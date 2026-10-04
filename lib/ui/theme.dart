@@ -93,3 +93,17 @@ class AppTheme {
     );
   }
 }
+
+/// One fixed colour per nutrient, everywhere in the app (categorical slots
+/// 1–7 of the dataviz reference palette, in order; validated for colour-blind
+/// separation on white). Text stays in text colours; the colour marks identity.
+/// Yellow, aqua and pink are under 3:1 on white, so every value keeps a visible label.
+const nutrientColors = <String, Color>{
+  'kcal': Color(0xFF2A78D6),
+  'protein_g': Color(0xFFEB6834),
+  'fat_g': Color(0xFF1BAF7A),
+  'carbs_g': Color(0xFFEDA100),
+  'fiber_g': Color(0xFFE87BA4),
+  'sugar_g': Color(0xFF008300),
+  'sodium_mg': Color(0xFF4A3AA7),
+};

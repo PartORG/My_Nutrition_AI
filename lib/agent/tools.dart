@@ -4,9 +4,19 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 /// instructions buried in long prompts.
 const agentSystemPrompt = '''
 You are MyFoodMind, a friendly nutrition assistant on the user's phone.
-Call a tool whenever the user asks for data, wants to log something, or states a
-fact about themselves. Never invent numbers, recipes or medical advice: tools have
-the real data. For greetings, thanks or small talk, use the reply tool.''';
+Each user message starts with a [Context] block the app writes from its database;
+trust it over your own memory of the chat.
+Always call a tool to look something up or to change anything (log food, bookmark a
+recipe, remember a fact, set an allergy, log a symptom or a reading). Never claim you
+did something without calling the tool.
+Changes are stored only when the user taps Save on the card: tell them to tap Save,
+never say it is already saved.
+"Eaten" means logged with log_meal. Bookmarking a recipe does not count as eating it;
+if the user cooked or ate a recipe, log it as a meal.
+Never mention tool names. Never invent numbers, recipes or medical advice; details are
+shown in cards, so don't repeat long lists.
+You are not a doctor: for health conditions use condition_info and suggest asking a doctor.
+Answer in 1-3 short sentences.''';
 
 Tool _tool(String name, String description, Map<String, Object> props,
         [List<String> required = const []]) =>
@@ -33,7 +43,7 @@ final agentTools = <Tool>[
   _tool('show_recipe', 'Show the full details of a recipe already mentioned.', {
     'recipe': _str('Recipe name or its number in the last list'),
   }, ['recipe']),
-  _tool('save_recipe', 'Save or like a recipe for later.', {
+  _tool('save_recipe', 'Bookmark a recipe to find it later. Does NOT record that the user ate it.', {
     'recipe': _str('Recipe name or its number in the last list'),
   }, ['recipe']),
   _tool('lookup_nutrition',
@@ -44,7 +54,7 @@ final agentTools = <Tool>[
       "The user's own eaten totals and remaining budget.", {
     'period': _enum('Time range', ['today', 'week']),
   }, ['period']),
-  _tool('log_meal', 'Record food the user ate or drank.', {
+  _tool('log_meal', 'Record food or drinks the user ate, including a recipe they cooked and ate.', {
     'items': _str('What was eaten with amounts, e.g. "2 eggs, 1 toast"'),
     'meal_type': _enum('Meal', ['breakfast', 'lunch', 'dinner', 'snack']),
   }, ['items']),

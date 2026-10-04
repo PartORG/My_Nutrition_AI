@@ -61,6 +61,9 @@ class Profiles {
   final Database _db;
   final Directory _root;
 
+  /// For the per-phone chat counter (chat_usage).
+  Database get db => _db;
+
   List<ProfileInfo> list() => [
         for (final r in _db.select('SELECT id, name FROM profiles ORDER BY id'))
           (id: r['id'] as int, name: r['name'] as String),
@@ -111,11 +114,17 @@ class Profiles {
         : PinWrong(freePinAttempts - failed);
   }
 
-  /// "Forgot PIN" path: removes the profile and every file it owns.
+  /// Episodic memory index; lives outside profiles/ so backup skips it.
+  String vectorsDbPath(int id) => '${_root.parent.path}/vectors/$id.db';
+
+  /// "Forgot PIN" path: removes the profile and every file it owns,
+  /// including its vectors (they quote the user's messages).
   void delete(int id) {
     _db.execute('DELETE FROM profiles WHERE id = ?', [id]);
     final dir = Directory('${_root.path}/$id');
     if (dir.existsSync()) dir.deleteSync(recursive: true);
+    final vectors = File(vectorsDbPath(id));
+    if (vectors.existsSync()) vectors.deleteSync();
   }
 
   void close() => _db.close();

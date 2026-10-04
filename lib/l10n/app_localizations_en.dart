@@ -99,4 +99,115 @@ class AppLocalizationsEn extends AppLocalizations {
   String deviceUnsupportedBody(String gb) {
     return 'MyFoodMind runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about $gb GB.';
   }
+
+  @override
+  String get chatHint => 'Ask about food, log a meal…';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get preparingAi =>
+      'Preparing the on-device AI… The first start takes about a minute.';
+
+  @override
+  String modelsMissing(String dir, String files) {
+    return 'AI model files are missing in $dir: $files';
+  }
+
+  @override
+  String get confirmSave => 'Save';
+
+  @override
+  String get confirmDiscard => 'Discard';
+
+  @override
+  String get confirmSaved => 'Saved';
+
+  @override
+  String get confirmDiscarded => 'Discarded';
+
+  @override
+  String get perServing => 'Per serving';
+
+  @override
+  String minutesServings(int minutes, int servings) {
+    return '$minutes min · $servings servings';
+  }
+
+  @override
+  String get notMedicalAdvice =>
+      'General information, not medical advice. Talk to your doctor before changing your diet.';
+
+  @override
+  String get cameraComing =>
+      'The camera arrives with the Pro plan in a later version.';
+
+  @override
+  String get crisisTitle => 'You don\'t have to go through this alone';
+
+  @override
+  String get crisisBody =>
+      'If you might hurt yourself, call your local emergency number now. Free, confidential helplines in your country are listed at findahelpline.com.';
+
+  @override
+  String get crisisButton => 'Find a helpline';
+
+  @override
+  String limitReached(int count) {
+    return 'You\'ve used today\'s $count free AI messages. They reset at midnight, or get unlimited chat with Basic.';
+  }
+
+  @override
+  String get agentError => 'Something went wrong. Please try again.';
+
+  @override
+  String get reportResponse => 'Report this response';
+
+  @override
+  String get kcal => 'kcal';
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get fat => 'Fat';
+
+  @override
+  String get carbs => 'Carbs';
+
+  @override
+  String get fiber => 'Fiber';
+
+  @override
+  String get sugar => 'Sugar';
+
+  @override
+  String get sodium => 'Sodium';
+
+  @override
+  String get recipeIdeas => 'Recipe ideas';
+
+  @override
+  String get ingredients => 'Ingredients';
+
+  @override
+  String get steps => 'Steps';
+
+  @override
+  String get healthInfo => 'Health information';
+
+  @override
+  String servingsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count servings',
+      one: '1 serving',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get iAteThis => 'I ate this';
 }

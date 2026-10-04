@@ -159,7 +159,11 @@ void main() {
       final p = Profiles.open(tmp);
       final anna = await p.create('Anna', '1234');
       final bob = await p.create('Bob', '5678');
+      File(p.vectorsDbPath(anna))
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('quotes of Anna');
       p.delete(anna);
+      expect(File(p.vectorsDbPath(anna)).existsSync(), isFalse, reason: 'vectors quote her messages');
       expect(p.list().map((e) => e.name), ['Bob']);
       expect(Directory('${tmp.path}/profiles/$anna').existsSync(), isFalse);
       expect(File(p.userDbPath(bob)).existsSync(), isTrue);

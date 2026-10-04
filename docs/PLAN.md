@@ -53,7 +53,7 @@ medical notes are rendered as cards from the database, never as model-generated 
   - "What the AI knows about me" screen: view/edit/delete facts, wipe episodic memory.
 - **Safety:** crisis keywords → fixed helpline card before the model runs. Condition rules only ever
   tighten limits. Wellness wording only ("suggestions", "limits"; never "treat", "diagnose",
-  "safe for your condition"). "Report response" button on every AI message (email draft).
+  "safe for your condition"). "Report this response" on every AI message via long-press (email draft); no icon (user decision 2026-10-04).
 - **Goals:** Mifflin-St Jeor × activity, ±15% for goal, kcal floor; protein 1.2 g/kg, fat 30%,
   carbs rest, fiber 14 g/1000 kcal, WHO sodium/sugar. Manual override per value. Under 18 → manual only.
 - **State:** Riverpod 3, no codegen. **UI:** reuse NutriAI theme + screen layouts, rewrite internals.

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_state.dart';
 import 'l10n/app_localizations.dart';
+import 'ui/chat_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
 
@@ -86,7 +87,7 @@ class _AppGateState extends ConsumerState<AppGate> {
   }
 }
 
-/// Placeholder until the chat and dashboard arrive (M2, M3).
+/// The unlocked profile's home: the chat (dashboard arrives in M3).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key, required this.name});
   final String name;
@@ -105,7 +106,22 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: const SizedBox.shrink(),
+      body: switch (ref.watch(agentProvider)) {
+        AsyncData(:final value) => ChatScreen(agent: value),
+        AsyncError(error: ModelsMissing(:final dir, :final missing)) =>
+          Padding(padding: const EdgeInsets.all(24), child: Text(l.modelsMissing(dir, missing.join(', ')))),
+        AsyncError(:final error) => Center(child: Text('$error')),
+        _ => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(l.preparingAi, textAlign: TextAlign.center),
+              ]),
+            ),
+          ),
+      },
     );
   }
 }

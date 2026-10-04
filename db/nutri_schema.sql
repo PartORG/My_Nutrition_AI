@@ -24,7 +24,8 @@ CREATE TABLE foods (
   carbs_g   REAL NOT NULL,
   fiber_g   REAL,
   sugar_g   REAL,
-  sodium_mg REAL
+  sodium_mg REAL,
+  serving_g REAL   -- one typical piece/portion ("2 eggs" = 2 x serving_g); NULL = unknown
 );
 
 CREATE TABLE recipes (

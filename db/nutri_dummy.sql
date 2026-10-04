@@ -6,32 +6,33 @@ INSERT INTO meta VALUES
   ('embedding_model', 'embeddinggemma-300m'),
   ('built_at', 'dummy');
 
-INSERT INTO foods (id, name, kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, sodium_mg) VALUES
-  (1,  'chicken breast, cooked', 165, 31,   3.6,  0,    0,    0,    74),
-  (2,  'white rice, cooked',     130, 2.7,  0.3,  28,   0.4,  0.1,  1),
-  (3,  'brown rice, cooked',     123, 2.7,  1.0,  25.6, 1.6,  0.2,  4),
-  (4,  'broccoli',               34,  2.8,  0.4,  6.6,  2.6,  1.7,  33),
-  (5,  'egg',                    143, 12.6, 9.5,  0.7,  0,    0.4,  142),
-  (6,  'spinach',                23,  2.9,  0.4,  3.6,  2.2,  0.4,  79),
-  (7,  'feta cheese',            264, 14.2, 21.3, 4.1,  0,    4.1,  1116),
-  (8,  'tomato',                 18,  0.9,  0.2,  3.9,  1.2,  2.6,  5),
-  (9,  'onion',                  40,  1.1,  0.1,  9.3,  1.7,  4.2,  4),
-  (10, 'olive oil',              884, 0,    100,  0,    0,    0,    2),
-  (11, 'salmon',                 208, 20,   13,   0,    0,    0,    59),
-  (12, 'zucchini',               17,  1.2,  0.3,  3.1,  1.0,  2.5,  8),
-  (13, 'avocado',                160, 2,    14.7, 8.5,  6.7,  0.7,  7),
-  (14, 'banana',                 89,  1.1,  0.3,  22.8, 2.6,  12.2, 1),
-  (15, 'oats',                   389, 16.9, 6.9,  66.3, 10.6, 0,    2),
-  (16, 'greek yogurt, plain',    59,  10.2, 0.4,  3.6,  0,    3.2,  36),
-  (17, 'almonds',                579, 21.2, 49.9, 21.6, 12.5, 4.4,  1),
-  (18, 'peanuts',                567, 25.8, 49.2, 16.1, 8.5,  4.7,  18),
-  (19, 'lentils, cooked',        116, 9,    0.4,  20.1, 7.9,  1.8,  2),
-  (20, 'potato, boiled',         87,  1.9,  0.1,  20.1, 1.8,  0.9,  5),
-  (21, 'milk, whole',            61,  3.2,  3.3,  4.8,  0,    5.1,  43),
-  (22, 'pasta, cooked',          158, 5.8,  0.9,  30.9, 1.8,  0.6,  1),
-  (23, 'soy sauce',              53,  8.1,  0.6,  4.9,  0.8,  0.4,  5493),
-  (24, 'tofu',                   76,  8,    4.8,  1.9,  0.3,  0.6,  7),
-  (25, 'chickpeas, cooked',      164, 8.9,  2.6,  27.4, 7.6,  4.8,  7);
+INSERT INTO foods (id, name, kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, sodium_mg, serving_g) VALUES
+  (1,  'chicken breast, cooked', 165, 31,   3.6,  0,    0,    0,    74, 120),
+  (2,  'white rice, cooked',     130, 2.7,  0.3,  28,   0.4,  0.1,  1, 150),
+  (3,  'brown rice, cooked',     123, 2.7,  1.0,  25.6, 1.6,  0.2,  4, 150),
+  (4,  'broccoli',               34,  2.8,  0.4,  6.6,  2.6,  1.7,  33, 90),
+  (5,  'egg',                    143, 12.6, 9.5,  0.7,  0,    0.4,  142, 50),
+  (6,  'spinach',                23,  2.9,  0.4,  3.6,  2.2,  0.4,  79, 30),
+  (7,  'feta cheese',            264, 14.2, 21.3, 4.1,  0,    4.1,  1116, 30),
+  (8,  'tomato',                 18,  0.9,  0.2,  3.9,  1.2,  2.6,  5, 120),
+  (9,  'onion',                  40,  1.1,  0.1,  9.3,  1.7,  4.2,  4, 110),
+  (10, 'olive oil',              884, 0,    100,  0,    0,    0,    2, 14),
+  (11, 'salmon',                 208, 20,   13,   0,    0,    0,    59, 150),
+  (12, 'zucchini',               17,  1.2,  0.3,  3.1,  1.0,  2.5,  8, 200),
+  (13, 'avocado',                160, 2,    14.7, 8.5,  6.7,  0.7,  7, 150),
+  (14, 'banana',                 89,  1.1,  0.3,  22.8, 2.6,  12.2, 1, 118),
+  (15, 'oats',                   389, 16.9, 6.9,  66.3, 10.6, 0,    2, 40),
+  (16, 'greek yogurt, plain',    59,  10.2, 0.4,  3.6,  0,    3.2,  36, 170),
+  (17, 'almonds',                579, 21.2, 49.9, 21.6, 12.5, 4.4,  1, 28),
+  (18, 'peanuts',                567, 25.8, 49.2, 16.1, 8.5,  4.7,  18, 28),
+  (19, 'lentils, cooked',        116, 9,    0.4,  20.1, 7.9,  1.8,  2, 200),
+  (20, 'potato, boiled',         87,  1.9,  0.1,  20.1, 1.8,  0.9,  5, 170),
+  (21, 'milk, whole',            61,  3.2,  3.3,  4.8,  0,    5.1,  43, 250),
+  (22, 'pasta, cooked',          158, 5.8,  0.9,  30.9, 1.8,  0.6,  1, 200),
+  (23, 'soy sauce',              53,  8.1,  0.6,  4.9,  0.8,  0.4,  5493, 15),
+  (24, 'tofu',                   76,  8,    4.8,  1.9,  0.3,  0.6,  7, 120),
+  (25, 'chickpeas, cooked',      164, 8.9,  2.6,  27.4, 7.6,  4.8,  7, 160),
+  (26, 'bread, toasted',         313, 13,   4.2,  55.8, 3.8,  5.4,  568, 30);
 
 INSERT INTO recipes (id, title, instructions, servings, minutes, tags, texture) VALUES
   (1, 'Chicken broccoli stir-fry',
@@ -79,7 +80,7 @@ INSERT INTO products (barcode, name, kcal, protein_g, fat_g, carbs_g, fiber_g, s
 
 INSERT INTO allergens (food_id, allergen) VALUES
   (5, 'egg'), (7, 'milk'), (16, 'milk'), (21, 'milk'), (17, 'tree nuts'),
-  (18, 'peanuts'), (11, 'fish'), (23, 'soy'), (23, 'gluten'), (24, 'soy'), (22, 'gluten');
+  (18, 'peanuts'), (11, 'fish'), (23, 'soy'), (23, 'gluten'), (24, 'soy'), (22, 'gluten'), (26, 'gluten');
 
 INSERT INTO conditions (id, name) VALUES
   (1, 'diabetes_t2'), (2, 'hypertension'), (3, 'gout'), (4, 'als'), (5, 'ms');
