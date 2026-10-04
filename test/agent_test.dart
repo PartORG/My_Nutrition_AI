@@ -135,6 +135,20 @@ void main() {
     expect(meals(), 1);
   });
 
+  test('tapping a listed recipe opens exactly it, and "save it" then means that one', () async {
+    model.script.add([ToolCall('search_recipes', {'query': 'breakfast'})]);
+    await agent.send('breakfast ideas');
+    final list = (agent.items.whereType<CardItem>().last.card as RecipeListCard).recipes;
+    agent.showRecipe(list[1].id); // tap on the second one
+    expect((agent.items.last as CardItem).card, isA<RecipeCard>());
+    expect(((agent.items.last as CardItem).card as RecipeCard).title, list[1].title);
+    expect(model.sent.length, 1, reason: 'the tap did not go through the model');
+    model.script.add([ToolCall('save_recipe', {'recipe': 'it'})]);
+    await agent.send('save it');
+    final save = agent.items.whereType<CardItem>().last.card as ConfirmCard;
+    expect(save.lines, [list[1].title]);
+  });
+
   test('✕ writes nothing', () async {
     model.script.add([ToolCall('remember_fact', {'fact': 'hates olives'})]);
     await agent.send('I hate olives');

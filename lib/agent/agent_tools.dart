@@ -50,11 +50,22 @@ class CameraCard extends AgentCard {
 
 /// A write the model proposed. Nothing is stored until the user taps ✓.
 class ConfirmCard extends AgentCard {
-  ConfirmCard({required this.title, required this.lines, required this.apply});
-  final String title;
+  ConfirmCard({required String title, required this.lines, required void Function(ConfirmCard) apply, this.mealType})
+      // ignore: prefer_initializing_formals
+      : _title = title,
+        // ignore: prefer_initializing_formals
+        _apply = apply;
+  final String _title;
   final List<String> lines;
-  final void Function() apply;
+  final void Function(ConfirmCard) _apply;
   bool? accepted; // null = not decided yet
+
+  /// Meal cards only: the meal it is logged under. The user can change it on
+  /// the card before Save, so it never depends on the time of day alone.
+  String? mealType;
+
+  String get title => mealType == null ? _title : 'Log $mealType';
+  void apply() => _apply(this);
 }
 
 class ToolResult {
@@ -168,6 +179,12 @@ class AgentTools {
   ToolResult _showRecipe(String ref) {
     final id = _resolveRecipe(ref);
     if (id == null) return ToolResult.error('no recipe matches "$ref"');
+    return showRecipeById(id);
+  }
+
+  /// Also what a tap on a recipe list item calls directly, without the model,
+  /// so a tap can't open the wrong recipe and "save it" refers to this one.
+  ToolResult showRecipeById(int id) {
     _lastShown = id;
     final r = nutri.select('SELECT * FROM recipes WHERE id = ?', [id]).single;
     final ingredients = [
@@ -202,12 +219,12 @@ class AgentTools {
     final title = _summary(recipeId).title;
     final grams = servings * _recipeServingGrams(recipeId);
     final values = _recipePer100(recipeId).map((k, v) => MapEntry(k, v * grams / 100));
-    final type = _mealTypeFor(_now());
     final at = _ms();
     return ToolResult({'status': _pendingNote, 'recipe': title}, ConfirmCard(
-      title: 'Log $type',
+      title: 'Log meal',
+      mealType: _mealTypeForRecipe(recipeId),
       lines: ['$title · ${grams.round()} g · ${values['kcal']!.round()} kcal'],
-      apply: () => _insertMeal(at, type, title, grams, values, false),
+      apply: (c) => _insertMeal(at, c.mealType!, title, grams, values, false),
     ));
   }
 
@@ -222,7 +239,7 @@ class AgentTools {
     }, ConfirmCard(
       title: 'Save recipe',
       lines: [title],
-      apply: () => user.execute(
+      apply: (_) => user.execute(
           'INSERT OR REPLACE INTO saved_recipes (recipe_id, title, saved_at) VALUES (?, ?, ?)',
           [id, title, _ms()]),
     ));
@@ -268,15 +285,20 @@ class AgentTools {
   }
 
   ToolResult _logMeal(String items, String mealType) {
-    final parsed = [for (final item in _split(items)) _portion(item)];
+    // "overnight oats with banana" is one recipe; "chicken with rice" is two foods.
+    final parts = _isDishName(items) ? [items] : _split(items);
+    final parsed = [for (final item in parts) _portion(item)];
     final found = [for (final p in parsed) ?p];
-    final missing = [for (final (i, p) in parsed.indexed) if (p == null) _split(items)[i]];
+    final missing = [for (final (i, p) in parsed.indexed) if (p == null) parts[i]];
     if (found.isEmpty) {
       return ToolResult.error('could not find "${missing.join('", "')}" in the food database; '
           'ask the user to name the food differently or give grams');
     }
-    const types = {'breakfast', 'lunch', 'dinner', 'snack'};
-    final type = types.contains(mealType) ? mealType : _mealTypeFor(_now());
+    // The model's choice, else the recipe's own tag ("Shakshuka" is breakfast
+    // even at 20:00), else the time of day. The user can still change it.
+    final type = _mealTypes.contains(mealType)
+        ? mealType
+        : found.map((p) => p.recipeId).nonNulls.map(_mealTypeForRecipe).firstOrNull ?? _mealTypeFor(_now());
     final total = <String, double>{for (final n in nutrients) n: 0};
     for (final p in found) {
       for (final n in nutrients) {
@@ -291,21 +313,32 @@ class AgentTools {
       'kcal': total['kcal']!.round(),
       if (missing.isNotEmpty) 'not_found': missing,
     }, ConfirmCard(
-      title: 'Log $type',
+      title: 'Log meal',
+      mealType: type,
       lines: [
         for (final p in found) '${p.label} · ${p.grams.round()} g · ${p.estimated ? '≈' : ''}${p.values['kcal']!.round()} kcal',
         if (missing.isNotEmpty) 'Not found: ${missing.join(', ')}',
       ],
-      apply: () {
+      apply: (c) {
         for (final p in found) {
-          _insertMeal(at, type, p.label, p.grams, p.values, p.estimated);
+          _insertMeal(at, c.mealType!, p.label, p.grams, p.values, p.estimated);
         }
       },
     ));
   }
 
+  /// The whole phrase is exactly a dish or recipe name (same content words),
+  /// so it must not be split on "and"/"with".
+  bool _isDishName(String text) {
+    final said = _words(text.replaceFirst(RegExp(r'^\s*\d+(?:[.,]\d+)?\s*'), ''));
+    bool same(String name) => _words(name).length == said.length && _words(name).containsAll(said);
+    return _ftsIds(nutri, 'dishes_fts', text, limit: 3)
+            .any((id) => same(nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String)) ||
+        _ftsIds(nutri, 'recipes_fts', text, limit: 3).any((id) => same(_summary(id).title));
+  }
+
   /// "2 eggs", "200 g greek yogurt", "3 slices of pizza", "lasagna".
-  ({String label, double grams, Nutrients values, bool estimated})? _portion(String item) {
+  ({String label, double grams, Nutrients values, bool estimated, int? recipeId})? _portion(String item) {
     final m = RegExp(
       // \b after the quantity word and unit: "almonds" is not "a lmonds", "greek" not "g reek".
       r'^(?:(\d+(?:[.,]\d+)?)|(an?|one|two|three|four|five|half(?: a)?)\b)?\s*'
@@ -326,25 +359,41 @@ class AgentTools {
         };
     Nutrients scale(Nutrients per100, double g) => per100.map((k, v) => MapEntry(k, v * g / 100));
 
-    // Prepared dishes first ("caesar salad" is a dish, not lettuce), then recipes, then foods.
-    final dish = _ftsIds(nutri, 'dishes_fts', name, limit: 1).firstOrNull;
-    if (dish != null) {
-      final d = nutri.select('SELECT * FROM dishes WHERE id = ?', [dish]).single;
-      final g = grams((d['serving_g'] as num).toDouble());
-      final recipeId = d['recipe_id'] as int?;
-      final per100 = recipeId == null ? _nutrientsOf(d) : _recipePer100(recipeId);
-      return (label: d['name'] as String, grams: g, values: scale(per100, g), estimated: true);
+    // The candidate whose name the user said most completely wins: "banana" is
+    // the food, not "Overnight oats with banana"; "lentil soup" is the recipe,
+    // "chicken caesar salad" the dish. Ties: dish, then recipe, then food.
+    final candidates = [
+      for (final id in _ftsIds(nutri, 'dishes_fts', name, limit: 3))
+        ('dish', id, nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String),
+      if (unit.isEmpty) // "200 g of shakshuka" is weighed food, not servings of a recipe
+        for (final id in _ftsIds(nutri, 'recipes_fts', name, limit: 3))
+          ('recipe', id, _summary(id).title),
+      for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 3))
+        ('food', id, nutri.select('SELECT name FROM foods WHERE id = ?', [id]).single['name'] as String),
+    ];
+    if (candidates.isEmpty) return null;
+    final said = _words(name);
+    double coverage(String label) {
+      final words = _words(label);
+      return words.isEmpty ? 0 : words.where(said.contains).length / words.length;
     }
-    final recipe = _ftsIds(nutri, 'recipes_fts', name, limit: 1).firstOrNull;
-    if (recipe != null && unit.isEmpty) {
-      final g = qty * _recipeServingGrams(recipe);
-      return (label: _summary(recipe).title, grams: g, values: scale(_recipePer100(recipe), g), estimated: false);
+    final (kind, id, _) = candidates.reduce((best, c) => coverage(c.$3) > coverage(best.$3) ? c : best);
+
+    switch (kind) {
+      case 'dish':
+        final d = nutri.select('SELECT * FROM dishes WHERE id = ?', [id]).single;
+        final g = grams((d['serving_g'] as num).toDouble());
+        final recipeId = d['recipe_id'] as int?;
+        final per100 = recipeId == null ? _nutrientsOf(d) : _recipePer100(recipeId);
+        return (label: d['name'] as String, grams: g, values: scale(per100, g), estimated: true, recipeId: recipeId);
+      case 'recipe':
+        final g = qty * _recipeServingGrams(id);
+        return (label: _summary(id).title, grams: g, values: scale(_recipePer100(id), g), estimated: false, recipeId: id);
+      default:
+        final f = nutri.select('SELECT * FROM foods WHERE id = ?', [id]).single;
+        final g = grams((f['serving_g'] as num?)?.toDouble());
+        return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
     }
-    final food = _ftsIds(nutri, 'foods_fts', name, limit: 1).firstOrNull;
-    if (food == null) return null;
-    final f = nutri.select('SELECT * FROM foods WHERE id = ?', [food]).single;
-    final g = grams((f['serving_g'] as num?)?.toDouble());
-    return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g), estimated: false);
   }
 
   Nutrients _recipePer100(int recipeId) {
@@ -354,6 +403,17 @@ class AgentTools {
         [recipeId]).single;
     return _nutrientsOf(r);
   }
+
+  static const _mealTypes = {'breakfast', 'lunch', 'dinner', 'snack'};
+
+  /// First meal tag of the recipe ('breakfast,vegetarian' → breakfast), else the time of day.
+  String _mealTypeForRecipe(int recipeId) =>
+      (nutri.select('SELECT tags FROM recipes WHERE id = ?', [recipeId]).single['tags'] as String)
+          .split(',')
+          .map((t) => t.trim())
+          .where(_mealTypes.contains)
+          .firstOrNull ??
+      _mealTypeFor(_now());
 
   static String _mealTypeFor(DateTime t) =>
       t.hour < 11 ? 'breakfast' : t.hour < 16 ? 'lunch' : t.hour < 21 ? 'dinner' : 'snack';
@@ -365,7 +425,7 @@ class AgentTools {
     return ToolResult({'status': _pendingNote, 'fact': fact}, ConfirmCard(
       title: 'Remember',
       lines: [fact],
-      apply: () => user.execute('INSERT INTO memory_facts (text, created_at) VALUES (?, ?)', [fact, _ms()]),
+      apply: (_) => user.execute('INSERT INTO memory_facts (text, created_at) VALUES (?, ?)', [fact, _ms()]),
     ));
   }
 
@@ -375,7 +435,7 @@ class AgentTools {
     return ToolResult({'status': _pendingNote, 'allergen': allergen, 'remove': remove}, ConfirmCard(
       title: remove ? 'Remove allergy' : 'Add allergy',
       lines: [allergen],
-      apply: () => remove
+      apply: (_) => remove
           ? user.execute('DELETE FROM user_allergens WHERE allergen = ?', [allergen])
           : user.execute('INSERT OR IGNORE INTO user_allergens (allergen, added_at) VALUES (?, ?)',
               [allergen, _ms()]),
@@ -388,7 +448,7 @@ class AgentTools {
     return ToolResult({'status': _pendingNote, 'symptom': symptom, 'severity': s}, ConfirmCard(
       title: 'Log symptom',
       lines: [s == null ? symptom : '$symptom · severity $s/5'],
-      apply: () => user.execute('INSERT INTO symptoms (logged_at, symptom, severity) VALUES (?, ?, ?)',
+      apply: (_) => user.execute('INSERT INTO symptoms (logged_at, symptom, severity) VALUES (?, ?, ?)',
           [_ms(), symptom.toLowerCase(), s]),
     ));
   }
@@ -414,7 +474,7 @@ class AgentTools {
     return ToolResult({'status': _pendingNote, 'kind': kind, 'value': text}, ConfirmCard(
       title: 'Log ${kind.replaceAll('_', ' ')}',
       lines: [text],
-      apply: () => user.execute(
+      apply: (_) => user.execute(
           'INSERT INTO readings (logged_at, kind, value, value2, unit) VALUES (?, ?, ?, ?, ?)',
           [_ms(), kind, reading.v, reading.v2, reading.unit]),
     ));
@@ -503,6 +563,13 @@ const _stopwords = {
   'can', 'what', 'how', 'much', 'many', 'some', 'something', 'please', 'make', 'cook', 'recipe',
   'recipes', 'idea', 'ideas', 'give', 'find', 'suggest', 'want', 'have', 'eat', 'food', 'foods',
 };
+
+/// Content words, crudely singular ("eggs" → "egg"), for comparing names.
+Set<String> _words(String text) => {
+      for (final m in RegExp(r'[a-z0-9]+').allMatches(text.toLowerCase()))
+        if (m[0]!.length > 1 && !_stopwords.contains(m[0]))
+          m[0]!.length > 3 && m[0]!.endsWith('s') ? m[0]!.substring(0, m[0]!.length - 1) : m[0]!
+    };
 
 /// FTS5 query: words OR-ed with prefix match, so "eggs" finds "egg" and
 /// "chickpea" finds "chickpeas". Null when nothing searchable is left.

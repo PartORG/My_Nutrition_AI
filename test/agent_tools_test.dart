@@ -75,6 +75,22 @@ void main() {
       expect((status.forModel['eaten'] as Map)['kcal'], 462);
     });
 
+    test('a recipe is logged under its own meal, not the time of day; the user can change it', () {
+      now = DateTime(2026, 10, 4, 20, 40); // evening, as in the phone test
+      final oats = confirmOf(tools.logRecipe(4)); // tagged breakfast
+      expect(oats.mealType, 'breakfast');
+      expect(oats.title, 'Log breakfast');
+      final viaChat = confirmOf(tools.run('log_meal', {'items': 'lentil soup'})); // tagged lunch
+      expect(viaChat.mealType, 'lunch');
+      oats.mealType = 'snack'; // picked on the card before Save
+      oats.apply();
+      viaChat.apply();
+      expect([for (final r in user.select('SELECT meal_type FROM meal_log ORDER BY id')) r['meal_type']],
+          ['snack', 'lunch']);
+      // Untagged food still follows the time of day.
+      expect(confirmOf(tools.run('log_meal', {'items': 'banana'})).mealType, 'dinner');
+    });
+
     test('unknown recipe is an error for the model, not a crash', () {
       expect(tools.run('show_recipe', {'recipe': 'unicorn pie'}).forModel['error'], isNotNull);
     });
@@ -119,6 +135,19 @@ void main() {
       expect(confirmOf(r).lines.single, 'lasagna · 350 g · ≈473 kcal');
       confirmOf(r).apply();
       expect(user.select('SELECT estimated FROM meal_log').single['estimated'], 1);
+    });
+
+    test('the best-covered name wins: "banana" is the fruit, not the oats recipe (regression)', () {
+      String label(String items) => confirmOf(tools.run('log_meal', {'items': items})).lines.first.split(' · ').first;
+      expect(label('banana'), 'banana');
+      expect(label('overnight oats with banana'), 'Overnight oats with banana');
+      expect(label('lentil soup'), 'Lentil soup');
+      expect(label('chicken caesar salad'), 'caesar salad');
+      expect(label('shakshuka'), 'shakshuka', reason: 'tie between the dish and the recipe: the dish');
+      expect(label('2 eggs'), 'egg');
+      // Splitting still happens when the phrase isn't one dish's name.
+      expect(confirmOf(tools.run('log_meal', {'items': 'lasagna and banana'})).lines.length, 2);
+      expect(confirmOf(tools.run('log_meal', {'items': 'chicken with rice'})).lines.length, 2);
     });
 
     test('unknown food is reported, known ones still logged', () {

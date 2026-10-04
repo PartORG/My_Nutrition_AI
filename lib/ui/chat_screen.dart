@@ -138,7 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 '&body=${Uri.encodeComponent('Response:\n$text\n\nWhat was wrong:\n')}',
           )),
         ),
-      CardItem(:final card) => _CardView(card: card, agent: widget.agent, onAsk: _send),
+      CardItem(:final card) => _CardView(card: card, agent: widget.agent),
       CrisisItem() => _Notice(
           color: scheme.errorContainer,
           title: l.crisisTitle,
@@ -260,10 +260,9 @@ class _Notice extends StatelessWidget {
 
 /// Cards carry the numbers: they come from the database, not the model's text.
 class _CardView extends StatelessWidget {
-  const _CardView({required this.card, required this.agent, required this.onAsk});
+  const _CardView({required this.card, required this.agent});
   final AgentCard card;
   final Agent agent;
-  final ValueChanged<String> onAsk;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +289,7 @@ class _CardView extends StatelessWidget {
                       label: '${r.minutes} min'),
                 ]),
                 trailing: const Icon(Icons.chevron_right, color: AppColors.primary),
-                onTap: () => onAsk('Show me recipe ${i + 1}'),
+                onTap: () => agent.showRecipe(r.id),
               ),
           ]),
         ),
@@ -374,6 +373,10 @@ class _CardView extends StatelessWidget {
           color: c.accepted == false ? AppColors.textSecondary : AppColors.primary,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             for (final line in c.lines) Text(line),
+            if (c.mealType != null && c.accepted == null) ...[
+              const SizedBox(height: 8),
+              _MealTypePicker(card: c, agent: agent),
+            ],
             const SizedBox(height: 8),
             switch (c.accepted) {
               // Wrap: at large text sizes the two buttons don't fit on one line.
@@ -463,4 +466,27 @@ class _Chip extends StatelessWidget {
           Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : AppColors.textPrimary)),
         ]),
       );
+}
+
+/// Breakfast · Lunch · Dinner · Snack on a meal card, before Save.
+class _MealTypePicker extends StatelessWidget {
+  const _MealTypePicker({required this.card, required this.agent});
+  final ConfirmCard card;
+  final Agent agent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return SegmentedButton<String>(
+      showSelectedIcon: false,
+      segments: [
+        ButtonSegment(value: 'breakfast', label: Text(l.mealBreakfast)),
+        ButtonSegment(value: 'lunch', label: Text(l.mealLunch)),
+        ButtonSegment(value: 'dinner', label: Text(l.mealDinner)),
+        ButtonSegment(value: 'snack', label: Text(l.mealSnack)),
+      ],
+      selected: {card.mealType!},
+      onSelectionChanged: (s) => agent.setMealType(card, s.single),
+    );
+  }
 }

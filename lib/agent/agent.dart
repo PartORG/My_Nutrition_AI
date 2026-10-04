@@ -169,6 +169,12 @@ class Agent extends ChangeNotifier {
     }
   }
 
+  /// A tap on a recipe in a list: opens exactly that recipe, no model, not counted.
+  void showRecipe(int recipeId) {
+    items.add(CardItem(tools.showRecipeById(recipeId).card!));
+    notifyListeners();
+  }
+
   /// "I ate this" on a recipe card: straight to a ✓ card, no model, not counted.
   void ateRecipe(int recipeId) {
     items.add(CardItem(tools.logRecipe(recipeId).card!));
@@ -182,6 +188,13 @@ class Agent extends ChangeNotifier {
     await _session?.close();
     _session = null;
     items.clear();
+    notifyListeners();
+  }
+
+  /// The user picked another meal on a meal card before saving.
+  void setMealType(ConfirmCard card, String mealType) {
+    if (card.accepted != null) return;
+    card.mealType = mealType;
     notifyListeners();
   }
 
