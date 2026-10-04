@@ -1029,6 +1029,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get tryAgain;
+
+  /// No description provided for @tierFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get tierFree;
+
+  /// No description provided for @tierBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic'**
+  String get tierBasic;
+
+  /// No description provided for @tierMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get tierMedium;
+
+  /// No description provided for @tierPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get tierPro;
+
+  /// No description provided for @plansTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get plansTitle;
+
+  /// No description provided for @monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthly;
+
+  /// No description provided for @yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get yearly;
+
+  /// No description provided for @perMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / month'**
+  String perMonth(String price);
+
+  /// No description provided for @perYear.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / year'**
+  String perYear(String price);
+
+  /// No description provided for @trialThen.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days free, then {price}'**
+  String trialThen(String price);
+
+  /// No description provided for @subscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get subscribe;
+
+  /// No description provided for @upgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get upgrade;
+
+  /// No description provided for @switchPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchPlan;
+
+  /// No description provided for @currentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get currentPlan;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @subscriptionTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions renew automatically until cancelled. Cancel anytime in Google Play → Payments & subscriptions. One subscription covers every profile on this phone.'**
+  String get subscriptionTerms;
+
+  /// No description provided for @devBillingBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode: no real payment. Pick any plan to try it.'**
+  String get devBillingBanner;
+
+  /// No description provided for @devBackToFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Free (developer)'**
+  String get devBackToFree;
+
+  /// No description provided for @purchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase didn\'t go through. Please try again.'**
+  String get purchaseFailed;
+
+  /// No description provided for @featBasic1.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited AI chat'**
+  String get featBasic1;
+
+  /// No description provided for @featBasic2.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly and monthly dashboard'**
+  String get featBasic2;
+
+  /// No description provided for @featBasic3.
+  ///
+  /// In en, this message translates to:
+  /// **'Micronutrients, streaks, weight trend'**
+  String get featBasic3;
+
+  /// No description provided for @featMedium1.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Basic'**
+  String get featMedium1;
+
+  /// No description provided for @featMedium2.
+  ///
+  /// In en, this message translates to:
+  /// **'Health conditions: diet limits and suggestions'**
+  String get featMedium2;
+
+  /// No description provided for @featMedium3.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptom and reading journal, doctor export'**
+  String get featMedium3;
+
+  /// No description provided for @featPro1.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Medium'**
+  String get featPro1;
+
+  /// No description provided for @featPro2.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo, live camera and barcode recognition'**
+  String get featPro2;
+
+  /// No description provided for @featPro3.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs meals and finds recipes from what you see'**
+  String get featPro3;
+
+  /// No description provided for @yourPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan'**
+  String get yourPlan;
+
+  /// No description provided for @seePlans.
+  ///
+  /// In en, this message translates to:
+  /// **'See plans'**
+  String get seePlans;
+
+  /// No description provided for @periodDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get periodDay;
+
+  /// No description provided for @periodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get periodWeek;
+
+  /// No description provided for @periodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get periodMonth;
+
+  /// No description provided for @lockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly and monthly trends are in Basic'**
+  String get lockedTitle;
+
+  /// No description provided for @lockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.'**
+  String get lockedBody;
+
+  /// No description provided for @caloriesPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories per day'**
+  String get caloriesPerDay;
+
+  /// No description provided for @goalLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal {kcal}'**
+  String goalLine(int kcal);
+
+  /// No description provided for @dailyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily average ({days} days with logs)'**
+  String dailyAverage(int days);
+
+  /// No description provided for @streakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{No logging streak yet} =1{1-day logging streak} other{{days}-day logging streak}}'**
+  String streakDays(int days);
+
+  /// No description provided for @weightTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get weightTrend;
+
+  /// No description provided for @weightTrendEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Log your weight at least twice to see the trend.'**
+  String get weightTrendEmpty;
+
+  /// No description provided for @logWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Log weight'**
+  String get logWeight;
+
+  /// No description provided for @weightLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight saved'**
+  String get weightLogged;
+
+  /// No description provided for @plansUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans aren\'t available in this build.'**
+  String get plansUnavailable;
 }
 
 class _AppLocalizationsDelegate

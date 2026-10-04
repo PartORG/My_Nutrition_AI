@@ -16,6 +16,8 @@ import 'agent/agent_tools.dart';
 import 'agent/chat_limit.dart';
 import 'agent/gemma_chat_model.dart';
 import 'agent/memory.dart';
+import 'billing/billing.dart';
+import 'billing/revenuecat_billing.dart';
 import 'data/nutri_db.dart';
 import 'data/profiles.dart';
 import 'data/user_db.dart';
@@ -157,6 +159,7 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
   final data = ref.watch(profileDataProvider);
   if (data == null) return Completer<Agent>().future; // locked: never resolves, disposed with the screen
   final profiles = ref.watch(profilesProvider);
+  final billing = await ref.watch(billingProvider.future);
   final llm = await ref.watch(llmProvider.future);
   final embedder = await ref.watch(embedderProvider.future);
 
@@ -170,8 +173,7 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
     memory: memory,
     user: data.user,
     limit: ChatLimit(profiles.db),
-    // ponytail: no tiers until M4 (RevenueCat); dev builds can pass DEV_UNLIMITED=true.
-    unlimited: () => const bool.fromEnvironment('DEV_UNLIMITED'),
+    unlimited: () => billing.tier.value.includes(Tier.basic),
     onWrite: data.changed,
   )..loadHistory();
   ref.onDispose(() {
@@ -210,3 +212,16 @@ Future<bool> authenticateFingerprint(WidgetRef ref, String reason) async {
     return false;
   }
 }
+
+/// Per phone. RevenueCat when the build has REVENUECAT_KEY (docs/BILLING_SETUP.md);
+/// the developer tier switch only when built with DEV_BILLING=true; else Free only.
+final billingProvider = FutureProvider<Billing>((ref) async {
+  const key = String.fromEnvironment('REVENUECAT_KEY');
+  final Billing billing = key.isNotEmpty
+      ? RevenueCatBilling(key)
+      : const bool.fromEnvironment('DEV_BILLING')
+          ? DevBilling(ref.watch(profilesProvider).db)
+          : UnavailableBilling();
+  await billing.init();
+  return billing;
+});

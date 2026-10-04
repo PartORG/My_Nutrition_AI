@@ -4,22 +4,69 @@ import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../data/diary.dart';
+import '../billing/billing.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
 import 'nutrients.dart';
+import 'paywall_screen.dart';
+import 'period_view.dart';
 import 'theme.dart';
 
 /// Nutrients where the goal is a ceiling, not something to reach.
 const limitNutrients = {'sugar_g', 'sodium_mg'};
 
-class TodayScreen extends ConsumerWidget {
+class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TodayScreen> createState() => _TodayScreenState();
+}
+
+class _TodayScreenState extends ConsumerState<TodayScreen> {
+  var _days = 1; // 1 = today, 7 = week, 30 = month
+
+  @override
+  Widget build(BuildContext context) {
     final data = ref.watch(profileDataProvider);
     if (data == null) return const SizedBox.shrink();
+    final l = AppLocalizations.of(context)!;
+    final period = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: SegmentedButton<int>(
+        segments: [
+          ButtonSegment(value: 1, label: Text(l.periodDay)),
+          ButtonSegment(value: 7, label: Text(l.periodWeek)),
+          ButtonSegment(value: 30, label: Text(l.periodMonth)),
+        ],
+        selected: {_days},
+        onSelectionChanged: (s) => setState(() => _days = s.single),
+      ),
+    );
+    final billing = ref.watch(billingProvider).value;
+    return Column(children: [
+      period,
+      Expanded(
+        child: _days == 1
+            ? _DayView(data: data)
+            : billing == null
+                ? const Center(child: CircularProgressIndicator())
+                : ValueListenableBuilder(
+                    valueListenable: billing.tier,
+                    builder: (context, tier, _) =>
+                        tier.includes(Tier.basic) ? PeriodView(data: data, days: _days) : const _LockedPeriod(),
+                  ),
+      ),
+    ]);
+  }
+}
+
+class _DayView extends StatelessWidget {
+  const _DayView({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder(
       valueListenable: data.changes,
       builder: (context, _, _) {
@@ -39,7 +86,7 @@ class TodayScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
                   for (final key in ['protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
-                    if (targets[key] != null) _NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!),
+                    if (targets[key] != null) NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!),
                 ]),
               ),
             ),
@@ -160,8 +207,8 @@ class _CaloriesCard extends StatelessWidget {
   }
 }
 
-class _NutrientBar extends StatelessWidget {
-  const _NutrientBar({required this.nutrient, required this.eaten, required this.goal});
+class NutrientBar extends StatelessWidget {
+  const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal});
   final String nutrient;
   final double eaten, goal;
 
@@ -253,5 +300,35 @@ class _MealGroup extends StatelessWidget {
           ),
       ]),
     );
+  }
+}
+
+/// Free tier: what Week/Month would show, and a way to the plans.
+class _LockedPeriod extends StatelessWidget {
+  const _LockedPeriod();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      Card(
+        color: AppColors.cardGreen,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.insights, color: AppColors.primary, size: 32),
+            const SizedBox(height: 8),
+            Text(l.lockedTitle, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(l.lockedBody),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
+              child: Text(l.seePlans),
+            ),
+          ]),
+        ),
+      ),
+    ]);
   }
 }

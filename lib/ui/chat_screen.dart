@@ -6,6 +6,7 @@ import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
 import '../l10n/app_localizations.dart';
 import 'nutrients.dart';
+import 'paywall_screen.dart';
 import 'theme.dart';
 
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
@@ -145,7 +146,11 @@ class _ChatScreenState extends State<ChatScreen> {
           body: l.crisisBody,
           action: (l.crisisButton, () => launchUrl(Uri.parse('https://findahelpline.com'))),
         ),
-      LimitItem(:final dailyFree) => _Notice(color: scheme.secondaryContainer, body: l.limitReached(dailyFree)),
+      LimitItem(:final dailyFree) => _Notice(
+          color: scheme.secondaryContainer,
+          body: l.limitReached(dailyFree),
+          action: (l.seePlans, () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen()))),
+        ),
       ErrorItem() => _Notice(color: scheme.errorContainer, body: l.agentError),
     };
   }

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_state.dart';
+import '../data/diary.dart';
 import '../data/goals.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
 import 'memory_screen.dart';
 import 'nutrients.dart';
+import 'paywall_screen.dart';
 import 'theme.dart';
 
 class MeScreen extends ConsumerWidget {
@@ -36,13 +38,22 @@ class MeScreen extends ConsumerWidget {
                 Text(body == null ? l.setGoalsBody : _describe(body, l)),
                 if (!adult) ...[const SizedBox(height: 8), Text(l.under18, style: const TextStyle(color: AppColors.textSecondary))],
                 const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () => open(const GoalsScreen()),
-                  child: Text(body == null ? l.setGoalsButton : l.editDetails),
-                ),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  OutlinedButton(
+                    onPressed: () => open(const GoalsScreen()),
+                    child: Text(body == null ? l.setGoalsButton : l.editDetails),
+                  ),
+                  // Free: goals use the current weight. The trend chart is Basic.
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.monitor_weight_outlined),
+                    label: Text(l.logWeight),
+                    onPressed: () => _logWeight(context, data, body?.imperial ?? false),
+                  ),
+                ]),
               ]),
             ),
           ),
+          _PlanCard(onOpen: () => open(const PaywallScreen())),
           Card(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               ListTile(title: Text(l.targetsTitle, style: Theme.of(context).textTheme.titleMedium)),
@@ -101,6 +112,18 @@ class MeScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _logWeight(BuildContext context, ProfileData data, bool imperial) async {
+    final l = AppLocalizations.of(context)!;
+    final v = await showDialog<double>(
+      context: context,
+      builder: (_) => _TargetDialog(title: imperial ? l.weightLb : l.weightKg, initial: null, allowReset: false),
+    );
+    if (v == null || v <= 0) return;
+    logWeight(data.user, v, imperial: imperial, at: DateTime.now());
+    data.changed();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.weightLogged)));
+  }
+
   static String _describe(Body b, AppLocalizations l) {
     final sex = {Sex.female: l.female, Sex.male: l.male, Sex.other: l.other}[b.sex]!;
     final fi = cmToFeetInches(b.heightCm);
@@ -127,9 +150,10 @@ class MeScreen extends ConsumerWidget {
 
 /// Owns its controller (see _EditDialog in memory_screen.dart for why).
 class _TargetDialog extends StatefulWidget {
-  const _TargetDialog({required this.title, required this.initial});
+  const _TargetDialog({required this.title, required this.initial, this.allowReset = true});
   final String title;
   final double? initial;
+  final bool allowReset;
 
   @override
   State<_TargetDialog> createState() => _TargetDialogState();
@@ -157,7 +181,7 @@ class _TargetDialogState extends State<_TargetDialog> {
         onChanged: (_) => setState(() {}),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, -1.0), child: Text(l.resetTarget)),
+        if (widget.allowReset) TextButton(onPressed: () => Navigator.pop(context, -1.0), child: Text(l.resetTarget)),
         TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
         ElevatedButton(
           onPressed: v == null || v <= 0 ? null : () => Navigator.pop(context, v),
@@ -216,6 +240,29 @@ class _RemindersCard extends ConsumerWidget {
             onChanged: (on) => update((slot: r.slot, enabled: on, hour: r.hour, minute: r.minute)),
           ),
       ]),
+    );
+  }
+}
+
+class _PlanCard extends ConsumerWidget {
+  const _PlanCard({required this.onOpen});
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final billing = ref.watch(billingProvider).value;
+    if (billing == null) return const SizedBox.shrink();
+    return ValueListenableBuilder(
+      valueListenable: billing.tier,
+      builder: (context, tier, _) => Card(
+        child: ListTile(
+          leading: const Icon(Icons.workspace_premium_outlined, color: AppColors.primary),
+          title: Text(l.yourPlan),
+          subtitle: Text(tierName(tier, l)),
+          trailing: TextButton(onPressed: onOpen, child: Text(l.seePlans)),
+        ),
+      ),
     );
   }
 }

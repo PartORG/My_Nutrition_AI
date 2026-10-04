@@ -19,12 +19,15 @@ by editing this file deliberately, never by silently diverging in code.
 | Tier | Includes |
 |---|---|
 | **Free** | AI chat **15 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, multiple profiles, reminders |
-| **Basic** | Unlimited chat, weekly/monthly dashboard, micronutrients, streaks, weight logging |
+| **Basic** | Unlimited chat, weekly/monthly dashboard, micronutrients, streaks, weight trend (logging weight is free) |
 | **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets** |
 | **Pro** | + Camera: photo / live video / barcode → review & edit screen → "What can I cook?" or "Log this meal" (user confirms portion, values shown as ≈). **7-day free trial** (Play offer) |
 
 - RevenueCat, anonymous device user, entitlements `basic ⊂ medium ⊂ pro`, one `has(tier)` check.
 - Tier changes use RevenueCat product change (replacement + proration) — never double charge.
+- **M4 decisions (2026-10-04):** monthly + yearly per paid tier (Pro trial unchanged); weight logging is free
+  (goals use the current weight), the weight trend chart is Basic; no store/RevenueCat accounts yet, so a
+  developer tier switch stands in until they exist.
 - Chat limit table in code: `free: 15, basic+: unlimited`. Bypass by clearing app data is accepted (wipes data too).
 
 ## Architecture
@@ -104,7 +107,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | M1 | Skeleton, `schema.sql` + dummy DB, profiles + PIN, migrations, PC-vs-phone embedding check | Tests pass ✅ (22 host tests + on-phone checks) |
 | M2 | Agent, tools, 4-type memory, chat limit, confirmation cards, report button | Eval runs as on-device `integration_test`; unit tests use a fake model ✅ (54 host tests; 105-query re-run with the new prompt skipped by user decision) |
 | M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values ✅ (77 host tests) |
-| M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore |
+| M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore ⏳ code done + dev tier switch (88 host tests); sandbox test waits for the accounts: `docs/BILLING_SETUP.md` |
 | M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition |
 | M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products |
 | M7 | Asset Delivery, privacy policy + ToS + Gemma terms, Data safety, trademark check (EUIPO/USPTO class 9/44) | Internal-testing build installs and runs |
@@ -190,3 +193,15 @@ Decisions from these numbers:
 - Accessibility: 200 % text on a 360 dp phone has no overflow (`test/accessibility_test.dart`, found and fixed
   4); chat bubbles and nutrient tiles read as whole sentences; progress bars carry spoken labels.
 - Not verified on the phone yet: reminders firing, voice recognition, fingerprint prompt.
+
+## M4 results (2026-10-04)
+
+- `Billing` interface: `RevenueCatBilling` (REVENUECAT_KEY), `DevBilling` (DEV_BILLING=true, tier stored in
+  profiles.db v3 `settings`), `UnavailableBilling` (neither: Free only — a store-less build must never fall
+  back to the dev switch). Packages `<tier>_<monthly|yearly>`, entitlements `basic`/`medium`/`pro`.
+- Plan changes replace the old subscription: up / same tier → immediately with time credited
+  (`withTimeProration`); down → at renewal (`deferred`). Monthly↔yearly is a replacement too.
+- Gates: chat unlimited from Basic; Week/Month (calories per day + goal line, daily averages over logged
+  days, streak, weight trend) from Basic; logging weight is free.
+- Paywall: price and renewal terms next to every button, Pro "7 days free, then …", restore.
+- Not verified: real purchases (no accounts yet). Setup checklist: `docs/BILLING_SETUP.md`.

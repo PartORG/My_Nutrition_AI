@@ -560,4 +560,160 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tryAgain => 'Try again';
+
+  @override
+  String get tierFree => 'Free';
+
+  @override
+  String get tierBasic => 'Basic';
+
+  @override
+  String get tierMedium => 'Medium';
+
+  @override
+  String get tierPro => 'Pro';
+
+  @override
+  String get plansTitle => 'Plans';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get yearly => 'Yearly';
+
+  @override
+  String perMonth(String price) {
+    return '$price / month';
+  }
+
+  @override
+  String perYear(String price) {
+    return '$price / year';
+  }
+
+  @override
+  String trialThen(String price) {
+    return '7 days free, then $price';
+  }
+
+  @override
+  String get subscribe => 'Subscribe';
+
+  @override
+  String get upgrade => 'Upgrade';
+
+  @override
+  String get switchPlan => 'Switch';
+
+  @override
+  String get currentPlan => 'Current plan';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get subscriptionTerms =>
+      'Subscriptions renew automatically until cancelled. Cancel anytime in Google Play → Payments & subscriptions. One subscription covers every profile on this phone.';
+
+  @override
+  String get devBillingBanner =>
+      'Developer mode: no real payment. Pick any plan to try it.';
+
+  @override
+  String get devBackToFree => 'Back to Free (developer)';
+
+  @override
+  String get purchaseFailed =>
+      'The purchase didn\'t go through. Please try again.';
+
+  @override
+  String get featBasic1 => 'Unlimited AI chat';
+
+  @override
+  String get featBasic2 => 'Weekly and monthly dashboard';
+
+  @override
+  String get featBasic3 => 'Micronutrients, streaks, weight trend';
+
+  @override
+  String get featMedium1 => 'Everything in Basic';
+
+  @override
+  String get featMedium2 => 'Health conditions: diet limits and suggestions';
+
+  @override
+  String get featMedium3 => 'Symptom and reading journal, doctor export';
+
+  @override
+  String get featPro1 => 'Everything in Medium';
+
+  @override
+  String get featPro2 => 'Photo, live camera and barcode recognition';
+
+  @override
+  String get featPro3 => 'Logs meals and finds recipes from what you see';
+
+  @override
+  String get yourPlan => 'Your plan';
+
+  @override
+  String get seePlans => 'See plans';
+
+  @override
+  String get periodDay => 'Day';
+
+  @override
+  String get periodWeek => 'Week';
+
+  @override
+  String get periodMonth => 'Month';
+
+  @override
+  String get lockedTitle => 'Weekly and monthly trends are in Basic';
+
+  @override
+  String get lockedBody =>
+      'See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.';
+
+  @override
+  String get caloriesPerDay => 'Calories per day';
+
+  @override
+  String goalLine(int kcal) {
+    return 'Goal $kcal';
+  }
+
+  @override
+  String dailyAverage(int days) {
+    return 'Daily average ($days days with logs)';
+  }
+
+  @override
+  String streakDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days-day logging streak',
+      one: '1-day logging streak',
+      zero: 'No logging streak yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get weightTrend => 'Weight';
+
+  @override
+  String get weightTrendEmpty =>
+      'Log your weight at least twice to see the trend.';
+
+  @override
+  String get logWeight => 'Log weight';
+
+  @override
+  String get weightLogged => 'Weight saved';
+
+  @override
+  String get plansUnavailable => 'Plans aren\'t available in this build.';
 }

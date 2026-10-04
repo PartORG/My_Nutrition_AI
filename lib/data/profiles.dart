@@ -29,6 +29,8 @@ const profilesDbMigrations = <String>[
   ''',
   // v2 (M3): fingerprint unlock, allowed only while there is one profile.
   'ALTER TABLE profiles ADD COLUMN biometric INTEGER NOT NULL DEFAULT 0;',
+  // v3 (M4): per-phone settings (the developer tier switch lives here).
+  'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);',
 ];
 
 /// Wrong PINs allowed before lockout starts.

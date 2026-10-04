@@ -332,5 +332,91 @@
       }
     }
   },
-  "tryAgain": "Try again"
+  "tryAgain": "Try again",
+  "tierFree": "Free",
+  "tierBasic": "Basic",
+  "tierMedium": "Medium",
+  "tierPro": "Pro",
+  "plansTitle": "Plans",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
+  "perMonth": "{price} / month",
+  "@perMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "perYear": "{price} / year",
+  "@perYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialThen": "7 days free, then {price}",
+  "@trialThen": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "subscribe": "Subscribe",
+  "upgrade": "Upgrade",
+  "switchPlan": "Switch",
+  "currentPlan": "Current plan",
+  "restorePurchases": "Restore purchases",
+  "subscriptionTerms": "Subscriptions renew automatically until cancelled. Cancel anytime in Google Play → Payments & subscriptions. One subscription covers every profile on this phone.",
+  "devBillingBanner": "Developer mode: no real payment. Pick any plan to try it.",
+  "devBackToFree": "Back to Free (developer)",
+  "purchaseFailed": "The purchase didn't go through. Please try again.",
+  "featBasic1": "Unlimited AI chat",
+  "featBasic2": "Weekly and monthly dashboard",
+  "featBasic3": "Micronutrients, streaks, weight trend",
+  "featMedium1": "Everything in Basic",
+  "featMedium2": "Health conditions: diet limits and suggestions",
+  "featMedium3": "Symptom and reading journal, doctor export",
+  "featPro1": "Everything in Medium",
+  "featPro2": "Photo, live camera and barcode recognition",
+  "featPro3": "Logs meals and finds recipes from what you see",
+  "yourPlan": "Your plan",
+  "seePlans": "See plans",
+  "periodDay": "Day",
+  "periodWeek": "Week",
+  "periodMonth": "Month",
+  "lockedTitle": "Weekly and monthly trends are in Basic",
+  "lockedBody": "See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.",
+  "caloriesPerDay": "Calories per day",
+  "goalLine": "Goal {kcal}",
+  "@goalLine": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyAverage": "Daily average ({days} days with logs)",
+  "@dailyAverage": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "streakDays": "{days, plural, =0{No logging streak yet} =1{1-day logging streak} other{{days}-day logging streak}}",
+  "@streakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "weightTrend": "Weight",
+  "weightTrendEmpty": "Log your weight at least twice to see the trend.",
+  "logWeight": "Log weight",
+  "weightLogged": "Weight saved",
+  "plansUnavailable": "Plans aren't available in this build."
 }
