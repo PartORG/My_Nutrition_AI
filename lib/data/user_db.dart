@@ -60,6 +60,34 @@ const userDbMigrations = <String>[
     unit      TEXT NOT NULL    -- 'mg/dL', 'mmol/L', 'mmHg', 'kg', 'lb'
   );
   ''',
+  // v2 (M3): body data for goals, manual target overrides. Stored metric.
+  '''
+  CREATE TABLE body (
+    id         INTEGER PRIMARY KEY CHECK (id = 1),
+    sex        TEXT CHECK (sex IN ('female', 'male', 'other')),
+    birth_year INTEGER,
+    height_cm  REAL,
+    weight_kg  REAL,
+    activity   TEXT CHECK (activity IN ('sedentary', 'light', 'moderate', 'active', 'very_active')),
+    goal       TEXT CHECK (goal IN ('lose', 'maintain', 'gain')),
+    units      TEXT NOT NULL DEFAULT 'metric' CHECK (units IN ('metric', 'imperial')),
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE goal_overrides (
+    nutrient TEXT PRIMARY KEY CHECK (nutrient IN
+      ('kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg')),
+    value    REAL NOT NULL CHECK (value > 0)
+  );
+  ''',
+  // v3 (M3): reminders the user turned on; no row = off, at the suggested time.
+  '''
+  CREATE TABLE reminders (
+    slot    TEXT PRIMARY KEY CHECK (slot IN ('breakfast', 'lunch', 'dinner', 'evening')),
+    enabled INTEGER NOT NULL,
+    hour    INTEGER NOT NULL CHECK (hour BETWEEN 0 AND 23),
+    minute  INTEGER NOT NULL CHECK (minute BETWEEN 0 AND 59)
+  );
+  ''',
 ];
 
 Database openUserDb(String path) {

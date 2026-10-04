@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
+import 'package:myfoodmind/data/diary.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -95,6 +96,11 @@ void main() {
       final status = tools.run('nutrition_status', {'period': 'today'});
       expect((status.forModel['eaten'] as Map)['kcal'], 237);
       expect(status.forModel['meals_logged'], 2);
+      expect(status.forModel['goals'], startsWith('not set'));
+      user.execute("INSERT INTO goal_overrides VALUES ('kcal', 2000), ('protein_g', 100)");
+      final withGoals = tools.run('nutrition_status', {'period': 'today'});
+      expect(withGoals.forModel['left_today'], {'kcal': 1763, 'protein_g': 84}); // 100 − (12.6 + 3.9)
+      expect((tools.run('nutrition_status', {'period': 'week'}).forModel['goals'] as Map)['kcal'], 14000);
     });
 
     test('"a handful of almonds" and "200 g greek yogurt" parse (regression)', () {
@@ -134,6 +140,33 @@ void main() {
       expect(today.forModel['meals_logged'], 0);
       expect(today.forModel['note'], contains('Saved recipes do not count as eaten'),
           reason: 'user saved recipes, then asked what they ate and got zeros (phone test)');
+    });
+  });
+
+  group('Log tab', () {
+    test('search covers dishes, recipes, foods and products', () {
+      final kinds = {for (final f in tools.searchFood('pasta')) f.kind};
+      expect(kinds, containsAll(['food', 'product']));
+      final shak = tools.searchFood('shakshuka');
+      expect(shak.first.kind, 'dish', reason: 'a prepared dish beats the recipe');
+      expect(shak.map((f) => f.kind), contains('recipe'));
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      expect((egg.label, egg.servingG, egg.per100['kcal']), ('egg', 50.0, 143.0));
+      expect(tools.searchFood('the of'), isEmpty);
+    });
+
+    test('logFood writes the scaled snapshot and the diary sees it', () {
+      now = DateTime(2026, 10, 4, 13);
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      tools.logFood(egg, 150, tools.mealTypeNow());
+      final meals = mealsOn(user, now);
+      expect(meals.single.label, 'egg');
+      expect(meals.single.type, 'lunch');
+      expect(meals.single.kcal, closeTo(214.5, .01));
+      expect(totalsOn(user, now)['protein_g'], closeTo(18.9, .01));
+      expect(totalsOn(user, now.add(const Duration(days: 1)))['kcal'], 0);
+      deleteMeal(user, meals.single.id);
+      expect(mealsOn(user, now), isEmpty);
     });
   });
 

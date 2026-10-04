@@ -57,6 +57,9 @@ medical notes are rendered as cards from the database, never as model-generated 
 - **Goals:** Mifflin-St Jeor × activity, ±15% for goal, kcal floor; protein 1.2 g/kg, fat 30%,
   carbs rest, fiber 14 g/1000 kcal, WHO sodium/sugar. Manual override per value. Under 18 → manual only.
 - **State:** Riverpod 3, no codegen. **UI:** reuse NutriAI theme + screen layouts, rewrite internals.
+- **M3 decisions (2026-10-04):** metric + imperial per profile (stored metric); goals onboarding is
+  skippable (dashboard nudges until set); big mic button in chat (Android speech recognizer, prefer
+  offline); bottom tabs Today · Chat · Log · Me.
 - **Reminders:** `flutter_local_notifications`, per profile, permission requested on enable, inexact
   scheduling, reschedule on boot, `VISIBILITY_PRIVATE` on lock screen.
 - **Accessibility:** large tap targets, TalkBack labels, voice input via Android speech-to-text.
@@ -100,7 +103,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | **M0** | ~100 labelled queries; compare candidate models on the phone; check chat + embedding models load together | ≥90% tool accuracy ✅ (Gemma 4 E2B 95.2%); in-app latency and RAM with both models recorded |
 | M1 | Skeleton, `schema.sql` + dummy DB, profiles + PIN, migrations, PC-vs-phone embedding check | Tests pass ✅ (22 host tests + on-phone checks) |
 | M2 | Agent, tools, 4-type memory, chat limit, confirmation cards, report button | Eval runs as on-device `integration_test`; unit tests use a fake model ✅ (54 host tests; 105-query re-run with the new prompt skipped by user decision) |
-| M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values |
+| M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values ✅ (77 host tests) |
 | M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore |
 | M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition |
 | M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products |
@@ -168,3 +171,22 @@ Decisions from these numbers:
   recall on real data, or embed them with the same `.tflite` on the PC for an exact match. Decide when
   real docs exist. `tool/compare_embeddings.py` does the comparison.
 - Not yet: biometric unlock (M3 with onboarding UI); the 5-minute auto-lock has no automated test.
+
+## M3 results (2026-10-04)
+
+- Goals: `lib/data/goals.dart` (formula per the plan, reference values in `test/goals_test.dart`), user.db v2
+  (`body`, `goal_overrides`); a newer weight reading replaces the onboarding weight; under 18 → manual only.
+- Bottom tabs Today · Chat · Log · Me. Profile databases open on unlock (`profileDataProvider`, auto-dispose,
+  null while locked); the AI loads separately and stays alive across tabs.
+- Log tab logs straight from the food database (pressing Log is the confirmation); one insert path shared with
+  the chat cards and "I ate this".
+- Reminders: user.db v3 `reminders`; meal reminders 30 min after the usual time (3+ logs in 30 days), else
+  8:30 / 13:00 / 19:00; evening 21:00. Inexact daily, re-armed after reboot, private on the lock screen,
+  first name only. Deleting a profile cancels its reminders.
+- Voice: **on-device recognition only**; if the phone has no offline speech pack the app explains how to add
+  it instead of falling back to online recognition (keeps "nothing leaves the phone").
+- Fingerprint: **only while the phone has one profile** (user decision: Android can't tell whose finger it
+  is); adding a second profile turns it off for everyone. profiles.db v2.
+- Accessibility: 200 % text on a 360 dp phone has no overflow (`test/accessibility_test.dart`, found and fixed
+  4); chat bubbles and nutrient tiles read as whole sentences; progress bars carry spoken labels.
+- Not verified on the phone yet: reminders firing, voice recognition, fingerprint prompt.

@@ -1,0 +1,257 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../app_state.dart';
+import '../data/diary.dart';
+import '../data/goals.dart';
+import '../l10n/app_localizations.dart';
+import 'goals_screen.dart';
+import 'nutrients.dart';
+import 'theme.dart';
+
+/// Nutrients where the goal is a ceiling, not something to reach.
+const limitNutrients = {'sugar_g', 'sodium_mg'};
+
+class TodayScreen extends ConsumerWidget {
+  const TodayScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = ref.watch(profileDataProvider);
+    if (data == null) return const SizedBox.shrink();
+    return ValueListenableBuilder(
+      valueListenable: data.changes,
+      builder: (context, _, _) {
+        final l = AppLocalizations.of(context)!;
+        final now = DateTime.now();
+        final targets = currentTargets(data.user, now: now).values;
+        final eaten = totalsOn(data.user, now);
+        final meals = mealsOn(data.user, now);
+        return ListView(padding: const EdgeInsets.all(16), children: [
+          if (targets['kcal'] == null)
+            _SetGoalsCard(eaten: eaten)
+          else
+            _CaloriesCard(eaten: eaten['kcal']!, goal: targets['kcal']!),
+          if (targets.length > 1)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(children: [
+                  for (final key in ['protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
+                    if (targets[key] != null) _NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!),
+                ]),
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(l.todaysMeals, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          if (meals.isEmpty) Text(l.noMealsYet, style: const TextStyle(color: AppColors.textSecondary)),
+          for (final type in ['breakfast', 'lunch', 'dinner', 'snack', null])
+            if (meals.where((m) => m.type == type).toList() case final group when group.isNotEmpty)
+              _MealGroup(type: type, meals: group, onDelete: (m) async {
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: Text(l.deleteMealTitle),
+                    content: Text('${m.label} · ${m.kcal.round()} ${l.kcal}'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
+                      TextButton(onPressed: () => Navigator.pop(c, true), child: Text(l.delete)),
+                    ],
+                  ),
+                );
+                if (ok == true) {
+                  deleteMeal(data.user, m.id);
+                  data.changed();
+                }
+              }),
+        ]);
+      },
+    );
+  }
+}
+
+class _SetGoalsCard extends StatelessWidget {
+  const _SetGoalsCard({required this.eaten});
+  final Map<String, double> eaten;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Column(children: [
+      Card(
+        color: AppColors.cardGreen,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.setGoalsTitle, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(l.setGoalsBody),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GoalsScreen())),
+              child: Text(l.setGoalsButton),
+            ),
+          ]),
+        ),
+      ),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.eatenToday, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            NutrientTiles(values: eaten),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
+
+/// Hero figure: calories eaten against the goal.
+class _CaloriesCard extends StatelessWidget {
+  const _CaloriesCard({required this.eaten, required this.goal});
+  final double eaten, goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final left = goal - eaten;
+    final over = left < 0;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Wrap, not Row: at large text sizes "of 2759 kcal" moves under the number.
+          Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
+            Text('${eaten.round()}',
+                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(l.eatenOfGoal(goal.round()), style: const TextStyle(color: AppColors.textSecondary)),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: (eaten / goal).clamp(0, 1),
+              minHeight: 12,
+              color: over ? Theme.of(context).colorScheme.error : nutrientColors['kcal'],
+              backgroundColor: nutrientColors['kcal']!.withValues(alpha: .15),
+              // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
+              semanticsLabel: '${l.kcal}: ${eaten.round()} ${l.eatenOfGoal(goal.round())}',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(children: [
+            if (over) Icon(Icons.warning_amber_rounded, size: 18, color: Theme.of(context).colorScheme.error),
+            if (over) const SizedBox(width: 4),
+            Flexible(
+              child: Text(over ? l.kcalOver((-left).round()) : l.kcalLeft(left.round()),
+                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+class _NutrientBar extends StatelessWidget {
+  const _NutrientBar({required this.nutrient, required this.eaten, required this.goal});
+  final String nutrient;
+  final double eaten, goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final limit = limitNutrients.contains(nutrient);
+    final over = limit && eaten > goal;
+    final color = nutrientColors[nutrient]!;
+    final name = nutrientLabels(l)[nutrient]!.$1;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Flexible(
+            child: Text(
+              '${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
+              style: const TextStyle(color: AppColors.textSecondary),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ]),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: (eaten / goal).clamp(0, 1),
+            minHeight: 8,
+            color: over ? Theme.of(context).colorScheme.error : color,
+            backgroundColor: color.withValues(alpha: .15),
+            semanticsLabel: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
+          ),
+        ),
+        // Own line: next to the values it overflows narrow phones.
+        if (over)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(children: [
+              Icon(Icons.warning_amber_rounded, size: 16, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(l.overBy(formatNutrient(nutrient, eaten - goal, l)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
+              ),
+            ]),
+          ),
+      ]),
+    );
+  }
+}
+
+class _MealGroup extends StatelessWidget {
+  const _MealGroup({required this.type, required this.meals, required this.onDelete});
+  final String? type;
+  final List<MealEntry> meals;
+  final ValueChanged<MealEntry> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final title = switch (type) {
+      'breakfast' => l.mealBreakfast,
+      'lunch' => l.mealLunch,
+      'dinner' => l.mealDinner,
+      _ => l.mealSnack,
+    };
+    final kcal = meals.fold(0.0, (s, m) => s + m.kcal);
+    return Card(
+      child: Column(children: [
+        ListTile(
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          trailing: Text('${kcal.round()} ${l.kcal}', style: const TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        for (final m in meals)
+          ListTile(
+            dense: true,
+            title: Text(m.label),
+            subtitle: Text([
+              DateFormat.Hm().format(m.at),
+              if (m.grams != null) '${m.grams!.round()} g',
+            ].join(' · ')),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('${m.estimated ? '≈' : ''}${m.kcal.round()} ${l.kcal}'),
+              IconButton(tooltip: l.delete, icon: const Icon(Icons.delete_outline), onPressed: () => onDelete(m)),
+            ]),
+          ),
+      ]),
+    );
+  }
+}

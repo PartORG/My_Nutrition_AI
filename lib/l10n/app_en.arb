@@ -151,5 +151,185 @@
   "forgetConversations": "Forget past conversations",
   "forgetConversationsBody": "Deletes your chat history and the AI's memory of it. Logged meals, facts and allergies stay.",
   "forget": "Forget",
-  "edit": "Edit"
+  "edit": "Edit",
+  "tabToday": "Today",
+  "tabChat": "Chat",
+  "tabLog": "Log",
+  "tabMe": "Me",
+  "eatenOfGoal": "of {goal} kcal",
+  "@eatenOfGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "kcalLeft": "{left} kcal left",
+  "@kcalLeft": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "kcalOver": "{over} kcal over",
+  "@kcalOver": {
+    "placeholders": {
+      "over": {
+        "type": "int"
+      }
+    }
+  },
+  "overBy": "over by {amount}",
+  "@overBy": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "eatenToday": "Eaten today",
+  "setGoalsTitle": "Set your daily goals",
+  "setGoalsBody": "Tell us a little about you to get calorie and nutrient targets.",
+  "setGoalsButton": "Set goals",
+  "todaysMeals": "Today's meals",
+  "noMealsYet": "Nothing logged yet. Use the Log tab or tell the chat what you ate.",
+  "deleteMealTitle": "Delete this entry?",
+  "mealBreakfast": "Breakfast",
+  "mealLunch": "Lunch",
+  "mealDinner": "Dinner",
+  "mealSnack": "Snack",
+  "searchFood": "Search foods, dishes, recipes…",
+  "kindFood": "Food",
+  "kindDish": "Dish",
+  "kindRecipe": "Recipe",
+  "kindProduct": "Product",
+  "perServing2": "{kcal} kcal per serving",
+  "@perServing2": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "per100g": "{kcal} kcal per 100 g",
+  "@per100g": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "servings": "Servings",
+  "grams": "Grams",
+  "logButton": "Log",
+  "loggedSnack": "Logged {label}",
+  "@loggedSnack": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "noResults": "No match in the food database.",
+  "goalsTitle": "Your daily goals",
+  "goalsIntro": "Used to compute your calorie and nutrient targets. Stays on this phone.",
+  "later": "Later",
+  "units": "Units",
+  "metric": "Metric",
+  "imperial": "Imperial",
+  "sex": "Sex used for the formula",
+  "female": "Female",
+  "male": "Male",
+  "other": "Other",
+  "birthYear": "Birth year",
+  "heightCm": "Height (cm)",
+  "heightFt": "ft",
+  "heightIn": "in",
+  "weightKg": "Weight (kg)",
+  "weightLb": "Weight (lb)",
+  "activity": "Activity",
+  "activitySedentary": "Sedentary: mostly sitting",
+  "activityLight": "Light: exercise 1–3 days a week",
+  "activityModerate": "Moderate: exercise 3–5 days a week",
+  "activityActive": "Active: exercise 6–7 days a week",
+  "activityVeryActive": "Very active: hard daily training or physical job",
+  "goal": "Goal",
+  "goalLose": "Lose weight",
+  "goalMaintain": "Maintain",
+  "goalGain": "Gain weight",
+  "invalidNumber": "Enter a valid number",
+  "under18": "For people under 18 these formulas don't apply. Set targets with your pediatrician below.",
+  "targetsTitle": "Daily targets",
+  "targetsNone": "No targets yet.",
+  "custom": "custom",
+  "editTarget": "{name} target",
+  "@editTarget": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resetTarget": "Use computed",
+  "editDetails": "Edit my details",
+  "aiKnowsLoading": "Available when the AI has loaded.",
+  "switchProfile": "Lock and switch profile",
+  "limitSuffix": "max",
+  "remindersTitle": "Reminders",
+  "remindersHint": "Times follow your usual meal times once you've logged a few meals.",
+  "reminderBreakfast": "Log breakfast",
+  "reminderLunch": "Log lunch",
+  "reminderDinner": "Log dinner",
+  "reminderEvening": "Evening check-in",
+  "notifMeal": "{name}, time to log your {meal}?",
+  "@notifMeal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "notifEvening": "{name}, how did today go? Your summary is ready.",
+  "@notifEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationsDenied": "Notifications are turned off for MyFoodMind in Android settings.",
+  "voiceInput": "Speak",
+  "voiceStop": "Stop listening",
+  "voiceUnavailable": "Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.",
+  "youSaid": "You said: {text}",
+  "@youSaid": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "aiSaid": "MyFoodMind said: {text}",
+  "@aiSaid": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "useFingerprint": "Use fingerprint",
+  "fingerprintTitle": "Unlock with fingerprint",
+  "fingerprintHint": "Only while this is the only profile on the phone: Android can't tell whose fingerprint it is.",
+  "fingerprintReason": "Unlock {name}'s profile",
+  "@fingerprintReason": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

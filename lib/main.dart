@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_state.dart';
 import 'l10n/app_localizations.dart';
-import 'ui/chat_screen.dart';
-import 'ui/memory_screen.dart';
+import 'ui/home_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
 
@@ -85,51 +84,5 @@ class _AppGateState extends ConsumerState<AppGate> {
       AsyncError(:final error) => Scaffold(body: Center(child: Text('$error'))),
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };
-  }
-}
-
-/// The unlocked profile's home: the chat (dashboard arrives in M3).
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key, required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.hello(name)),
-        actions: [
-          if (ref.watch(agentProvider) case AsyncData(:final value))
-            IconButton(
-              tooltip: l.aiKnowsTitle,
-              icon: const Icon(Icons.psychology_outlined),
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => MemoryScreen(agent: value))),
-            ),
-          IconButton(
-            tooltip: l.lock,
-            icon: const Icon(Icons.lock),
-            onPressed: () => ref.read(unlockedProvider.notifier).lock(),
-          ),
-        ],
-      ),
-      body: switch (ref.watch(agentProvider)) {
-        AsyncData(:final value) => ChatScreen(agent: value),
-        AsyncError(error: ModelsMissing(:final dir, :final missing)) =>
-          Padding(padding: const EdgeInsets.all(24), child: Text(l.modelsMissing(dir, missing.join(', ')))),
-        AsyncError(:final error) => Center(child: Text('$error')),
-        _ => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(l.preparingAi, textAlign: TextAlign.center),
-              ]),
-            ),
-          ),
-      },
-    );
   }
 }

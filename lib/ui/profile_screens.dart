@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../app_state.dart';
 import '../data/pin.dart';
 import '../data/profiles.dart';
 import '../l10n/app_localizations.dart';
+import 'goals_screen.dart';
 
 /// "Who's eating?" — pick a profile or add one.
 class ProfilesScreen extends ConsumerStatefulWidget {
@@ -79,7 +82,9 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     final id = await ref.read(profilesProvider).create(name, _pin.text);
     if (!mounted) return;
     ref.read(unlockedProvider.notifier).unlock((id: id, name: name));
-    Navigator.of(context).pop();
+    // Skippable onboarding: straight to the goals form, with a "Later" button.
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const GoalsScreen(onboarding: true)));
   }
 
   @override
@@ -132,9 +137,26 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Offer the fingerprint straight away when this profile uses it.
+    if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fingerprint());
+    }
+  }
+
+  @override
   void dispose() {
     _pin.dispose();
     super.dispose();
+  }
+
+  Future<void> _fingerprint() async {
+    final l = AppLocalizations.of(context)!;
+    if (!await authenticateFingerprint(ref, l.fingerprintReason(widget.profile.name)) || !mounted) return;
+    ref.read(profilesProvider).unlockedByBiometric(widget.profile.id);
+    ref.read(unlockedProvider.notifier).unlock(widget.profile);
+    Navigator.of(context).pop();
   }
 
   Future<void> _unlock() async {
@@ -175,6 +197,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     );
     if (ok != true || !mounted) return;
     ref.read(profilesProvider).delete(widget.profile.id);
+    unawaited(ref.read(remindersProvider).cancelProfile(widget.profile.id));
     Navigator.of(context).pop();
   }
 
@@ -198,6 +221,14 @@ class _PinScreenState extends ConsumerState<PinScreen> {
             onPressed: _busy ? null : _unlock,
             child: _busy ? const _Spinner() : Text(l.unlock),
           ),
+          if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.fingerprint, size: 28),
+              label: Text(l.useFingerprint),
+              onPressed: _busy ? null : _fingerprint,
+            ),
+          ],
           const SizedBox(height: 8),
           TextButton(onPressed: _busy ? null : _forgot, child: Text(l.forgotPin)),
         ],

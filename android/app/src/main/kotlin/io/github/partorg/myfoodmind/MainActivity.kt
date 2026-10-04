@@ -1,5 +1,6 @@
 package io.github.partorg.myfoodmind
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FragmentActivity: required by local_auth (fingerprint unlock).
+class MainActivity : FlutterFragmentActivity()

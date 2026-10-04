@@ -1,0 +1,133 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/agent/agent.dart';
+import 'package:myfoodmind/agent/agent_tools.dart';
+import 'package:myfoodmind/app_state.dart';
+import 'package:myfoodmind/data/diary.dart';
+import 'package:myfoodmind/data/goals.dart';
+import 'package:myfoodmind/data/nutri_db.dart';
+import 'package:myfoodmind/data/profiles.dart';
+import 'package:myfoodmind/data/user_db.dart';
+import 'package:myfoodmind/l10n/app_localizations.dart';
+import 'package:myfoodmind/ui/goals_screen.dart';
+import 'package:myfoodmind/ui/home_screen.dart';
+
+void main() {
+  late Directory tmp;
+  late ProfileData data;
+
+  setUp(() {
+    tmp = Directory.systemTemp.createTempSync('myfoodmind_m3_');
+    final nutri = openNutriDb('assets/nutri.db');
+    final user = openUserDb('${tmp.path}/user.db');
+    data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
+  });
+  tearDown(() {
+    data.nutri.close();
+    data.user.close();
+    tmp.deleteSync(recursive: true);
+  });
+
+  Future<void> pumpApp(WidgetTester tester, Widget home) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        profileDataProvider.overrideWithValue(data),
+        profilesProvider.overrideWithValue(Profiles.open(tmp)), // Me reads the profile list
+        agentProvider.overrideWith((ref) => Completer<Agent>().future), // model "still loading"
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: home,
+      ),
+    ));
+    await tester.pump();
+  }
+
+  testWidgets('goals form: imperial input is stored metric', (tester) async {
+    await pumpApp(tester, const GoalsScreen(onboarding: true));
+    expect(find.text('Later'), findsOneWidget);
+    await tester.tap(find.text('Imperial'));
+    await tester.pump();
+    await tester.tap(find.text('Male'));
+    await tester.enterText(find.widgetWithText(TextFormField, 'Birth year'), '1996');
+    await tester.enterText(find.widgetWithText(TextFormField, 'ft'), '5');
+    await tester.enterText(find.widgetWithText(TextFormField, 'in'), '11');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Weight (lb)'), '176');
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final b = loadBody(data.user)!;
+    expect(b.heightCm, closeTo(180.34, .01)); // 71 in
+    expect(b.weightKg, closeTo(79.83, .01)); // 176 lb
+    expect((b.sex, b.imperial, b.activity, b.goal), (Sex.male, true, Activity.light, Goal.maintain));
+  });
+
+  testWidgets('goals form rejects impossible numbers', (tester) async {
+    await pumpApp(tester, const GoalsScreen());
+    await tester.enterText(find.widgetWithText(TextFormField, 'Birth year'), '1890');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Height (cm)'), '20');
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    expect(find.text('Enter a valid number'), findsNWidgets(3)); // year, height, empty weight
+    expect(loadBody(data.user), isNull);
+  });
+
+  testWidgets('Today: nudge without goals; hero, bars, over-limit warning with goals; delete', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    expect(find.text('Set your daily goals'), findsOneWidget);
+
+    saveBody(data.user, (sex: Sex.male, birthYear: 1996, heightCm: 180, weightKg: 80,
+        activity: Activity.moderate, goal: Goal.maintain, imperial: false), now: DateTime.now());
+    final soy = data.tools.searchFood('soy sauce').firstWhere((f) => f.kind == 'food');
+    data.tools.logFood(soy, 50, 'lunch'); // 2747 mg sodium: over the 2000 mg limit
+    data.changed();
+    await tester.pump();
+
+    expect(find.text('27'), findsOneWidget, reason: 'hero: 26.5 kcal eaten, rounded');
+    expect(find.text('of 2759 kcal'), findsOneWidget);
+    expect(find.text('2733 kcal left'), findsOneWidget); // 2759 − 26.5 = 2732.5 → 2733
+    expect(find.text('over by 747 mg'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget, reason: 'never colour alone');
+
+    await tester.ensureVisible(find.byTooltip('Delete'));
+    await tester.tap(find.byTooltip('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+    expect(mealsOn(data.user, DateTime.now()), isEmpty);
+    expect(find.text('over by 747 mg'), findsNothing);
+  });
+
+  testWidgets('Log tab: search → servings → Log → shows on Today', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    await tester.tap(find.text('Log'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'banana');
+    await tester.pump();
+    expect(find.text('Food · 105 kcal per serving'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ListTile, 'banana'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('+')); // 1.5 servings = 177 g
+    await tester.pump();
+    await tester.tap(find.text('Snack'));
+    await tester.tap(find.text('Log').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Logged banana'), findsOneWidget);
+    final m = mealsOn(data.user, DateTime.now()).single;
+    expect((m.label, m.grams, m.type), ('banana', 177.0, 'snack'));
+
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
+    expect(find.text('Snack'), findsOneWidget);
+    expect(find.text('158 kcal'), findsWidgets);
+  });
+}

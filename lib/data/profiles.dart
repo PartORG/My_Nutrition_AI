@@ -27,6 +27,8 @@ const profilesDbMigrations = <String>[
     count INTEGER NOT NULL
   );
   ''',
+  // v2 (M3): fingerprint unlock, allowed only while there is one profile.
+  'ALTER TABLE profiles ADD COLUMN biometric INTEGER NOT NULL DEFAULT 0;',
 ];
 
 /// Wrong PINs allowed before lockout starts.
@@ -83,6 +85,9 @@ class Profiles {
       [name, hash, salt, DateTime.now().millisecondsSinceEpoch],
     );
     final id = _db.lastInsertRowId;
+    // A second person on the phone: Android can't tell whose fingerprint it
+    // is, so fingerprint unlock goes off for everyone.
+    if (list().length > 1) _db.execute('UPDATE profiles SET biometric = 0');
     Directory('${_root.path}/$id').createSync(recursive: true);
     openUserDb(userDbPath(id)).close();
     return id;
@@ -113,6 +118,22 @@ class Profiles {
         ? PinLocked(DateTime.fromMillisecondsSinceEpoch(until))
         : PinWrong(freePinAttempts - failed);
   }
+
+  /// Fingerprint unlock is offered only while the phone has one profile.
+  bool get biometricAllowed => list().length == 1;
+
+  bool biometricEnabled(int id) =>
+      biometricAllowed &&
+      _db.select('SELECT biometric FROM profiles WHERE id = ?', [id]).single['biometric'] == 1;
+
+  void setBiometric(int id, bool on) {
+    if (on && !biometricAllowed) throw StateError('fingerprint unlock needs a single-profile phone');
+    _db.execute('UPDATE profiles SET biometric = ? WHERE id = ?', [on ? 1 : 0, id]);
+  }
+
+  /// A successful fingerprint also clears PIN failures, like a correct PIN.
+  void unlockedByBiometric(int id) =>
+      _db.execute('UPDATE profiles SET failed_attempts = 0, locked_until = 0 WHERE id = ?', [id]);
 
   /// Episodic memory index; lives outside profiles/ so backup skips it.
   String vectorsDbPath(int id) => '${_root.parent.path}/vectors/$id.db';

@@ -264,4 +264,297 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get edit => 'Edit';
+
+  @override
+  String get tabToday => 'Today';
+
+  @override
+  String get tabChat => 'Chat';
+
+  @override
+  String get tabLog => 'Log';
+
+  @override
+  String get tabMe => 'Me';
+
+  @override
+  String eatenOfGoal(int goal) {
+    return 'of $goal kcal';
+  }
+
+  @override
+  String kcalLeft(int left) {
+    return '$left kcal left';
+  }
+
+  @override
+  String kcalOver(int over) {
+    return '$over kcal over';
+  }
+
+  @override
+  String overBy(String amount) {
+    return 'over by $amount';
+  }
+
+  @override
+  String get eatenToday => 'Eaten today';
+
+  @override
+  String get setGoalsTitle => 'Set your daily goals';
+
+  @override
+  String get setGoalsBody =>
+      'Tell us a little about you to get calorie and nutrient targets.';
+
+  @override
+  String get setGoalsButton => 'Set goals';
+
+  @override
+  String get todaysMeals => 'Today\'s meals';
+
+  @override
+  String get noMealsYet =>
+      'Nothing logged yet. Use the Log tab or tell the chat what you ate.';
+
+  @override
+  String get deleteMealTitle => 'Delete this entry?';
+
+  @override
+  String get mealBreakfast => 'Breakfast';
+
+  @override
+  String get mealLunch => 'Lunch';
+
+  @override
+  String get mealDinner => 'Dinner';
+
+  @override
+  String get mealSnack => 'Snack';
+
+  @override
+  String get searchFood => 'Search foods, dishes, recipes…';
+
+  @override
+  String get kindFood => 'Food';
+
+  @override
+  String get kindDish => 'Dish';
+
+  @override
+  String get kindRecipe => 'Recipe';
+
+  @override
+  String get kindProduct => 'Product';
+
+  @override
+  String perServing2(int kcal) {
+    return '$kcal kcal per serving';
+  }
+
+  @override
+  String per100g(int kcal) {
+    return '$kcal kcal per 100 g';
+  }
+
+  @override
+  String get servings => 'Servings';
+
+  @override
+  String get grams => 'Grams';
+
+  @override
+  String get logButton => 'Log';
+
+  @override
+  String loggedSnack(String label) {
+    return 'Logged $label';
+  }
+
+  @override
+  String get noResults => 'No match in the food database.';
+
+  @override
+  String get goalsTitle => 'Your daily goals';
+
+  @override
+  String get goalsIntro =>
+      'Used to compute your calorie and nutrient targets. Stays on this phone.';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get units => 'Units';
+
+  @override
+  String get metric => 'Metric';
+
+  @override
+  String get imperial => 'Imperial';
+
+  @override
+  String get sex => 'Sex used for the formula';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get birthYear => 'Birth year';
+
+  @override
+  String get heightCm => 'Height (cm)';
+
+  @override
+  String get heightFt => 'ft';
+
+  @override
+  String get heightIn => 'in';
+
+  @override
+  String get weightKg => 'Weight (kg)';
+
+  @override
+  String get weightLb => 'Weight (lb)';
+
+  @override
+  String get activity => 'Activity';
+
+  @override
+  String get activitySedentary => 'Sedentary: mostly sitting';
+
+  @override
+  String get activityLight => 'Light: exercise 1–3 days a week';
+
+  @override
+  String get activityModerate => 'Moderate: exercise 3–5 days a week';
+
+  @override
+  String get activityActive => 'Active: exercise 6–7 days a week';
+
+  @override
+  String get activityVeryActive =>
+      'Very active: hard daily training or physical job';
+
+  @override
+  String get goal => 'Goal';
+
+  @override
+  String get goalLose => 'Lose weight';
+
+  @override
+  String get goalMaintain => 'Maintain';
+
+  @override
+  String get goalGain => 'Gain weight';
+
+  @override
+  String get invalidNumber => 'Enter a valid number';
+
+  @override
+  String get under18 =>
+      'For people under 18 these formulas don\'t apply. Set targets with your pediatrician below.';
+
+  @override
+  String get targetsTitle => 'Daily targets';
+
+  @override
+  String get targetsNone => 'No targets yet.';
+
+  @override
+  String get custom => 'custom';
+
+  @override
+  String editTarget(String name) {
+    return '$name target';
+  }
+
+  @override
+  String get resetTarget => 'Use computed';
+
+  @override
+  String get editDetails => 'Edit my details';
+
+  @override
+  String get aiKnowsLoading => 'Available when the AI has loaded.';
+
+  @override
+  String get switchProfile => 'Lock and switch profile';
+
+  @override
+  String get limitSuffix => 'max';
+
+  @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String get remindersHint =>
+      'Times follow your usual meal times once you\'ve logged a few meals.';
+
+  @override
+  String get reminderBreakfast => 'Log breakfast';
+
+  @override
+  String get reminderLunch => 'Log lunch';
+
+  @override
+  String get reminderDinner => 'Log dinner';
+
+  @override
+  String get reminderEvening => 'Evening check-in';
+
+  @override
+  String notifMeal(String name, String meal) {
+    return '$name, time to log your $meal?';
+  }
+
+  @override
+  String notifEvening(String name) {
+    return '$name, how did today go? Your summary is ready.';
+  }
+
+  @override
+  String get notificationsDenied =>
+      'Notifications are turned off for MyFoodMind in Android settings.';
+
+  @override
+  String get voiceInput => 'Speak';
+
+  @override
+  String get voiceStop => 'Stop listening';
+
+  @override
+  String get voiceUnavailable =>
+      'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.';
+
+  @override
+  String youSaid(String text) {
+    return 'You said: $text';
+  }
+
+  @override
+  String aiSaid(String text) {
+    return 'MyFoodMind said: $text';
+  }
+
+  @override
+  String get useFingerprint => 'Use fingerprint';
+
+  @override
+  String get fingerprintTitle => 'Unlock with fingerprint';
+
+  @override
+  String get fingerprintHint =>
+      'Only while this is the only profile on the phone: Android can\'t tell whose fingerprint it is.';
+
+  @override
+  String fingerprintReason(String name) {
+    return 'Unlock $name\'s profile';
+  }
 }

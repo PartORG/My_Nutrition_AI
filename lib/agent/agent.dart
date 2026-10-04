@@ -47,8 +47,12 @@ class Agent extends ChangeNotifier {
     required this.user,
     required this.limit,
     required this.unlimited,
+    this.onWrite,
     DateTime Function()? clock,
   }) : _now = clock ?? DateTime.now;
+
+  /// Called after the user confirms a write, so other screens can refresh.
+  final VoidCallback? onWrite;
 
   final ChatModel model;
   final AgentTools tools;
@@ -185,7 +189,10 @@ class Agent extends ChangeNotifier {
   Future<void> decide(ConfirmCard card, bool accept) async {
     if (card.accepted != null) return;
     card.accepted = accept;
-    if (accept) card.apply();
+    if (accept) {
+      card.apply();
+      onWrite?.call();
+    }
     notifyListeners();
     if (accept) unawaited(memory.backfill()); // index a logged meal for episodic memory
   }

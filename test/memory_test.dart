@@ -88,6 +88,16 @@ void main() {
     expect(ctx, contains('28 Sep chat: "soup too spicy"'));
   });
 
+  test('context shows goals and what is left, for any subset of targets', () {
+    meal('banana', 118, 105, now.subtract(const Duration(hours: 2)));
+    expect(memory.context(), contains('Daily goals: not set'));
+    user.execute("INSERT INTO goal_overrides VALUES ('kcal', 2000)"); // e.g. under 18: manual only
+    expect(memory.context(), contains('Daily goals: 2000 kcal. Left today: 1895 kcal.'));
+    user.execute("INSERT INTO body VALUES (1, 'male', 1996, 180, 80, 'moderate', 'maintain', 'metric', 0)");
+    expect(memory.context(), contains('Daily goals: 2000 kcal, 96 g protein, 387 g carbs, 69 g sugar. '
+        'Left today: 1895 kcal, 86 g protein, 367 g carbs, 69 g sugar.'));
+  });
+
   test('forgetting conversations sticks; meals stay remembered', () async {
     final hour = now.subtract(const Duration(hours: 1));
     chat('user', 'hello there friend', hour);

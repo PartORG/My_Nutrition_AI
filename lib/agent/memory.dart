@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../data/goals.dart';
 import '../data/migrate.dart';
 
 /// Turns texts into vectors (EmbeddingGemma on device, a fake in tests).
@@ -159,7 +160,8 @@ class Memory {
       'Now: ${DateFormat('EEE d MMM, HH:mm').format(now)}.',
       'Eaten today: ${(today['kcal'] as num).round()} kcal, ${(today['p'] as num).round()} g protein, '
           '${(today['c'] as num).round()} g carbs, ${(today['s'] as num).round()} g sugar '
-          '(${today['n']} items). Goals: not set yet.',
+          '(${today['n']} items).',
+      _goalsLine(now, today),
       'Allergies: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
       if (facts.isNotEmpty) 'About the user: ${facts.join('; ')}.',
       ?_habits(now),
@@ -167,6 +169,20 @@ class Memory {
         'Related past events: ${recalls.map((r) => '${DateFormat('d MMM').format(r.at)} ${r.kind}: "${r.text}"').join(' | ')}',
     ];
     return lines.join('\n');
+  }
+
+  String _goalsLine(DateTime now, Row today) {
+    final t = currentTargets(user, now: now).values;
+    if (t.isEmpty) return 'Daily goals: not set (the user can set them in the Me tab).';
+    // Any subset can be set (under 18: only the manual ones), so nothing is assumed.
+    const shown = {'kcal': ('kcal', '', 'kcal'), 'protein_g': ('p', ' g', 'protein'),
+        'carbs_g': ('c', ' g', 'carbs'), 'sugar_g': ('s', ' g', 'sugar')};
+    final goals = [for (final e in shown.entries) if (t[e.key] != null) '${t[e.key]!.round()}${e.value.$2} ${e.value.$3}'];
+    final left = [
+      for (final e in shown.entries)
+        if (t[e.key] != null) '${(t[e.key]! - (today[e.value.$1] as num)).round()}${e.value.$2} ${e.value.$3}'
+    ];
+    return 'Daily goals: ${goals.join(', ')}. Left today: ${left.join(', ')}.';
   }
 
   String? _habits(DateTime now) {

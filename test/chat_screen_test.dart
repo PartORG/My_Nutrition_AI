@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/data/migrate.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
@@ -23,7 +24,7 @@ void main() {
     final nutri = openNutriDb('assets/nutri.db');
     final user = openUserDb('${tmp.path}/user.db');
     final vectors = openVectorsDb('${tmp.path}/vectors.db');
-    final profiles = sqlite3.openInMemory()..execute(profilesDbMigrations.single);
+    final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);
     addTearDown(() {
       for (final db in [nutri, user, vectors, profiles]) {
         db.close();
@@ -86,7 +87,7 @@ void main() {
     final nutri = openNutriDb('assets/nutri.db');
     final user = openUserDb('${tmp.path}/user.db');
     final vectors = openVectorsDb('${tmp.path}/vectors.db');
-    final profiles = sqlite3.openInMemory()..execute(profilesDbMigrations.single);
+    final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);
     addTearDown(() {
       for (final db in [nutri, user, vectors, profiles]) {
         db.close();

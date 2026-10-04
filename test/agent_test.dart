@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/data/migrate.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
@@ -77,7 +78,7 @@ void main() {
     nutri = openNutriDb('assets/nutri.db');
     user = openUserDb('${tmp.path}/user.db');
     vectors = openVectorsDb('${tmp.path}/vectors.db');
-    profilesDb = sqlite3.openInMemory()..execute(profilesDbMigrations.single);
+    profilesDb = migrated(sqlite3.openInMemory(), profilesDbMigrations);
     paid = false;
     model = FakeModel([]);
     agent = makeAgent();

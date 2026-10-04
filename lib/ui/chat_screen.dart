@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
 import '../l10n/app_localizations.dart';
+import 'nutrients.dart';
 import 'theme.dart';
 
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
@@ -20,11 +22,46 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _input = TextEditingController();
+  final _speech = SpeechToText();
+  bool _listening = false;
 
   @override
   void dispose() {
+    _speech.cancel();
     _input.dispose();
     super.dispose();
+  }
+
+  /// Big mic for users who can't type easily. On-device recognition only:
+  /// falling back to online recognition would send their voice to a server.
+  Future<void> _toggleVoice() async {
+    if (_listening) {
+      await _speech.stop();
+      setState(() => _listening = false);
+      return;
+    }
+    final l = AppLocalizations.of(context)!;
+    void unavailable() {
+      if (!mounted) return;
+      setState(() => _listening = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.voiceUnavailable)));
+    }
+
+    final ok = await _speech.initialize(
+      onError: (_) => unavailable(),
+      onStatus: (s) {
+        if (s == SpeechToText.doneStatus || s == SpeechToText.notListeningStatus) {
+          if (mounted) setState(() => _listening = false);
+        }
+      },
+    );
+    if (!ok) return unavailable();
+    setState(() => _listening = true);
+    await _speech.listen(
+      // The text lands in the field for the user to check, then they tap Send.
+      onResult: (r) => setState(() => _input.text = r.recognizedWords),
+      listenOptions: SpeechListenOptions(onDevice: true, listenMode: ListenMode.dictation, partialResults: true),
+    );
   }
 
   void _send([String? text]) {
@@ -65,6 +102,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     maxLines: 4,
                     onSubmitted: (_) => _send(),
                   ),
+                ),
+                IconButton.filledTonal(
+                  tooltip: _listening ? l.voiceStop : l.voiceInput,
+                  iconSize: 28,
+                  onPressed: widget.agent.busy ? null : _toggleVoice,
+                  icon: Icon(_listening ? Icons.stop : Icons.mic),
                 ),
                 IconButton.filled(
                   tooltip: l.send,
@@ -149,12 +192,18 @@ class _Bubble extends StatelessWidget {
         child: Text(text, style: TextStyle(color: mine ? Colors.white : AppColors.textPrimary)),
       ),
     );
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: mine ? [bubble, avatar] : [avatar, bubble],
+      // One TalkBack node per message: "You said: …" / "MyFoodMind said: …".
+      child: Semantics(
+        label: mine ? l.youSaid(text) : l.aiSaid(text),
+        excludeSemantics: true,
+        child: Row(
+          mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: mine ? [bubble, avatar] : [avatar, bubble],
+        ),
       ),
     ).withReport(context, onReport);
   }
@@ -267,7 +316,7 @@ class _CardView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 _Section(l.perServing),
-                _Nutrients(values: c.perServing),
+                NutrientTiles(values: c.perServing),
                 const SizedBox(height: 14),
                 _Section(l.ingredients),
                 for (final i in c.ingredients)
@@ -299,7 +348,7 @@ class _CardView extends StatelessWidget {
       NutritionCard c => _Framed(
           icon: Icons.pie_chart_outline,
           title: c.title,
-          child: _Nutrients(values: c.values, estimated: c.estimated),
+          child: NutrientTiles(values: c.values, estimated: c.estimated),
         ),
       InfoCard(:final passages) => _Framed(
           icon: Icons.info_outline,
@@ -327,13 +376,13 @@ class _CardView extends StatelessWidget {
             for (final line in c.lines) Text(line),
             const SizedBox(height: 8),
             switch (c.accepted) {
-              null => Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              // Wrap: at large text sizes the two buttons don't fit on one line.
+              null => Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
                   TextButton.icon(
                     icon: const Icon(Icons.close),
                     label: Text(l.confirmDiscard),
                     onPressed: () => agent.decide(c, false),
                   ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.check),
                     label: Text(l.confirmSave),
@@ -414,48 +463,4 @@ class _Chip extends StatelessWidget {
           Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : AppColors.textPrimary)),
         ]),
       );
-}
-
-/// Nutrient tiles: a colour bar marks which nutrient, the number and label
-/// stay in text colours (readable whatever the hue).
-class _Nutrients extends StatelessWidget {
-  const _Nutrients({required this.values, this.estimated = false});
-  final Nutrients values;
-  final bool estimated;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final labels = {
-      'kcal': (l.kcal, ''), 'protein_g': (l.protein, 'g'), 'fat_g': (l.fat, 'g'), 'carbs_g': (l.carbs, 'g'),
-      'fiber_g': (l.fiber, 'g'), 'sugar_g': (l.sugar, 'g'), 'sodium_mg': (l.sodium, 'mg'),
-    };
-    final approx = estimated ? '≈' : '';
-    return Wrap(spacing: 8, runSpacing: 8, children: [
-      for (final e in labels.entries)
-        if (values[e.key] != null)
-          Container(
-            width: 92,
-            padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-            // Not a one-sided Border: Flutter asserts on non-uniform borders with a radius.
-            decoration: BoxDecoration(
-              color: nutrientColors[e.key]!.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('$approx${values[e.key]!.round()}${e.value.$2.isEmpty ? '' : ' ${e.value.$2}'}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-              Row(children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(color: nutrientColors[e.key], shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 5),
-                Flexible(child: Text(e.value.$1, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))),
-              ]),
-            ]),
-          ),
-    ]);
-  }
 }

@@ -23,3 +23,9 @@ void migrate(Database db, List<String> steps) {
     rethrow;
   }
 }
+
+/// [migrate] as an expression, for in-memory databases (tests).
+Database migrated(Database db, List<String> steps) {
+  migrate(db, steps);
+  return db;
+}

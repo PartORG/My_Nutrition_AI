@@ -507,6 +507,522 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
+
+  /// No description provided for @tabToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get tabToday;
+
+  /// No description provided for @tabChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get tabChat;
+
+  /// No description provided for @tabLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Log'**
+  String get tabLog;
+
+  /// No description provided for @tabMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get tabMe;
+
+  /// No description provided for @eatenOfGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'of {goal} kcal'**
+  String eatenOfGoal(int goal);
+
+  /// No description provided for @kcalLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{left} kcal left'**
+  String kcalLeft(int left);
+
+  /// No description provided for @kcalOver.
+  ///
+  /// In en, this message translates to:
+  /// **'{over} kcal over'**
+  String kcalOver(int over);
+
+  /// No description provided for @overBy.
+  ///
+  /// In en, this message translates to:
+  /// **'over by {amount}'**
+  String overBy(String amount);
+
+  /// No description provided for @eatenToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Eaten today'**
+  String get eatenToday;
+
+  /// No description provided for @setGoalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your daily goals'**
+  String get setGoalsTitle;
+
+  /// No description provided for @setGoalsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us a little about you to get calorie and nutrient targets.'**
+  String get setGoalsBody;
+
+  /// No description provided for @setGoalsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set goals'**
+  String get setGoalsButton;
+
+  /// No description provided for @todaysMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s meals'**
+  String get todaysMeals;
+
+  /// No description provided for @noMealsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing logged yet. Use the Log tab or tell the chat what you ate.'**
+  String get noMealsYet;
+
+  /// No description provided for @deleteMealTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this entry?'**
+  String get deleteMealTitle;
+
+  /// No description provided for @mealBreakfast.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakfast'**
+  String get mealBreakfast;
+
+  /// No description provided for @mealLunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunch'**
+  String get mealLunch;
+
+  /// No description provided for @mealDinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Dinner'**
+  String get mealDinner;
+
+  /// No description provided for @mealSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Snack'**
+  String get mealSnack;
+
+  /// No description provided for @searchFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Search foods, dishes, recipes…'**
+  String get searchFood;
+
+  /// No description provided for @kindFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get kindFood;
+
+  /// No description provided for @kindDish.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish'**
+  String get kindDish;
+
+  /// No description provided for @kindRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe'**
+  String get kindRecipe;
+
+  /// No description provided for @kindProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get kindProduct;
+
+  /// No description provided for @perServing2.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal per serving'**
+  String perServing2(int kcal);
+
+  /// No description provided for @per100g.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal per 100 g'**
+  String per100g(int kcal);
+
+  /// No description provided for @servings.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings'**
+  String get servings;
+
+  /// No description provided for @grams.
+  ///
+  /// In en, this message translates to:
+  /// **'Grams'**
+  String get grams;
+
+  /// No description provided for @logButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Log'**
+  String get logButton;
+
+  /// No description provided for @loggedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged {label}'**
+  String loggedSnack(String label);
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No match in the food database.'**
+  String get noResults;
+
+  /// No description provided for @goalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your daily goals'**
+  String get goalsTitle;
+
+  /// No description provided for @goalsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Used to compute your calorie and nutrient targets. Stays on this phone.'**
+  String get goalsIntro;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @units.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get units;
+
+  /// No description provided for @metric.
+  ///
+  /// In en, this message translates to:
+  /// **'Metric'**
+  String get metric;
+
+  /// No description provided for @imperial.
+  ///
+  /// In en, this message translates to:
+  /// **'Imperial'**
+  String get imperial;
+
+  /// No description provided for @sex.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex used for the formula'**
+  String get sex;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @birthYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth year'**
+  String get birthYear;
+
+  /// No description provided for @heightCm.
+  ///
+  /// In en, this message translates to:
+  /// **'Height (cm)'**
+  String get heightCm;
+
+  /// No description provided for @heightFt.
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get heightFt;
+
+  /// No description provided for @heightIn.
+  ///
+  /// In en, this message translates to:
+  /// **'in'**
+  String get heightIn;
+
+  /// No description provided for @weightKg.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (kg)'**
+  String get weightKg;
+
+  /// No description provided for @weightLb.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (lb)'**
+  String get weightLb;
+
+  /// No description provided for @activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activity;
+
+  /// No description provided for @activitySedentary.
+  ///
+  /// In en, this message translates to:
+  /// **'Sedentary: mostly sitting'**
+  String get activitySedentary;
+
+  /// No description provided for @activityLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light: exercise 1–3 days a week'**
+  String get activityLight;
+
+  /// No description provided for @activityModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate: exercise 3–5 days a week'**
+  String get activityModerate;
+
+  /// No description provided for @activityActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active: exercise 6–7 days a week'**
+  String get activityActive;
+
+  /// No description provided for @activityVeryActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Very active: hard daily training or physical job'**
+  String get activityVeryActive;
+
+  /// No description provided for @goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get goal;
+
+  /// No description provided for @goalLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Lose weight'**
+  String get goalLose;
+
+  /// No description provided for @goalMaintain.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain'**
+  String get goalMaintain;
+
+  /// No description provided for @goalGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Gain weight'**
+  String get goalGain;
+
+  /// No description provided for @invalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get invalidNumber;
+
+  /// No description provided for @under18.
+  ///
+  /// In en, this message translates to:
+  /// **'For people under 18 these formulas don\'t apply. Set targets with your pediatrician below.'**
+  String get under18;
+
+  /// No description provided for @targetsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily targets'**
+  String get targetsTitle;
+
+  /// No description provided for @targetsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No targets yet.'**
+  String get targetsNone;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'custom'**
+  String get custom;
+
+  /// No description provided for @editTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} target'**
+  String editTarget(String name);
+
+  /// No description provided for @resetTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Use computed'**
+  String get resetTarget;
+
+  /// No description provided for @editDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit my details'**
+  String get editDetails;
+
+  /// No description provided for @aiKnowsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Available when the AI has loaded.'**
+  String get aiKnowsLoading;
+
+  /// No description provided for @switchProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock and switch profile'**
+  String get switchProfile;
+
+  /// No description provided for @limitSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'max'**
+  String get limitSuffix;
+
+  /// No description provided for @remindersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get remindersTitle;
+
+  /// No description provided for @remindersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Times follow your usual meal times once you\'ve logged a few meals.'**
+  String get remindersHint;
+
+  /// No description provided for @reminderBreakfast.
+  ///
+  /// In en, this message translates to:
+  /// **'Log breakfast'**
+  String get reminderBreakfast;
+
+  /// No description provided for @reminderLunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Log lunch'**
+  String get reminderLunch;
+
+  /// No description provided for @reminderDinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Log dinner'**
+  String get reminderDinner;
+
+  /// No description provided for @reminderEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Evening check-in'**
+  String get reminderEvening;
+
+  /// No description provided for @notifMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, time to log your {meal}?'**
+  String notifMeal(String name, String meal);
+
+  /// No description provided for @notifEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, how did today go? Your summary is ready.'**
+  String notifEvening(String name);
+
+  /// No description provided for @notificationsDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off for MyFoodMind in Android settings.'**
+  String get notificationsDenied;
+
+  /// No description provided for @voiceInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak'**
+  String get voiceInput;
+
+  /// No description provided for @voiceStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop listening'**
+  String get voiceStop;
+
+  /// No description provided for @voiceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.'**
+  String get voiceUnavailable;
+
+  /// No description provided for @youSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'You said: {text}'**
+  String youSaid(String text);
+
+  /// No description provided for @aiSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'MyFoodMind said: {text}'**
+  String aiSaid(String text);
+
+  /// No description provided for @useFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint'**
+  String get useFingerprint;
+
+  /// No description provided for @fingerprintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with fingerprint'**
+  String get fingerprintTitle;
+
+  /// No description provided for @fingerprintHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only while this is the only profile on the phone: Android can\'t tell whose fingerprint it is.'**
+  String get fingerprintHint;
+
+  /// No description provided for @fingerprintReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {name}\'s profile'**
+  String fingerprintReason(String name);
 }
 
 class _AppLocalizationsDelegate

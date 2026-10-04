@@ -1,5 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import '../data/goals.dart';
+
 /// Nutrient columns shared by foods, dishes, products, meal_log and the
 /// recipe_nutrition view.
 const nutrients = ['kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
@@ -29,10 +31,11 @@ class RecipeCard extends AgentCard {
 }
 
 class NutritionCard extends AgentCard {
-  NutritionCard({required this.title, required this.values, this.estimated = false});
+  NutritionCard({required this.title, required this.values, this.estimated = false, this.goals = const {}});
   final String title;
   final Nutrients values;
   final bool estimated;
+  final Nutrients goals; // empty = no goals set
 }
 
 class InfoCard extends AgentCard {
@@ -197,21 +200,14 @@ class AgentTools {
   /// "I ate this" on a recipe card: one serving, through the same ✓ card.
   ToolResult logRecipe(int recipeId, {double servings = 1}) {
     final title = _summary(recipeId).title;
-    final perServingGrams = (nutri.select(
-        'SELECT TOTAL(grams) / r.servings AS g FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id '
-        'WHERE ri.recipe_id = ?', [recipeId]).single['g'] as num).toDouble();
-    final grams = servings * perServingGrams;
+    final grams = servings * _recipeServingGrams(recipeId);
     final values = _recipePer100(recipeId).map((k, v) => MapEntry(k, v * grams / 100));
     final type = _mealTypeFor(_now());
     final at = _ms();
     return ToolResult({'status': _pendingNote, 'recipe': title}, ConfirmCard(
       title: 'Log $type',
       lines: ['$title · ${grams.round()} g · ${values['kcal']!.round()} kcal'],
-      apply: () => user.execute(
-        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${nutrients.join(', ')}) '
-        'VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')})',
-        [at, type, title, grams, for (final n in nutrients) values[n]],
-      ),
+      apply: () => _insertMeal(at, type, title, grams, values, false),
     ));
   }
 
@@ -254,15 +250,21 @@ class AgentTools {
         'SELECT COUNT(*) AS meals, ${[for (final n in nutrients) 'TOTAL($n) AS $n'].join(', ')} '
         'FROM meal_log WHERE eaten_at >= ?', [from.millisecondsSinceEpoch]).single;
     final totals = _nutrientsOf(r);
+    final daily = currentTargets(user, now: now).values;
+    final goals = daily.map((k, v) => MapEntry(k, week ? v * 7 : v));
     return ToolResult({
       'period': week ? 'last 7 days' : 'today',
       'meals_logged': r['meals'],
       'eaten': totals.map((k, v) => MapEntry(k, _round(v))),
-      'goals': 'not set yet', // M3: goals from onboarding
+      'goals': goals.isEmpty
+          ? 'not set; suggest setting them in the Me tab'
+          : goals.map((k, v) => MapEntry(k, _round(v))),
+      if (!week && goals.isNotEmpty)
+        'left_today': {for (final e in goals.entries) e.key: _round(e.value - totals[e.key]!)},
       if (r['meals'] == 0)
         'note': 'nothing logged ${week ? 'in the last 7 days' : 'today'}. Saved recipes do not count as eaten; '
             'offer to log what the user ate',
-    }, NutritionCard(title: week ? 'Last 7 days' : 'Today', values: totals));
+    }, NutritionCard(title: week ? 'Last 7 days' : 'Today', values: totals, goals: goals));
   }
 
   ToolResult _logMeal(String items, String mealType) {
@@ -296,11 +298,7 @@ class AgentTools {
       ],
       apply: () {
         for (final p in found) {
-          user.execute(
-            'INSERT INTO meal_log (eaten_at, meal_type, description, grams, '
-            '${nutrients.join(', ')}, estimated) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')}, ?)',
-            [at, type, p.label, p.grams, for (final n in nutrients) p.values[n], p.estimated ? 1 : 0],
-          );
+          _insertMeal(at, type, p.label, p.grams, p.values, p.estimated);
         }
       },
     ));
@@ -339,10 +337,7 @@ class AgentTools {
     }
     final recipe = _ftsIds(nutri, 'recipes_fts', name, limit: 1).firstOrNull;
     if (recipe != null && unit.isEmpty) {
-      final perServingGrams = (nutri.select(
-          'SELECT TOTAL(grams) / r.servings AS g FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id '
-          'WHERE ri.recipe_id = ?', [recipe]).single['g'] as num).toDouble();
-      final g = qty * perServingGrams;
+      final g = qty * _recipeServingGrams(recipe);
       return (label: _summary(recipe).title, grams: g, values: scale(_recipePer100(recipe), g), estimated: false);
     }
     final food = _ftsIds(nutri, 'foods_fts', name, limit: 1).firstOrNull;
@@ -444,7 +439,53 @@ class AgentTools {
   // ---- helpers --------------------------------------------------------------
 
   int _ms() => _now().millisecondsSinceEpoch;
+
+  /// The one place a meal_log row is written (chat card, "I ate this", Log tab).
+  void _insertMeal(int at, String type, String label, double grams, Nutrients values, bool estimated) =>
+      user.execute(
+        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, '
+        '${nutrients.join(', ')}, estimated) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')}, ?)',
+        [at, type, label, grams, for (final n in nutrients) values[n], estimated ? 1 : 0],
+      );
+
+  // ---- Log tab: search and log without the model ---------------------------------
+
+  /// Foods, dishes, recipes and packaged products matching [text], best first.
+  List<FoodChoice> searchFood(String text, {int limit = 20}) {
+    FoodChoice of(String kind, Row r, double? serving, Nutrients per100, {bool estimated = false}) =>
+        (kind: kind, id: r['id'], label: r['name'] as String, servingG: serving, per100: per100, estimated: estimated);
+    return [
+      for (final id in _ftsIds(nutri, 'dishes_fts', text, limit: 5))
+        for (final r in nutri.select('SELECT *, id FROM dishes WHERE id = ?', [id]))
+          of('dish', r, (r['serving_g'] as num).toDouble(),
+              r['recipe_id'] == null ? _nutrientsOf(r) : _recipePer100(r['recipe_id'] as int), estimated: true),
+      for (final id in _ftsIds(nutri, 'recipes_fts', text, limit: 5))
+        for (final r in nutri.select('SELECT id, title AS name FROM recipes WHERE id = ?', [id]))
+          of('recipe', r, _recipeServingGrams(id), _recipePer100(id)),
+      for (final id in _ftsIds(nutri, 'foods_fts', text, limit: limit))
+        for (final r in nutri.select('SELECT * FROM foods WHERE id = ?', [id]))
+          of('food', r, (r['serving_g'] as num?)?.toDouble(), _nutrientsOf(r)),
+      for (final r in nutri.select(
+          'SELECT p.*, p.barcode AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
+          'WHERE products_fts MATCH ? LIMIT 5', [_ftsQuery(text) ?? '""']))
+        of('product', r, null, _nutrientsOf(r)),
+    ];
+  }
+
+  /// Logs [grams] of [food] right away: pressing "Log" on that screen is the
+  /// user's confirmation.
+  void logFood(FoodChoice food, double grams, String mealType) => _insertMeal(
+      _ms(), mealType, food.label, grams, food.per100.map((k, v) => MapEntry(k, v * grams / 100)), food.estimated);
+
+  double _recipeServingGrams(int recipeId) => (nutri.select(
+          'SELECT TOTAL(grams) / r.servings AS g FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id '
+          'WHERE ri.recipe_id = ?', [recipeId]).single['g'] as num).toDouble();
+
+  /// Breakfast before 11, lunch before 16, dinner before 21, then snack.
+  String mealTypeNow() => _mealTypeFor(_now());
 }
+
+typedef FoodChoice = ({String kind, Object? id, String label, double? servingG, Nutrients per100, bool estimated});
 
 /// Splits "2 eggs, toast and a coffee" into items.
 List<String> _split(String s) => [
@@ -463,9 +504,9 @@ const _stopwords = {
   'recipes', 'idea', 'ideas', 'give', 'find', 'suggest', 'want', 'have', 'eat', 'food', 'foods',
 };
 
-/// Row ids from an FTS5 table, best match first. Words are OR-ed with prefix
-/// match so "eggs" finds "egg" and "chickpea" finds "chickpeas".
-List<int> _ftsIds(Database db, String table, String text, {required int limit}) {
+/// FTS5 query: words OR-ed with prefix match, so "eggs" finds "egg" and
+/// "chickpea" finds "chickpeas". Null when nothing searchable is left.
+String? _ftsQuery(String text) {
   final words = RegExp(r'[a-z0-9]+')
       .allMatches(text.toLowerCase())
       .map((m) => m[0]!)
@@ -473,8 +514,13 @@ List<int> _ftsIds(Database db, String table, String text, {required int limit}) 
       // crude singular: "eggs" -> "egg*" also matches "eggs"
       .map((w) => w.length > 3 && w.endsWith('s') ? w.substring(0, w.length - 1) : w)
       .toSet();
-  if (words.isEmpty) return [];
-  final query = words.map((w) => '"$w"*').join(' OR ');
+  return words.isEmpty ? null : words.map((w) => '"$w"*').join(' OR ');
+}
+
+/// Row ids from an FTS5 table, best match first.
+List<int> _ftsIds(Database db, String table, String text, {required int limit}) {
+  final query = _ftsQuery(text);
+  if (query == null) return [];
   return [
     for (final r in db.select(
         'SELECT rowid FROM $table WHERE $table MATCH ? ORDER BY bm25($table) LIMIT ?', [query, limit]))

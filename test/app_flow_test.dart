@@ -8,7 +8,10 @@ import 'package:myfoodmind/main.dart';
 
 void main() {
   late Directory tmp;
-  setUp(() => tmp = Directory.systemTemp.createTempSync('myfoodmind_ui_'));
+  setUp(() {
+    tmp = Directory.systemTemp.createTempSync('myfoodmind_ui_');
+    File('assets/nutri.db').copySync('${tmp.path}/nutri.db'); // Today tab opens it on unlock
+  });
   tearDown(() => tmp.deleteSync(recursive: true));
 
   /// PIN hashing runs on a real isolate; let real time pass until it's done.
@@ -44,7 +47,12 @@ void main() {
     await enter(tester, 'Repeat PIN', '1234');
     await tester.tap(find.text('Create'));
     await settle(tester);
+    // Skippable onboarding comes first.
+    expect(find.text('Your daily goals'), findsOneWidget);
+    await tester.tap(find.text('Later'));
+    await tester.pumpAndSettle();
     expect(find.text('Hello, Anna'), findsOneWidget);
+    expect(find.text('Set your daily goals'), findsOneWidget, reason: 'Today nudges until goals are set');
 
     // Lock → picker → wrong PIN → right PIN.
     await tester.tap(find.byTooltip('Lock'));
@@ -72,7 +80,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Anna'), findsNothing);
     expect(Directory('${tmp.path}/profiles/1').existsSync(), isFalse);
-    expect(File('${tmp.path}/nutri.db').existsSync(), isFalse,
-        reason: 'overridden dir skips the asset install');
+
   });
 }

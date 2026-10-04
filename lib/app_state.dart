@@ -7,7 +7,9 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 import 'agent/agent.dart';
 import 'agent/agent_tools.dart';
@@ -17,6 +19,7 @@ import 'agent/memory.dart';
 import 'data/nutri_db.dart';
 import 'data/profiles.dart';
 import 'data/user_db.dart';
+import 'reminders_service.dart';
 
 /// App-private data directory, with nutri.db installed from the bundled asset
 /// when missing or unreadable by this build. Overridden in tests.
@@ -118,36 +121,62 @@ final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
   return FlutterGemma.getActiveEmbedder();
 });
 
-/// The unlocked profile's agent. Rebuilt per profile and torn down on lock,
-/// closing that profile's databases.
-final agentProvider = FutureProvider<Agent>((ref) async {
+/// The unlocked profile's databases, open as soon as the PIN is accepted so
+/// Today/Log/Me don't wait ~40 s for the model. Closed on lock.
+class ProfileData {
+  ProfileData({required this.profile, required this.nutri, required this.user, required this.tools});
+  final ProfileInfo profile;
+  final Database nutri, user;
+  final AgentTools tools;
+
+  /// Bumped on every write, so the dashboard redraws after logging anywhere.
+  final changes = ValueNotifier<int>(0);
+  void changed() => changes.value++;
+}
+
+/// Null while locked. Auto-dispose: once no screen shows the profile (after
+/// Lock), its databases close. Returning null instead of throwing matters: for
+/// one frame during the switch the old screens still watch this.
+final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final profile = ref.watch(unlockedProvider);
-  if (profile == null) throw StateError('locked');
+  if (profile == null) return null;
   final dir = ref.watch(appDirProvider).requireValue;
+  final nutri = openNutriDb('${dir.path}/nutri.db');
+  final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
+  final data = ProfileData(profile: profile, nutri: nutri, user: user, tools: AgentTools(nutri, user));
+  ref.onDispose(() {
+    data.changes.dispose();
+    nutri.close();
+    user.close();
+  });
+  return data;
+});
+
+/// The unlocked profile's agent, once the models are loaded.
+final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
+  final data = ref.watch(profileDataProvider);
+  if (data == null) return Completer<Agent>().future; // locked: never resolves, disposed with the screen
   final profiles = ref.watch(profilesProvider);
   final llm = await ref.watch(llmProvider.future);
   final embedder = await ref.watch(embedderProvider.future);
 
-  final nutri = openNutriDb('${dir.path}/nutri.db');
-  final user = openUserDb(profiles.userDbPath(profile.id));
-  final vectorsPath = profiles.vectorsDbPath(profile.id);
+  final vectorsPath = profiles.vectorsDbPath(data.profile.id);
   File(vectorsPath).parent.createSync(recursive: true);
   final vectors = openVectorsDb(vectorsPath);
-  final memory = Memory(user, vectors, embedder.generateEmbeddings);
+  final memory = Memory(data.user, vectors, embedder.generateEmbeddings);
   final agent = Agent(
     model: GemmaChatModel(llm),
-    tools: AgentTools(nutri, user),
+    tools: data.tools,
     memory: memory,
-    user: user,
+    user: data.user,
     limit: ChatLimit(profiles.db),
     // ponytail: no tiers until M4 (RevenueCat); dev builds can pass DEV_UNLIMITED=true.
     unlimited: () => const bool.fromEnvironment('DEV_UNLIMITED'),
+    onWrite: data.changed,
   )..loadHistory();
   ref.onDispose(() {
     agent.dispose();
-    for (final db in [nutri, user, vectors]) {
-      db.close();
-    }
+    vectors.close();
   });
   // Background work may still run when the user locks and the dbs close; its
   // failure then is expected and harmless (backfill resumes next unlock).
@@ -159,3 +188,25 @@ final agentProvider = FutureProvider<Agent>((ref) async {
   quietly(memory.backfill()); // rebuilds episodic memory after a backup restore
   return agent;
 });
+
+final remindersProvider = Provider<RemindersService>((ref) => RemindersService());
+
+final localAuthProvider = Provider<LocalAuthentication>((ref) => LocalAuthentication());
+
+/// Device has a fingerprint (or other biometric) enrolled.
+final biometricsAvailableProvider = FutureProvider<bool>((ref) async {
+  try {
+    return await ref.watch(localAuthProvider).canCheckBiometrics;
+  } on Object {
+    return false;
+  }
+});
+
+/// Shows the system fingerprint prompt; false on cancel or error.
+Future<bool> authenticateFingerprint(WidgetRef ref, String reason) async {
+  try {
+    return await ref.read(localAuthProvider).authenticate(localizedReason: reason, biometricOnly: true);
+  } on Object {
+    return false;
+  }
+}

@@ -170,6 +170,21 @@ void main() {
       p.close();
     });
 
+    test('fingerprint unlock only while the phone has one profile', () async {
+      final p = Profiles.open(tmp);
+      final anna = await p.create('Anna', '1234');
+      expect(p.biometricAllowed, isTrue);
+      p.setBiometric(anna, true);
+      expect(p.biometricEnabled(anna), isTrue);
+      final bob = await p.create('Bob', '5678');
+      expect(p.biometricAllowed, isFalse);
+      expect(p.biometricEnabled(anna), isFalse, reason: 'switched off when Bob joined');
+      expect(() => p.setBiometric(bob, true), throwsStateError);
+      p.delete(bob);
+      expect(p.biometricEnabled(anna), isFalse, reason: 'stays off until Anna turns it on again');
+      p.close();
+    });
+
     test('data survives reopening', () async {
       final first = Profiles.open(tmp);
       await first.create('Anna', '1234');
