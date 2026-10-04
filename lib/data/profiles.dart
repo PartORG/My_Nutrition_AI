@@ -1,0 +1,126 @@
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:sqlite3/sqlite3.dart';
+
+import 'migrate.dart';
+import 'pin.dart';
+import 'user_db.dart';
+
+/// profiles.db — shared, holds no personal data beyond names and PIN hashes.
+const profilesDbMigrations = <String>[
+  // v1
+  '''
+  CREATE TABLE profiles (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT NOT NULL,
+    pin_hash        BLOB NOT NULL,
+    pin_salt        BLOB NOT NULL,
+    failed_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until    INTEGER NOT NULL DEFAULT 0,
+    created_at      INTEGER NOT NULL
+  );
+  CREATE TABLE chat_usage (
+    day   TEXT PRIMARY KEY,   -- local date yyyy-mm-dd; per phone, not per profile
+    count INTEGER NOT NULL
+  );
+  ''',
+];
+
+/// Wrong PINs allowed before lockout starts.
+const freePinAttempts = 5;
+
+sealed class PinResult {}
+
+class PinOk extends PinResult {}
+
+class PinWrong extends PinResult {
+  PinWrong(this.attemptsLeft);
+  final int attemptsLeft; // before lockout starts
+}
+
+class PinLocked extends PinResult {
+  PinLocked(this.until);
+  final DateTime until;
+}
+
+typedef ProfileInfo = ({int id, String name});
+
+class Profiles {
+  Profiles._(this._db, this._root);
+
+  /// [dir] is the app's private data directory.
+  factory Profiles.open(Directory dir) {
+    final db = sqlite3.open('${dir.path}/profiles.db');
+    migrate(db, profilesDbMigrations);
+    return Profiles._(db, Directory('${dir.path}/profiles'));
+  }
+
+  final Database _db;
+  final Directory _root;
+
+  List<ProfileInfo> list() => [
+        for (final r in _db.select('SELECT id, name FROM profiles ORDER BY id'))
+          (id: r['id'] as int, name: r['name'] as String),
+      ];
+
+  String userDbPath(int id) => '${_root.path}/$id/user.db';
+
+  /// Creates the profile row, its folder and its migrated user.db.
+  Future<int> create(String name, String pin) async {
+    name = name.trim();
+    if (name.isEmpty) throw ArgumentError('name is empty');
+    if (!isValidPin(pin)) throw ArgumentError('PIN must be 4-6 digits');
+    final salt = newSalt();
+    final hash = await _hash(pin, salt);
+    _db.execute(
+      'INSERT INTO profiles (name, pin_hash, pin_salt, created_at) VALUES (?, ?, ?, ?)',
+      [name, hash, salt, DateTime.now().millisecondsSinceEpoch],
+    );
+    final id = _db.lastInsertRowId;
+    Directory('${_root.path}/$id').createSync(recursive: true);
+    openUserDb(userDbPath(id)).close();
+    return id;
+  }
+
+  /// Checks [pin]. After [freePinAttempts] wrong tries each further wrong try
+  /// locks the profile for 30 s, doubling, capped at 1 h. While locked the PIN
+  /// is not even checked, so guessing can't continue in the background.
+  Future<PinResult> unlock(int id, String pin, {DateTime? now}) async {
+    final t = (now ?? DateTime.now()).millisecondsSinceEpoch;
+    final r = _db.select(
+        'SELECT pin_hash, pin_salt, failed_attempts, locked_until FROM profiles WHERE id = ?',
+        [id]).single;
+    final lockedUntil = r['locked_until'] as int;
+    if (t < lockedUntil) {
+      return PinLocked(DateTime.fromMillisecondsSinceEpoch(lockedUntil));
+    }
+    if (sameBytes(await _hash(pin, r['pin_salt'] as Uint8List), r['pin_hash'] as Uint8List)) {
+      _db.execute('UPDATE profiles SET failed_attempts = 0, locked_until = 0 WHERE id = ?', [id]);
+      return PinOk();
+    }
+    final failed = (r['failed_attempts'] as int) + 1;
+    final over = failed - freePinAttempts;
+    final until = over < 0 ? 0 : t + min<int>(30000 << min(over, 7), 3600000);
+    _db.execute('UPDATE profiles SET failed_attempts = ?, locked_until = ? WHERE id = ?',
+        [failed, until, id]);
+    return until > 0
+        ? PinLocked(DateTime.fromMillisecondsSinceEpoch(until))
+        : PinWrong(freePinAttempts - failed);
+  }
+
+  /// "Forgot PIN" path: removes the profile and every file it owns.
+  void delete(int id) {
+    _db.execute('DELETE FROM profiles WHERE id = ?', [id]);
+    final dir = Directory('${_root.path}/$id');
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  }
+
+  void close() => _db.close();
+
+  /// ~0.25 s on a PC, more on a phone: keep it off the UI thread.
+  static Future<Uint8List> _hash(String pin, Uint8List salt) =>
+      Isolate.run(() => hashPin(pin, salt));
+}

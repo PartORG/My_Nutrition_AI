@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 10-11 Auto Backup. Include-only: profile data is small; models,
+     flutter_gemma GPU caches (~800 MB) and vectors would blow the 25 MB quota,
+     which silently stops ALL backup. nutri.db is reinstalled from the app. -->
+<full-backup-content>
+    <include domain="file" path="profiles.db" />
+    <include domain="file" path="profiles/" />
+</full-backup-content>

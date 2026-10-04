@@ -19,7 +19,7 @@ android {
         applicationId = "io.github.partorg.myfoodmind"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 29 // Android 10, see docs/PLAN.md
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

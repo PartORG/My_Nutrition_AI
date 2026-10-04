@@ -1,0 +1,57 @@
+import 'dart:io';
+
+import 'package:sqlite3/sqlite3.dart';
+
+/// nutri.db schema versions this app build can read (see db/nutri_schema.sql).
+const nutriSchemaMin = 1;
+const nutriSchemaMax = 1;
+
+/// Vectors in docs.embedding are only comparable with the app's own embedder.
+const nutriEmbeddingModel = 'embeddinggemma-300m';
+
+class NutriDbException implements Exception {
+  NutriDbException(this.message);
+  final String message;
+  @override
+  String toString() => 'NutriDbException: $message';
+}
+
+/// Opens nutri.db read-only, refusing a file this build can't read.
+Database openNutriDb(String path) {
+  final db = sqlite3.open(path, mode: OpenMode.readOnly);
+  try {
+    _check(db);
+    return db;
+  } catch (_) {
+    db.close();
+    rethrow;
+  }
+}
+
+/// Replaces [target] with [candidate] only if the candidate passes the checks.
+/// The rename is atomic, so readers see the old file or the new one, never half.
+void installNutriDb(File candidate, File target) {
+  openNutriDb(candidate.path).close();
+  candidate.renameSync(target.path);
+}
+
+void _check(Database db) {
+  String? meta(String key) {
+    try {
+      return db.select('SELECT value FROM meta WHERE key = ?', [key])
+          .firstOrNull?['value'] as String?;
+    } on SqliteException {
+      throw NutriDbException('not a nutri.db (no meta table)');
+    }
+  }
+
+  final version = int.tryParse(meta('schema_version') ?? '');
+  if (version == null || version < nutriSchemaMin || version > nutriSchemaMax) {
+    throw NutriDbException(
+        'schema_version $version, this app reads $nutriSchemaMin..$nutriSchemaMax');
+  }
+  final model = meta('embedding_model');
+  if (model != nutriEmbeddingModel) {
+    throw NutriDbException('embedding_model $model, expected $nutriEmbeddingModel');
+  }
+}

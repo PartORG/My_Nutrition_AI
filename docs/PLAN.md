@@ -65,11 +65,15 @@ medical notes are rendered as cards from the database, never as model-generated 
 
 ```
 nutri.db                   shared, read-only, replaced whole (meta.schema_version range)
-models/ (noBackupFilesDir) LLM + embedding + detector, excluded from backup
+models/                    LLM + embedding + detector, not backed up
 profiles.db                profile list, PIN hashes, chat counter
 profiles/<id>/user.db      private data, PRAGMA user_version migrations (add-only, one transaction)
-profiles/<id>/vectors.db   episodic embeddings, excluded from backup, rebuilt after restore
+vectors/<id>.db            episodic embeddings, not backed up, rebuilt after restore
 ```
+
+Backup is **include-only** (`android/app/src/main/res/xml/`): `profiles.db` + `profiles/`. Everything else
+in the app folder — nutri.db, models, flutter_gemma's ~800 MB GPU caches, vectors — stays out, because
+going over Auto Backup's 25 MB quota silently stops all backup.
 
 - Profiles: PIN (4–6 digits, salted hash) + biometric; unlocked until 5 min in background;
   growing lockout after 5 wrong tries; forgot PIN = delete profile; monthly doctor-export reminder.
@@ -94,7 +98,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | # | Goal | Done when |
 |---|---|---|
 | **M0** | ~100 labelled queries; compare candidate models on the phone; check chat + embedding models load together | ≥90% tool accuracy ✅ (Gemma 4 E2B 95.2%); in-app latency and RAM with both models recorded |
-| M1 | Skeleton, `schema.sql` + dummy DB, profiles + PIN, migrations, PC-vs-phone embedding check | Tests pass |
+| M1 | Skeleton, `schema.sql` + dummy DB, profiles + PIN, migrations, PC-vs-phone embedding check | Tests pass ✅ (22 host tests + on-phone checks) |
 | M2 | Agent, tools, 4-type memory, chat limit, confirmation cards, report button | Eval runs as on-device `integration_test`; unit tests use a fake model |
 | M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values |
 | M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore |
@@ -145,3 +149,22 @@ Decisions from these numbers:
 - M2: stream answers (`generateChatResponseAsync`), short-answer instruction, warm the conversation at app
   start, and tool results must say "awaiting user confirmation" clearly — the model told the user
   "I have added peanuts" while the result was still pending.
+
+## M1 results (2026-10-04)
+
+- `db/nutri_schema.sql` is the data contract; `tool/build_nutri_db.py` builds `nutri.db` from SQL files
+  (stdlib only, atomic, checks foreign keys and meta). Dummy data: `db/nutri_dummy.sql` → `assets/nutri.db`.
+  Contract additions: ids are stable across releases; `meta.embedding_model = 'embeddinggemma-300m'`
+  names the model, not the file variant.
+- user.db v1 tables: chat_messages, memory_facts, user_allergens, saved_recipes, meal_log (nutrition
+  snapshot at log time), symptoms, readings. profiles.db v1: profiles, chat_usage.
+- PIN: PBKDF2-HMAC-SHA256 100k (≈0.24 s on PC, on a background isolate); 4 wrong → 5th locks 30 s,
+  doubling, capped 1 h; the PIN isn't checked while locked.
+- **Embedder:** the seq512 build pads every text to 512 tokens. **Use the seq256 build on the phone:
+  0.58 s vs 1.4–1.6 s per text, identical vectors (cos 1.0000).**
+- **PC vs phone vectors:** sentence-transformers (`google/embeddinggemma-300m`, full precision) vs the
+  phone's mixed-precision `.tflite`: cos 0.96 on every text, nearest neighbour agreed 8/8. Not the prefix
+  (checked), not bf16 (checked) → quantization. Either embed docs with sentence-transformers and check
+  recall on real data, or embed them with the same `.tflite` on the PC for an exact match. Decide when
+  real docs exist. `tool/compare_embeddings.py` does the comparison.
+- Not yet: biometric unlock (M3 with onboarding UI); the 5-minute auto-lock has no automated test.
