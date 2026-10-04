@@ -88,11 +88,14 @@ void main() {
     expect(ctx, contains('28 Sep chat: "soup too spicy"'));
   });
 
-  test('wipe clears episodic memory; backfill can rebuild it', () async {
-    chat('user', 'hello there friend', now.subtract(const Duration(hours: 1)));
+  test('forgetting conversations sticks; meals stay remembered', () async {
+    final hour = now.subtract(const Duration(hours: 1));
+    chat('user', 'hello there friend', hour);
+    meal('lasagna', 350, 473, hour, 'dinner');
     await memory.backfill();
-    memory.wipeEpisodic();
-    expect(vectors.select('SELECT 1 FROM events'), isEmpty);
-    expect(await memory.backfill(), 1);
+    memory.forgetConversations();
+    expect(user.select('SELECT 1 FROM chat_messages'), isEmpty);
+    expect([for (final r in vectors.select('SELECT kind FROM events')) r['kind']], ['meal']);
+    expect(await memory.backfill(), 0, reason: 'nothing to rebuild the chat from');
   });
 }

@@ -171,6 +171,16 @@ class Agent extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// "Forget past conversations": history, episodic memory, and the live
+  /// conversation the model still holds in its context.
+  Future<void> forgetConversations() async {
+    memory.forgetConversations();
+    await _session?.close();
+    _session = null;
+    items.clear();
+    notifyListeners();
+  }
+
   /// The user tapped ✓ or ✕ on a card. Only ✓ writes.
   Future<void> decide(ConfirmCard card, bool accept) async {
     if (card.accepted != null) return;

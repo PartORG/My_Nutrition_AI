@@ -210,4 +210,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get iAteThis => 'I ate this';
+
+  @override
+  String get aiKnowsTitle => 'What the AI knows about you';
+
+  @override
+  String get aiKnowsIntro =>
+      'This is everything the assistant is told about you. It stays on this phone.';
+
+  @override
+  String get factsSection => 'Things you told it';
+
+  @override
+  String get factsEmpty =>
+      'Nothing yet. Tell the chat things like “I have an air fryer”.';
+
+  @override
+  String get allergiesSection => 'Allergies';
+
+  @override
+  String get allergiesEmpty => 'None recorded.';
+
+  @override
+  String get habitsSection => 'Habits it noticed (last 30 days)';
+
+  @override
+  String get habitsEmpty => 'Not enough logged meals yet.';
+
+  @override
+  String get conversationsSection => 'Conversations';
+
+  @override
+  String conversationsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages stored.',
+      one: '1 message stored.',
+      zero: 'No messages stored.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get forgetConversations => 'Forget past conversations';
+
+  @override
+  String get forgetConversationsBody =>
+      'Deletes your chat history and the AI\'s memory of it. Logged meals, facts and allergies stay.';
+
+  @override
+  String get forget => 'Forget';
+
+  @override
+  String get edit => 'Edit';
 }

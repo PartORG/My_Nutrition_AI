@@ -423,6 +423,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I ate this'**
   String get iAteThis;
+
+  /// No description provided for @aiKnowsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the AI knows about you'**
+  String get aiKnowsTitle;
+
+  /// No description provided for @aiKnowsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This is everything the assistant is told about you. It stays on this phone.'**
+  String get aiKnowsIntro;
+
+  /// No description provided for @factsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Things you told it'**
+  String get factsSection;
+
+  /// No description provided for @factsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet. Tell the chat things like “I have an air fryer”.'**
+  String get factsEmpty;
+
+  /// No description provided for @allergiesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Allergies'**
+  String get allergiesSection;
+
+  /// No description provided for @allergiesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded.'**
+  String get allergiesEmpty;
+
+  /// No description provided for @habitsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits it noticed (last 30 days)'**
+  String get habitsSection;
+
+  /// No description provided for @habitsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough logged meals yet.'**
+  String get habitsEmpty;
+
+  /// No description provided for @conversationsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get conversationsSection;
+
+  /// No description provided for @conversationsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No messages stored.} =1{1 message stored.} other{{count} messages stored.}}'**
+  String conversationsCount(int count);
+
+  /// No description provided for @forgetConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget past conversations'**
+  String get forgetConversations;
+
+  /// No description provided for @forgetConversationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes your chat history and the AI\'s memory of it. Logged meals, facts and allergies stay.'**
+  String get forgetConversationsBody;
+
+  /// No description provided for @forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget'**
+  String get forget;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
 }
 
 class _AppLocalizationsDelegate

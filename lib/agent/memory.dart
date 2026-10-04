@@ -109,7 +109,37 @@ class Memory {
     return scored.take(k).toList();
   }
 
-  void wipeEpisodic() => vectors.execute('DELETE FROM events');
+  /// Deletes the chat history and the episodic memory built from it. Logged
+  /// meals, facts and allergies stay. (Wiping only the index would not stick:
+  /// [backfill] rebuilds it from chat_messages.)
+  void forgetConversations() {
+    vectors.execute("DELETE FROM events WHERE kind = 'chat'");
+    user.execute('DELETE FROM chat_messages');
+  }
+
+  // ---- semantic memory, editable on the "What the AI knows" screen ----------
+
+  List<({int id, String text})> facts() => [
+        for (final r in user.select('SELECT id, text FROM memory_facts ORDER BY id DESC'))
+          (id: r['id'] as int, text: r['text'] as String)
+      ];
+
+  void updateFact(int id, String text) =>
+      user.execute('UPDATE memory_facts SET text = ? WHERE id = ?', [text.trim(), id]);
+
+  void deleteFact(int id) => user.execute('DELETE FROM memory_facts WHERE id = ?', [id]);
+
+  List<String> allergies() =>
+      [for (final r in user.select('SELECT allergen FROM user_allergens ORDER BY 1')) r['allergen'] as String];
+
+  void removeAllergy(String allergen) =>
+      user.execute('DELETE FROM user_allergens WHERE allergen = ?', [allergen]);
+
+  int conversationCount() =>
+      user.select("SELECT COUNT(*) AS n FROM chat_messages WHERE role = 'user'").single['n'] as int;
+
+  /// The habits line of [context], for the "What the AI knows" screen.
+  String? habits() => _habits(_now());
 
   // ---- context for each message ------------------------------------------
 

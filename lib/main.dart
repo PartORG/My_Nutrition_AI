@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_state.dart';
 import 'l10n/app_localizations.dart';
 import 'ui/chat_screen.dart';
+import 'ui/memory_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
 
@@ -99,6 +100,13 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l.hello(name)),
         actions: [
+          if (ref.watch(agentProvider) case AsyncData(:final value))
+            IconButton(
+              tooltip: l.aiKnowsTitle,
+              icon: const Icon(Icons.psychology_outlined),
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute<void>(builder: (_) => MemoryScreen(agent: value))),
+            ),
           IconButton(
             tooltip: l.lock,
             icon: const Icon(Icons.lock),

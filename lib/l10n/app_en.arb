@@ -130,5 +130,26 @@
       }
     }
   },
-  "iAteThis": "I ate this"
+  "iAteThis": "I ate this",
+  "aiKnowsTitle": "What the AI knows about you",
+  "aiKnowsIntro": "This is everything the assistant is told about you. It stays on this phone.",
+  "factsSection": "Things you told it",
+  "factsEmpty": "Nothing yet. Tell the chat things like “I have an air fryer”.",
+  "allergiesSection": "Allergies",
+  "allergiesEmpty": "None recorded.",
+  "habitsSection": "Habits it noticed (last 30 days)",
+  "habitsEmpty": "Not enough logged meals yet.",
+  "conversationsSection": "Conversations",
+  "conversationsCount": "{count, plural, =0{No messages stored.} =1{1 message stored.} other{{count} messages stored.}}",
+  "@conversationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "forgetConversations": "Forget past conversations",
+  "forgetConversationsBody": "Deletes your chat history and the AI's memory of it. Logged meals, facts and allergies stay.",
+  "forget": "Forget",
+  "edit": "Edit"
 }
