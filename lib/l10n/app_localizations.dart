@@ -1023,6 +1023,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock {name}\'s profile'**
   String fingerprintReason(String name);
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
 }
 
 class _AppLocalizationsDelegate

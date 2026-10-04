@@ -67,8 +67,15 @@ class _ChatTab extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     return switch (ref.watch(agentProvider)) {
       AsyncData(:final value) => ChatScreen(agent: value),
-      AsyncError(error: ModelsMissing(:final dir, :final missing)) =>
-        Padding(padding: const EdgeInsets.all(24), child: Text(l.modelsMissing(dir, missing.join(', ')))),
+      AsyncError(error: ModelsMissing(:final dir, :final missing)) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(l.modelsMissing(dir, missing.join(', '))),
+            const SizedBox(height: 12),
+            // The check runs once per app start; this repeats it after the files are copied.
+            ElevatedButton(onPressed: () => ref.invalidate(modelDirProvider), child: Text(l.tryAgain)),
+          ]),
+        ),
       AsyncError(:final error) => Center(child: Text('$error')),
       _ => Center(
           child: Padding(

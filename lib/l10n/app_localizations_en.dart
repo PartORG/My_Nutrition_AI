@@ -557,4 +557,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String fingerprintReason(String name) {
     return 'Unlock $name\'s profile';
   }
+
+  @override
+  String get tryAgain => 'Try again';
 }
