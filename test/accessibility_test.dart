@@ -18,6 +18,8 @@ import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
+import 'package:myfoodmind/vision/scan.dart';
+import 'package:myfoodmind/ui/camera_screen.dart';
 import 'package:myfoodmind/ui/chat_screen.dart';
 import 'package:myfoodmind/ui/health_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
@@ -148,6 +150,20 @@ void main() {
     // One unit per chart: the latest reading's.
     await tester.scrollUntilVisible(find.text('Blood glucose (mmol/L)'), 200, scrollable: find.byType(Scrollable).first);
     await scrollAll(tester, 'Timeline');
+  });
+
+  testWidgets('camera review at 200 % text', (tester) async {
+    smallPhone(tester);
+    final items = [
+      ...itemsFromDetections(data.tools, [
+        (label: 'banana', score: .9, box: Rect.zero),
+        (label: 'hot dog', score: .8, box: Rect.zero), // not in the dummy db
+      ]),
+    ];
+    await tester.pumpWidget(app(ReviewScreen(data: data, items: items, mode: 'photo', unknownCode: '4006381333931',
+        onCook: (_) {})));
+    await tester.pump();
+    await scrollAll(tester, 'Review');
   });
 
   testWidgets('Health shows the plans below Medium', (tester) async {

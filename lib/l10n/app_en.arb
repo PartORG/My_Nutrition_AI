@@ -97,7 +97,6 @@
     }
   },
   "notMedicalAdvice": "General information, not medical advice. Talk to your doctor before changing your diet.",
-  "cameraComing": "The camera arrives with the Pro plan in a later version.",
   "crisisTitle": "You don't have to go through this alone",
   "crisisBody": "If you might hurt yourself, call your local emergency number now. Free, confidential helplines in your country are listed at findahelpline.com.",
   "crisisButton": "Find a helpline",
@@ -551,5 +550,55 @@
   "reportDate": "Date",
   "reportItems": "Items",
   "reportMeasurement": "Measurement",
-  "reportValue": "Value"
+  "reportValue": "Value",
+  "cameraTitle": "Camera",
+  "cameraOpen": "Open camera",
+  "cameraPhoto": "Photo",
+  "cameraLive": "Live",
+  "cameraUnavailable": "The camera isn't available. Allow camera access for MyFoodMind in Android settings.",
+  "cameraShoot": "Take photo",
+  "cameraUseFound": "{count, plural, =0{Continue} =1{Use 1 item} other{Use {count} items}}",
+  "@cameraUseFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "barcodeTitle": "Barcode",
+  "barcodeScan": "Scan barcode",
+  "barcodeUnknown": "Barcode {code} isn't in the food database.",
+  "@barcodeUnknown": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "barcodeUnknownHint": "Tap \"Add item\" to find it by name.",
+  "reviewTitle": "Check what was found",
+  "reviewHint": "Amounts from a photo are estimates (≈). Change or remove anything; nothing is saved until you tap Log.",
+  "reviewEmpty": "No food found. Add items by name.",
+  "notInDatabase": "{name}: not in the database, tap edit to pick a food",
+  "@notInDatabase": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewChange": "Change",
+  "reviewAdd": "Add item",
+  "reviewLog": "Log this meal",
+  "reviewLogged": "{count, plural, =1{1 item logged} other{{count} items logged}}",
+  "@reviewLogged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewCook": "What can I cook?",
+  "cookNone": "No recipe in the database uses these foods.",
+  "per100Suffix": " / 100 g"
 }

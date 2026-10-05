@@ -96,6 +96,15 @@ const userDbMigrations = <String>[
     added_at     INTEGER NOT NULL
   );
   ''',
+  // v5 (M6): camera scans as one-line texts for episodic memory. Photos are never stored.
+  '''
+  CREATE TABLE scans (
+    id         INTEGER PRIMARY KEY,
+    scanned_at INTEGER NOT NULL,
+    mode       TEXT NOT NULL CHECK (mode IN ('photo', 'live', 'barcode')),
+    text       TEXT NOT NULL   -- what the user kept on the review screen: 'banana, broccoli'
+  );
+  ''',
 ];
 
 Database openUserDb(String path) {

@@ -43,9 +43,11 @@ medical notes are rendered as cards from the database, never as model-generated 
   document `title: none | text: {t}`. Same model + prefixes on PC and phone.
 - **Search:** SQLite FTS5 (foods, recipes, dishes, products) + brute-force cosine over `docs` and
   episodic vectors, merged with RRF. ObjectBox only if measured slow.
-- **Vision (Apache stack, no Ultralytics/AGPL):** `tflite_flutter` + EfficientDet-Lite0 (COCO) for dev;
-  real food/dish model trained with D-FINE / RT-DETR / YOLOX → TFLite, labels = `foods.name`/`dishes.name`.
-  Barcode: ML Kit. Everything detected goes through the review screen before use.
+- **Vision (Apache stack, no Ultralytics/AGPL):** `tflite_flutter` + EfficientDet-Lite0 (COCO, bundled asset,
+  food classes only) since M6; real food/dish model trained with D-FINE / RT-DETR / YOLOX → TFLite, labels =
+  `foods.name`/`dishes.name`, drops in behind the same `Detector` interface (`lib/vision/detector.dart`).
+  Camera via `camera` (photo + live, frames never stored); barcode via `mobile_scanner` (ML Kit, EAN/UPC).
+  Everything detected goes through the review screen before use.
 - **Memory (per profile):**
   1. Working — last 6 messages.
   2. Semantic — `memory_facts`, written via `remember_fact` + user confirmation.
@@ -71,7 +73,7 @@ medical notes are rendered as cards from the database, never as model-generated 
 
 ```
 nutri.db                   shared, read-only, replaced whole (meta.schema_version range)
-models/                    LLM + embedding + detector, not backed up
+models/                    LLM + embedding, not backed up (the 4.6 MB detector ships as an app asset)
 profiles.db                profile list, PIN hashes, chat counter
 profiles/<id>/user.db      private data, PRAGMA user_version migrations (add-only, one transaction)
 vectors/<id>.db            episodic embeddings, not backed up, rebuilt after restore
@@ -110,7 +112,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values ✅ (77 host tests) |
 | M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore ⏳ code done + dev tier switch (88 host tests); sandbox test waits for the accounts: `docs/BILLING_SETUP.md` |
 | M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition ✅ (97 host tests) |
-| M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products |
+| M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products ✅ (105 host tests); real detector on the phone ⏳ `integration_test/detector_test.dart` |
 | M7 | Asset Delivery, privacy policy + ToS + Gemma terms, Data safety, trademark check (EUIPO/USPTO class 9/44) | Internal-testing build installs and runs |
 
 **v1.1:** Health Connect import · encrypted backup export · iOS · second language · optional photo storage.
@@ -234,3 +236,27 @@ Built:
 Not yet: monthly doctor-export reminder (reminders.slot CHECK needs a new table), texture rules for
 ALS (recipes.texture exists, no rule links it), avoided foods aren't flagged in the Log tab search,
 real condition data. Not verified on the phone: share sheet, PDF rendering on device.
+
+## M6 results (2026-10-05)
+
+Decisions (user, 2026-10-05): EfficientDet-Lite0 COCO via `tflite_flutter` now (real food model later);
+**live mode included**; a barcode missing from nutri.db → "find it by name" on the review screen, offline.
+
+- Model: TFLite task-library `efficientdet_lite0_detection_metadata_1` (Apache 2.0, 4.6 MB asset) — it has
+  NMS built in (the MediaPipe build outputs 19 206 raw anchors). Input 320×320 uint8 RGB, outputs boxes /
+  classes (0-based COCO-90 labelmap) / scores / count. Food classes 51–60 only. Checked on the PC: a banana
+  photo → class 51, 0.76.
+- Camera (`camera`): one screen, Photo ⇄ Live. YUV frames are converted in Dart to an upright 320² image;
+  live detects every 500 ms and draws boxes; photo detects on the shutter. **No picture is written to disk.**
+  Barcode: `mobile_scanner` (ML Kit, EAN/UPC only) → nutri.db `products`.
+- Review screen: rename/re-match, grams, remove, add by name, meal type; photo values ≈. "Log this meal"
+  (the tap is the confirmation) or "What can I cook?" (recipes into the chat, no model, not counted).
+  Entry: chat camera button, `open_camera` card, Log tab camera + barcode buttons. Below Pro → paywall.
+- user.db v5 `scans` (one line per scan) → episodic memory. Dummy foods + apple, orange, carrot.
+- Match rule: the shortest matching name wins ("banana" is the food, not "Overnight oats with banana").
+- `android/build.gradle.kts`: tflite_flutter 0.12.1's Kotlin target forced to JVM 11 (Gradle rejects 11 vs 21).
+- Release APK 187 → 231 MB (native libs for all ABIs); an arm64 app bundle split is M7's job.
+
+Not yet / not verified: detector speed and boxes on the phone, camera permission prompt, barcode on a real
+packet, live-mode smoothness (YUV conversion runs on the UI isolate; move it if it stutters), Gemma 4 vision
+as a replacement detector.

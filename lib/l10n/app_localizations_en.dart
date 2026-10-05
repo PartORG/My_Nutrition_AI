@@ -140,10 +140,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'General information, not medical advice. Talk to your doctor before changing your diet.';
 
   @override
-  String get cameraComing =>
-      'The camera arrives with the Pro plan in a later version.';
-
-  @override
   String get crisisTitle => 'You don\'t have to go through this alone';
 
   @override
@@ -894,4 +890,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportValue => 'Value';
+
+  @override
+  String get cameraTitle => 'Camera';
+
+  @override
+  String get cameraOpen => 'Open camera';
+
+  @override
+  String get cameraPhoto => 'Photo';
+
+  @override
+  String get cameraLive => 'Live';
+
+  @override
+  String get cameraUnavailable =>
+      'The camera isn\'t available. Allow camera access for MyFoodMind in Android settings.';
+
+  @override
+  String get cameraShoot => 'Take photo';
+
+  @override
+  String cameraUseFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Use $count items',
+      one: 'Use 1 item',
+      zero: 'Continue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get barcodeTitle => 'Barcode';
+
+  @override
+  String get barcodeScan => 'Scan barcode';
+
+  @override
+  String barcodeUnknown(String code) {
+    return 'Barcode $code isn\'t in the food database.';
+  }
+
+  @override
+  String get barcodeUnknownHint => 'Tap \"Add item\" to find it by name.';
+
+  @override
+  String get reviewTitle => 'Check what was found';
+
+  @override
+  String get reviewHint =>
+      'Amounts from a photo are estimates (≈). Change or remove anything; nothing is saved until you tap Log.';
+
+  @override
+  String get reviewEmpty => 'No food found. Add items by name.';
+
+  @override
+  String notInDatabase(String name) {
+    return '$name: not in the database, tap edit to pick a food';
+  }
+
+  @override
+  String get reviewChange => 'Change';
+
+  @override
+  String get reviewAdd => 'Add item';
+
+  @override
+  String get reviewLog => 'Log this meal';
+
+  @override
+  String reviewLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items logged',
+      one: '1 item logged',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewCook => 'What can I cook?';
+
+  @override
+  String get cookNone => 'No recipe in the database uses these foods.';
+
+  @override
+  String get per100Suffix => ' / 100 g';
 }

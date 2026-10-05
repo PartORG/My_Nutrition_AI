@@ -32,7 +32,10 @@ INSERT INTO foods (id, name, kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, 
   (23, 'soy sauce',              53,  8.1,  0.6,  4.9,  0.8,  0.4,  5493, 15),
   (24, 'tofu',                   76,  8,    4.8,  1.9,  0.3,  0.6,  7, 120),
   (25, 'chickpeas, cooked',      164, 8.9,  2.6,  27.4, 7.6,  4.8,  7, 160),
-  (26, 'bread, toasted',         313, 13,   4.2,  55.8, 3.8,  5.4,  568, 30);
+  (26, 'bread, toasted',         313, 13,   4.2,  55.8, 3.8,  5.4,  568, 30),
+  (27, 'apple',                  52,  0.3,  0.2,  13.8, 2.4,  10.4, 1, 180),
+  (28, 'orange',                 47,  0.9,  0.1,  11.8, 2.4,  9.4,  0, 130),
+  (29, 'carrot',                 41,  0.9,  0.2,  9.6,  2.8,  4.7,  69, 60);
 
 INSERT INTO recipes (id, title, instructions, servings, minutes, tags, texture) VALUES
   (1, 'Chicken broccoli stir-fry',

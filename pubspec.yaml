@@ -7,6 +7,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  camera: ^0.12.1
   crypto: ^3.0.7
   fl_chart: ^1.2.0
   flutter:
@@ -21,12 +22,14 @@ dependencies:
   flutter_timezone: ^5.1.1
   intl: ^0.20.2
   local_auth: ^3.0.2
+  mobile_scanner: ^7.4.2
   path_provider: ^2.1.6
   pdf: ^3.13.1
   purchases_flutter: ^10.14.0
   share_plus: ^13.3.1
   speech_to_text: ^7.5.0
   sqlite3: ^3.5.2
+  tflite_flutter: ^0.12.1
   timezone: ^0.11.1
   url_launcher: ^6.3.3
 
@@ -44,3 +47,4 @@ flutter:
     - assets/nutri.db
     - assets/icons/icon_chat.png
     - assets/fonts/
+    - assets/models/

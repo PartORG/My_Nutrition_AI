@@ -113,7 +113,10 @@ class AgentTools {
       'log_symptom' => _logSymptom(arg('symptom'), int.tryParse(arg('severity'))),
       'log_reading' => _logReading(arg('kind'), arg('value')),
       'condition_info' => _conditionInfo(arg('question')),
-      'open_camera' => ToolResult({'status': 'the camera is not available yet'}, CameraCard(arg('mode'))),
+      'open_camera' => ToolResult({
+          'status': 'a card with a camera button is shown; the user taps it (Pro plan). Nothing is logged '
+              'until they check the result and tap Log',
+        }, CameraCard(arg('mode'))),
       _ => ToolResult.error('unknown tool $name'),
     };
   }
@@ -557,6 +560,14 @@ class AgentTools {
           'WHERE products_fts MATCH ? LIMIT 5', [_ftsQuery(text) ?? '""']))
         of('product', r, null, _nutrientsOf(r)),
     ];
+  }
+
+  /// A packaged product by its barcode; null when nutri.db doesn't have it.
+  FoodChoice? productByBarcode(String code) {
+    final r = nutri.select('SELECT *, barcode AS id FROM products WHERE barcode = ?', [code.trim()]).firstOrNull;
+    return r == null
+        ? null
+        : (kind: 'product', id: r['id'], label: r['name'] as String, servingG: null, per100: _nutrientsOf(r), estimated: false);
   }
 
   /// Logs [grams] of [food] right away: pressing "Log" on that screen is the

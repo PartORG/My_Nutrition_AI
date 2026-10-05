@@ -304,12 +304,6 @@ abstract class AppLocalizations {
   /// **'General information, not medical advice. Talk to your doctor before changing your diet.'**
   String get notMedicalAdvice;
 
-  /// No description provided for @cameraComing.
-  ///
-  /// In en, this message translates to:
-  /// **'The camera arrives with the Pro plan in a later version.'**
-  String get cameraComing;
-
   /// No description provided for @crisisTitle.
   ///
   /// In en, this message translates to:
@@ -1599,6 +1593,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Value'**
   String get reportValue;
+
+  /// No description provided for @cameraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cameraTitle;
+
+  /// No description provided for @cameraOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open camera'**
+  String get cameraOpen;
+
+  /// No description provided for @cameraPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get cameraPhoto;
+
+  /// No description provided for @cameraLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get cameraLive;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera isn\'t available. Allow camera access for MyFoodMind in Android settings.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @cameraShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get cameraShoot;
+
+  /// No description provided for @cameraUseFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Continue} =1{Use 1 item} other{Use {count} items}}'**
+  String cameraUseFound(int count);
+
+  /// No description provided for @barcodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode'**
+  String get barcodeTitle;
+
+  /// No description provided for @barcodeScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan barcode'**
+  String get barcodeScan;
+
+  /// No description provided for @barcodeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode {code} isn\'t in the food database.'**
+  String barcodeUnknown(String code);
+
+  /// No description provided for @barcodeUnknownHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap \"Add item\" to find it by name.'**
+  String get barcodeUnknownHint;
+
+  /// No description provided for @reviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check what was found'**
+  String get reviewTitle;
+
+  /// No description provided for @reviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts from a photo are estimates (≈). Change or remove anything; nothing is saved until you tap Log.'**
+  String get reviewHint;
+
+  /// No description provided for @reviewEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No food found. Add items by name.'**
+  String get reviewEmpty;
+
+  /// No description provided for @notInDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: not in the database, tap edit to pick a food'**
+  String notInDatabase(String name);
+
+  /// No description provided for @reviewChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get reviewChange;
+
+  /// No description provided for @reviewAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add item'**
+  String get reviewAdd;
+
+  /// No description provided for @reviewLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Log this meal'**
+  String get reviewLog;
+
+  /// No description provided for @reviewLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item logged} other{{count} items logged}}'**
+  String reviewLogged(int count);
+
+  /// No description provided for @reviewCook.
+  ///
+  /// In en, this message translates to:
+  /// **'What can I cook?'**
+  String get reviewCook;
+
+  /// No description provided for @cookNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipe in the database uses these foods.'**
+  String get cookNone;
+
+  /// No description provided for @per100Suffix.
+  ///
+  /// In en, this message translates to:
+  /// **' / 100 g'**
+  String get per100Suffix;
 }
 
 class _AppLocalizationsDelegate

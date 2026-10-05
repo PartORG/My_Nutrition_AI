@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
 import '../l10n/app_localizations.dart';
+import 'camera_screen.dart';
 import 'nutrients.dart';
 import 'theme.dart';
 
@@ -47,12 +48,29 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(16),
-        child: TextField(
-          controller: _search,
-          decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: l.searchFood),
-          textInputAction: TextInputAction.search,
-          onChanged: (t) => setState(() => _results = t.trim().length < 2 ? [] : tools.searchFood(t)),
-        ),
+        child: Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _search,
+              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: l.searchFood),
+              textInputAction: TextInputAction.search,
+              onChanged: (t) => setState(() => _results = t.trim().length < 2 ? [] : tools.searchFood(t)),
+            ),
+          ),
+          // Pro: log from a photo or a packet. The paywall opens below Pro.
+          IconButton(
+            tooltip: l.cameraOpen,
+            iconSize: 28,
+            icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+            onPressed: () => openCamera(context, 'photo'),
+          ),
+          IconButton(
+            tooltip: l.barcodeScan,
+            iconSize: 28,
+            icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+            onPressed: () => openCamera(context, 'barcode'),
+          ),
+        ]),
       ),
       Expanded(
         child: _results.isEmpty && _search.text.trim().length >= 2

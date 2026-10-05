@@ -64,7 +64,7 @@ class Memory {
           // COALESCE: in SQL 'text' || NULL is NULL, which would blank the line.
           "  'logged ' || COALESCE(meal_type || ': ', '') || description "
           "  || COALESCE(' ' || CAST(ROUND(grams) AS INT) || ' g', '') "
-          'FROM meal_log'))
+          "FROM meal_log UNION ALL SELECT 'scan', id, scanned_at, 'camera ' || mode || ': ' || text FROM scans"))
         if (vectors.select('SELECT 1 FROM events WHERE kind = ? AND ref_id = ?',
                 [r['kind'], r['id']]).isEmpty)
           (kind: r['kind'] as String, id: r['id'] as int, at: r['at'] as int, text: r['text'] as String)

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
 import '../l10n/app_localizations.dart';
+import 'camera_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'theme.dart';
@@ -12,6 +13,14 @@ import 'theme.dart';
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
 // TODO(ievgen): real support address before release.
 const supportEmail = 'support@example.com';
+
+/// Recipe ideas for what the camera saw, or a note that there are none.
+void cookOrSay(BuildContext context, Agent agent, List<String> names) {
+  if (!agent.cookWith(names)) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.cookNone)));
+  }
+}
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.agent});
@@ -103,6 +112,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     maxLines: 4,
                     onSubmitted: (_) => _send(),
                   ),
+                ),
+                IconButton.filledTonal(
+                  tooltip: l.cameraOpen,
+                  iconSize: 28,
+                  onPressed: widget.agent.busy
+                      ? null
+                      : () => openCamera(context, 'photo', onCook: (names) => cookOrSay(context, widget.agent, names)),
+                  icon: const Icon(Icons.photo_camera_outlined),
                 ),
                 IconButton.filledTonal(
                   tooltip: _listening ? l.voiceStop : l.voiceInput,
@@ -383,7 +400,18 @@ class _CardView extends StatelessWidget {
             Text(l.notMedicalAdvice, style: text.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
           ]),
         ),
-      CameraCard() => _Framed(icon: Icons.photo_camera_outlined, title: 'Camera', child: Text(l.cameraComing)),
+      CameraCard c => _Framed(
+          icon: c.mode == 'barcode' ? Icons.qr_code_scanner : Icons.photo_camera_outlined,
+          title: c.mode == 'barcode' ? l.barcodeTitle : l.cameraTitle,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: ElevatedButton.icon(
+              icon: Icon(c.mode == 'barcode' ? Icons.qr_code_scanner : Icons.photo_camera),
+              label: Text(c.mode == 'barcode' ? l.barcodeScan : l.cameraOpen),
+              onPressed: () => openCamera(context, c.mode, onCook: (names) => cookOrSay(context, agent, names)),
+            ),
+          ),
+        ),
       ConfirmCard c => _Framed(
           icon: switch (c.accepted) {
             null => Icons.pending_actions,

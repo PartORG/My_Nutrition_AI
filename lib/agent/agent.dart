@@ -175,6 +175,16 @@ class Agent extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// "What can I cook?" from the camera review: recipes for what was seen,
+  /// no model, not counted. False when nothing matches.
+  bool cookWith(List<String> ingredients) {
+    final card = tools.run('search_recipes', {'query': '', 'ingredients': ingredients.join(', ')}).card;
+    if (card == null) return false;
+    items.add(CardItem(card));
+    notifyListeners();
+    return true;
+  }
+
   /// "I ate this" on a recipe card: straight to a ✓ card, no model, not counted.
   void ateRecipe(int recipeId) {
     items.add(CardItem(tools.logRecipe(recipeId).card!));
