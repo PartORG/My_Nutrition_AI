@@ -1,6 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../agent/agent_tools.dart' show Nutrients, nutrients;
+import 'journal.dart';
 
 typedef MealEntry = ({
   int id,
@@ -100,6 +101,5 @@ List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
     ];
 
 /// Free: anyone can log their weight (goals use it); the trend is Basic.
-void logWeight(Database user, double value, {required bool imperial, required DateTime at}) => user.execute(
-    "INSERT INTO readings (logged_at, kind, value, unit) VALUES (?, 'weight', ?, ?)",
-    [at.millisecondsSinceEpoch, value, imperial ? 'lb' : 'kg']);
+void logWeight(Database user, double value, {required bool imperial, required DateTime at}) =>
+    logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);

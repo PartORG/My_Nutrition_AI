@@ -22,7 +22,9 @@ dependencies:
   intl: ^0.20.2
   local_auth: ^3.0.2
   path_provider: ^2.1.6
+  pdf: ^3.13.1
   purchases_flutter: ^10.14.0
+  share_plus: ^13.3.1
   speech_to_text: ^7.5.0
   sqlite3: ^3.5.2
   timezone: ^0.11.1
@@ -41,3 +43,4 @@ flutter:
   assets:
     - assets/nutri.db
     - assets/icons/icon_chat.png
+    - assets/fonts/

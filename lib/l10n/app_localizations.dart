@@ -1293,6 +1293,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plans aren\'t available in this build.'**
   String get plansUnavailable;
+
+  /// No description provided for @cautionAllergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Contains {food}, on your allergy list ({allergen})'**
+  String cautionAllergy(String food, String allergen);
+
+  /// No description provided for @cautionCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Contains {food}, a food to avoid with {condition}'**
+  String cautionCondition(String food, String condition);
+
+  /// No description provided for @condDiabetesT2.
+  ///
+  /// In en, this message translates to:
+  /// **'Type 2 diabetes'**
+  String get condDiabetesT2;
+
+  /// No description provided for @condHypertension.
+  ///
+  /// In en, this message translates to:
+  /// **'High blood pressure'**
+  String get condHypertension;
+
+  /// No description provided for @condGout.
+  ///
+  /// In en, this message translates to:
+  /// **'Gout'**
+  String get condGout;
+
+  /// No description provided for @condAls.
+  ///
+  /// In en, this message translates to:
+  /// **'ALS'**
+  String get condAls;
+
+  /// No description provided for @condMs.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple sclerosis'**
+  String get condMs;
+
+  /// No description provided for @healthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get healthTitle;
+
+  /// No description provided for @healthMeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions, journal, timeline, report for your doctor'**
+  String get healthMeHint;
+
+  /// No description provided for @conditionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get conditionsTitle;
+
+  /// No description provided for @conditionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe suggestions skip foods to avoid, and limits lower your daily targets. These are general suggestions, not medical advice: talk to your doctor before changing your diet.'**
+  String get conditionsHint;
+
+  /// No description provided for @limitLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient}: at most {amount} a day ({condition})'**
+  String limitLine(String nutrient, String amount, String condition);
+
+  /// No description provided for @avoidLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Foods to avoid: {foods}'**
+  String avoidLine(String foods);
+
+  /// No description provided for @limitFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'limit for {condition}'**
+  String limitFrom(String condition);
+
+  /// No description provided for @timelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get timelineTitle;
+
+  /// No description provided for @timelineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrients, readings and symptoms by date'**
+  String get timelineHint;
+
+  /// No description provided for @timelineEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded in this period.'**
+  String get timelineEmpty;
+
+  /// No description provided for @reportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Report for your doctor'**
+  String get reportButton;
+
+  /// No description provided for @reportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF and CSV of what you logged'**
+  String get reportHint;
+
+  /// No description provided for @journalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal'**
+  String get journalTitle;
+
+  /// No description provided for @journalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 14 days'**
+  String get journalHint;
+
+  /// No description provided for @journalEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded in the last 14 days.'**
+  String get journalEmpty;
+
+  /// No description provided for @symptom.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptom'**
+  String get symptom;
+
+  /// No description provided for @symptomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you feel? e.g. fatigue'**
+  String get symptomHint;
+
+  /// No description provided for @severity.
+  ///
+  /// In en, this message translates to:
+  /// **'Severity (optional)'**
+  String get severity;
+
+  /// No description provided for @severityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1 = mild, 5 = severe'**
+  String get severityHint;
+
+  /// No description provided for @glucose.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood glucose'**
+  String get glucose;
+
+  /// No description provided for @bloodPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood pressure'**
+  String get bloodPressure;
+
+  /// No description provided for @systolic.
+  ///
+  /// In en, this message translates to:
+  /// **'Systolic (upper)'**
+  String get systolic;
+
+  /// No description provided for @diastolic.
+  ///
+  /// In en, this message translates to:
+  /// **'Diastolic (lower)'**
+  String get diastolic;
+
+  /// No description provided for @deleteEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this entry?'**
+  String get deleteEntryTitle;
+
+  /// No description provided for @healthLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health tracking is part of Medium'**
+  String get healthLockedTitle;
+
+  /// No description provided for @healthLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium adds conditions (recipe filtering and daily limits), a symptom and reading journal, timeline charts and a report to share with your doctor.'**
+  String get healthLockedBody;
+
+  /// No description provided for @conditionsStillApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Your conditions still filter recipes and limit your targets: {conditions}'**
+  String conditionsStillApply(String conditions);
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String days(int count);
+
+  /// No description provided for @perDay.
+  ///
+  /// In en, this message translates to:
+  /// **'per day'**
+  String get perDay;
+
+  /// No description provided for @symptomsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get symptomsTitle;
+
+  /// No description provided for @readingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Readings'**
+  String get readingsTitle;
+
+  /// No description provided for @reportSheetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A PDF to read and a CSV for spreadsheets, with everything you logged. You choose where to send them; the app shares nothing by itself.'**
+  String get reportSheetHint;
+
+  /// No description provided for @reportShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and share'**
+  String get reportShare;
+
+  /// No description provided for @reportSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'MyFoodMind report'**
+  String get reportSubject;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the report.'**
+  String get reportFailed;
+
+  /// No description provided for @reportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'MyFoodMind report: {name}'**
+  String reportTitle(String name);
+
+  /// No description provided for @reportCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'created {date}'**
+  String reportCreated(String date);
+
+  /// No description provided for @reportDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.'**
+  String get reportDisclaimer;
+
+  /// No description provided for @reportNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded.'**
+  String get reportNone;
+
+  /// No description provided for @reportDailyNutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily nutrition ({days} days with logs)'**
+  String reportDailyNutrition(int days);
+
+  /// No description provided for @reportDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get reportDate;
+
+  /// No description provided for @reportItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get reportItems;
+
+  /// No description provided for @reportMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get reportMeasurement;
+
+  /// No description provided for @reportValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get reportValue;
 }
 
 class _AppLocalizationsDelegate

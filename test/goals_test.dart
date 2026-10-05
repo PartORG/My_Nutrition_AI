@@ -55,24 +55,24 @@ void main() {
 
     test('overrides beat computed values and can be removed', () {
       final user = openUserDb('${tmp.path}/user.db');
-      expect(currentTargets(user, now: now).values, isEmpty);
+      expect(currentTargets(user, nutri: null, now: now).values, isEmpty);
       saveBody(user, body(), now: now);
       setOverride(user, 'kcal', 2200);
-      final t = currentTargets(user, now: now);
+      final t = currentTargets(user, nutri: null, now: now);
       expect(t.values['kcal'], 2200);
       expect(t.values['protein_g'], closeTo(96, .01));
       expect(t.custom, {'kcal'});
       setOverride(user, 'kcal', null);
-      expect(currentTargets(user, now: now).values['kcal'], closeTo(2759, .01));
+      expect(currentTargets(user, nutri: null, now: now).values['kcal'], closeTo(2759, .01));
       user.close();
     });
 
     test('under 18 only manual targets apply', () {
       final user = openUserDb('${tmp.path}/user.db');
       saveBody(user, body(age: 15), now: now);
-      expect(currentTargets(user, now: now).values, isEmpty);
+      expect(currentTargets(user, nutri: null, now: now).values, isEmpty);
       setOverride(user, 'kcal', 2000);
-      expect(currentTargets(user, now: now).values, {'kcal': 2000});
+      expect(currentTargets(user, nutri: null, now: now).values, {'kcal': 2000});
       user.close();
     });
 

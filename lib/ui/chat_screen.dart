@@ -319,6 +319,22 @@ class _CardView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                for (final w in c.cautions)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(children: [
+                      Icon(Icons.warning_amber_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          w.allergen != null
+                              ? l.cautionAllergy(w.food, w.allergen!)
+                              : l.cautionCondition(w.food, conditionLabel(w.condition!, l)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ]),
+                  ),
                 _Section(l.perServing),
                 NutrientTiles(values: c.perServing),
                 const SizedBox(height: 14),

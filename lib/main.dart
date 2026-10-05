@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_state.dart';
@@ -9,7 +11,13 @@ import 'ui/home_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
 
-void main() => runApp(const ProviderScope(child: MyFoodMindApp()));
+void main() {
+  // The doctor report embeds Noto Sans; OFL asks for its licence to ship along.
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(['Noto Sans'], await rootBundle.loadString('assets/fonts/OFL.txt'));
+  });
+  runApp(const ProviderScope(child: MyFoodMindApp()));
+}
 
 class MyFoodMindApp extends StatelessWidget {
   const MyFoodMindApp({super.key});

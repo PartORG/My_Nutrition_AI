@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../data/conditions.dart';
 import '../data/goals.dart';
 import '../data/migrate.dart';
 
@@ -37,10 +38,13 @@ Database openVectorsDb(String path) {
 /// The four memories: working (the live conversation, kept by the agent),
 /// semantic (memory_facts), episodic (vectors.db) and habits (SQL over logs).
 class Memory {
-  Memory(this.user, this.vectors, this.embed, {DateTime Function()? clock, this.minScore = 0.55})
+  Memory(this.user, this.vectors, this.embed, {this.nutri, DateTime Function()? clock, this.minScore = 0.55})
       : _now = clock ?? DateTime.now;
 
   final Database user, vectors;
+
+  /// For the profile's condition limits and foods to avoid; null in tests that don't need them.
+  final Database? nutri;
   final Embed embed;
   final DateTime Function() _now;
 
@@ -163,6 +167,7 @@ class Memory {
           '(${today['n']} items).',
       _goalsLine(now, today),
       'Allergies: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
+      ?_conditionsLine(),
       if (facts.isNotEmpty) 'About the user: ${facts.join('; ')}.',
       ?_habits(now),
       if (recalls.isNotEmpty)
@@ -172,7 +177,7 @@ class Memory {
   }
 
   String _goalsLine(DateTime now, Row today) {
-    final t = currentTargets(user, now: now).values;
+    final t = currentTargets(user, nutri: nutri, now: now).values;
     if (t.isEmpty) return 'Daily goals: not set (the user can set them in the Me tab).';
     // Any subset can be set (under 18: only the manual ones), so nothing is assumed.
     const shown = {'kcal': ('kcal', '', 'kcal'), 'protein_g': ('p', ' g', 'protein'),
@@ -183,6 +188,18 @@ class Memory {
         if (t[e.key] != null) '${(t[e.key]! - (today[e.value.$1] as num)).round()}${e.value.$2} ${e.value.$3}'
     ];
     return 'Daily goals: ${goals.join(', ')}. Left today: ${left.join(', ')}.';
+  }
+
+  /// Facts only; recipes with avoided foods are already filtered out by the tools.
+  String? _conditionsLine() {
+    final conditions = myConditions(user);
+    if (conditions.isEmpty) return null;
+    final avoid = nutri == null ? <int, String>{} : avoidedFoods(nutri!, user);
+    final foods = avoid.isEmpty
+        ? const <String>[]
+        : [for (final r in nutri!.select('SELECT name FROM foods WHERE id IN (${avoid.keys.join(',')}) ORDER BY name')) r['name']];
+    return 'Conditions: ${conditions.map((c) => c.name.replaceAll('_', ' ')).join(', ')} '
+        '(limits are included in the daily goals${foods.isEmpty ? '' : '; foods to avoid: ${foods.join(', ')}'}).';
   }
 
   String? _habits(DateTime now) {

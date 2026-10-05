@@ -72,7 +72,8 @@ class _DayView extends StatelessWidget {
       builder: (context, _, _) {
         final l = AppLocalizations.of(context)!;
         final now = DateTime.now();
-        final targets = currentTargets(data.user, now: now).values;
+        final t = currentTargets(data.user, nutri: data.nutri, now: now);
+        final targets = t.values;
         final eaten = totalsOn(data.user, now);
         final meals = mealsOn(data.user, now);
         return ListView(padding: const EdgeInsets.all(16), children: [
@@ -86,7 +87,8 @@ class _DayView extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
                   for (final key in ['protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
-                    if (targets[key] != null) NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!),
+                    if (targets[key] != null)
+                      NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!, limited: t.limited.containsKey(key)),
                 ]),
               ),
             ),
@@ -208,14 +210,17 @@ class _CaloriesCard extends StatelessWidget {
 }
 
 class NutrientBar extends StatelessWidget {
-  const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal});
+  const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal, this.limited = false});
   final String nutrient;
   final double eaten, goal;
+
+  /// A condition caps this nutrient, so its goal is a ceiling too.
+  final bool limited;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final limit = limitNutrients.contains(nutrient);
+    final limit = limited || limitNutrients.contains(nutrient);
     final over = limit && eaten > goal;
     final color = nutrientColors[nutrient]!;
     final name = nutrientLabels(l)[nutrient]!.$1;

@@ -1,6 +1,8 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import '../data/conditions.dart';
 import '../data/goals.dart';
+import '../data/journal.dart';
 
 /// Nutrient columns shared by foods, dishes, products, meal_log and the
 /// recipe_nutrition view.
@@ -21,14 +23,21 @@ class RecipeListCard extends AgentCard {
 
 class RecipeCard extends AgentCard {
   RecipeCard({required this.id, required this.title, required this.instructions, required this.minutes,
-      required this.servings, required this.ingredients, required this.perServing});
+      required this.servings, required this.ingredients, required this.perServing, this.cautions = const []});
   final int id;
   final String title, instructions;
   final int? minutes;
   final int servings;
   final List<({String name, double grams})> ingredients;
   final Nutrients perServing;
+
+  /// Ingredients that hit the profile's allergies or conditions. Search never
+  /// suggests such a recipe; this shows when the user opens it by name.
+  final List<Caution> cautions;
 }
+
+/// [food] is on the profile's list because of [allergen] or [condition].
+typedef Caution = ({String food, String? allergen, String? condition});
 
 class NutritionCard extends AgentCard {
   NutritionCard({required this.title, required this.values, this.estimated = false, this.goals = const {}});
@@ -138,22 +147,40 @@ class AgentTools {
         for (final (i, r) in list.indexed)
           '${i + 1}. ${r.title} (${r.kcal.round()} kcal per serving${r.minutes == null ? '' : ', ${r.minutes} min'})'
       ],
-      if (blocked.isNotEmpty) 'note': 'recipes with the user\'s allergens were excluded',
+      if (blocked.isNotEmpty) 'note': 'recipes with the user\'s allergens or foods to avoid for their conditions were excluded',
     }, RecipeListCard(list));
   }
 
-  /// Recipes containing any allergen the profile has.
+  /// Recipes containing any allergen the profile has, or any food its
+  /// conditions say to avoid. Kept even after a downgrade from Medium.
   Set<int> _blockedRecipes() {
     final mine = [for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen']];
-    if (mine.isEmpty) return {};
+    final avoid = avoidedFoods(nutri, user).keys;
+    if (mine.isEmpty && avoid.isEmpty) return {};
     return {
       for (final r in nutri.select(
           'SELECT DISTINCT ri.recipe_id FROM recipe_ingredients ri '
-          'JOIN allergens a ON a.food_id = ri.food_id '
-          'WHERE a.allergen IN (${List.filled(mine.length, '?').join(',')})',
+          'LEFT JOIN allergens a ON a.food_id = ri.food_id '
+          'WHERE a.allergen IN (${List.filled(mine.length, '?').join(',')}) OR ri.food_id IN (${avoid.join(',')})',
           mine))
         r['recipe_id'] as int
     };
+  }
+
+  /// Ingredients of [recipeId] on the profile's allergy or condition lists, one per food.
+  List<Caution> _cautions(int recipeId) {
+    final avoid = avoidedFoods(nutri, user);
+    final mine = {for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen'] as String};
+    final byFood = <int, Caution>{};
+    for (final r in nutri.select(
+        'SELECT f.id, f.name, a.allergen FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id '
+        'LEFT JOIN allergens a ON a.food_id = f.id WHERE ri.recipe_id = ? ORDER BY f.name', [recipeId])) {
+      final id = r['id'] as int;
+      final allergen = mine.contains(r['allergen']) ? r['allergen'] as String : null;
+      if (allergen == null && !avoid.containsKey(id)) continue;
+      byFood[id] = (food: r['name'] as String, allergen: allergen ?? byFood[id]?.allergen, condition: avoid[id]);
+    }
+    return byFood.values.toList();
   }
 
   RecipeSummary _summary(int id) {
@@ -203,6 +230,7 @@ class AgentTools {
       servings: r['servings'] as int,
       ingredients: ingredients,
       perServing: perServing,
+      cautions: _cautions(id),
     );
     return ToolResult({
       'title': card.title,
@@ -211,6 +239,9 @@ class AgentTools {
       'kcal_per_serving': perServing['kcal']!.round(),
       'ingredients': [for (final i in ingredients) '${i.grams.round()} g ${i.name}'],
       'note': 'the full recipe is shown in a card with an "I ate this" button that logs one serving',
+      if (card.cautions.isNotEmpty)
+        'caution': 'contains ${card.cautions.map((c) => c.food).toSet().join(', ')}, which the user\'s '
+            'allergies or conditions list; the card shows this. Mention it and offer other recipes',
     }, card);
   }
 
@@ -267,7 +298,7 @@ class AgentTools {
         'SELECT COUNT(*) AS meals, ${[for (final n in nutrients) 'TOTAL($n) AS $n'].join(', ')} '
         'FROM meal_log WHERE eaten_at >= ?', [from.millisecondsSinceEpoch]).single;
     final totals = _nutrientsOf(r);
-    final daily = currentTargets(user, now: now).values;
+    final daily = currentTargets(user, nutri: nutri, now: now).values;
     final goals = daily.map((k, v) => MapEntry(k, week ? v * 7 : v));
     return ToolResult({
       'period': week ? 'last 7 days' : 'today',
@@ -448,8 +479,7 @@ class AgentTools {
     return ToolResult({'status': _pendingNote, 'symptom': symptom, 'severity': s}, ConfirmCard(
       title: 'Log symptom',
       lines: [s == null ? symptom : '$symptom · severity $s/5'],
-      apply: (_) => user.execute('INSERT INTO symptoms (logged_at, symptom, severity) VALUES (?, ?, ?)',
-          [_ms(), symptom.toLowerCase(), s]),
+      apply: (_) => logSymptom(user, symptom, s, at: _now()),
     ));
   }
 
@@ -469,14 +499,11 @@ class AgentTools {
     };
     if (reading == null) return ToolResult.error('could not read a $kind value from "$value"; ask the user');
     // Exact, as the user said it: 72.5 kg must not become 73.
-    String exact(double v) => v == v.roundToDouble() ? '${v.toInt()}' : '$v';
-    final text = '${exact(reading.v)}${reading.v2 == null ? '' : '/${exact(reading.v2!)}'} ${reading.unit}';
+    final text = '${exactNumber(reading.v)}${reading.v2 == null ? '' : '/${exactNumber(reading.v2!)}'} ${reading.unit}';
     return ToolResult({'status': _pendingNote, 'kind': kind, 'value': text}, ConfirmCard(
       title: 'Log ${kind.replaceAll('_', ' ')}',
       lines: [text],
-      apply: (_) => user.execute(
-          'INSERT INTO readings (logged_at, kind, value, value2, unit) VALUES (?, ?, ?, ?, ?)',
-          [_ms(), kind, reading.v, reading.v2, reading.unit]),
+      apply: (_) => logReading(user, kind, reading.v, reading.unit, value2: reading.v2, at: _now()),
     ));
   }
 

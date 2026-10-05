@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../agent/agent_tools.dart';
+import '../data/conditions.dart';
 import '../l10n/app_localizations.dart';
 import 'theme.dart';
 
@@ -56,3 +57,13 @@ class NutrientTiles extends StatelessWidget {
     ]);
   }
 }
+
+/// Display name of a nutri.db condition ('diabetes_t2' → "Type 2 diabetes").
+String conditionLabel(String name, AppLocalizations l) => switch (name) {
+      'diabetes_t2' => l.condDiabetesT2,
+      'hypertension' => l.condHypertension,
+      'gout' => l.condGout,
+      'als' => l.condAls,
+      'ms' => l.condMs,
+      _ => conditionFallbackName(name),
+    };

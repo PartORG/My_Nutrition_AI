@@ -10,12 +10,16 @@ import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
 import 'package:myfoodmind/agent/memory.dart';
 import 'package:myfoodmind/app_state.dart';
+import 'package:myfoodmind/billing/billing.dart';
+import 'package:myfoodmind/data/conditions.dart';
+import 'package:myfoodmind/data/journal.dart';
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/chat_screen.dart';
+import 'package:myfoodmind/ui/health_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -95,6 +99,65 @@ void main() {
     await tester.tap(find.text('Me'));
     await tester.pumpAndSettle();
     await scrollAll(tester, 'Me');
+  });
+
+  testWidgets('Health, journal entry, timeline and report sheet at 200 % text (Medium)', (tester) async {
+    smallPhone(tester);
+    final settings = migrated(sqlite3.openInMemory(), profilesDbMigrations);
+    addTearDown(settings.close);
+    final billing = DevBilling(settings)..setTier(Tier.medium);
+    final now = DateTime.now();
+    for (final c in allConditions(data.nutri).take(2)) {
+      setCondition(data.user, c, true, now: now);
+    }
+    logReading(data.user, 'glucose', 112, 'mg/dL', at: now.subtract(const Duration(days: 3)));
+    logReading(data.user, 'glucose', 6.1, 'mmol/L', at: now.subtract(const Duration(days: 1)));
+    logReading(data.user, 'blood_pressure', 131, 'mmHg', value2: 84, at: now.subtract(const Duration(days: 2)));
+    logReading(data.user, 'blood_pressure', 125, 'mmHg', value2: 80, at: now.subtract(const Duration(hours: 2)));
+    logSymptom(data.user, 'tingling in both feet after the evening walk', 3, at: now.subtract(const Duration(hours: 5)));
+    await tester.pumpWidget(app(const HealthScreen(), overrides: [
+      billingProvider.overrideWith((ref) async => billing),
+    ]));
+    await tester.pumpAndSettle();
+    expect(find.text('Conditions'), findsOneWidget);
+    await scrollAll(tester, 'Health');
+    Future<void> tapText(String text, double delta) async {
+      await tester.scrollUntilVisible(find.text(text), delta, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text(text));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(text));
+      await tester.pumpAndSettle();
+    }
+
+    await tapText('Symptom', -200);
+    await tester.enterText(find.byType(TextField), 'Headache');
+    await tester.tap(find.text('4'));
+    await tester.pump();
+    expect(tester.takeException(), isNull, reason: 'symptom dialog');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(symptomsBetween(data.user, now.subtract(const Duration(days: 1)), DateTime.now()).last,
+        isA<Symptom>().having((s) => s.symptom, 'symptom', 'headache').having((s) => s.severity, 'severity', 4));
+
+    await tapText('Report for your doctor', 200);
+    expect(tester.takeException(), isNull, reason: 'report sheet');
+    tester.state<NavigatorState>(find.byType(Navigator)).pop(); // close the sheet (it fills the screen at 200 %)
+    await tester.pumpAndSettle();
+
+    await tapText('Timeline', 200);
+    // One unit per chart: the latest reading's.
+    await tester.scrollUntilVisible(find.text('Blood glucose (mmol/L)'), 200, scrollable: find.byType(Scrollable).first);
+    await scrollAll(tester, 'Timeline');
+  });
+
+  testWidgets('Health shows the plans below Medium', (tester) async {
+    smallPhone(tester);
+    setCondition(data.user, allConditions(data.nutri).first, true, now: DateTime.now());
+    await tester.pumpWidget(app(const HealthScreen())); // no store: Free
+    await tester.pumpAndSettle();
+    expect(find.text('Health tracking is part of Medium'), findsOneWidget);
+    expect(find.textContaining('still filter recipes'), findsOneWidget);
+    await scrollAll(tester, 'Health locked');
   });
 
   testWidgets('chat cards at 200 % text; bubbles read as whole sentences', (tester) async {

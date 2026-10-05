@@ -88,6 +88,14 @@ const userDbMigrations = <String>[
     minute  INTEGER NOT NULL CHECK (minute BETWEEN 0 AND 59)
   );
   ''',
+  // v4 (M5): the profile's conditions (nutri.db conditions.id; name kept like saved_recipes.title).
+  '''
+  CREATE TABLE user_conditions (
+    condition_id INTEGER PRIMARY KEY,
+    name         TEXT NOT NULL,
+    added_at     INTEGER NOT NULL
+  );
+  ''',
 ];
 
 Database openUserDb(String path) {

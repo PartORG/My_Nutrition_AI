@@ -716,4 +716,182 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plansUnavailable => 'Plans aren\'t available in this build.';
+
+  @override
+  String cautionAllergy(String food, String allergen) {
+    return 'Contains $food, on your allergy list ($allergen)';
+  }
+
+  @override
+  String cautionCondition(String food, String condition) {
+    return 'Contains $food, a food to avoid with $condition';
+  }
+
+  @override
+  String get condDiabetesT2 => 'Type 2 diabetes';
+
+  @override
+  String get condHypertension => 'High blood pressure';
+
+  @override
+  String get condGout => 'Gout';
+
+  @override
+  String get condAls => 'ALS';
+
+  @override
+  String get condMs => 'Multiple sclerosis';
+
+  @override
+  String get healthTitle => 'Health';
+
+  @override
+  String get healthMeHint =>
+      'Conditions, journal, timeline, report for your doctor';
+
+  @override
+  String get conditionsTitle => 'Conditions';
+
+  @override
+  String get conditionsHint =>
+      'Recipe suggestions skip foods to avoid, and limits lower your daily targets. These are general suggestions, not medical advice: talk to your doctor before changing your diet.';
+
+  @override
+  String limitLine(String nutrient, String amount, String condition) {
+    return '$nutrient: at most $amount a day ($condition)';
+  }
+
+  @override
+  String avoidLine(String foods) {
+    return 'Foods to avoid: $foods';
+  }
+
+  @override
+  String limitFrom(String condition) {
+    return 'limit for $condition';
+  }
+
+  @override
+  String get timelineTitle => 'Timeline';
+
+  @override
+  String get timelineHint => 'Nutrients, readings and symptoms by date';
+
+  @override
+  String get timelineEmpty => 'Nothing recorded in this period.';
+
+  @override
+  String get reportButton => 'Report for your doctor';
+
+  @override
+  String get reportHint => 'PDF and CSV of what you logged';
+
+  @override
+  String get journalTitle => 'Journal';
+
+  @override
+  String get journalHint => 'Last 14 days';
+
+  @override
+  String get journalEmpty => 'Nothing recorded in the last 14 days.';
+
+  @override
+  String get symptom => 'Symptom';
+
+  @override
+  String get symptomHint => 'What do you feel? e.g. fatigue';
+
+  @override
+  String get severity => 'Severity (optional)';
+
+  @override
+  String get severityHint => '1 = mild, 5 = severe';
+
+  @override
+  String get glucose => 'Blood glucose';
+
+  @override
+  String get bloodPressure => 'Blood pressure';
+
+  @override
+  String get systolic => 'Systolic (upper)';
+
+  @override
+  String get diastolic => 'Diastolic (lower)';
+
+  @override
+  String get deleteEntryTitle => 'Delete this entry?';
+
+  @override
+  String get healthLockedTitle => 'Health tracking is part of Medium';
+
+  @override
+  String get healthLockedBody =>
+      'Medium adds conditions (recipe filtering and daily limits), a symptom and reading journal, timeline charts and a report to share with your doctor.';
+
+  @override
+  String conditionsStillApply(String conditions) {
+    return 'Your conditions still filter recipes and limit your targets: $conditions';
+  }
+
+  @override
+  String days(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get perDay => 'per day';
+
+  @override
+  String get symptomsTitle => 'Symptoms';
+
+  @override
+  String get readingsTitle => 'Readings';
+
+  @override
+  String get reportSheetHint =>
+      'A PDF to read and a CSV for spreadsheets, with everything you logged. You choose where to send them; the app shares nothing by itself.';
+
+  @override
+  String get reportShare => 'Create and share';
+
+  @override
+  String get reportSubject => 'MyFoodMind report';
+
+  @override
+  String get reportFailed => 'Couldn\'t create the report.';
+
+  @override
+  String reportTitle(String name) {
+    return 'MyFoodMind report: $name';
+  }
+
+  @override
+  String reportCreated(String date) {
+    return 'created $date';
+  }
+
+  @override
+  String get reportDisclaimer =>
+      'Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.';
+
+  @override
+  String get reportNone => 'None recorded.';
+
+  @override
+  String reportDailyNutrition(int days) {
+    return 'Daily nutrition ($days days with logs)';
+  }
+
+  @override
+  String get reportDate => 'Date';
+
+  @override
+  String get reportItems => 'Items';
+
+  @override
+  String get reportMeasurement => 'Measurement';
+
+  @override
+  String get reportValue => 'Value';
 }

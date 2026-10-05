@@ -94,6 +94,7 @@ going over Auto Backup's 25 MB quota silently stops all backup.
 `recipe_ingredients(recipe_id, food_id, grams)` · `dishes(id, name, serving_g, recipe_id NULL, + per-100 g nutrition)` ·
 `products(barcode, name, + per-100 g nutrition)` · `allergens(food_id, allergen)` ·
 `conditions(id, name)` · `condition_rules(condition_id, nutrient, max_per_day, note)` ·
+`condition_avoid(condition_id, food_id, note)` (M5: foods to avoid, filtered like allergens) ·
 `docs(id, source, text, embedding BLOB float32[768])` + FTS5 tables.
 
 Rules: recipe nutrition is computed, never stored · additive changes need no version bump ·
@@ -108,7 +109,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | M2 | Agent, tools, 4-type memory, chat limit, confirmation cards, report button | Eval runs as on-device `integration_test`; unit tests use a fake model ✅ (54 host tests; 105-query re-run with the new prompt skipped by user decision) |
 | M3 | Onboarding/goals, logging, dashboard, reminders, accessibility | Goal formula test with reference values ✅ (77 host tests) |
 | M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore ⏳ code done + dev tier switch (88 host tests); sandbox test waits for the accounts: `docs/BILLING_SETUP.md` |
-| M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition |
+| M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition ✅ (97 host tests) |
 | M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products |
 | M7 | Asset Delivery, privacy policy + ToS + Gemma terms, Data safety, trademark check (EUIPO/USPTO class 9/44) | Internal-testing build installs and runs |
 
@@ -205,3 +206,31 @@ Decisions from these numbers:
   days, streak, weight trend) from Basic; logging weight is free.
 - Paywall: price and renewal terms next to every button, Pro "7 days free, then …", restore.
 - Not verified: real purchases (no accounts yet). Setup checklist: `docs/BILLING_SETUP.md`.
+
+## M5 results (2026-10-05)
+
+Decisions (user, 2026-10-05):
+- Forbidden ingredients: additive contract table `condition_avoid(condition_id, food_id, note)`, no
+  schema_version bump; the app tolerates an older nutri.db without it.
+- **Downgrade keeps filtering:** conditions already set keep hiding recipes and capping targets below
+  Medium (safety never switches off silently). Editing conditions, the journal screen, timeline and
+  report are Medium.
+- Doctor report: **PDF + CSV through the Android share sheet** (`pdf`, `share_plus`); the app sends
+  nothing itself. PDF embeds Noto Sans (OFL, `assets/fonts/`) so any script prints.
+- Chat `log_symptom` / `log_reading` stay free; only the Health screen is Medium.
+
+Built:
+- user.db v4 `user_conditions`. `currentTargets` caps every target (manual ones too) at the lowest
+  condition `max_per_day`; capped nutrients show "limit for …" and turn into ceilings on the bars.
+- Recipe search drops recipes with allergens **or** avoided foods; a recipe opened by name lists the
+  offending ingredients on the card and tells the model. The AI context names conditions and foods to avoid.
+- Me → Health: condition chips with their limits, journal (symptom 1–5, glucose mg/dL or mmol/L,
+  blood pressure; last 14 days, delete), timeline (30/90 days: limited nutrients per day, glucose in
+  the latest unit, BP, weight, symptoms on one date axis), report (30/90/365 days).
+- CSV: one row per meal/reading/symptom; typed text can't run as a spreadsheet formula.
+- Gate test: `test/health_test.dart` searches every recipe title, tag and food under each condition and
+  fails if any suggestion contains an avoided food (checked: it fails with the filter removed).
+
+Not yet: monthly doctor-export reminder (reminders.slot CHECK needs a new table), texture rules for
+ALS (recipes.texture exists, no rule links it), avoided foods aren't flagged in the Log tab search,
+real condition data. Not verified on the phone: share sheet, PDF rendering on device.

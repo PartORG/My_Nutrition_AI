@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:sqlite3/sqlite3.dart';
 
+import 'conditions.dart';
+
 /// Daily targets per nutrient (same keys as nutri.db columns).
 typedef Targets = Map<String, double>;
 
@@ -116,13 +118,27 @@ void setOverride(Database user, String nutrient, double? value) => value == null
     ? user.execute('DELETE FROM goal_overrides WHERE nutrient = ?', [nutrient])
     : user.execute('INSERT OR REPLACE INTO goal_overrides (nutrient, value) VALUES (?, ?)', [nutrient, value]);
 
-/// What the app uses: computed targets with the user's overrides on top.
-/// Empty when nothing is set (or under 18 with no manual targets).
-({Targets values, Set<String> custom}) currentTargets(Database user, {required DateTime now}) {
+/// What the app uses: computed targets with the user's overrides on top, then
+/// capped by the profile's condition limits (rules only tighten, even a manual
+/// target). [limited] maps a capped nutrient to the condition that capped it.
+/// Empty when nothing is set (or under 18 with no manual targets or conditions).
+/// [nutri] null = conditions unknown (tests without nutri.db).
+({Targets values, Set<String> custom, Map<String, String> limited}) currentTargets(Database user,
+    {required Database? nutri, required DateTime now}) {
   final body = loadBody(user);
   final computed = body == null ? null : computeTargets(body, now: now);
   final overrides = loadOverrides(user);
-  return (values: {...?computed, ...overrides}, custom: overrides.keys.toSet());
+  final values = {...?computed, ...overrides};
+  final limited = <String, String>{};
+  if (nutri != null) {
+    for (final MapEntry(key: k, value: l) in conditionLimits(nutri, user).entries) {
+      if (values[k] == null || l.max < values[k]!) {
+        values[k] = l.max;
+        limited[k] = l.condition;
+      }
+    }
+  }
+  return (values: values, custom: overrides.keys.toSet(), limited: limited);
 }
 
 // ---- units ------------------------------------------------------------------

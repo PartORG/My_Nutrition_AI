@@ -6,6 +6,7 @@ import '../app_state.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'nutrients.dart';
 import 'theme.dart';
 import 'today_screen.dart';
 
@@ -25,22 +26,24 @@ class PeriodView extends StatelessWidget {
         final now = DateTime.now();
         final series = dailyTotals(data.user, now, days);
         final logged = series.where((d) => d.entries > 0).toList();
-        final targets = currentTargets(data.user, now: now).values;
+        final t = currentTargets(data.user, nutri: data.nutri, now: now);
+        final targets = t.values;
         // Averages over days that have logs: unlogged days aren't "0 kcal eaten".
         double avg(String k) => logged.isEmpty ? 0 : logged.fold(0.0, (s, d) => s + d.totals[k]!) / logged.length;
         final streak = loggingStreak(data.user, now);
         final body = loadBody(data.user);
         return ListView(padding: const EdgeInsets.all(16), children: [
-          _Section(
+          ChartSection(
             title: l.caloriesPerDay,
-            child: SizedBox(height: 200, child: _CaloriesChart(series: series, goal: targets['kcal'])),
+            child: SizedBox(height: 200, child: DailyBarChart(series: series, nutrient: 'kcal', goal: targets['kcal'])),
           ),
           if (logged.isNotEmpty)
-            _Section(
+            ChartSection(
               title: l.dailyAverage(logged.length),
               child: Column(children: [
                 for (final k in ['kcal', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
-                  if (targets[k] != null) NutrientBar(nutrient: k, eaten: avg(k), goal: targets[k]!),
+                  if (targets[k] != null)
+                    NutrientBar(nutrient: k, eaten: avg(k), goal: targets[k]!, limited: t.limited.containsKey(k)),
               ]),
             ),
           Card(
@@ -49,11 +52,12 @@ class PeriodView extends StatelessWidget {
               title: Text(l.streakDays(streak), style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
-          _Section(
+          ChartSection(
             title: l.weightTrend,
-            child: _WeightChart(
-              points: weightsSince(data.user, now.subtract(Duration(days: days < 30 ? 90 : 365))),
+            child: weightChart(
+              weightsSince(data.user, now.subtract(Duration(days: days < 30 ? 90 : 365))),
               imperial: body?.imperial ?? false,
+              l: l,
             ),
           ),
         ]);
@@ -62,8 +66,8 @@ class PeriodView extends StatelessWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+class ChartSection extends StatelessWidget {
+  const ChartSection({super.key, required this.title, required this.child});
   final String title;
   final Widget child;
 
@@ -80,19 +84,21 @@ class _Section extends StatelessWidget {
       );
 }
 
-/// One series, so no legend box; the section title names it. Thin bars with
-/// rounded tops, a dashed goal line with its label, a tooltip per bar.
-class _CaloriesChart extends StatelessWidget {
-  const _CaloriesChart({required this.series, required this.goal});
+/// One nutrient per day, so no legend box; the section title names it. Thin
+/// bars with rounded tops, a dashed goal line with its label, a tooltip per bar.
+class DailyBarChart extends StatelessWidget {
+  const DailyBarChart({super.key, required this.series, required this.nutrient, required this.goal});
   final List<DayTotals> series;
+  final String nutrient;
   final double? goal;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final color = nutrientColors['kcal']!;
+    final color = nutrientColors[nutrient]!;
     final month = series.length > 7;
-    final maxY = [goal ?? 0, ...series.map((d) => d.totals['kcal']!)].reduce((a, b) => a > b ? a : b) * 1.15;
+    final quarter = series.length > 31;
+    final maxY = [goal ?? 0, ...series.map((d) => d.totals[nutrient]!)].reduce((a, b) => a > b ? a : b) * 1.15;
     const muted = TextStyle(color: AppColors.textSecondary, fontSize: 11);
     return BarChart(BarChartData(
       maxY: maxY <= 0 ? 100 : maxY,
@@ -101,9 +107,9 @@ class _CaloriesChart extends StatelessWidget {
         for (final (i, d) in series.indexed)
           BarChartGroupData(x: i, barRods: [
             BarChartRodData(
-              toY: d.totals['kcal']!,
+              toY: d.totals[nutrient]!,
               color: color,
-              width: month ? 6 : 18,
+              width: quarter ? 2 : month ? 6 : 18,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             ),
           ]),
@@ -119,7 +125,7 @@ class _CaloriesChart extends StatelessWidget {
               show: true,
               alignment: Alignment.topRight,
               style: muted,
-              labelResolver: (_) => l.goalLine(goal!.round()),
+              labelResolver: (_) => nutrient == 'kcal' ? l.goalLine(goal!.round()) : formatNutrient(nutrient, goal!, l),
             ),
           ),
       ]),
@@ -146,8 +152,8 @@ class _CaloriesChart extends StatelessWidget {
               final i = v.toInt();
               if (i < 0 || i >= series.length) return const SizedBox.shrink();
               final day = series[i].day;
-              // Week: weekday letters; month: every 5th day number.
-              if (month && (series.length - 1 - i) % 5 != 0) return const SizedBox.shrink();
+              // Week: weekday letters; month: every 5th day number; 90 days: every 15th.
+              if (month && (series.length - 1 - i) % (quarter ? 15 : 5) != 0) return const SizedBox.shrink();
               return Text(month ? '${day.day}' : DateFormat.E().format(day).substring(0, 2), style: muted);
             },
           ),
@@ -157,7 +163,7 @@ class _CaloriesChart extends StatelessWidget {
         touchTooltipData: BarTouchTooltipData(
           getTooltipColor: (_) => AppColors.textPrimary,
           getTooltipItem: (group, _, rod, _) => BarTooltipItem(
-            '${DateFormat('EEE d MMM').format(series[group.x].day)}\n${rod.toY.round()} ${l.kcal}',
+            '${DateFormat('EEE d MMM').format(series[group.x].day)}\n${formatNutrient(nutrient, rod.toY, l)}',
             const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),
@@ -166,41 +172,58 @@ class _CaloriesChart extends StatelessWidget {
   }
 }
 
-class _WeightChart extends StatelessWidget {
-  const _WeightChart({required this.points, required this.imperial});
-  final List<({DateTime at, double kg})> points;
-  final bool imperial;
+Widget weightChart(List<({DateTime at, double kg})> points, {required bool imperial, required AppLocalizations l}) =>
+    TrendChart(
+      lines: [
+        [for (final p in points) (at: p.at, y: imperial ? kgToLb(p.kg) : p.kg)]
+      ],
+      unit: imperial ? 'lb' : 'kg',
+      empty: l.weightTrendEmpty,
+    );
+
+typedef TrendPoint = ({DateTime at, double y});
+
+/// Values over time, one line per series. With [from]/[days] every chart
+/// spans the same dates, so charts stacked on the timeline line up.
+class TrendChart extends StatelessWidget {
+  const TrendChart({super.key, required this.lines, required this.unit, required this.empty,
+      this.colors = const [AppColors.primary, Color(0xFFEB6834)], this.from, this.days});
+  final List<List<TrendPoint>> lines;
+  final List<Color> colors;
+  final String unit, empty;
+  final DateTime? from;
+  final int? days;
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    if (points.length < 2) {
-      return Text(l.weightTrendEmpty, style: const TextStyle(color: AppColors.textSecondary));
+    final all = lines.expand((l) => l).toList();
+    if (all.length < 2) {
+      return Text(empty, style: const TextStyle(color: AppColors.textSecondary));
     }
-    double shown(double kg) => imperial ? kgToLb(kg) : kg;
-    final unit = imperial ? 'lb' : 'kg';
-    final t0 = points.first.at;
-    final spots = [
-      for (final p in points) FlSpot(p.at.difference(t0).inHours / 24, shown(p.kg)),
-    ];
-    final ys = spots.map((s) => s.y);
+    final t0 = from ?? all.map((p) => p.at).reduce((a, b) => a.isBefore(b) ? a : b);
+    double x(DateTime at) => at.difference(t0).inMinutes / (24 * 60);
+    final ys = all.map((p) => p.y);
     final (lo, hi) = (ys.reduce((a, b) => a < b ? a : b), ys.reduce((a, b) => a > b ? a : b));
+    final pad = ((hi - lo) * .1).clamp(2, double.infinity);
     const muted = TextStyle(color: AppColors.textSecondary, fontSize: 11);
     return SizedBox(
       height: 180,
       child: LineChart(LineChartData(
-        minY: (lo - 2).floorToDouble(),
-        maxY: (hi + 2).ceilToDouble(),
+        minX: from == null ? null : 0,
+        maxX: days?.toDouble(),
+        minY: (lo - pad).floorToDouble(),
+        maxY: (hi + pad).ceilToDouble(),
         lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            color: AppColors.primary,
-            barWidth: 2,
-            dotData: FlDotData(
-              getDotPainter: (_, _, _, _) =>
-                  FlDotCirclePainter(radius: 4, color: AppColors.primary, strokeWidth: 2, strokeColor: Colors.white),
+          for (final (i, line) in lines.indexed)
+            LineChartBarData(
+              spots: [for (final p in line) FlSpot(x(p.at), p.y)],
+              color: colors[i % colors.length],
+              barWidth: 2,
+              dotData: FlDotData(
+                getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                    radius: 4, color: colors[i % colors.length], strokeWidth: 2, strokeColor: Colors.white),
+              ),
             ),
-          ),
         ],
         gridData: FlGridData(
           drawVerticalLine: false,
@@ -210,7 +233,15 @@ class _WeightChart extends StatelessWidget {
         titlesData: FlTitlesData(
           topTitles: const AxisTitles(),
           rightTitles: const AxisTitles(),
-          bottomTitles: const AxisTitles(),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: from != null && days != null,
+              interval: days == null ? null : (days! / 4).ceilToDouble(),
+              getTitlesWidget: (v, meta) => v == meta.max
+                  ? const SizedBox.shrink()
+                  : Text(DateFormat('d MMM').format(t0.add(Duration(days: v.round()))), style: muted),
+            ),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -226,7 +257,7 @@ class _WeightChart extends StatelessWidget {
             getTooltipItems: (spots) => [
               for (final s in spots)
                 LineTooltipItem(
-                  '${DateFormat('d MMM').format(points[s.spotIndex].at)}\n${s.y.toStringAsFixed(1)} $unit',
+                  '${DateFormat('d MMM').format(lines[s.barIndex][s.spotIndex].at)}\n${s.y.toStringAsFixed(s.y % 1 == 0 ? 0 : 1)} $unit',
                   const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
             ],

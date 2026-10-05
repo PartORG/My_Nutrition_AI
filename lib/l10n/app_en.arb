@@ -418,5 +418,138 @@
   "weightTrendEmpty": "Log your weight at least twice to see the trend.",
   "logWeight": "Log weight",
   "weightLogged": "Weight saved",
-  "plansUnavailable": "Plans aren't available in this build."
+  "plansUnavailable": "Plans aren't available in this build.",
+  "cautionAllergy": "Contains {food}, on your allergy list ({allergen})",
+  "@cautionAllergy": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "allergen": {
+        "type": "String"
+      }
+    }
+  },
+  "cautionCondition": "Contains {food}, a food to avoid with {condition}",
+  "@cautionCondition": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "condDiabetesT2": "Type 2 diabetes",
+  "condHypertension": "High blood pressure",
+  "condGout": "Gout",
+  "condAls": "ALS",
+  "condMs": "Multiple sclerosis",
+  "healthTitle": "Health",
+  "healthMeHint": "Conditions, journal, timeline, report for your doctor",
+  "conditionsTitle": "Conditions",
+  "conditionsHint": "Recipe suggestions skip foods to avoid, and limits lower your daily targets. These are general suggestions, not medical advice: talk to your doctor before changing your diet.",
+  "limitLine": "{nutrient}: at most {amount} a day ({condition})",
+  "@limitLine": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "avoidLine": "Foods to avoid: {foods}",
+  "@avoidLine": {
+    "placeholders": {
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "limitFrom": "limit for {condition}",
+  "@limitFrom": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "timelineTitle": "Timeline",
+  "timelineHint": "Nutrients, readings and symptoms by date",
+  "timelineEmpty": "Nothing recorded in this period.",
+  "reportButton": "Report for your doctor",
+  "reportHint": "PDF and CSV of what you logged",
+  "journalTitle": "Journal",
+  "journalHint": "Last 14 days",
+  "journalEmpty": "Nothing recorded in the last 14 days.",
+  "symptom": "Symptom",
+  "symptomHint": "What do you feel? e.g. fatigue",
+  "severity": "Severity (optional)",
+  "severityHint": "1 = mild, 5 = severe",
+  "glucose": "Blood glucose",
+  "bloodPressure": "Blood pressure",
+  "systolic": "Systolic (upper)",
+  "diastolic": "Diastolic (lower)",
+  "deleteEntryTitle": "Delete this entry?",
+  "healthLockedTitle": "Health tracking is part of Medium",
+  "healthLockedBody": "Medium adds conditions (recipe filtering and daily limits), a symptom and reading journal, timeline charts and a report to share with your doctor.",
+  "conditionsStillApply": "Your conditions still filter recipes and limit your targets: {conditions}",
+  "@conditionsStillApply": {
+    "placeholders": {
+      "conditions": {
+        "type": "String"
+      }
+    }
+  },
+  "days": "{count} days",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "perDay": "per day",
+  "symptomsTitle": "Symptoms",
+  "readingsTitle": "Readings",
+  "reportSheetHint": "A PDF to read and a CSV for spreadsheets, with everything you logged. You choose where to send them; the app shares nothing by itself.",
+  "reportShare": "Create and share",
+  "reportSubject": "MyFoodMind report",
+  "reportFailed": "Couldn't create the report.",
+  "reportTitle": "MyFoodMind report: {name}",
+  "@reportTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCreated": "created {date}",
+  "@reportCreated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDisclaimer": "Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.",
+  "reportNone": "None recorded.",
+  "reportDailyNutrition": "Daily nutrition ({days} days with logs)",
+  "@reportDailyNutrition": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportDate": "Date",
+  "reportItems": "Items",
+  "reportMeasurement": "Measurement",
+  "reportValue": "Value"
 }

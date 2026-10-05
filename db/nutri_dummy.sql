@@ -90,6 +90,12 @@ INSERT INTO condition_rules (condition_id, nutrient, max_per_day, note) VALUES
   (1, 'carbs_g',   200,  'DUMMY rule for development'),
   (2, 'sodium_mg', 1500, 'DUMMY rule for development');
 
+INSERT INTO condition_avoid (condition_id, food_id, note) VALUES
+  (1, 14, 'DUMMY rule for development'),
+  (2, 23, 'DUMMY rule for development'),
+  (2, 7,  'DUMMY rule for development'),
+  (3, 11, 'DUMMY rule for development');
+
 INSERT INTO docs (id, source, text) VALUES
   (1, 'DUMMY', 'DUMMY TEXT. People with type 2 diabetes are often advised to limit added sugar and prefer high-fiber carbohydrates.'),
   (2, 'DUMMY', 'DUMMY TEXT. A lower sodium intake is commonly recommended for people with high blood pressure.'),

@@ -94,6 +94,15 @@ CREATE TABLE condition_rules (
   PRIMARY KEY (condition_id, nutrient)
 );
 
+-- Foods to avoid with a condition. Recipes containing one are never suggested
+-- to a profile with that condition, exactly like allergens.
+CREATE TABLE condition_avoid (
+  condition_id INTEGER NOT NULL REFERENCES conditions (id),
+  food_id      INTEGER NOT NULL REFERENCES foods (id),
+  note         TEXT,
+  PRIMARY KEY (condition_id, food_id)
+);
+
 CREATE TABLE docs (
   id        INTEGER PRIMARY KEY,
   source    TEXT NOT NULL,   -- citation shown to the user

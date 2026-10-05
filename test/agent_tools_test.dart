@@ -44,7 +44,7 @@ void main() {
       final titles = (r.card! as RecipeListCard).recipes.map((e) => e.title);
       expect(titles, isNot(contains('Shakshuka')));
       expect(titles, contains('Overnight oats with banana'));
-      expect(r.forModel['note'], contains('allergens were excluded'));
+      expect(r.forModel['note'], contains('allergens or foods to avoid'));
     });
 
     test('show and save resolve "2", "the first one", titles and "that"', () {

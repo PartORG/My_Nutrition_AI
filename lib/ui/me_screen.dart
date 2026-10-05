@@ -7,6 +7,7 @@ import '../data/goals.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
+import 'health_screen.dart';
 import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -25,7 +26,7 @@ class MeScreen extends ConsumerWidget {
       builder: (context, _, _) {
         final l = AppLocalizations.of(context)!;
         final body = loadBody(data.user);
-        final targets = currentTargets(data.user, now: DateTime.now());
+        final targets = currentTargets(data.user, nutri: data.nutri, now: DateTime.now());
         final adult = body == null || computeTargets(body, now: DateTime.now()) != null;
         void open(Widget screen) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
         return ListView(padding: const EdgeInsets.all(16), children: [
@@ -68,11 +69,22 @@ class MeScreen extends ConsumerWidget {
                       decoration: BoxDecoration(color: nutrientColors[key], shape: BoxShape.circle),
                     ),
                     title: Text(nutrientLabels(l)[key]!.$1),
-                    subtitle: targets.custom.contains(key) ? Text(l.custom) : null,
+                    subtitle: targets.limited[key] != null
+                        ? Text(l.limitFrom(conditionLabel(targets.limited[key]!, l)))
+                        : targets.custom.contains(key) ? Text(l.custom) : null,
                     trailing: Text(targets.values[key] == null ? '—' : formatNutrient(key, targets.values[key]!, l)),
                     onTap: () => _editTarget(context, ref, key, targets.values[key]),
                   ),
             ]),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.monitor_heart_outlined, color: AppColors.primary),
+              title: Text(l.healthTitle),
+              subtitle: Text(l.healthMeHint),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => open(const HealthScreen()),
+            ),
           ),
           _RemindersCard(data: data),
           if (ref.watch(profilesProvider).biometricAllowed && ref.watch(biometricsAvailableProvider).value == true)

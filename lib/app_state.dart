@@ -166,7 +166,7 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
   final vectorsPath = profiles.vectorsDbPath(data.profile.id);
   File(vectorsPath).parent.createSync(recursive: true);
   final vectors = openVectorsDb(vectorsPath);
-  final memory = Memory(data.user, vectors, embedder.generateEmbeddings);
+  final memory = Memory(data.user, vectors, embedder.generateEmbeddings, nutri: data.nutri);
   final agent = Agent(
     model: GemmaChatModel(llm),
     tools: data.tools,
