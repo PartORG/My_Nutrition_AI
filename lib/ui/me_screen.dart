@@ -113,6 +113,16 @@ class MeScreen extends ConsumerWidget {
             ),
           ),
           Card(
+            child: Column(children: [
+              ListTile(
+                leading: const Icon(Icons.info_outline, color: AppColors.primary),
+                title: Text(l.licenses),
+                onTap: () => showLicensePage(context: context, applicationName: l.appTitle),
+              ),
+              legalLinks(context),
+            ]),
+          ),
+          Card(
             child: ListTile(
               leading: const Icon(Icons.lock_outline, color: AppColors.primary),
               title: Text(l.switchProfile),

@@ -121,8 +121,11 @@ void main() {
       await tester.scrollUntilVisible(find.text('7 days free, then €69.99 / year'), 300);
       expect(find.text('7 days free, then €69.99 / year'), findsOneWidget, reason: 'trial terms next to the price');
       await tester.scrollUntilVisible(find.text('Monthly'), -300);
+      await tester.ensureVisible(find.text('Monthly'));
+      await settle(tester);
       await tester.tap(find.text('Monthly'));
       await settle(tester);
+      await tester.scrollUntilVisible(find.text('€3.99 / month'), -300);
       expect(find.text('€3.99 / month'), findsOneWidget);
       await tester.tap(find.text('Subscribe').first); // Basic monthly
       await settle(tester);

@@ -46,7 +46,8 @@ medical notes are rendered as cards from the database, never as model-generated 
 - **Vision (Apache stack, no Ultralytics/AGPL):** `tflite_flutter` + EfficientDet-Lite0 (COCO, bundled asset,
   food classes only) since M6; real food/dish model trained with D-FINE / RT-DETR / YOLOX → TFLite, labels =
   `foods.name`/`dishes.name`, drops in behind the same `Detector` interface (`lib/vision/detector.dart`).
-  Camera via `camera` (photo + live, frames never stored); barcode via `mobile_scanner` (ML Kit, EAN/UPC).
+  Camera via `camera` (photo + live, frames never stored); barcode via `flutter_zxing` (zxing-cpp, EAN/UPC,
+  no network; ML Kit was dropped in M7 because it sends usage diagnostics to Google).
   Everything detected goes through the review screen before use.
 - **Memory (per profile):**
   1. Working — last 6 messages.
@@ -85,8 +86,9 @@ going over Auto Backup's 25 MB quota silently stops all backup.
 
 - Profiles: PIN (4–6 digits, salted hash) + biometric; unlocked until 5 min in background;
   growing lockout after 5 wrong tries; forgot PIN = delete profile; monthly doctor-export reminder.
-- Delivery: dev = dummy `nutri.db` as asset, models via `adb push`; prod = Play Asset Delivery fast-follow
-  (verify the 2.6 GB single-file limit), else first-launch download from Hugging Face (ungated, free).
+- Delivery (decided M7): `nutri.db` bundled as an asset until real data exists; EmbeddingGemma bundled in the
+  app; Gemma 4 downloaded once from Hugging Face on the user's tap (2.2 GB compressed is over Play's 1.5 GB
+  per-asset-pack limit). Dev: models via `adb push` still win.
 
 ### nutri.db data contract (owner: Ievgen builds real DBs to this)
 
@@ -113,7 +115,7 @@ docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licen
 | M4 | RevenueCat, Basic dashboard, weight logging, tier changes, Pro trial | Sandbox buy / upgrade / restore ⏳ code done + dev tier switch (88 host tests); sandbox test waits for the accounts: `docs/BILLING_SETUP.md` |
 | M5 | Medium: conditions, journal, timeline, doctor export | No forbidden ingredient for a given condition ✅ (97 host tests) |
 | M6 | Pro: tflite detector + barcode → review → cook/log | Full flow with dummy detector + products ✅ (105 host tests); real detector on the phone ⏳ `integration_test/detector_test.dart` |
-| M7 | Asset Delivery, privacy policy + ToS + Gemma terms, Data safety, trademark check (EUIPO/USPTO class 9/44) | Internal-testing build installs and runs |
+| M7 | Model delivery, privacy policy + ToS + Gemma terms, Data safety, trademark check (EUIPO/USPTO class 9/44) | Internal-testing build installs and runs ⏳ code + docs done (105 host tests, arm64 `.aab` builds); needs Play Console + upload key: `docs/PLAY_RELEASE.md` |
 
 **v1.1:** Health Connect import · encrypted backup export · iOS · second language · optional photo storage.
 
@@ -248,7 +250,7 @@ Decisions (user, 2026-10-05): EfficientDet-Lite0 COCO via `tflite_flutter` now (
   photo → class 51, 0.76.
 - Camera (`camera`): one screen, Photo ⇄ Live. YUV frames are converted in Dart to an upright 320² image;
   live detects every 500 ms and draws boxes; photo detects on the shutter. **No picture is written to disk.**
-  Barcode: `mobile_scanner` (ML Kit, EAN/UPC only) → nutri.db `products`.
+  Barcode: `mobile_scanner` (ML Kit, EAN/UPC only) → nutri.db `products` (replaced by `flutter_zxing` in M7).
 - Review screen: rename/re-match, grams, remove, add by name, meal type; photo values ≈. "Log this meal"
   (the tap is the confirmation) or "What can I cook?" (recipes into the chat, no model, not counted).
   Entry: chat camera button, `open_camera` card, Log tab camera + barcode buttons. Below Pro → paywall.
@@ -260,3 +262,40 @@ Decisions (user, 2026-10-05): EfficientDet-Lite0 COCO via `tflite_flutter` now (
 Not yet / not verified: detector speed and boxes on the phone, camera permission prompt, barcode on a real
 packet, live-mode smoothness (YUV conversion runs on the UI isolate; move it if it stutters), Gemma 4 vision
 as a replacement detector.
+
+## M7 results (2026-10-05)
+
+Decisions (user, 2026-10-05):
+- **Model delivery:** Play Asset Delivery is out — Gemma 4 compresses to 2.2 GB, over the **1.5 GB per
+  asset pack** limit. Gemma 4 (Apache 2.0, ungated, same SHA-256 as the M0 file) downloads from Hugging Face
+  when the user taps Download in Chat (resumable, flutter_gemma's downloader, progress, cancel).
+  EmbeddingGemma is gated on HF, so it ships inside the app (Gemma terms allow redistribution with the notice).
+- **Publisher:** Ievgen Perederieiev, individual; contact peredereev.ievgen@gmail.com (also the in-app
+  report address, replacing the placeholder).
+- **Signing:** the owner creates the upload key; `android/key.properties` (git-ignored) is read if present,
+  else the debug key. Play App Signing.
+- **Trademark:** pre-check only (`docs/TRADEMARK.md`); the official searches are the owner's.
+- **ML Kit removed:** it sends usage diagnostics (device IDs, app info) to Google, against "no analytics".
+  Barcodes now decode with `flutter_zxing` (zxing-cpp, MIT), on the device.
+
+Built:
+- `llmProvider`: adb-pushed file (dev) → already-downloaded model → else `LlmNotDownloaded`, and the Chat tab
+  shows a download card (size, Wi-Fi, "nothing about you is sent"). Everything else works without the model.
+- Release: `INTERNET` declared; implied `READ_PHONE_STATE` / storage permissions removed (TFLite GPU's and
+  CameraX's old manifests); **arm64 only** — plugin `.so` files for other ABIs are excluded, else Play would
+  offer the app to 32-bit/x86 phones that crash on start. `.aab` 257 MB (≈180 MB of it EmbeddingGemma).
+- Legal: `site/` (landing, privacy policy, terms with the Gemma notice + Prohibited Use Policy, wellness
+  disclaimer) deployed by `.github/workflows/pages.yml`; links in Me and on the paywall; model licences
+  (Apache 2.0 text, Gemma notice) on the in-app licences page.
+- `docs/PLAY_RELEASE.md`: upload key, build, internal-testing checklist, device catalog (RAM ≥ 6 GB),
+  App content answers (Health apps, foreground service `dataSync`), Data safety (only purchase history is
+  collected), store listing draft. Dependency scan: no analytics/telemetry left (RevenueCat diagnostics off).
+
+Open: the real `nutri.db` (≤ 300 MB) can't also be bundled — the base module limit is 500 MB and the app is
+already 257 MB. When the real data exists: an install-time asset pack (≤ 1.5 GB, read via a small native
+bridge) or a download like Gemma 4 (it holds no user data either).
+
+Owner to do: create the GitHub repo + Pages, upload key, Play Console app + internal track (needs the
+developer account), official trademark searches, governing-law country in `site/terms.html` (TODO there),
+legal review of the privacy policy and terms. Not verified on the phone: model download + offline restart,
+zxing barcode scanning, bundled-embedder first load.

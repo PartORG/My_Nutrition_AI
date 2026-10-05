@@ -15,6 +15,9 @@ void main() {
   // The doctor report embeds Noto Sans; OFL asks for its licence to ship along.
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(['Noto Sans'], await rootBundle.loadString('assets/fonts/OFL.txt'));
+    // Apache 2.0 (Gemma 4, EfficientDet) and the Gemma Terms notice EmbeddingGemma requires.
+    yield LicenseEntryWithLineBreaks(
+        ['Gemma 4 E2B', 'EmbeddingGemma', 'EfficientDet-Lite0'], await rootBundle.loadString('assets/licenses/models.txt'));
   });
   runApp(const ProviderScope(child: MyFoodMindApp()));
 }

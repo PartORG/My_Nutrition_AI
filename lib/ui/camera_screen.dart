@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
@@ -217,7 +217,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   }
 }
 
-/// EAN/UPC only: what packaged food carries.
+/// EAN/UPC only: what packaged food carries. zxing-cpp decodes on the phone
+/// with no network (ML Kit would send usage diagnostics to Google).
 class BarcodeScreen extends StatefulWidget {
   const BarcodeScreen({super.key});
 
@@ -226,29 +227,22 @@ class BarcodeScreen extends StatefulWidget {
 }
 
 class _BarcodeScreenState extends State<BarcodeScreen> {
-  final _scanner = MobileScannerController(
-      formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE]);
   var _done = false;
-
-  @override
-  void dispose() {
-    _scanner.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(l.barcodeTitle)),
-      body: MobileScanner(
-        controller: _scanner,
-        errorBuilder: (_, _) => Center(child: Text(l.cameraUnavailable)),
-        onDetect: (capture) {
-          final code = capture.barcodes.firstOrNull?.rawValue;
-          if (code == null || _done) return;
+      body: ReaderWidget(
+        codeFormat: Format.ean13 | Format.ean8 | Format.upca | Format.upce,
+        showGallery: false, // a photo from the gallery isn't "scan a packet"
+        showToggleCamera: false,
+        onScan: (code) {
+          final text = code.text;
+          if (!code.isValid || text == null || _done) return;
           _done = true;
-          Navigator.pop(context, code);
+          Navigator.pop(context, text);
         },
       ),
     );

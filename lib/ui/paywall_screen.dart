@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app_state.dart';
 import '../billing/billing.dart';
 import '../l10n/app_localizations.dart';
+import 'nutrients.dart';
 import 'theme.dart';
 
 String tierName(Tier t, AppLocalizations l) =>
@@ -94,6 +95,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 8),
               Text(l.subscriptionTerms, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               TextButton(onPressed: _busy ? null : billing.restore, child: Text(l.restorePurchases)),
+              legalLinks(context),
               if (billing case DevBilling dev when current != Tier.free)
                 TextButton(onPressed: () => dev.setTier(Tier.free), child: Text(l.devBackToFree)),
             ]);

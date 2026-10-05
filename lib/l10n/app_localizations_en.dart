@@ -111,11 +111,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Preparing the on-device AI… The first start takes about a minute.';
 
   @override
-  String modelsMissing(String dir, String files) {
-    return 'AI model files are missing in $dir: $files';
-  }
-
-  @override
   String get confirmSave => 'Save';
 
   @override
@@ -555,9 +550,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tryAgain => 'Try again';
-
-  @override
   String get tierFree => 'Free';
 
   @override
@@ -979,4 +971,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get per100Suffix => ' / 100 g';
+
+  @override
+  String get aiDownloadTitle => 'Download the AI assistant';
+
+  @override
+  String aiDownloadBody(String gb) {
+    return 'The chat assistant runs entirely on your phone. Its model ($gb GB) downloads once from Hugging Face; use Wi-Fi. Nothing about you is sent. Logging, recipes and your dashboard already work without it.';
+  }
+
+  @override
+  String get aiDownloadButton => 'Download';
+
+  @override
+  String get aiDownloading => 'Downloading';
+
+  @override
+  String get aiDownloadFailed =>
+      'The download stopped. Check your connection and free space, then try again; it continues where it stopped.';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get termsOfUse => 'Terms of use';
+
+  @override
+  String get licenses => 'Licenses and AI models';
 }

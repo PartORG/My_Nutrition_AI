@@ -256,12 +256,6 @@ abstract class AppLocalizations {
   /// **'Preparing the on-device AI… The first start takes about a minute.'**
   String get preparingAi;
 
-  /// No description provided for @modelsMissing.
-  ///
-  /// In en, this message translates to:
-  /// **'AI model files are missing in {dir}: {files}'**
-  String modelsMissing(String dir, String files);
-
   /// No description provided for @confirmSave.
   ///
   /// In en, this message translates to:
@@ -1018,12 +1012,6 @@ abstract class AppLocalizations {
   /// **'Unlock {name}\'s profile'**
   String fingerprintReason(String name);
 
-  /// No description provided for @tryAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Try again'**
-  String get tryAgain;
-
   /// No description provided for @tierFree.
   ///
   /// In en, this message translates to:
@@ -1725,6 +1713,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **' / 100 g'**
   String get per100Suffix;
+
+  /// No description provided for @aiDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the AI assistant'**
+  String get aiDownloadTitle;
+
+  /// No description provided for @aiDownloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat assistant runs entirely on your phone. Its model ({gb} GB) downloads once from Hugging Face; use Wi-Fi. Nothing about you is sent. Logging, recipes and your dashboard already work without it.'**
+  String aiDownloadBody(String gb);
+
+  /// No description provided for @aiDownloadButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get aiDownloadButton;
+
+  /// No description provided for @aiDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get aiDownloading;
+
+  /// No description provided for @aiDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The download stopped. Check your connection and free space, then try again; it continues where it stopped.'**
+  String get aiDownloadFailed;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get termsOfUse;
+
+  /// No description provided for @licenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses and AI models'**
+  String get licenses;
 }
 
 class _AppLocalizationsDelegate

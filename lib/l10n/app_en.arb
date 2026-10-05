@@ -69,17 +69,6 @@
   "chatHint": "Ask about food, log a meal…",
   "send": "Send",
   "preparingAi": "Preparing the on-device AI… The first start takes about a minute.",
-  "modelsMissing": "AI model files are missing in {dir}: {files}",
-  "@modelsMissing": {
-    "placeholders": {
-      "dir": {
-        "type": "String"
-      },
-      "files": {
-        "type": "String"
-      }
-    }
-  },
   "confirmSave": "Save",
   "confirmDiscard": "Discard",
   "confirmSaved": "Saved",
@@ -331,7 +320,6 @@
       }
     }
   },
-  "tryAgain": "Try again",
   "tierFree": "Free",
   "tierBasic": "Basic",
   "tierMedium": "Medium",
@@ -600,5 +588,20 @@
   },
   "reviewCook": "What can I cook?",
   "cookNone": "No recipe in the database uses these foods.",
-  "per100Suffix": " / 100 g"
+  "per100Suffix": " / 100 g",
+  "aiDownloadTitle": "Download the AI assistant",
+  "aiDownloadBody": "The chat assistant runs entirely on your phone. Its model ({gb} GB) downloads once from Hugging Face; use Wi-Fi. Nothing about you is sent. Logging, recipes and your dashboard already work without it.",
+  "@aiDownloadBody": {
+    "placeholders": {
+      "gb": {
+        "type": "String"
+      }
+    }
+  },
+  "aiDownloadButton": "Download",
+  "aiDownloading": "Downloading",
+  "aiDownloadFailed": "The download stopped. Check your connection and free space, then try again; it continues where it stopped.",
+  "privacyPolicy": "Privacy policy",
+  "termsOfUse": "Terms of use",
+  "licenses": "Licenses and AI models"
 }

@@ -31,7 +31,7 @@ final appDirProvider = FutureProvider<Directory>((ref) async {
   try {
     openNutriDb(nutri.path).close();
   } on Object {
-    // ponytail: bundled dummy db; real nutri.db arrives via Asset Delivery in M7.
+    // ponytail: bundled dummy db; the real one (≤ 300 MB) needs its own delivery, see docs/PLAN.md M7.
     final tmp = File('${dir.path}/nutri.db.download');
     final data = await rootBundle.load('assets/nutri.db');
     await tmp.writeAsBytes(data.buffer.asUint8List(), flush: true);
@@ -75,51 +75,79 @@ const minRamMb = 5000;
 
 // ---- on-device AI -----------------------------------------------------------
 
-/// Where the model files are. Dev: `adb push` into the app's external files
-/// dir (see integration_test/agent_latency_test.dart); M7 replaces this with
-/// Play Asset Delivery / download.
+/// Gemma 4 E2B (Apache 2.0, ungated) downloads once from Hugging Face when the
+/// user asks: at 2.2 GB compressed it is over Play's 1.5 GB asset-pack limit.
+/// Same SHA-256 as the file measured in M0. Only the model comes over the
+/// network; nothing about the user goes out.
 const llmFile = 'gemma-4-E2B-it.litertlm';
-const embedderFile = 'embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
-const tokenizerFile = 'embeddinggemma_sentencepiece.model';
+const llmUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/$llmFile';
+const llmDownloadMb = 2468;
 
-class ModelsMissing implements Exception {
-  ModelsMissing(this.dir, this.missing);
-  final String dir;
-  final List<String> missing;
-}
+/// EmbeddingGemma is gated on Hugging Face (Gemma terms allow redistribution),
+/// so it ships inside the app from the git-ignored models/ folder.
+const embedderAsset = 'models/embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
+const tokenizerAsset = 'models/embeddinggemma_sentencepiece.model';
 
-final modelDirProvider = FutureProvider<Directory>((ref) async {
-  final dir = Directory('${(await getExternalStorageDirectory())!.path}/models');
-  final missing = [
-    for (final f in [llmFile, embedderFile, tokenizerFile])
-      if (!File('${dir.path}/$f').existsSync()) f
-  ];
-  if (missing.isNotEmpty) throw ModelsMissing(dir.path, missing);
-  await FlutterGemma.initialize(
-    inferenceEngines: [LiteRtLmEngine()],
-    embeddingBackends: [LiteRtEmbeddingBackend()],
-    embeddingTokenizers: [GemmaEmbeddingTokenizers()],
-  );
-  return dir;
-});
+/// The chat model isn't on the phone yet: the Chat tab offers the download.
+class LlmNotDownloaded implements Exception {}
+
+final _gemmaReadyProvider = FutureProvider<void>((ref) => FlutterGemma.initialize(
+      inferenceEngines: [LiteRtLmEngine()],
+      embeddingBackends: [LiteRtEmbeddingBackend()],
+      embeddingTokenizers: [GemmaEmbeddingTokenizers()],
+    ));
+
+InferenceInstallationBuilder _llmInstall() =>
+    FlutterGemma.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm);
 
 /// Loaded once per app run; first launch ~38 s (GPU setup), then ~3 s.
+/// Development: a file `adb push`ed into the external files dir's models/ wins
+/// (see integration_test/agent_latency_test.dart).
 final llmProvider = FutureProvider<InferenceModel>((ref) async {
-  final dir = await ref.watch(modelDirProvider.future);
-  await FlutterGemma.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm)
-      .fromFile('${dir.path}/$llmFile')
-      .install();
+  await ref.watch(_gemmaReadyProvider.future);
+  final dev = File('${(await getExternalStorageDirectory())?.path}/models/$llmFile');
+  if (dev.existsSync()) {
+    await _llmInstall().fromFile(dev.path).install();
+  } else if (await FlutterGemma.isModelInstalled(llmFile)) {
+    await _llmInstall().fromNetwork(llmUrl).install(); // already downloaded: no network, just activates it
+  } else {
+    throw LlmNotDownloaded();
+  }
   final model = await FlutterGemma.getActiveModel(maxTokens: 4096, preferredBackend: PreferredBackend.gpu);
   ref.onDispose(model.close);
   return model;
 });
 
+/// Download progress in % while the chat model downloads; null when idle.
+final llmDownloadProvider = NotifierProvider<LlmDownload, int?>(LlmDownload.new);
+
+class LlmDownload extends Notifier<int?> {
+  CancelToken? _cancel;
+
+  @override
+  int? build() => null;
+
+  /// Resumable (flutter_gemma's background downloader). Throws on failure.
+  Future<void> start() async {
+    if (state != null) return;
+    state = 0;
+    _cancel = CancelToken();
+    try {
+      await ref.read(_gemmaReadyProvider.future);
+      await _llmInstall().fromNetwork(llmUrl).withProgress((p) => state = p).withCancelToken(_cancel!).install();
+      ref.invalidate(llmProvider);
+    } finally {
+      state = null;
+      _cancel = null;
+    }
+  }
+
+  void cancel() => _cancel?.cancel('cancelled by the user');
+}
+
 final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
-  final dir = await ref.watch(modelDirProvider.future);
-  await FlutterGemma.installEmbedder()
-      .modelFromFile('${dir.path}/$embedderFile')
-      .tokenizerFromFile('${dir.path}/$tokenizerFile')
-      .install();
+  await ref.watch(_gemmaReadyProvider.future);
+  await FlutterGemma.installEmbedder().modelFromAsset(embedderAsset).tokenizerFromAsset(tokenizerAsset).install();
   return FlutterGemma.getActiveEmbedder();
 });
 

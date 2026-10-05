@@ -12,7 +12,7 @@ import 'theme.dart';
 
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
 // TODO(ievgen): real support address before release.
-const supportEmail = 'support@example.com';
+const supportEmail = 'peredereev.ievgen@gmail.com';
 
 /// Recipe ideas for what the camera saw, or a note that there are none.
 void cookOrSay(BuildContext context, Agent agent, List<String> names) {

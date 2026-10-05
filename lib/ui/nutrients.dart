@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent_tools.dart';
 import '../data/conditions.dart';
@@ -56,6 +57,19 @@ class NutrientTiles extends StatelessWidget {
           ),
     ]);
   }
+}
+
+/// Privacy policy and terms (GitHub Pages, source in site/).
+const legalBase = 'https://partorg.github.io/myfoodmind';
+
+/// Privacy policy · Terms of use links, for the Me tab and the paywall.
+Widget legalLinks(BuildContext context) {
+  final l = AppLocalizations.of(context)!;
+  void open(String page) => launchUrl(Uri.parse('$legalBase/$page'), mode: LaunchMode.externalApplication);
+  return Wrap(alignment: WrapAlignment.center, children: [
+    TextButton(onPressed: () => open('privacy.html'), child: Text(l.privacyPolicy)),
+    TextButton(onPressed: () => open('terms.html'), child: Text(l.termsOfUse)),
+  ]);
 }
 
 /// Display name of a nutri.db condition ('diabetes_t2' → "Type 2 diabetes").
