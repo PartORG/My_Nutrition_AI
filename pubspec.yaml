@@ -48,8 +48,8 @@ flutter:
     - assets/icons/icon_chat.png
     - assets/fonts/
     - assets/licenses/
+    # EmbeddingGemma (Gemma terms; gated on Hugging Face): copy
+    # embeddinggemma-300M_seq256.tflite + embeddinggemma_sentencepiece.model into
+    # assets/models/ before building. Git-ignored (179 MB is over GitHub's limit).
+    # Must live under assets/: flutter_gemma looks bundled models up as assets/<path>.
     - assets/models/
-    # EmbeddingGemma (Gemma terms; gated on Hugging Face): copy the two files into
-    # models/ before building. models/ is git-ignored (179 MB is over GitHub's limit).
-    - models/embeddinggemma-300M_seq256.tflite
-    - models/embeddinggemma_sentencepiece.model

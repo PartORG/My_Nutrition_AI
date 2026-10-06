@@ -25,7 +25,7 @@ Without `key.properties` release builds fall back to the debug key — fine loca
 
 ## 2. Build
 
-The two EmbeddingGemma files must be in `models/` (git-ignored, bundled into the app):
+The two EmbeddingGemma files must be in `assets/models/` (git-ignored, bundled into the app):
 `embeddinggemma-300M_seq256.tflite`, `embeddinggemma_sentencepiece.model`.
 
 ```sh

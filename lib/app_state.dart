@@ -84,9 +84,9 @@ const llmUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
 const llmDownloadMb = 2468;
 
 /// EmbeddingGemma is gated on Hugging Face (Gemma terms allow redistribution),
-/// so it ships inside the app from the git-ignored models/ folder.
-const embedderAsset = 'models/embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
-const tokenizerAsset = 'models/embeddinggemma_sentencepiece.model';
+/// so it ships inside the app from git-ignored files in assets/models/.
+const embedderAsset = 'assets/models/embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
+const tokenizerAsset = 'assets/models/embeddinggemma_sentencepiece.model';
 
 /// The chat model isn't on the phone yet: the Chat tab offers the download.
 class LlmNotDownloaded implements Exception {}
@@ -113,7 +113,9 @@ final llmProvider = FutureProvider<InferenceModel>((ref) async {
   } else {
     throw LlmNotDownloaded();
   }
-  final model = await FlutterGemma.getActiveModel(maxTokens: 4096, preferredBackend: PreferredBackend.gpu);
+  // supportImage: photo mode names the foods with the same model (vision encoder on the CPU).
+  final model = await FlutterGemma.getActiveModel(
+      maxTokens: 4096, preferredBackend: PreferredBackend.gpu, supportImage: true, maxNumImages: 1);
   ref.onDispose(model.close);
   return model;
 });

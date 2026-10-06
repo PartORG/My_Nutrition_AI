@@ -545,6 +545,8 @@
   "cameraLive": "Live",
   "cameraUnavailable": "The camera isn't available. Allow camera access for MyFoodMind in Android settings.",
   "cameraShoot": "Take photo",
+  "cameraNaming": "Recognizing food…",
+  "cameraNamingFailed": "Couldn't recognize the food. Try again.",
   "cameraUseFound": "{count, plural, =0{Continue} =1{Use 1 item} other{Use {count} items}}",
   "@cameraUseFound": {
     "placeholders": {

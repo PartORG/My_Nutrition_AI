@@ -46,6 +46,7 @@ app.*.map.json
 
 # on-device models (large, pushed with adb, never committed)
 /models/
+/assets/models/embeddinggemma*
 *.profraw
 
 # secrets

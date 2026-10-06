@@ -903,6 +903,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraShoot => 'Take photo';
 
   @override
+  String get cameraNaming => 'Recognizing food…';
+
+  @override
+  String get cameraNamingFailed => 'Couldn\'t recognize the food. Try again.';
+
+  @override
   String cameraUseFound(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

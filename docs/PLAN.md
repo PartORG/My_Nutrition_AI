@@ -46,6 +46,9 @@ medical notes are rendered as cards from the database, never as model-generated 
 - **Vision (Apache stack, no Ultralytics/AGPL):** `tflite_flutter` + EfficientDet-Lite0 (COCO, bundled asset,
   food classes only) since M6; real food/dish model trained with D-FINE / RT-DETR / YOLOX → TFLite, labels =
   `foods.name`/`dishes.name`, drops in behind the same `Detector` interface (`lib/vision/detector.dart`).
+  Photo mode (2026-10-06): Gemma 4 E2B vision names the foods + estimates grams (`nameFoods` in
+  `lib/vision/scan.dart`, own session, model loaded with `supportImage`); EfficientDet stays for live mode
+  and as the photo fallback before the chat model is downloaded.
   Camera via `camera` (photo + live, frames never stored); barcode via `flutter_zxing` (zxing-cpp, EAN/UPC,
   no network; ML Kit was dropped in M7 because it sends usage diagnostics to Google).
   Everything detected goes through the review screen before use.
@@ -263,7 +266,7 @@ Decisions (user, 2026-10-05): EfficientDet-Lite0 COCO via `tflite_flutter` now (
 
 Not yet / not verified: detector speed and boxes on the phone, camera permission prompt, barcode on a real
 packet, live-mode smoothness (YUV conversion runs on the UI isolate; move it if it stutters), Gemma 4 vision
-as a replacement detector.
+as a replacement detector (photo mode done 2026-10-06, see below).
 
 ## M7 results (2026-10-05)
 
@@ -301,3 +304,28 @@ Owner to do: create the GitHub repo + Pages, upload key, Play Console app + inte
 developer account), official trademark searches, governing-law country in `site/terms.html` (TODO there),
 legal review of the privacy policy and terms. Not verified on the phone: model download + offline restart,
 zxing barcode scanning, bundled-embedder first load.
+
+## After M7 (2026-10-06)
+
+Fixed: **bundled embedder failed to install** after the Gemma 4 download (`PlatformException: Failed to copy
+asset "assets/models/embeddinggemma-300M_seq256.tflite"`). flutter_gemma → `large_file_handler` always looks
+bundled files up as `assets/<path>`, but they were declared as `models/…`. The two EmbeddingGemma files now
+live in `assets/models/` (git-ignored, copy them there before building); `models/` keeps the adb/dev files.
+
+Found on the phone: the camera labels almost everything "pizza". EfficientDet-Lite0 knows only 10 COCO foods
+(banana … cake), so any plate gets the nearest of those. Not fixable by tuning; a different model is needed.
+
+Decision (user, 2026-10-06): **good recognition in both photo and live mode**, in two steps:
+1. **Photo — Gemma 4 E2B vision** ✅ code. The shutter sends the upright frame (own resolution, PNG via the
+   engine's encoder, never written to disk) to the chat model in its own session (`nameFoods`,
+   `lib/vision/scan.dart`); it answers `grams | name` per food; names are matched in nutri.db like typed text,
+   grams go to the review screen. The model now loads with `supportImage: true` (vision encoder on the CPU).
+   EfficientDet is the photo fallback until the chat model is downloaded. 108 host tests.
+   Not verified on the phone: the `.litertlm` file's vision section loads, extra RAM, seconds per photo,
+   name quality.
+2. **Live — own small detector** ⏳. YOLOX / RT-DETR / D-FINE (Apache; no Ultralytics/YOLO-World, GPL/AGPL)
+   → TFLite behind the `Detector` interface, ~100–200 coarse classes (pasta, rice, salad, soup, …); the
+   shutter's Gemma pass refines names. Data: FoodSeg103 (Apache 2.0, masks → boxes), Open Images V7 food
+   classes (CC BY boxes; check image licences), own meal photos; UEC FOOD-256 for experiments only until its
+   licence is checked; auto-labelling with OWLv2 / Grounding DINO (Apache 2.0) on the PC, distilled into the
+   small model. Open question: training GPU (local NVIDIA vs Colab/Kaggle).

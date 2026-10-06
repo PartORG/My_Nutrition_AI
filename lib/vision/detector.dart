@@ -45,9 +45,9 @@ List<Detection> decodeDetections(List<List<double>> boxes, List<double> classes,
   return found..sort((a, b) => b.score.compareTo(a.score));
 }
 
-/// A YUV_420_888 camera frame → [inputSize]² RGB, rotated upright by
-/// [rotation] degrees clockwise (the sensor orientation) and squeezed to a
-/// square, as EfficientDet expects. Nearest-neighbour: fast enough per frame.
+/// A YUV_420_888 camera frame → [outW]×[outH] RGB, rotated upright by
+/// [rotation] degrees clockwise (the sensor orientation). The default squeezes
+/// it to the [inputSize]² square EfficientDet expects. Nearest-neighbour: fast enough per frame.
 Uint8List yuvToRgb({
   required int width,
   required int height,
@@ -58,13 +58,15 @@ Uint8List yuvToRgb({
   required int uvRowStride,
   required int uvPixelStride,
   required int rotation,
+  int outW = inputSize,
+  int outH = inputSize,
 }) {
-  final out = Uint8List(inputSize * inputSize * 3);
+  final out = Uint8List(outW * outH * 3);
   var o = 0;
-  for (var oy = 0; oy < inputSize; oy++) {
-    final fv = (oy + .5) / inputSize;
-    for (var ox = 0; ox < inputSize; ox++) {
-      final fu = (ox + .5) / inputSize;
+  for (var oy = 0; oy < outH; oy++) {
+    final fv = (oy + .5) / outH;
+    for (var ox = 0; ox < outW; ox++) {
+      final fu = (ox + .5) / outW;
       // Display (fu, fv) → sensor (fx, fy).
       final (fx, fy) = switch (rotation) {
         90 => (fv, 1 - fu),

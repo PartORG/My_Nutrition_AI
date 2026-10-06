@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gemma/flutter_gemma.dart' show InferenceModel;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
@@ -36,6 +39,7 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
         null => (<ScanItem>[], code, 'barcode'),
       },
     (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found), null, live ? 'live' : 'photo'),
+    (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), null, 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
   };
   await nav.push(MaterialPageRoute<void>(
@@ -43,8 +47,9 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   ));
 }
 
-/// What a capture returns: a barcode (String) or detections and whether they
-/// came from live mode (a `(List<Detection>, bool)` record); null = cancelled. Tests
+/// What a capture returns: a barcode (String), Gemma's foods from a photo
+/// (`List<SeenFood>`), or detections and whether they came from live mode
+/// (a `(List<Detection>, bool)` record); null = cancelled. Tests
 /// replace it with a dummy detector, since there is no camera on the host.
 typedef Capture = Future<Object?> Function(BuildContext context, String mode);
 
@@ -58,8 +63,9 @@ final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
   return d;
 });
 
-/// Preview with food boxes. Live: detects twice a second; photo: once, on
-/// the shutter. Frames stay in memory only — no picture is ever written.
+/// Preview with food boxes. Live: EfficientDet twice a second; photo: Gemma 4
+/// names the foods on the shutter (EfficientDet until the chat model is
+/// downloaded). Frames stay in memory only — no picture is ever written.
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key, required this.live});
   final bool live;
@@ -73,7 +79,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   CameraImage? _frame;
   List<Detection> _found = [];
   late bool _live = widget.live;
-  bool _busy = false;
+  bool _busy = false, _naming = false;
   Timer? _timer;
   Object? _error;
 
@@ -101,28 +107,56 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     }
   }
 
+  /// [frame] → upright RGB, [inputSize]² by default.
+  Uint8List _rgb(CameraImage frame, int rotation, {int outW = inputSize, int outH = inputSize}) {
+    final p = frame.planes;
+    return yuvToRgb(
+      width: frame.width,
+      height: frame.height,
+      y: p[0].bytes,
+      u: p[1].bytes,
+      v: p[2].bytes,
+      yRowStride: p[0].bytesPerRow,
+      uvRowStride: p[1].bytesPerRow,
+      uvPixelStride: p[1].bytesPerPixel ?? 1,
+      rotation: rotation,
+      outW: outW,
+      outH: outH,
+    );
+  }
+
   Future<void> _detect() async {
     final frame = _frame, cam = _cam;
     final detector = ref.read(detectorProvider).value;
     if (_busy || frame == null || cam == null || detector == null) return;
     _busy = true;
     try {
-      final p = frame.planes;
       // ponytail: converted on the UI isolate (~320² pixels); move to an isolate if live mode stutters.
-      final found = await detector.detect(yuvToRgb(
-        width: frame.width,
-        height: frame.height,
-        y: p[0].bytes,
-        u: p[1].bytes,
-        v: p[2].bytes,
-        yRowStride: p[0].bytesPerRow,
-        uvRowStride: p[1].bytesPerRow,
-        uvPixelStride: p[1].bytesPerPixel ?? 1,
-        rotation: cam.description.sensorOrientation,
-      ));
+      final found = await detector.detect(_rgb(frame, cam.description.sensorOrientation));
       if (mounted) setState(() => _found = found);
     } finally {
       _busy = false;
+    }
+  }
+
+  /// Photo: the frame at its own resolution, upright, to Gemma. Null when the
+  /// chat model isn't downloaded (the caller falls back to EfficientDet).
+  Future<List<SeenFood>?> _nameFoods() async {
+    final frame = _frame, cam = _cam;
+    if (frame == null || cam == null) return const [];
+    setState(() => _naming = true);
+    try {
+      final InferenceModel llm;
+      try {
+        llm = await ref.read(llmProvider.future);
+      } on LlmNotDownloaded {
+        return null;
+      }
+      final rotation = cam.description.sensorOrientation;
+      final (w, h) = rotation % 180 == 0 ? (frame.width, frame.height) : (frame.height, frame.width);
+      return await nameFoods(llm, await _png(_rgb(frame, rotation, outW: w, outH: h), w, h));
+    } finally {
+      if (mounted) setState(() => _naming = false);
     }
   }
 
@@ -203,11 +237,33 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           icon: Icon(_live ? Icons.check : Icons.camera),
-                          label: Text(_live ? l.cameraUseFound(_found.length) : l.cameraShoot),
-                          onPressed: () async {
-                            if (!_live) await _detect();
-                            if (context.mounted) Navigator.pop(context, (_found, _live));
-                          },
+                          label: Text(_naming
+                              ? l.cameraNaming
+                              : _live
+                                  ? l.cameraUseFound(_found.length)
+                                  : l.cameraShoot),
+                          onPressed: _naming
+                              ? null
+                              : () async {
+                                  if (!_live) {
+                                    try {
+                                      final seen = await _nameFoods();
+                                      if (seen != null) {
+                                        if (context.mounted) Navigator.pop(context, seen);
+                                        return;
+                                      }
+                                    } on Object catch (e) {
+                                      debugPrint('photo naming failed: $e');
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+                                      }
+                                      return;
+                                    }
+                                    await _detect();
+                                  }
+                                  if (context.mounted) Navigator.pop(context, (_found, _live));
+                                },
                         ),
                       ),
                     ),
@@ -443,5 +499,29 @@ class _PickFoodDialogState extends State<_PickFoodDialog> {
       ),
       actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel))],
     );
+  }
+}
+
+/// RGB → PNG with the engine's own encoder (no image package).
+Future<Uint8List> _png(Uint8List rgb, int w, int h) async {
+  final rgba = Uint8List(w * h * 4);
+  for (var i = 0, j = 0; i < rgb.length; i += 3, j += 4) {
+    rgba
+      ..[j] = rgb[i]
+      ..[j + 1] = rgb[i + 1]
+      ..[j + 2] = rgb[i + 2]
+      ..[j + 3] = 255;
+  }
+  final buffer = await ui.ImmutableBuffer.fromUint8List(rgba);
+  final descriptor = ui.ImageDescriptor.raw(buffer, width: w, height: h, pixelFormat: ui.PixelFormat.rgba8888);
+  final codec = await descriptor.instantiateCodec();
+  final image = (await codec.getNextFrame()).image;
+  try {
+    return (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+  } finally {
+    image.dispose();
+    codec.dispose();
+    descriptor.dispose();
+    buffer.dispose();
   }
 }

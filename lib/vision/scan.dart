@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../agent/agent_tools.dart';
@@ -26,6 +29,49 @@ List<ScanItem> itemsFromDetections(AgentTools tools, List<Detection> found) {
       }()
   ];
 }
+
+/// What Gemma saw on a photo: a food name and its estimated portion.
+typedef SeenFood = ({String name, double? grams});
+
+const _photoPrompt = 'List every food and drink in this photo, one per line, as: grams | name\n'
+    'grams = your estimate of the portion shown; name = a short generic English food name, '
+    'e.g. "150 | boiled rice" or "120 | grilled chicken breast". Write nothing else. '
+    'If there is no food, write: none';
+
+/// Photo mode: Gemma 4 looks at [png] and names the foods. Its own session,
+/// so the chat's conversation is untouched; inference waits while the chat generates.
+Future<List<SeenFood>> nameFoods(InferenceModel model, Uint8List png) async {
+  final session = await model.openSession(temperature: 0, topK: 1, enableVisionModality: true, maxOutputTokens: 160);
+  try {
+    await session.addQueryChunk(Message.withImage(text: _photoPrompt, imageBytes: png, isUser: true));
+    return parseSeenFoods(await session.getResponse());
+  } finally {
+    await session.close();
+  }
+}
+
+/// "150 | boiled rice" lines → foods; a missing or silly amount → null (a serving).
+List<SeenFood> parseSeenFoods(String reply) {
+  final seen = <SeenFood>[];
+  for (final line in reply.split('\n')) {
+    final parts = line.replaceFirst(RegExp(r'^[\s*•-]+'), '').split('|');
+    final name = parts.last.trim().toLowerCase();
+    if (name.isEmpty || name == 'none') continue;
+    final number = parts.length < 2 ? null : RegExp(r'\d+([.,]\d+)?').firstMatch(parts.first)?[0];
+    final g = double.tryParse(number?.replaceAll(',', '.') ?? '');
+    seen.add((name: name, grams: g != null && g > 0 && g <= 2000 ? g : null));
+  }
+  return seen.take(12).toList();
+}
+
+/// Gemma's foods → review items, matched in nutri.db like typed text.
+List<ScanItem> itemsFromSeen(AgentTools tools, List<SeenFood> seen) => [
+      for (final s in seen)
+        () {
+          final food = matchFood(tools, s.name);
+          return ScanItem(name: s.name, food: food, grams: s.grams ?? food?.servingG ?? 100);
+        }()
+    ];
 
 /// Best nutri.db match for a name, marked ≈: a photo never knows the exact food.
 /// The shortest name wins: a seen "banana" is the food, not "Overnight oats with banana".

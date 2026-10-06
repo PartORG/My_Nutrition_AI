@@ -1618,6 +1618,18 @@ abstract class AppLocalizations {
   /// **'Take photo'**
   String get cameraShoot;
 
+  /// No description provided for @cameraNaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing food…'**
+  String get cameraNaming;
+
+  /// No description provided for @cameraNamingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t recognize the food. Try again.'**
+  String get cameraNamingFailed;
+
   /// No description provided for @cameraUseFound.
   ///
   /// In en, this message translates to:

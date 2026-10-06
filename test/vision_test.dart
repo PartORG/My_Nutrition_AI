@@ -18,6 +18,7 @@ import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/camera_screen.dart';
 import 'package:myfoodmind/ui/chat_screen.dart';
 import 'package:myfoodmind/vision/detector.dart';
+import 'package:myfoodmind/vision/scan.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 
 import 'agent_test.dart' show FakeModel;
@@ -61,6 +62,22 @@ void main() {
       expect(at(rgb(90), 0, 0), 0);
       expect(at(rgb(0), 0, 0), 255);
       expect(at(rgb(270), 0, inputSize - 1), 255);
+      // Photo mode keeps the frame's own upright size: 2×4 at 90°.
+      expect(yuvToRgb(width: 4, height: 2, y: y, u: uv, v: uv, yRowStride: 4, uvRowStride: 2, uvPixelStride: 1,
+              rotation: 90, outW: 2, outH: 4)
+          .length, 2 * 4 * 3);
+    });
+
+    test("Gemma's photo reply → foods with portions; junk amounts become a serving", () {
+      expect(parseSeenFoods('150 | Boiled rice\n- 120 g | grilled chicken breast\n\n* broccoli\n0 | apple\n99999 | bread'), [
+        (name: 'boiled rice', grams: 150.0),
+        (name: 'grilled chicken breast', grams: 120.0),
+        (name: 'broccoli', grams: null),
+        (name: 'apple', grams: null),
+        (name: 'bread', grams: null),
+      ]);
+      expect(parseSeenFoods('none'), isEmpty);
+      expect(parseSeenFoods('80,5 | banana'), [(name: 'banana', grams: 80.5)]);
     });
   });
 
@@ -136,6 +153,21 @@ void main() {
       expect(find.text('1 item logged'), findsOneWidget);
       // Episodic memory picks the scan up like a meal.
       expect(await Memory(data.user, vectors, fakeEmbed).backfill(), 2); // the meal + the scan
+    });
+
+    testWidgets('Gemma photo → review with its portions; an unknown food waits for a match', (tester) async {
+      capture = (_) => parseSeenFoods('150 | banana\n90 | broccoli\n200 | unicorn stew');
+      await pumpChat(tester);
+      await tester.tap(find.text('Open camera').last);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, '150'), findsOneWidget); // Gemma's grams, not a serving
+      expect(find.widgetWithText(TextFormField, '90'), findsOneWidget);
+      expect(find.textContaining('unicorn stew'), findsOneWidget); // not in nutri.db: shown, not loggable
+      await tester.tap(find.textContaining('Log this meal'));
+      await tester.pumpAndSettle();
+      expect(meals().map((r) => (r['description'], r['grams'])), [('banana', 150.0), ('broccoli', 90.0)]);
+      expect(scans(), ['photo: banana, broccoli']);
     });
 
     testWidgets('photo → What can I cook? shows recipes in the chat, logs nothing', (tester) async {
