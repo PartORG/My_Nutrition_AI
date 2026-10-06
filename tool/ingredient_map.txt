@@ -1,0 +1,1511 @@
+# Recipe ingredient name (after ingredients.normalize_name) -> food in nutri.db.
+# phrase | food name (exact) | grams per piece | grams per cup | extra allergens
+# Empty columns fall back to the USDA household weights of the food. "-" as food = known
+# but deliberately left out of nutrition (water and the like), never blocks a recipe.
+# Extra allergens: for composite foods whose name hides them (pesto -> tree nuts, milk).
+salt | Salt, table
+kosher salt | Salt, table
+sea salt | Salt, table
+table salt | Salt, table
+coarse salt | Salt, table
+salt pepper | Salt, table
+salt & pepper | Salt, table
+salt black pepper | Salt, table
+salt & ground black pepper | Salt, table
+salt & ground pepper | Salt, table
+kosher salt & ground black pepper | Salt, table
+seasoning salt | Salt, table
+garlic salt | Spices, garlic powder | | |
+celery salt | Salt, table
+onion salt | Salt, table
+butter | Butter, with salt | 113 |  |
+salted butter | Butter, with salt | 113
+soft butter | Butter, with salt | 113
+unsalted butter | Butter, without salt | 113
+margarine | Margarine, regular, 80% fat, composite, stick, with salt | 113
+sugar | Sugars, granulated
+white sugar | Sugars, granulated
+granulated sugar | Sugars, granulated
+caster sugar | Sugars, granulated
+superfine sugar | Sugars, granulated
+brown sugar | Sugars, brown
+light brown sugar | Sugars, brown
+dark brown sugar | Sugars, brown
+powdered sugar | Sugars, powdered
+confectioners sugar | Sugars, powdered
+icing sugar | Sugars, powdered
+water | -
+boiling water | -
+cold water | -
+warm water | -
+hot water | -
+ice | -
+ice water | -
+ice cubes | -
+ice cube | -
+onion | Onions, raw | 110
+onions | Onions, raw | 110
+yellow onion | Onions, yellow, raw | 110
+yellow onions | Onions, yellow, raw | 110
+white onion | Onions, white, raw | 110
+white onions | Onions, white, raw | 110
+red onion | Onions, red, raw | 110
+red onions | Onions, red, raw | 110
+sweet onion | Onions, sweet, raw | 150
+green onions | Onions, spring or scallions (includes tops and bulb), raw | 15
+green onion | Onions, spring or scallions (includes tops and bulb), raw | 15
+scallions | Onions, spring or scallions (includes tops and bulb), raw | 15
+scallion | Onions, spring or scallions (includes tops and bulb), raw | 15
+spring onions | Onions, spring or scallions (includes tops and bulb), raw | 15
+shallot | Shallots, raw | 25
+shallots | Shallots, raw | 25
+leeks | Leeks, (bulb and lower leaf-portion), raw | 89
+leek | Leeks, (bulb and lower leaf-portion), raw | 89
+dried onion flakes | Onions, dehydrated flakes
+onion powder | Spices, onion powder
+eggs | Egg, whole, raw, fresh | 50
+egg | Egg, whole, raw, fresh | 50
+hard-boiled eggs | Egg, whole, cooked, hard-boiled | 50
+egg whites | Egg, white, raw, fresh | 33
+egg white | Egg, white, raw, fresh | 33
+egg yolks | Egg, yolk, raw, fresh | 17
+egg yolk | Egg, yolk, raw, fresh | 17
+egg substitute | Egg substitute, liquid or frozen, fat free | | | egg
+olive oil | Oil, olive, salad or cooking
+virgin olive oil | Oil, olive, salad or cooking
+extra-virgin olive oil | Oil, olive, salad or cooking
+vegetable oil | Oil, soybean, salad or cooking
+oil | Oil, soybean, salad or cooking
+cooking oil | Oil, soybean, salad or cooking
+salad oil | Oil, soybean, salad or cooking
+canola oil | Oil, canola
+peanut oil | Oil, peanut, salad or cooking | | | peanuts
+sesame oil | Oil, sesame, salad or cooking
+toasted sesame oil | Oil, sesame, salad or cooking
+dark sesame oil | Oil, sesame, salad or cooking
+corn oil | Oil, corn, industrial and retail, all purpose salad or cooking
+sunflower oil | Oil, sunflower, linoleic, (approx. 65%)
+coconut oil | Oil, coconut
+cooking spray | Oil, soybean, salad or cooking | 0.3
+nonstick cooking spray | Oil, soybean, salad or cooking | 0.3
+vegetable oil cooking spray | Oil, soybean, salad or cooking | 0.3
+shortening | Shortening, household, soybean (partially hydrogenated)-cottonseed (partially hydrogenated)
+vegetable shortening | Shortening, household, soybean (partially hydrogenated)-cottonseed (partially hydrogenated)
+lard | Lard
+ghee | Butter oil, anhydrous
+garlic cloves | Garlic, raw | 3
+garlic clove | Garlic, raw | 3
+garlic | Garlic, raw | 3
+clove | Garlic, raw | 3
+minced garlic | Garlic, raw | 3
+garlic powder | Spices, garlic powder
+flour | Wheat flour, white, all-purpose, enriched, bleached
+all-purpose flour | Wheat flour, white, all-purpose, enriched, bleached
+plain flour | Wheat flour, white, all-purpose, enriched, bleached
+white flour | Wheat flour, white, all-purpose, enriched, bleached
+unbleached all-purpose flour | Wheat flour, white, all-purpose, enriched, unbleached
+unbleached flour | Wheat flour, white, all-purpose, enriched, unbleached
+bread flour | Wheat flour, white, bread, enriched
+cake flour | Wheat flour, white, cake, enriched
+self-rising flour | Wheat flour, white, all-purpose, self-rising, enriched
+self raising flour | Wheat flour, white, all-purpose, self-rising, enriched
+self-raising flour | Wheat flour, white, all-purpose, self-rising, enriched
+whole wheat flour | Wheat flour, whole-grain
+whole wheat pastry flour | Wheat flour, whole-grain
+rice flour | Rice flour, white, unenriched
+cornflour | Cornstarch
+cornstarch | Cornstarch
+cornmeal | Cornmeal, whole-grain, yellow
+yellow cornmeal | Cornmeal, whole-grain, yellow
+milk | Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D
+whole milk | Milk, whole, 3.25% milkfat, with added vitamin D
+low-fat milk | Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D
+skim milk | Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)
+nonfat milk | Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)
+buttermilk | Milk, buttermilk, fluid, cultured, lowfat | | 245
+evaporated milk | Milk, canned, evaporated, with added vitamin D and without added vitamin A
+sweetened condensed milk | Milk, canned, condensed, sweetened
+condensed milk | Milk, canned, condensed, sweetened
+powdered milk | Milk, dry, nonfat, regular, without added vitamin A and vitamin D
+half-and-half | Cream, fluid, half and half
+half-and-half cream | Cream, fluid, half and half
+light cream | Cream, fluid, light (coffee cream or table cream)
+cream | Cream, fluid, heavy whipping
+heavy cream | Cream, fluid, heavy whipping
+whipping cream | Cream, fluid, heavy whipping
+heavy whipping cream | Cream, fluid, heavy whipping
+double cream | Cream, fluid, heavy whipping
+whipped cream | Cream, whipped, cream topping, pressurized
+sour cream | Cream, sour, cultured
+container sour cream | Cream, sour, cultured
+light sour cream | Cream, sour, reduced fat, cultured
+low-fat sour cream | Cream, sour, reduced fat, cultured
+fat free sour cream | Sour cream, fat free
+creme fraiche | Cream, sour, cultured
+soymilk | Soymilk, original and vanilla, with added calcium, vitamins A and D
+coconut milk | Nuts, coconut milk, canned (liquid expressed from grated meat and water)
+plain yogurt | Yogurt, plain, whole milk
+yogurt | Yogurt, plain, whole milk
+greek yogurt | Yogurt, Greek, plain, nonfat
+pepper | Spices, pepper, black
+black pepper | Spices, pepper, black
+ground black pepper | Spices, pepper, black
+ground pepper | Spices, pepper, black
+fresh ground black pepper | Spices, pepper, black
+coarse ground black pepper | Spices, pepper, black
+cracked black pepper | Spices, pepper, black
+cracked pepper | Spices, pepper, black
+black peppercorns | Spices, pepper, black | 0.05
+peppercorns | Spices, pepper, black | 0.05
+white pepper | Spices, pepper, white
+cayenne pepper | Spices, pepper, red or cayenne
+cayenne | Spices, pepper, red or cayenne
+ground cayenne pepper | Spices, pepper, red or cayenne
+ground red pepper | Spices, pepper, red or cayenne
+red pepper flakes | Spices, pepper, red or cayenne
+lemon pepper | Spices, pepper, black
+baking powder | Leavening agents, baking powder, double-acting, sodium aluminum sulfate
+baking soda | Leavening agents, baking soda
+bicarbonate soda | Leavening agents, baking soda
+cream tartar | Leavening agents, cream of tartar
+yeast | Leavening agents, yeast, baker's, active dry | 7
+active dry yeast | Leavening agents, yeast, baker's, active dry | 7
+dry yeast | Leavening agents, yeast, baker's, active dry | 7
+instant yeast | Leavening agents, yeast, baker's, active dry | 7
+vanilla | Vanilla extract
+vanilla extract | Vanilla extract
+pure vanilla extract | Vanilla extract
+vanilla essence | Vanilla extract
+almond extract | Vanilla extract
+lemon extract | Vanilla extract
+vanilla bean | Vanilla extract | 4
+lemon juice | Lemon juice, raw
+fresh lemon juice | Lemon juice, raw
+lime juice | Lime juice, raw
+orange juice | Orange juice, raw
+pineapple juice | Pineapple juice, canned or bottled, unsweetened, without added ascorbic acid
+apple juice | Apple juice, canned or bottled, unsweetened, without added ascorbic acid
+apple cider | Apple juice, canned or bottled, unsweetened, without added ascorbic acid
+cranberry juice | Cranberry juice, unsweetened
+tomato juice | Tomato juice, canned, with salt added
+frozen orange juice concentrate | Orange juice, frozen concentrate, unsweetened, undiluted
+lemon | Lemons, raw, without peel | 58
+lemons | Lemons, raw, without peel | 58
+lime | Limes, raw | 67
+limes | Limes, raw | 67
+lemon zest | Lemon peel, raw | 2
+lemon rind | Lemon peel, raw | 2
+lemon peel | Lemon peel, raw | 2
+lime zest | Lemon peel, raw | 2
+orange zest | Orange peel, raw | 3
+orange rind | Orange peel, raw | 3
+orange peel | Orange peel, raw | 3
+lemon wedge | Lemons, raw, without peel | 8
+lime wedge | Limes, raw | 8
+orange | Oranges, raw, all commercial varieties | 131
+oranges | Oranges, raw, all commercial varieties | 131
+mandarin oranges | Tangerines, (mandarin oranges), canned, light syrup pack
+tomatoes | Tomatoes, red, ripe, raw, year round average | 123
+tomato | Tomatoes, red, ripe, raw, year round average | 123
+ripe tomatoes | Tomatoes, red, ripe, raw, year round average | 123
+plum tomatoes | Tomatoes, red, ripe, raw, year round average | 62
+roma tomatoes | Tomatoes, red, ripe, raw, year round average | 62
+cherry tomatoes | Tomatoes, red, ripe, raw, year round average | 17
+grape tomatoes | Tomatoes, red, ripe, raw, year round average | 8
+canned tomatoes | Tomatoes, red, ripe, canned, packed in tomato juice
+whole tomatoes | Tomatoes, red, ripe, canned, packed in tomato juice
+tomatoes with juice | Tomatoes, red, ripe, canned, packed in tomato juice
+stewed tomatoes | Tomatoes, red, ripe, canned, stewed
+sun-dried tomatoes | Tomatoes, sun-dried | 2
+sun-dried tomato | Tomatoes, sun-dried | 2
+tomato sauce | Tomato products, canned, sauce | 227
+tomato paste | Tomato products, canned, paste, without salt added
+tomato puree | Tomato products, canned, puree, without salt added
+tomato soup | Soup, tomato, canned, condensed | 305
+spaghetti sauce | Sauce, pasta, spaghetti/marinara, ready-to-serve
+marinara sauce | Sauce, pasta, spaghetti/marinara, ready-to-serve
+pizza sauce | Sauce, pasta, spaghetti/marinara, ready-to-serve
+salsa | Sauce, salsa, ready-to-serve
+ketchup | Catsup
+catsup | Catsup
+chili sauce | Sauce, chili, peppers, hot, immature green, canned
+parmesan cheese | Cheese, parmesan, grated
+parmigiano-reggiano cheese | Cheese, parmesan, hard
+romano cheese | Cheese, romano
+asiago cheese | Cheese, parmesan, hard
+cheddar cheese | Cheese, cheddar | 21
+sharp cheddar cheese | Cheese, cheddar
+shredded cheddar cheese | Cheese, cheddar
+low-fat cheddar cheese | Cheese, cheddar, reduced fat
+cheese | Cheese, cheddar | 21
+mozzarella cheese | Cheese, mozzarella, whole milk | 28
+part-skim mozzarella cheese | Cheese, mozzarella, part skim milk
+monterey jack cheese | Cheese, monterey
+monterey jack pepper cheese | Cheese, monterey
+colby-monterey jack cheese | Cheese, monterey
+mexican blend cheese | Cheese, Mexican blend
+swiss cheese | Cheese, swiss | 21
+provolone cheese | Cheese, provolone | 21
+gruyere cheese | Cheese, gruyere
+american cheese | Cheese, pasteurized process, American, fortified with vitamin D | 21
+velveeta cheese | Cheese, pasteurized process, American, fortified with vitamin D
+blue cheese | Cheese, blue
+crumbled blue cheese | Cheese, blue
+feta cheese | Cheese, feta
+crumbled feta cheese | Cheese, feta
+goat cheese | Cheese, goat, soft type
+ricotta cheese | Cheese, ricotta, whole milk
+cottage cheese | Cheese, cottage, creamed, large or small curd
+cream cheese | Cheese, cream
+light cream cheese | Cheese, cream, low fat
+fat free cream cheese | Cheese, cream, fat free
+parsley | Parsley, fresh | 1
+flat leaf parsley | Parsley, fresh | 1
+flat-leaf parsley | Parsley, fresh | 1
+italian parsley | Parsley, fresh | 1
+parsley leaves | Parsley, fresh | 1
+dried parsley | Spices, parsley, dried
+parsley flakes | Spices, parsley, dried
+dried parsley flakes | Spices, parsley, dried
+cilantro | Coriander (cilantro) leaves, raw | 1
+cilantro leaves | Coriander (cilantro) leaves, raw | 1
+cilantro leaf | Coriander (cilantro) leaves, raw | 1
+coriander leaves | Coriander (cilantro) leaves, raw | 1
+coriander | Coriander (cilantro) leaves, raw | 1
+basil | Basil, fresh | 1
+basil leaves | Basil, fresh | 1
+basil leaf | Basil, fresh | 1
+dried basil | Spices, basil, dried
+mint | Peppermint, fresh | 1
+mint leaves | Peppermint, fresh | 1
+mint leaf | Peppermint, fresh | 1
+thyme | Thyme, fresh | 1
+thyme leaves | Thyme, fresh | 1
+thyme leave | Thyme, fresh | 1
+dried thyme | Spices, thyme, dried
+rosemary | Rosemary, fresh | 1
+dried rosemary | Spices, rosemary, dried
+dill | Dill weed, fresh | 1
+dill weed | Spices, dill weed, dried
+dried dill | Spices, dill weed, dried
+chives | Chives, raw | 1
+sage | Spices, sage, ground
+dried sage | Spices, sage, ground
+tarragon | Spices, tarragon, dried
+dried tarragon | Spices, tarragon, dried
+marjoram | Spices, marjoram, dried
+dried marjoram | Spices, marjoram, dried
+oregano | Spices, oregano, dried
+dried oregano | Spices, oregano, dried
+dried oregano leaves | Spices, oregano, dried
+bay leaf | Spices, bay leaf | 0.6
+bay leaves | Spices, bay leaf | 0.6
+cinnamon | Spices, cinnamon, ground
+ground cinnamon | Spices, cinnamon, ground
+cinnamon stick | Spices, cinnamon, ground | 2.6
+cinnamon sticks | Spices, cinnamon, ground | 2.6
+nutmeg | Spices, nutmeg, ground
+ground nutmeg | Spices, nutmeg, ground
+cloves | Spices, cloves, ground | 0.1
+ground cloves | Spices, cloves, ground
+allspice | Spices, allspice, ground
+ground allspice | Spices, allspice, ground
+ginger | Ginger root, raw | 6
+gingerroot | Ginger root, raw | 6
+ground ginger | Spices, ginger, ground
+cumin | Spices, cumin seed
+ground cumin | Spices, cumin seed
+cumin seed | Spices, cumin seed
+cumin powder | Spices, cumin seed
+paprika | Spices, paprika
+sweet paprika | Spices, paprika
+smoked paprika | Spices, paprika
+chili powder | Spices, chili powder
+red chili powder | Spices, chili powder
+curry powder | Spices, curry powder
+garam masala | Spices, curry powder
+turmeric | Spices, turmeric, ground
+ground turmeric | Spices, turmeric, ground
+turmeric powder | Spices, turmeric, ground
+ground coriander | Spices, coriander seed
+coriander powder | Spices, coriander seed
+coriander seed | Spices, coriander seed
+cardamom | Spices, cardamom | 0.15
+ground cardamom | Spices, cardamom
+fennel seed | Spices, fennel seed
+caraway seed | Spices, caraway seed
+celery seed | Spices, celery seed
+mustard seeds | Spices, mustard seed, ground
+dry mustard | Spices, mustard seed, ground
+mustard powder | Spices, mustard seed, ground
+ground mustard | Spices, mustard seed, ground
+poppy seed | Spices, poppy seed
+saffron | Spices, saffron
+italian seasoning | Spices, oregano, dried
+poultry seasoning | Spices, poultry seasoning
+pumpkin pie spice | Spices, pumpkin pie spice
+cajun seasoning | Spices, paprika
+old bay seasoning | Spices, celery seed
+taco seasoning | Spices, chili powder | | | gluten
+taco seasoning mix | Spices, chili powder | | | gluten
+lemongrass | Lemon grass (citronella), raw | 20
+celery | Celery, raw | 40
+celery ribs | Celery, raw | 40
+celery rib | Celery, raw | 40
+carrots | Carrots, raw | 61
+carrot | Carrots, raw | 61
+baby carrots | Carrots, baby, raw | 10
+potatoes | Potatoes, flesh and skin, raw | 213
+potato | Potatoes, flesh and skin, raw | 213
+red potatoes | Potatoes, red, flesh and skin, raw | 170
+russet potatoes | Potatoes, russet, flesh and skin, raw | 213
+baking potatoes | Potatoes, russet, flesh and skin, raw | 213
+yukon gold potatoes | Potatoes, flesh and skin, raw | 170
+mashed potatoes | Potatoes, mashed, home-prepared, whole milk and butter added
+sweet potatoes | Sweet potato, raw, unprepared | 130
+sweet potato | Sweet potato, raw, unprepared | 130
+mushrooms | Mushrooms, white, raw | 18
+mushroom | Mushrooms, white, raw | 18
+button mushrooms | Mushrooms, white, raw | 18
+portabella mushrooms | Mushrooms, portabella, raw | 84
+bell pepper | Peppers, sweet, green, raw | 119
+bell peppers | Peppers, sweet, green, raw | 119
+green pepper | Peppers, sweet, green, raw | 119
+green peppers | Peppers, sweet, green, raw | 119
+green bell pepper | Peppers, sweet, green, raw | 119
+green bell peppers | Peppers, sweet, green, raw | 119
+red bell pepper | Peppers, sweet, red, raw | 119
+red bell peppers | Peppers, sweet, red, raw | 119
+red pepper | Peppers, sweet, red, raw | 119
+red peppers | Peppers, sweet, red, raw | 119
+sweet red pepper | Peppers, sweet, red, raw | 119
+yellow bell pepper | Peppers, sweet, yellow, raw | 186
+yellow pepper | Peppers, sweet, yellow, raw | 186
+roasted red pepper | Peppers, sweet, red, canned, solids and liquids | 35
+roasted red peppers | Peppers, sweet, red, canned, solids and liquids | 35
+pimiento | Pimento, canned
+jalapeno pepper | Peppers, jalapeno, raw | 14
+jalapeno peppers | Peppers, jalapeno, raw | 14
+jalapeno | Peppers, jalapeno, raw | 14
+jalapenos | Peppers, jalapeno, raw | 14
+green chilies | Peppers, chili, green, canned | 30
+red chilies | Peppers, hot chili, red, raw | 45
+zucchini | Squash, summer, zucchini, includes skin, raw | 196
+yellow squash | Squash, summer, crookneck and straightneck, raw | 196
+butternut squash | Squash, winter, butternut, raw | 1100
+pumpkin | Pumpkin, canned, without salt
+pumpkin puree | Pumpkin, canned, without salt
+canned pumpkin | Pumpkin, canned, without salt
+eggplant | Eggplant, raw | 458
+eggplants | Eggplant, raw | 458
+cucumber | Cucumber, with peel, raw | 301
+cucumbers | Cucumber, with peel, raw | 301
+spinach | Spinach, raw | 340
+baby spinach | Spinach, raw
+baby spinach leaves | Spinach, raw
+spinach leaves | Spinach, raw
+frozen spinach | Spinach, frozen, chopped or leaf, unprepared
+kale | Kale, raw | 200
+arugula | Arugula, raw
+lettuce | Lettuce, cos or romaine, raw | 6
+lettuce leaves | Lettuce, cos or romaine, raw | 10
+romaine lettuce | Lettuce, cos or romaine, raw | 6
+iceberg lettuce | Lettuce, iceberg (includes crisphead types), raw | 8
+cabbage | Cabbage, raw | 900
+green cabbage | Cabbage, raw | 900
+red cabbage | Cabbage, red, raw | 900
+sauerkraut | Sauerkraut, canned, solids and liquids
+broccoli | Broccoli, raw | 150
+broccoli florets | Broccoli, raw | 10
+broccoli floret | Broccoli, raw | 10
+frozen broccoli | Broccoli, frozen, chopped, unprepared
+cauliflower | Cauliflower, raw | 575
+asparagus | Asparagus, raw | 16
+green beans | Beans, snap, green, raw
+snow peas | Peas, edible-podded, raw | 3
+peas | Peas, green, raw
+frozen peas | Peas, green, frozen, unprepared
+corn | Corn, sweet, yellow, raw | 90
+frozen corn | Corn, sweet, yellow, frozen, kernels cut off cob, unprepared
+whole kernel corn | Corn, sweet, yellow, canned, whole kernel, drained solids
+corn kernels | Corn, sweet, yellow, canned, whole kernel, drained solids
+creamed corn | Corn, sweet, yellow, canned, cream style, regular pack
+cream-style corn | Corn, sweet, yellow, canned, cream style, regular pack
+frozen mixed vegetables | Vegetables, mixed, frozen, unprepared
+bean sprouts | Mung beans, mature seeds, sprouted, raw
+water chestnuts | Waterchestnuts, chinese, canned, solids and liquids
+artichoke hearts | Artichokes, (globe or french), frozen, unprepared
+parsnips | Parsnips, raw | 133
+avocado | Avocados, raw, all commercial varieties | 150
+avocados | Avocados, raw, all commercial varieties | 150
+black olives | Olives, ripe, canned (small-extra large) | 4
+ripe olives | Olives, ripe, canned (small-extra large) | 4
+olive | Olives, ripe, canned (small-extra large) | 4
+green olives | Olives, pickled, canned or bottled, green | 3
+kalamata olive | Olives, ripe, canned (small-extra large) | 4
+capers | Capers, canned
+horseradish | Horseradish, prepared
+apples | Apples, raw, with skin | 182
+apple | Apples, raw, with skin | 182
+granny smith apples | Apples, raw, with skin | 182
+granny smith apple | Apples, raw, with skin | 182
+applesauce | Applesauce, canned, unsweetened, with added ascorbic acid
+unsweetened applesauce | Applesauce, canned, unsweetened, with added ascorbic acid
+bananas | Bananas, raw | 118
+banana | Bananas, raw | 118
+ripe bananas | Bananas, raw | 118
+strawberries | Strawberries, raw | 12
+strawberry | Strawberries, raw | 12
+frozen strawberries | Strawberries, frozen, unsweetened
+blueberries | Blueberries, raw
+raspberries | Raspberries, raw | 2 | 123
+cranberries | Cranberries, raw
+dried cranberries | Cranberries, dried, sweetened
+pineapple | Pineapple, raw, all varieties
+pineapple chunks | Pineapple, canned, juice pack, solids and liquids
+peaches | Peaches, yellow, raw | 150 | 154
+pears | Pears, raw | 178
+mango | Mangos, raw | 336
+mangoes | Mangos, raw | 336
+rhubarb | Rhubarb, raw
+dates | Dates, medjool | 24
+raisins | Raisins, seedless
+golden raisin | Raisins, golden seedless
+currants | Currants, zante, dried
+dried apricot | Apricots, dried, sulfured, uncooked | 7
+maraschino cherry | Cherries, sweet, canned, light syrup pack, solids and liquids | 5
+maraschino cherries | Cherries, sweet, canned, light syrup pack, solids and liquids | 5
+cherry pie filling | Pie fillings, canned, cherry
+coconut | Nuts, coconut meat, dried (desiccated), sweetened, shredded
+flaked coconut | Nuts, coconut meat, dried (desiccated), sweetened, shredded
+sweetened flaked coconut | Nuts, coconut meat, dried (desiccated), sweetened, shredded
+honey | Honey
+maple syrup | Syrups, maple
+pure maple syrup | Syrups, maple
+molasses | Molasses
+corn syrup | Syrups, corn, light
+light corn syrup | Syrups, corn, light
+golden syrup | Syrups, corn, light
+chocolate syrup | Syrups, chocolate, fudge-type
+apricot preserves | Jams and preserves, apricot
+orange marmalade | Marmalade, orange
+splenda sugar substitute | -
+splenda granular | -
+cocoa | Cocoa, dry powder, unsweetened
+cocoa powder | Cocoa, dry powder, unsweetened
+unsweetened cocoa powder | Cocoa, dry powder, unsweetened
+unsweetened cocoa | Cocoa, dry powder, unsweetened
+chocolate | Chocolate, dark, 45- 59% cacao solids | 28 | | milk, soy
+semisweet chocolate | Chocolate, dark, 45- 59% cacao solids | 28 | 170 | milk, soy
+bittersweet chocolate | Chocolate, dark, 60-69% cacao solids | 28 | | milk, soy
+dark chocolate | Chocolate, dark, 70-85% cacao solids | 28 | | milk, soy
+unsweetened chocolate | Baking chocolate, unsweetened, squares | 28
+white chocolate | Candies, white chocolate | 28
+white chocolate chips | Candies, white chocolate
+chocolate chips | Candies, semisweet chocolate | | | milk, soy
+semi-sweet chocolate chips | Candies, semisweet chocolate | | | milk, soy
+milk chocolate chips | Candies, milk chocolate
+butterscotch chips | Candies, butterscotch | | | milk
+marshmallows | Candies, marshmallows | 7
+mini marshmallows | Candies, marshmallows
+miniature marshmallows | Candies, marshmallows
+almonds | Nuts, almonds
+slivered almonds | Nuts, almonds
+ground almonds | Nuts, almonds
+walnuts | Nuts, walnuts, english
+pecans | Nuts, pecans
+pecan halves | Nuts, pecans
+nuts | Nuts, mixed nuts, dry roasted, with peanuts, without salt added | | | peanuts
+pine nuts | Nuts, pine nuts, dried
+cashews | Nuts, cashew nuts, raw
+hazelnuts | Nuts, hazelnuts or filberts
+macadamia nuts | Nuts, macadamia nuts, raw
+peanuts | Peanuts, all types, raw
+peanut butter | Peanut butter, smooth style, with salt
+creamy peanut butter | Peanut butter, smooth style, with salt
+sesame seeds | Seeds, sesame seeds, whole, dried
+toasted sesame seeds | Seeds, sesame seeds, whole, roasted and toasted
+sunflower seeds | Seeds, sunflower seed kernels, dried
+tahini | Seeds, sesame butter, tahini, from roasted and toasted kernels (most common type)
+wheat germ | Wheat germ, crude
+rolled oats | Cereals, oats, regular and quick, not fortified, dry
+oats | Cereals, oats, regular and quick, not fortified, dry
+old fashioned oats | Cereals, oats, regular and quick, not fortified, dry
+quick-cooking oats | Cereals, oats, regular and quick, not fortified, dry
+quick oats | Cereals, oats, regular and quick, not fortified, dry
+oatmeal | Cereals, oats, regular and quick, not fortified, dry
+corn flakes | Cereals ready-to-eat, corn flakes, pln, single brand | | | gluten
+rice krispies | Cereals ready-to-eat, rice, puffed, fortified | | | gluten
+rice | Rice, white, long-grain, regular, raw, enriched
+white rice | Rice, white, long-grain, regular, raw, enriched
+long grain rice | Rice, white, long-grain, regular, raw, enriched
+basmati rice | Rice, white, long-grain, regular, raw, enriched
+arborio rice | Rice, white, medium-grain, raw, enriched
+brown rice | Rice, brown, long-grain, raw
+cooked rice | Rice, white, long-grain, regular, enriched, cooked
+cooked brown rice | Rice, brown, long-grain, cooked
+quinoa | Quinoa, uncooked
+couscous | Couscous, dry
+spaghetti | Pasta, dry, enriched
+pasta | Pasta, dry, enriched
+linguine | Pasta, dry, enriched
+penne pasta | Pasta, dry, enriched
+elbow macaroni | Pasta, dry, enriched
+macaroni | Pasta, dry, enriched
+orzo pasta | Pasta, dry, enriched
+lasagna noodles | Pasta, dry, enriched | 20
+egg noodles | Noodles, egg, dry, enriched
+bread | Bread, white, commercially prepared (includes soft bread crumbs) | 25
+white bread | Bread, white, commercially prepared (includes soft bread crumbs) | 25
+french bread | Bread, french or vienna (includes sourdough) | 25
+baguette | Bread, french or vienna (includes sourdough) | 250
+whole wheat bread | Bread, whole-wheat, commercially prepared | 28
+hamburger buns | Rolls, hamburger or hotdog, plain | 43
+flour tortillas | Tortillas, ready-to-bake or -fry, flour, refrigerated | 49
+corn tortillas | Tortillas, ready-to-bake or -fry, corn | 26
+tortilla chips | Snacks, tortilla chips, plain, white corn, salted
+breadcrumbs | Bread crumbs, dry, grated, plain
+breadcrumb | Bread crumbs, dry, grated, plain
+dry breadcrumbs | Bread crumbs, dry, grated, plain
+plain breadcrumbs | Bread crumbs, dry, grated, plain
+panko breadcrumbs | Bread crumbs, dry, grated, plain
+italian seasoned breadcrumbs | Bread crumbs, dry, grated, seasoned
+seasoned bread crumbs | Bread crumbs, dry, grated, seasoned
+graham cracker crumbs | Cookies, graham crackers, plain or honey (includes cinnamon)
+graham crackers | Cookies, graham crackers, plain or honey (includes cinnamon) | 7
+saltine crackers | Crackers, saltines (includes oyster, soda, soup) | 3
+oreo cookies | Cookies, chocolate sandwich, with creme filling, regular | 11 | | soy
+bisquick | Leavening agents, baking powder, double-acting, sodium aluminum sulfate
+yellow cake mix | Cake, yellow, enriched, dry mix
+instant vanilla pudding | Puddings, vanilla, dry mix, instant | | | milk
+vanilla instant pudding mix | Puddings, vanilla, dry mix, instant | | | milk
+unflavored gelatin | Gelatins, dry powder, unsweetened | 7 | 160
+cool whip | Dessert topping, semi solid, frozen | | | milk
+container cool whip | Dessert topping, semi solid, frozen | | | milk
+whipped topping | Dessert topping, semi solid, frozen | | | milk
+vanilla ice cream | Ice creams, vanilla
+miracle whip | Salad dressing, mayonnaise type, regular, with salt | | | egg
+mayonnaise | Salad dressing, mayonnaise, regular
+light mayonnaise | Salad dressing, mayonnaise, light
+italian dressing | Salad dressing, italian dressing, commercial, regular
+ranch dressing | Salad dressing, ranch dressing, regular | | | milk, egg
+pesto sauce | Sauce, pesto, ready-to-serve, refrigerated | | | milk, tree nuts
+mustard | Mustard, prepared, yellow
+yellow mustard | Mustard, prepared, yellow
+dijon mustard | Mustard, prepared, yellow
+soy sauce | Soy sauce made from soy and wheat (shoyu)
+light soy sauce | Soy sauce made from soy and wheat (shoyu)
+low sodium soy sauce | Soy sauce made from soy and wheat (shoyu), low sodium
+reduced sodium soy sauce | Soy sauce made from soy and wheat (shoyu), low sodium
+teriyaki sauce | Sauce, teriyaki, ready-to-serve
+hoisin sauce | Sauce, hoisin, ready-to-serve | | | soy, gluten
+oyster sauce | Sauce, oyster, ready-to-serve | | | shellfish, gluten
+fish sauce | Sauce, fish, ready-to-serve
+worcestershire sauce | Sauce, worcestershire | | | fish
+barbecue sauce | Sauce, barbecue
+tabasco sauce | Sauce, ready-to-serve, pepper or hot
+pepper sauce | Sauce, ready-to-serve, pepper or hot
+enchilada sauce | Sauce, enchilada, red, mild, ready to serve
+liquid smoke | -
+vinegar | Vinegar, distilled
+white vinegar | Vinegar, distilled
+cider vinegar | Vinegar, cider
+apple cider vinegar | Vinegar, cider
+balsamic vinegar | Vinegar, balsamic
+red wine vinegar | Vinegar, red wine
+white wine vinegar | Vinegar, red wine
+sherry wine vinegar | Vinegar, red wine
+rice vinegar | Vinegar, distilled
+rice wine vinegar | Vinegar, distilled
+mirin | Alcoholic beverage, rice (sake)
+chicken broth | Soup, chicken broth, ready-to-serve
+low sodium chicken broth | Soup, chicken broth, less/reduced sodium, ready to serve
+reduced-sodium chicken broth | Soup, chicken broth, less/reduced sodium, ready to serve
+chicken stock | Soup, stock, chicken, home-prepared
+beef broth | Soup, beef broth or bouillon canned, ready-to-serve
+beef stock | Soup, stock, beef, home-prepared
+vegetable broth | Soup, vegetable broth, ready to serve
+vegetable stock | Soup, vegetable broth, ready to serve
+chicken bouillon cubes | Soup, chicken broth cubes, dry | 4
+beef bouillon cubes | Soup, beef broth, cubed, dry | 4
+cream mushroom soup | Soup, cream of mushroom, canned, condensed | 298 | | milk, gluten
+condensed cream mushroom soup | Soup, cream of mushroom, canned, condensed | 298 | | milk, gluten
+cream chicken soup | Soup, cream of chicken, canned, condensed | 298 | | milk, gluten
+condensed cream chicken soup | Soup, cream of chicken, canned, condensed | 298 | | milk, gluten
+cream celery soup | Soup, cream of celery, canned, condensed | 298 | | milk, gluten
+onion soup mix | Soup, onion, dry, mix | | | gluten
+dry onion soup mix | Soup, onion, dry, mix | | | gluten
+dry white wine | Alcoholic beverage, wine, table, white
+white wine | Alcoholic beverage, wine, table, white
+red wine | Alcoholic beverage, wine, table, red
+dry red wine | Alcoholic beverage, wine, table, red
+dry sherry | Alcoholic beverage, wine, dessert, dry
+sherry wine | Alcoholic beverage, wine, dessert, dry
+beer | Alcoholic beverage, beer, regular, all
+brandy | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+vodka | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+rum | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+dark rum | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+bourbon | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+tequila | Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof
+kahlua | Alcoholic beverage, liqueur, coffee, 53 proof
+grand marnier | Alcoholic beverage, liqueur, coffee, 53 proof
+ginger ale | Beverages, carbonated, ginger ale
+coffee | Beverages, coffee, brewed, prepared with tap water
+instant coffee | Beverages, coffee, instant, regular, powder
+red food coloring | -
+green food coloring | -
+chicken | Chicken, broilers or fryers, meat and skin, raw | 750
+cooked chicken | Chicken, broilers or fryers, meat only, roasted
+cooked chicken breasts | Chicken, broilers or fryers, breast, meat only, cooked, roasted | 172
+chicken breasts | Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw | 174
+chicken breast | Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw | 174
+chicken breast halves | Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw | 174
+chicken thighs | Chicken, broilers or fryers, dark meat, thigh, meat only, raw | 69
+chicken wings | Chicken, broilers or fryers, wing, meat and skin, raw | 49
+ground chicken | Chicken, ground, raw
+cooked turkey | Turkey, whole, meat only, cooked, roasted
+ground turkey | Ground turkey, raw
+ground beef | Beef, ground, 80% lean meat / 20% fat, raw
+lean ground beef | Beef, ground, 90% lean meat / 10% fat, raw
+hamburger | Beef, ground, 80% lean meat / 20% fat, raw
+ground chuck | Beef, ground, 80% lean meat / 20% fat, raw
+beef | Beef, ground, 85% lean meat / 15% fat, raw
+ground pork | Pork, fresh, ground, raw
+pork | Pork, fresh, loin, whole, separable lean and fat, raw
+pork chops | Pork, fresh, loin, center loin (chops), bone-in, separable lean and fat, raw | 200
+pork tenderloin | Pork, fresh, loin, tenderloin, separable lean only, raw | 450
+pork loin | Pork, fresh, loin, whole, separable lean and fat, raw
+bacon | Pork, cured, bacon, pre-sliced, cooked, pan-fried | 8
+cooked bacon | Pork, cured, bacon, pre-sliced, cooked, pan-fried | 8
+bacon bits | Pork, cured, bacon, pre-sliced, cooked, pan-fried
+ham | Ham, sliced, regular (approximately 11% fat) | 28 | 140
+cooked ham | Ham, sliced, regular (approximately 11% fat) | 28 | 140
+prosciutto | Ham, sliced, regular (approximately 11% fat) | 15
+pancetta | Pork, cured, bacon, unprepared | 15
+italian sausage | Sausage, Italian, pork, raw | 83
+sausage | Sausage, Italian, pork, raw | 75
+chorizo sausage | Chorizo, pork and beef | 60
+pepperoni | Pepperoni, beef and pork, sliced | 2 | 110
+shrimp | Crustaceans, shrimp, raw (not previously frozen) | 6 | | shellfish
+raw shrimp | Crustaceans, shrimp, raw (not previously frozen) | 6 | | shellfish
+cooked shrimp | Crustaceans, shrimp, cooked (not previously frozen) | 5 | | shellfish
+crabmeat | Crustaceans, crab, blue, canned | | | shellfish
+salmon | Fish, salmon, Atlantic, farmed, raw | 170
+salmon fillets | Fish, salmon, Atlantic, farmed, raw | 170
+smoked salmon | Fish, salmon, chinook, smoked | 28
+tuna | Fish, tuna, light, canned in water, drained solids
+firm tofu | Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)
+chickpeas | Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids
+garbanzo beans | Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids
+black beans | Beans, black, mature seeds, canned, low sodium
+kidney beans | Beans, kidney, red, mature seeds, canned, drained solids
+red kidney beans | Beans, kidney, red, mature seeds, canned, drained solids
+pinto beans | Beans, pinto, canned, drained solids
+cannellini beans | Beans, white, mature seeds, canned
+white beans | Beans, white, mature seeds, canned
+refried beans | Refried beans, canned, traditional, reduced sodium
+lentils | Lentils, raw
+# ---- batch 2 (food.com long tail). "=phrase" reuses another line.
+almond extract | Oil, almond | | | tree nuts
+pork shoulder | Pork, fresh, shoulder, whole, separable lean and fat, raw
+pork butt | Pork, fresh, shoulder, whole, separable lean and fat, raw
+pork roast | Pork, fresh, loin, whole, separable lean and fat, raw
+pork loin roast | Pork, fresh, loin, whole, separable lean and fat, raw
+pork loin chops | Pork, fresh, loin, center loin (chops), boneless, separable lean and fat, raw | 170
+country-style pork ribs | Pork, fresh, shoulder, whole, separable lean and fat, raw
+pork spareribs | Pork, fresh, spareribs, separable lean and fat, raw
+chuck roast | Beef, chuck, roast, boneless, choice, raw
+beef chuck roast | Beef, chuck, roast, boneless, choice, raw
+beef chuck | Beef, chuck, roast, boneless, choice, raw
+rump roast | Beef, chuck, roast, boneless, choice, raw
+beef stew meat | Beef, chuck for stew, separable lean and fat, all grades, raw
+stewing beef | Beef, chuck for stew, separable lean and fat, all grades, raw
+stew meat | Beef, chuck for stew, separable lean and fat, all grades, raw
+lean stewing beef | Beef, chuck for stew, separable lean and fat, all grades, raw
+beef brisket | Beef, brisket, whole, separable lean only, all grades, raw
+flank steak | Beef, flank, steak, boneless, choice, raw
+flank steaks | Beef, flank, steak, boneless, choice, raw
+beef flank steak | Beef, flank, steak, boneless, choice, raw
+skirt steaks | Beef, flank, steak, boneless, choice, raw
+beef tenderloin | Beef, tenderloin steak, raw
+beef tenderloin steaks | Beef, tenderloin steak, raw | 170
+sirloin steak | Beef, top sirloin steak, raw
+sirloin steaks | Beef, top sirloin steak, raw | 225
+beef sirloin | Beef, top sirloin steak, raw
+round steak | Beef, round, top round, boneless, choice, raw
+round steaks | Beef, round, top round, boneless, choice, raw
+beef round steak | Beef, round, top round, boneless, choice, raw
+ground round | =lean ground beef
+ground sirloin | =lean ground beef
+hamburger meat | =ground beef
+beef mince | =ground beef
+lamb chops | Lamb, domestic, loin, separable lean and fat, trimmed to 1/4" fat, choice, raw | 100
+ground lamb | Lamb, ground, raw
+chicken drumsticks | Chicken, broilers or fryers, drumstick, meat and skin, raw | 110
+chicken legs | Chicken, broilers or fryers, leg, meat and skin, raw | 250
+chicken parts | Chicken, broilers or fryers, meat and skin, raw | 150
+chicken tenderloins | =chicken breast
+chicken breast fillets | =chicken breast
+chicken breast half | =chicken breast
+chicken liver | Chicken, liver, all classes, raw | 32
+whole chicken | Chicken, broilers or fryers, meat and skin, raw | 1100
+roasting chicken | Chicken, broilers or fryers, meat and skin, raw | 1100
+cornish hens | Chicken, cornish game hens, meat and skin, raw | 500
+duck breasts | Duck, domesticated, meat only, raw | 170
+ground turkey breast | Ground turkey, 93% lean, 7% fat, raw
+tilapia fillets | Fish, tilapia, raw | 115
+catfish fillets | Fish, catfish, channel, farmed, raw | 150
+cod fish fillets | Fish, cod, Atlantic, raw | 170
+white fish fillets | Fish, cod, Atlantic, raw | 170
+fish fillets | Fish, cod, Atlantic, raw | 170
+flounder fillets | Fish, flatfish (flounder and sole species), raw | 150
+red snapper fillets | Fish, snapper, mixed species, raw | 170
+salmon steaks | =salmon
+tuna steaks | Fish, tuna, fresh, yellowfin, raw | 170
+tuna in water | Fish, tuna, light, canned in water, drained solids
+pink salmon | Fish, salmon, pink, canned, total can contents
+anchovy fillets | Fish, anchovy, european, canned in oil, drained solids | 4
+lump crabmeat | =crabmeat
+imitation crabmeat | Crustaceans, shrimp, mixed species, imitation, made from surimi | | | fish, gluten
+mussels | Mollusks, mussel, blue, raw | 20 | | shellfish
+prawns | =shrimp
+baby shrimp | =shrimp
+uncooked shrimp | =shrimp
+new potatoes | Potatoes, red, flesh and skin, raw | 60
+baby potatoes | Potatoes, red, flesh and skin, raw | 40
+idaho potatoes | =russet potatoes
+russet potato | =russet potatoes
+frozen hash browns | Potatoes, hash brown, frozen, plain, unprepared
+hash browns | Potatoes, hash brown, frozen, plain, unprepared
+simply potatoes hash browns | Potatoes, hash brown, refrigerated, unprepared
+instant potato flakes | Potatoes, mashed, dehydrated, flakes without milk, dry form
+mashed sweet potatoes | Sweet potato, cooked, baked in skin, flesh, without salt
+vidalia onion | =sweet onion
+vidalia onions | =sweet onion
+spanish onion | =yellow onion
+purple onion | =red onion
+brown onion | =yellow onion
+white pearl onions | Onions, raw | 7
+instant onion | Onions, dehydrated flakes
+dried onion | Onions, dehydrated flakes
+onion flakes | Onions, dehydrated flakes
+red capsicum | =red bell pepper
+poblano chiles | Peppers, poblano, seeded, raw | 75
+jalapeno chile | =jalapeno
+green chili | =green chilies
+chilies | =green chilies
+red chile | =red chilies
+dried red chilies | Spices, pepper, red or cayenne | 0.5
+chili flakes | =red pepper flakes
+dried red pepper flakes | =red pepper flakes
+red chili pepper flakes | =red pepper flakes
+chipotle chile in adobo | Peppers, hot chili, red, canned, excluding seeds, solids and liquids | 15
+chipotle chiles in adobo | =chipotle chile in adobo
+white cake mix | Cake, white, dry mix, reg
+yellow cake mix | Cake, yellow, enriched, dry mix
+lemon cake mix | Cake, yellow, enriched, dry mix
+spice cake mix | Cake, yellow, enriched, dry mix
+devil's food cake mix | Cake, pudding-type, chocolate, dry mix
+chocolate cake mix | Cake, pudding-type, chocolate, dry mix
+german chocolate cake mix | Cake, pudding-type, german chocolate, dry mix
+brownie mix | Cookies, brownies, dry mix, regular | | | egg, milk
+fudge brownie mix | Cookies, brownies, dry mix, regular | | | egg, milk
+angel food cake | Cake, angelfood, commercially prepared | 28 | | egg
+crisco | Shortening, vegetable, household, composite
+crisco shortening | =crisco
+butter flavor crisco | =crisco
+butter flavor shortening | =crisco
+oleo | =margarine
+sweet butter | =unsalted butter
+chilled butter | =butter
+clarified butter | =ghee
+bacon drippings | Pork, bacon, rendered fat, cooked
+bacon grease | Pork, bacon, rendered fat, cooked
+smoked bacon | =bacon
+light olive oil | =olive oil
+olive oil flavored cooking spray | =cooking spray
+pam cooking spray | =cooking spray
+chili oil | Oil, sesame, salad or cooking
+refrigerated crescent dinner rolls | Rolls, dinner, plain, commercially prepared (includes brown-and-serve) | 28
+pillsbury refrigerated crescent dinner rolls | =refrigerated crescent dinner rolls
+crescent rolls | =refrigerated crescent dinner rolls
+crescent roll dough | =refrigerated crescent dinner rolls
+pizza dough | Bread, french or vienna (includes sourdough) | 400
+pizza crust | =pizza dough
+frozen bread dough | Bread, white, commercially prepared (includes soft bread crumbs) | 450
+unbaked pie shell | Pie crust, refrigerated, regular, unbaked | 160
+unbaked pie shells | =unbaked pie shell
+pie shell | Pie crust, refrigerated, regular, baked | 160
+pie crust | Pie crust, refrigerated, regular, unbaked | 160
+pie crusts | =pie crust
+graham cracker crust | Pie Crust, Cookie-type, Graham Cracker, Ready Crust | 170
+graham cracker pie crust | =graham cracker crust
+sheets phyllo dough | Phyllo dough | 19
+sheet frozen puff pastry | Puff pastry, frozen, ready-to-bake | 245
+wonton wrappers | Wonton wrappers (includes egg roll wrappers) | 8 | | egg
+pasta shells | =pasta
+shell pasta | =pasta
+angel hair pasta | =pasta
+fettuccine | =pasta
+fettuccine pasta | =pasta
+rotini pasta | =pasta
+bow tie pasta | =pasta
+rigatoni pasta | =pasta
+ziti pasta | =pasta
+farfalle pasta | =pasta
+fusilli | =pasta
+manicotti | =pasta
+spaghetti noodles | =pasta
+uncooked elbow macaroni | =pasta
+whole wheat spaghetti | Pasta, whole-wheat, dry
+wide egg noodles | =egg noodles
+noodles | =egg noodles
+cooked noodles | Noodles, egg, enriched, cooked
+ramen noodles | Noodles, egg, dry, enriched
+tortillas | =flour tortillas
+tortilla | =flour tortillas
+minute rice | Rice, white, long-grain, precooked or instant, enriched, dry
+jasmine rice | =white rice
+cooked white rice | =cooked rice
+long grain wild rice blend | Wild rice, raw
+pearl barley | Barley, pearled, raw
+polenta | =cornmeal
+baking cocoa | =cocoa
+dutch-processed cocoa powder | =cocoa
+unsweetened chocolate squares | =unsweetened chocolate
+semi-sweet chocolate baking squares | =semisweet chocolate
+dark chocolate chips | =chocolate chips
+mini chocolate chip | =chocolate chips
+miniature semisweet chocolate chips | =chocolate chips
+peanut butter chips | Peanut butter, smooth style, with salt | | | milk
+caramels | Candies, caramels | 10 | | milk
+nutella | Chocolate-flavored hazelnut spread | | 296 | tree nuts, milk
+marshmallow creme | Toppings, marshmallow cream
+marshmallow cream | =marshmallow creme
+low fat cottage cheese | Cheese, cottage, lowfat, 2% milkfat
+reduced-fat cream cheese | =light cream cheese
+philadelphia cream cheese | =cream cheese
+extra-sharp cheddar cheese | =cheddar cheese
+mild cheddar cheese | =cheddar cheese
+tasty cheese | =cheddar cheese
+feta | =feta cheese
+gorgonzola | =blue cheese
+brie round | Cheese, brie
+mascarpone | -
+nonfat dry milk powder | Milk, dry, nonfat, regular, without added vitamin A and vitamin D
+evaporated skim milk | Milk, canned, evaporated, nonfat, with added vitamin A and vitamin D
+eagle brand sweetened condensed milk | =sweetened condensed milk
+sour milk | =buttermilk
+fat-free buttermilk | =buttermilk
+plain low-fat yogurt | Yogurt, Greek, plain, lowfat
+low-fat plain yogurt | =plain low-fat yogurt
+plain fat-free yogurt | Yogurt, plain, nonfat
+plain nonfat yogurt | =plain fat-free yogurt
+low-fat vanilla yogurt | Yogurt, vanilla, lofat, 11 grams prot per 8 oz
+nonfat sour cream | =fat free sour cream
+low-fat mayonnaise | =light mayonnaise
+fat-free mayonnaise | Salad Dressing, mayonnaise-like, fat-free | | | egg
+hellmann's mayonnaise | =mayonnaise
+scoops vanilla ice cream | Ice creams, vanilla | 66
+ground flax seeds | Flaxseed, ground | | 112
+flax seed meal | =ground flax seeds
+flax seed | Seeds, flaxseed
+black-eyed peas | Cowpeas, common (blackeyes, crowder, southern), mature seeds, canned, plain
+dried black beans | Beans, black, mature seeds, raw
+dried lentils | Lentils, raw
+dried navy beans | Beans, navy, mature seeds, raw
+dried split peas | Peas, green, split, mature seeds, raw
+dried garbanzo beans | Chickpeas (garbanzo beans, bengal gram), mature seeds, raw
+canned chick-peas | =chickpeas
+butter beans | Lima beans, large, mature seeds, canned
+french style green beans | =green beans
+vanilla wafers | Cookies, vanilla wafers, higher fat | 4
+vanilla wafer crumbs | Cookies, vanilla wafers, higher fat
+ritz crackers | Crackers, standard snack-type, regular | 3
+cracker crumb | Crackers, standard snack-type, regular
+corn flake crumbs | =corn flakes
+corn chips | Snacks, corn-based, extruded, chips, plain
+instant coffee granules | =instant coffee
+instant espresso powder | =instant coffee
+strong coffee | =coffee
+brewed coffee | =coffee
+soft breadcrumbs | =bread
+dried breadcrumbs | =breadcrumbs
+fine dry breadcrumb | =breadcrumbs
+matzo meal | Crackers, matzo, plain
+sandwich bread | =bread
+cornbread | Bread, cornbread, dry mix, prepared with 2% milk, 80% margarine, and eggs | 60
+french baguette | =baguette
+desiccated coconut | Nuts, coconut meat, dried (desiccated), not sweetened
+unsweetened coconut | =desiccated coconut
+sweetened coconut | =coconut
+unsweetened coconut milk | =coconut milk
+asparagus spears | =asparagus
+cauliflower florets | =cauliflower
+head cauliflower | =cauliflower
+head cabbage | =cabbage
+frozen broccoli florets | =frozen broccoli
+cremini mushrooms | Mushrooms, brown, italian, or crimini, raw | 15
+portabella mushroom caps | =portabella mushrooms
+mixed mushrooms | =mushrooms
+dried porcini mushrooms | Mushrooms, shiitake, dried | 2
+coleslaw mix | Cabbage, raw
+marinated artichoke hearts | Artichokes, (globe or french), frozen, unprepared
+fennel bulb | Fennel, bulb, raw | 234
+fennel bulbs | =fennel bulb
+cantaloupe | Melons, cantaloupe, raw | 550
+english cucumber | =cucumber
+bok choy | Cabbage, chinese (pak-choi), raw | 500
+mixed salad greens | Lettuce, green leaf, raw
+kiwi fruits | Kiwifruit, green, raw | 69
+ripe avocados | =avocado
+ripe avocado | =avocado
+ripe mangoes | =mango
+mashed banana | Bananas, raw
+mashed bananas | =mashed banana
+mashed ripe banana | =mashed banana
+very ripe bananas | =banana
+tart apples | =apples
+cooking apples | =apples
+baking apples | =apples
+pineapple tidbits | =pineapple chunks
+pineapple in juice | =pineapple chunks
+pineapple chunks in juice | =pineapple chunks
+pineapple slices | =pineapple chunks
+sultanas | =golden raisin
+mixed dried fruit | =raisins
+whole berry cranberry sauce | Cranberry sauce, canned, sweetened
+raspberry jam | Jams and preserves
+strawberry jam | Jams and preserves
+crystallized ginger | Candies, hard | 5
+tomatoes green chilies | Tomatoes, red, ripe, canned, with green chilies
+tomatoes with green chilies | =tomatoes green chilies
+rotel | =tomatoes green chilies
+rotel tomatoes | =tomatoes green chilies
+italian-style tomatoes | =canned tomatoes
+plum tomato | =plum tomatoes
+picante sauce | =salsa
+chunky salsa | =salsa
+taco sauce | =salsa
+sweet chili sauce | Sauce, sweet and sour, prepared-from-recipe
+chili paste | =chili sauce
+chili-garlic sauce | =chili sauce
+frank's red sauce | =tabasco sauce
+honey mustard | Salad dressing, honey mustard, regular | | | egg
+spicy brown mustard | =mustard
+whole grain mustard | =mustard
+coarse grain mustard | =mustard
+dijon-style mustard | =mustard
+ranch dressing mix | Salad dressing, ranch dressing, regular | | | milk, egg
+dry ranch dressing mix | =ranch dressing mix
+hidden valley ranch dressing mix | =ranch dressing mix
+italian salad dressing mix | =italian dressing
+lipton onion soup mix | =onion soup mix
+cheddar cheese soup | Soup, cheese, canned, condensed | 298 | | milk, gluten
+condensed cheddar cheese soup | =cheddar cheese soup
+stove top stuffing mix | Bread, stuffing, dry mix
+seasoned stuffing mix | =stove top stuffing mix
+chicken bouillon | =chicken bouillon cubes
+chicken bouillon granule | =chicken bouillon cubes
+beef bouillon | =beef bouillon cubes
+beef bouillon granules | =beef bouillon cubes
+fat free chicken broth | =low sodium chicken broth
+fat-free chicken broth | =low sodium chicken broth
+reduced-sodium fat-free chicken broth | =low sodium chicken broth
+stock | =chicken stock
+clam juice | Mollusks, clam, mixed species, canned, liquid | | | shellfish
+v vegetable juice | Vegetable juice cocktail, canned
+frozen lemonade concentrate | Lemonade, frozen concentrate, white
+orange juice concentrate | =frozen orange juice concentrate
+squeezed orange juice | =orange juice
+squeezed lemon juice | =lemon juice
+squeezed lime juice | =lime juice
+distilled white vinegar | =white vinegar
+tarragon vinegar | =white wine vinegar
+rice wine | =mirin
+sake | =mirin
+soya sauce | =soy sauce
+dark soy sauce | =soy sauce
+mango chutney | Sauce, sweet and sour, prepared-from-recipe
+agave nectar | Sweetener, syrup, agave
+liquid honey | =honey
+white corn syrup | =light corn syrup
+dark molasses | =molasses
+golden brown sugar | =brown sugar
+soft brown sugar | =brown sugar
+vanilla sugar | =sugar
+cinnamon sugar | =sugar
+sugar substitute | -
+artificial sweetener | -
+splenda brown sugar blend | Sweeteners, for baking, brown, contains sugar and sucralose
+mace | Spices, mace, ground
+creole seasoning | =cajun seasoning
+accent seasoning | -
+five-spice powder | =allspice
+mixed herbs | =italian seasoning
+ground sage | =sage
+rubbed sage | =sage
+sage leaves | Spices, sage, ground | 0.7
+dried basil leaves | =dried basil
+dried thyme leaves | =dried thyme
+dried dill weed | =dill weed
+oregano leaves | =dried oregano
+ground oregano | =dried oregano
+ground thyme | =dried thyme
+ginger powder | =ground ginger
+powdered ginger | =ground ginger
+granulated garlic | =garlic powder
+ground white pepper | =white pepper
+black mustard seeds | =mustard seeds
+cardamom pods | =cardamom
+star anise | Spices, anise seed | 0.5
+saffron thread | =saffron
+dried ancho chile powder | =chili powder
+peppermint extract | =vanilla extract
+orange extract | =vanilla extract
+rum extract | =vanilla extract
+rose water | -
+food coloring | -
+teaspoon salt | =salt
+fine sea salt | =salt
+nutritional yeast | Leavening agents, yeast, baker's, active dry
+fast rising yeast | =active dry yeast
+bread machine yeast | =active dry yeast
+dry active yeast | =active dry yeast
+potato starch | Potato flour
+quick-cooking tapioca | Tapioca, pearl, dry
+almond meal | =ground almonds
+blanched almond | =almonds
+toasted pecans | =pecans
+walnut halves | =walnuts
+pistachios | Nuts, pistachio nuts, raw
+crunchy peanut butter | Peanut butter, chunk style, with salt
+natural-style peanut butter | =peanut butter
+basil pesto | =pesto sauce
+silken tofu | Tofu, soft, prepared with calcium sulfate and magnesium chloride (nigari)
+egg beaters egg substitute | =egg substitute
+extra-large eggs | Egg, whole, raw, fresh | 56
+quick-cooking rolled oats | =oats
+quick-cooking oatmeal | =oats
+natural bran | Wheat bran, crude
+white whole wheat flour | =whole wheat flour
+gluten-free flour | Rice flour, white, unenriched
+biscuit mix | Biscuits, plain or buttermilk, dry mix
+bisquick | =biscuit mix
+bisquick baking mix | =biscuit mix
+baking mix | =biscuit mix
+pancake mix | Pancakes, plain, dry mix, complete (includes buttermilk)
+jiffy cornbread mix | Bread, cornbread, dry mix, enriched (includes corn muffin mix)
+corn muffin mix | Bread, cornbread, dry mix, enriched (includes corn muffin mix)
+instant chocolate pudding mix | Puddings, chocolate, dry mix, instant | | | milk
+jello gelatin | Gelatin desserts, dry mix
+strawberry jell-o gelatin dessert | =jello gelatin
+strawberry gelatin | =jello gelatin
+lemon jell-o gelatin | =jello gelatin
+french-fried onions | Onions, frozen, chopped, unprepared | | | gluten
+light rum | =rum
+white rum | =rum
+gin | =vodka
+cognac | =brandy
+amaretto | Alcoholic beverage, liqueur, coffee, 53 proof | | | tree nuts
+triple sec | =grand marnier
+cointreau liqueur | =grand marnier
+champagne | =white wine
+marsala wine | =dry sherry
+wine | =white wine
+# ---- cooked states ('fusilli, cooked'), looked up as 'cooked <name>'
+cooked pasta | Pasta, cooked, enriched, without added salt
+cooked spaghetti | =cooked pasta
+cooked fusilli | =cooked pasta
+cooked penne pasta | =cooked pasta
+cooked macaroni | =cooked pasta
+cooked elbow macaroni | =cooked pasta
+cooked egg noodles | =cooked noodles
+cooked white rice | =cooked rice
+cooked long grain rice | =cooked rice
+cooked basmati rice | =cooked rice
+cooked quinoa | Quinoa, cooked
+cooked lentils | Lentils, mature seeds, cooked, boiled, without salt
+cooked black beans | Beans, black, mature seeds, cooked, boiled, without salt
+cooked chickpeas | Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt
+cooked couscous | Couscous, cooked
+cooked barley | Barley, pearled, cooked
+cooked potatoes | Potatoes, boiled, cooked in skin, flesh, without salt
+cooked ground beef | Beef, ground, 80% lean meat / 20% fat, crumbles, cooked, pan-browned
+cooked chicken breast | =cooked chicken breasts
+cooked turkey breast | =cooked turkey
+cooked salmon | Fish, salmon, Atlantic, farmed, cooked, dry heat
+cooked crabmeat | =crabmeat
+# ---- batch 3
+salted peanuts | Peanuts, all types, dry-roasted, with salt
+unsalted peanuts | Peanuts, all types, dry-roasted, without salt
+club soda | -
+mascarpone cheese | -
+dried italian seasoning | =italian seasoning
+italian spices | =italian seasoning
+mixed italian herbs | =italian seasoning
+dried herbs | =italian seasoning
+herbes de provence | =italian seasoning
+chinese five spice powder | =allspice
+mixed spice | =allspice
+apple pie spice | =pumpkin pie spice
+red curry paste | Spices, curry powder
+thai red curry paste | =red curry paste
+green curry paste | =red curry paste
+curry paste | =red curry paste
+curry | =curry powder
+coconut extract | =vanilla extract
+maple extract | =vanilla extract
+maple flavoring | =vanilla extract
+vanilla flavoring | =vanilla extract
+almond flavoring | =almond extract
+light coconut milk | Nuts, coconut milk, canned (liquid expressed from grated meat and water)
+coconut cream | Nuts, coconut cream, canned, sweetened
+cream coconut | =coconut cream
+dried chipotle powder | =chili powder
+cayenne powder | =cayenne
+dried chili pepper flakes | =red pepper flakes
+pepper flakes | =red pepper flakes
+dry red pepper | =red pepper flakes
+low sodium beef broth | Soup, beef broth, less/reduced sodium, ready to serve
+beef consomme | Soup, beef broth bouillon and consomme, canned, condensed
+condensed beef broth | =beef consomme
+condensed golden mushroom soup | =cream mushroom soup
+low sodium vegetable broth | =vegetable broth
+fat-free low-sodium chicken broth | =low sodium chicken broth
+chicken base | =chicken bouillon cubes
+chicken bouillon powder | =chicken bouillon cubes
+instant chicken bouillon granules | =chicken bouillon cubes
+fish stock | Fish broth
+dry vermouth | =dry white wine
+port wine | Alcoholic beverage, wine, dessert, sweet
+madeira wine | =port wine
+burgundy wine | =red wine
+cooking sherry | =dry sherry
+dark beer | =beer
+guinness stout | =beer
+orange liqueur | =grand marnier
+coffee liqueur | =kahlua
+baileys irish cream | Alcoholic beverage, liqueur, coffee with cream, 34 proof
+irish whiskey | =vodka
+vanilla vodka | =vodka
+coconut rum | =rum
+southern comfort | =vodka
+almond paste | Nuts, almond paste
+coarse sea salt | =salt
+coarse kosher salt | =salt
+season salt | =salt
+lawry's seasoned salt | =salt
+pickling salt | =salt
+fine salt | =salt
+msg | =salt
+garlic pepper seasoning | =garlic powder
+lemon pepper seasoning | =lemon pepper
+lemon-pepper seasoning | =lemon pepper
+mrs dash seasoning mix | =italian seasoning
+mccormick's montreal brand steak seasoning | =salt
+adobo seasoning | =salt
+all purpose greek seasoning | =italian seasoning
+fajita seasoning mix | =taco seasoning
+dried mint | Spearmint, dried
+fat-free evaporated milk | =evaporated skim milk
+fat-free half-and-half | Cream, half and half, fat free
+non-fat powdered milk | =nonfat dry milk powder
+eagle brand condensed milk | =sweetened condensed milk
+pecorino romano cheese | =romano cheese
+gruyere | =gruyere cheese
+white cheddar cheese | =cheddar cheese
+old cheddar cheese | =cheddar cheese
+smoked gouda cheese | Cheese, gouda | 21
+italian cheese blend | =mozzarella cheese
+processed cheese | =american cheese
+container ricotta cheese | =ricotta cheese
+low-fat ricotta cheese | Cheese, ricotta, part skim milk
+fat-free cottage cheese | Cheese, cottage, nonfat, uncreamed, dry, large or small curd
+cream-style cottage cheese | =cottage cheese
+yoghurt | =plain yogurt
+natural yoghurt | =plain yogurt
+low-fat yogurt | =plain low-fat yogurt
+mushroom stems | =mushrooms
+baby portabella mushrooms | =cremini mushrooms
+caramel ice cream topping | Toppings, butterscotch or caramel | | | milk
+anchovy paste | Fish, anchovy, european, canned in oil, drained solids
+bulk italian sausage | =italian sausage
+andouille sausage | Sausage, Polish, pork and beef, smoked | 85
+andouille sausages | =andouille sausage
+ripe peaches | =peaches
+peach | =peaches
+toasted walnuts | =walnuts
+ground walnuts | =walnuts
+toasted pine nuts | =pine nuts
+toasted almonds | =almonds
+toasted almond | =almonds
+toasted slivered almonds | =almonds
+whole almond | =almonds
+raw cashews | =cashews
+ground pecans | =pecans
+serrano chilies | Peppers, serrano, raw | 6
+serrano chili | =serrano chilies
+habanero pepper | Peppers, hot chili, red, raw | 8
+habanero peppers | =habanero pepper
+anaheim chilies | Peppers, hot chili, green, raw | 45
+mild green chilies | =green chilies
+whole green chilies | =green chilies
+pickled jalapeno peppers | =jalapeno
+pickled jalapeno pepper | =jalapeno
+rotel tomatoes & chilies | =tomatoes green chilies
+grenadine | Syrups, grenadine
+tomato ketchup | =ketchup
+sourdough starter | -
+fine breadcrumbs | =breadcrumbs
+italian breadcrumbs | =italian seasoned breadcrumbs
+italian style breadcrumbs | =italian seasoned breadcrumbs
+white breadcrumbs | =breadcrumbs
+stale bread | =bread
+yellow food coloring | -
+oysters | Mollusks, oyster, eastern, wild, raw | 14 | | shellfish
+semisweet chocolate morsels | =chocolate chips
+semisweet chocolate morsel | =chocolate chips
+semisweet mini chocolate chips | =chocolate chips
+bittersweet chocolate chips | =chocolate chips
+ground mace | =mace
+craisins | =dried cranberries
+toffee | Candies, toffee, prepared-from-recipe | | | milk
+brown lentils | =lentils
+whole cloves | =cloves
+raspberry vinegar | =red wine vinegar
+white balsamic vinegar | =balsamic vinegar
+champagne vinegar | =white wine vinegar
+malt vinegar | =white vinegar
+seasoned rice vinegar | =rice vinegar
+egg roll wraps | =wonton wrappers
+canned pumpkin puree | =canned pumpkin
+solid pack pumpkin | =canned pumpkin
+solid-pack pumpkin | =canned pumpkin
+baking potato | =baking potatoes
+boiling potatoes | =red potatoes
+red potato | =red potatoes
+baby red potatoes | =baby potatoes
+tiny new potatoes | =baby potatoes
+new potato | =new potatoes
+yukon gold potato | =yukon gold potatoes
+ripe mango | =mango
+lime rind | =lime zest
+lime peel | =lime zest
+petite tomatoes | =canned tomatoes
+italian tomatoes | =canned tomatoes
+italian plum tomatoes | =canned tomatoes
+fire-roasted tomatoes | =canned tomatoes
+cornbread mix | =corn muffin mix
+jiffy corn muffin mix | =corn muffin mix
+tapioca flour | Tapioca, pearl, dry
+tapioca starch | =tapioca flour
+canned tuna | =tuna
+light molasses | =molasses
+snipped chives | =chives
+dried cilantro | Spices, coriander leaf, dried
+collard greens | Collards, raw
+chocolate wafer crumbs | Cookies, chocolate wafers
+real butter | =butter
+chilled unsalted butter | =unsalted butter
+harissa | =chili sauce
+coarse black pepper | =black pepper
+coconut flakes | =coconut
+unsweetened dried coconut | =desiccated coconut
+seedless raspberry jam | =raspberry jam
+raspberry preserves | =raspberry jam
+strawberry preserves | =raspberry jam
+peach preserves | =raspberry jam
+apple jelly | =raspberry jam
+grape jelly | =raspberry jam
+red currant jelly | =raspberry jam
+hungarian paprika | =paprika
+sweet hungarian paprika | =paprika
+green enchilada sauce | Sauce, salsa, verde, ready-to-serve
+salsa verde | Sauce, salsa, verde, ready-to-serve
+mild salsa | =salsa
+key lime juice | =lime juice
+uncooked long grain rice | =long grain rice
+uncooked brown rice | =brown rice
+instant brown rice | =brown rice
+thyme sprigs | Thyme, fresh | 1
+rosemary sprigs | Rosemary, fresh | 1
+rosemary leaf | =rosemary
+parsley sprig | Parsley, fresh | 1
+mint sprig | Peppermint, fresh | 1
+sage leaf | =sage leaves
+sweet basil | =basil
+curry leaves | -
+kaffir lime leaves | -
+sugar snap peas | =snow peas
+sugar snap pea | =snow peas
+stevia | -
+equal sugar substitute | -
+instant coffee powder | =instant coffee
+espresso powder | =instant coffee
+espresso | =coffee
+strong brewed coffee | =coffee
+unsifted flour | =flour
+french onion soup | Soup, onion, dry, mix | | | gluten
+adobo sauce | =chili sauce
+sirloin | =sirloin steak
+eye steaks | =sirloin steak
+white kidney beans | =cannellini beans
+chicken cutlets | =chicken breast
+frying chicken | =chicken
+hardboiled egg | =hard-boiled eggs
+hard-cooked eggs | =hard-boiled eggs
+grainy mustard | =mustard
+brown mustard | =mustard
+creole mustard | =mustard
+brown gravy mix | Gravy, brown, dry | | | gluten
+orange jell-o | =jello gelatin
+raspberry jell-o gelatin | =jello gelatin
+lime jell-o gelatin | =jello gelatin
+lemon gelatin | =jello gelatin
+mexicorn | =whole kernel corn
+white shoepeg corn | =whole kernel corn
+baby corn | =whole kernel corn
+sheets phyllo pastry | =sheets phyllo dough
+sheet puff pastry | =sheet frozen puff pastry
+sheets puff pastry | =sheet frozen puff pastry
+old-fashioned oatmeal | =oats
+quick oatmeal | =oats
+mixed greens | =mixed salad greens
+clear honey | =honey
+instant mashed potatoes | =instant potato flakes
+celery leaves | =celery
+celery & leaves | =celery
+celery root | Celeriac, raw
+whole wheat penne | =whole wheat spaghetti
+cheerios toasted oat cereal | Cereals ready-to-eat, rice, puffed, fortified | | | gluten
+graham wafer crumbs | =graham cracker crumbs
+ladyfingers | Cookies, ladyfingers, with lemon juice and rind | 10 | | egg
+no-boil lasagna noodles | =lasagna noodles
+instant pistachio pudding mix | =instant vanilla pudding
+sugar-free instant vanilla pudding mix | =instant vanilla pudding
+ginger paste | =ginger
+ginger-garlic paste | =ginger
+garlic paste | =garlic
+bulb garlic | Garlic, raw | 40
+instant garlic | =garlic powder
+garlic granules | =garlic powder
+textured vegetable protein | Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)
+vegan margarine | =margarine
+butter-flavored cooking spray | =cooking spray
+romaine lettuce hearts | =romaine lettuce
+water-packed artichoke hearts | =artichoke hearts
+frozen artichoke hearts | =artichoke hearts
+tamarind paste | Tamarinds, raw
+venison | Game meat, deer, raw
+ground venison | Game meat, deer, ground, raw
+lean bacon | =bacon
+thick-cut bacon | =bacon
+streaky bacon | =bacon
+lean hamburger | =lean ground beef
+candied ginger | =crystallized ginger
+pimento stuffed olive | =green olives
+coca-cola | Beverages, carbonated, cola, regular
+cola | =coca-cola
+frozen tater tots | Potatoes, french fried, cross cut, frozen, unprepared
+tater tots | =frozen tater tots
+quick-cooking grits | Cereals, corn grits, white, regular and quick, enriched, dry
+head broccoli | =broccoli
+double-acting baking powder | =baking powder
+green capsicum | =green pepper
+bulgar wheat | Bulgur, dry
+bran flakes | Cereals ready-to-eat, rice, puffed, fortified | | | gluten
+deep dish pie shells | =unbaked pie shell
+refrigerated pizza dough | =pizza dough
+refrigerated pie crust | =pie crust
+pastry dough | =pie crust
+lemon curd | -
+thickened cream | =heavy cream
+sweetened whipped cream | =whipped cream
+green apple | =apples
+green apples | =apples
+golden delicious apples | =apples
+louisiana sauce | =tabasco sauce
+xanthan gum | -
+unbleached cane sugar | =sugar
+demerara sugar | =brown sugar
+light-brown sugar | =brown sugar
+mandarin orange segments | =mandarin oranges
+real maple syrup | =maple syrup
+karo syrup | =light corn syrup
+sambal oelek | =chili sauce
+dark raisin | =raisins
+dried mustard | =dry mustard
+dozen egg | =eggs
+baby bok choy | =bok choy
+courgettes | =zucchini
+frozen baby peas | =frozen peas
+wasabi powder | =horseradish
+pickle juice | =white vinegar
+rice milk | Beverages, rice milk, unsweetened
+flat-leaf italian parsley | =parsley
+container frozen whipped topping | =cool whip
+container whipped topping | =cool whip
+toasted wheat germ | =wheat germ
+tri-color spiral pasta | =pasta
+spiral shaped pasta | =pasta
+dry penne pasta | =pasta
+penne rigate | =pasta
+uncooked spaghetti | =pasta
+uncooked orzo pasta | =pasta
+fenugreek seeds | Spices, fenugreek seed
+chutney | =mango chutney
+butter recipe cake mix | =yellow cake mix
+angel food cake mix | Cake, angelfood, dry mix
+dried yeast | =active dry yeast
+ripe pears | =pears
+spareribs | =pork spareribs
+balsamic vinaigrette | =italian dressing
+yellow split peas | =dried split peas
+dried black-eyed peas | Cowpeas, common (blackeyes, crowder, southern), mature seeds, raw
+dried great northern beans | Beans, great northern, mature seeds, raw
+seafood cocktail sauce | =chili sauce
+rice chex | =rice krispies
+mexican oregano | =oregano
+hass avocadoes | =avocado
+hoagie rolls | =hamburger buns
+herb seasoned stuffing mix | =stove top stuffing mix
+stuffing | =stove top stuffing mix
+candied cherry | =maraschino cherries
+belgian endive | Endive, raw | 50
+red snapper | =red snapper fillets
+hot dogs | Frankfurter, meat | 45
+hot dog | =hot dogs
+hot sauce | =tabasco sauce
+hot pepper sauce | =tabasco sauce
+hot milk | =milk
+radishes | Radishes, raw | 4.5
+pita bread | Bread, pita, white, enriched | 60
+pita breads | =pita bread
+english muffins | English muffins, wheat | 57
+acorn squash | Squash, winter, acorn, raw | 430
+spaghetti squash | Squash, winter, spaghetti, raw | 900
+beets | Beets, raw | 82
+kiwi | Kiwifruit, green, raw | 69
+pretzels | Snacks, pretzels, hard, plain, salted
+almond flour | Flour, almond
+buckwheat flour | Flour, buckwheat
+lamb shanks | Lamb, New Zealand, imported, hind-shank, separable lean and fat, raw | 350
+crispy rice cereal | =rice krispies
+almond milk | Almond milk, unsweetened, plain, shelf stable
+canned tomato | =canned tomatoes
+dried fruit | =raisins
+center-cut pork chops | =pork chops
+roma tomato | =roma tomatoes
+orange bell pepper | =yellow bell pepper
+poblano peppers | =poblano chiles
+poblano pepper | =poblano chiles
+italian bread | Bread, italian | 450
+deli ham | =ham
+turkey bacon | Turkey bacon, cooked | 8
+wheat tortillas | Tortillas, ready-to-bake or -fry, whole wheat | 49
+unbleached white flour | =unbleached flour
+lemon slices | =lemon wedge
+low-fat buttermilk | =buttermilk
+semi-sweet chocolate | =semisweet chocolate

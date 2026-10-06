@@ -44,6 +44,8 @@ CREATE TABLE recipe_ingredients (
   grams     REAL NOT NULL CHECK (grams > 0),
   PRIMARY KEY (recipe_id, food_id)
 );
+-- "Recipes with this food" and the allergen filter look up by food.
+CREATE INDEX recipe_ingredients_food ON recipe_ingredients (food_id);
 
 -- Prepared / restaurant meals for camera logging. Either linked to a recipe
 -- (nutrition computed from it) or with its own per-100 g values.

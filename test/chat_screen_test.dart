@@ -21,7 +21,7 @@ import 'memory_test.dart' show fakeEmbed;
 void main() {
   testWidgets('send → confirm card with database numbers → Save writes', (tester) async {
     final tmp = Directory.systemTemp.createTempSync('myfoodmind_chat_');
-    final nutri = openNutriDb('assets/nutri.db');
+    final nutri = openNutriDb('test/nutri_test.db');
     final user = openUserDb('${tmp.path}/user.db');
     final vectors = openVectorsDb('${tmp.path}/vectors.db');
     final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);
@@ -84,7 +84,7 @@ void main() {
 
   testWidgets('every card type renders without layout errors', (tester) async {
     final tmp = Directory.systemTemp.createTempSync('myfoodmind_cards_');
-    final nutri = openNutriDb('assets/nutri.db');
+    final nutri = openNutriDb('test/nutri_test.db');
     final user = openUserDb('${tmp.path}/user.db');
     final vectors = openVectorsDb('${tmp.path}/vectors.db');
     final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);

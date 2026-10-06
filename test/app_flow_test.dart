@@ -10,7 +10,7 @@ void main() {
   late Directory tmp;
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('myfoodmind_ui_');
-    File('assets/nutri.db').copySync('${tmp.path}/nutri.db'); // Today tab opens it on unlock
+    File('test/nutri_test.db').copySync('${tmp.path}/nutri.db'); // Today tab opens it on unlock
   });
   tearDown(() => tmp.deleteSync(recursive: true));
 

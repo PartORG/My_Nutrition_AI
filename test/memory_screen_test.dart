@@ -20,7 +20,7 @@ import 'memory_test.dart' show fakeEmbed;
 void main() {
   testWidgets('view, edit and delete what the AI knows; forget conversations', (tester) async {
     final tmp = Directory.systemTemp.createTempSync('myfoodmind_memscreen_');
-    final nutri = openNutriDb('assets/nutri.db');
+    final nutri = openNutriDb('test/nutri_test.db');
     final user = openUserDb('${tmp.path}/user.db');
     final vectors = openVectorsDb('${tmp.path}/vectors.db');
     final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);

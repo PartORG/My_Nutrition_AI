@@ -58,7 +58,7 @@ void main() {
 
     setUp(() {
       tmp = Directory.systemTemp.createTempSync('myfoodmind_bill_ui_');
-      final nutri = openNutriDb('assets/nutri.db');
+      final nutri = openNutriDb('test/nutri_test.db');
       final user = openUserDb('${tmp.path}/user.db');
       data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
       profiles = Profiles.open(tmp);

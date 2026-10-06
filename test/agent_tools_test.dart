@@ -15,7 +15,7 @@ void main() {
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('myfoodmind_tools_');
-    nutri = openNutriDb('assets/nutri.db');
+    nutri = openNutriDb('test/nutri_test.db');
     user = openUserDb('${tmp.path}/user.db');
     now = DateTime(2026, 10, 4, 8, 30);
     tools = AgentTools(nutri, user, clock: () => now);

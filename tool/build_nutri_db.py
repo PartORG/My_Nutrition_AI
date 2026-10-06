@@ -1,9 +1,8 @@
 """Build nutri.db from the schema plus data SQL files (Python stdlib only).
 
-    python3 tool/build_nutri_db.py assets/nutri.db db/nutri_schema.sql db/nutri_dummy.sql
+    python3 tool/build_nutri_db.py test/nutri_test.db db/nutri_schema.sql db/nutri_dummy.sql
 
-The real data pipeline can call build() with its own SQL, or insert rows itself
-between create and finish.
+tool/build_real_nutri_db.py builds the real one: schema, its own inserts, then finish().
 """
 
 import sqlite3
@@ -20,6 +19,11 @@ def build(out: Path, sql_files: list[Path]) -> None:
     db.execute("PRAGMA foreign_keys = ON")
     for f in sql_files:
         db.executescript(f.read_text())
+    finish(db, tmp, out)
+
+
+def finish(db: sqlite3.Connection, tmp: Path, out: Path) -> None:
+    """Index for search, check the contract, then swap tmp into place."""
     for t in FTS_TABLES:
         db.execute(f"INSERT INTO {t}({t}) VALUES ('rebuild')")
     if bad := db.execute("PRAGMA foreign_key_check").fetchall():

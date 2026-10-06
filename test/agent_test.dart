@@ -75,7 +75,7 @@ void main() {
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('myfoodmind_agent_');
-    nutri = openNutriDb('assets/nutri.db');
+    nutri = openNutriDb('test/nutri_test.db');
     user = openUserDb('${tmp.path}/user.db');
     vectors = openVectorsDb('${tmp.path}/vectors.db');
     profilesDb = migrated(sqlite3.openInMemory(), profilesDbMigrations);

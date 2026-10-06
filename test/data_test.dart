@@ -13,9 +13,9 @@ void main() {
   setUp(() => tmp = Directory.systemTemp.createTempSync('myfoodmind_'));
   tearDown(() => tmp.deleteSync(recursive: true));
 
-  /// A copy of the bundled dummy nutri.db with [meta] overrides applied.
+  /// A copy of the dummy nutri.db test fixture with [meta] overrides applied.
   File nutriCopy(Map<String, String?> meta) {
-    final f = File('assets/nutri.db').copySync('${tmp.path}/candidate.db');
+    final f = File('test/nutri_test.db').copySync('${tmp.path}/candidate.db');
     final db = sqlite3.open(f.path);
     meta.forEach((k, v) => v == null
         ? db.execute('DELETE FROM meta WHERE key = ?', [k])
@@ -25,8 +25,8 @@ void main() {
   }
 
   group('nutri.db', () {
-    test('bundled dummy db opens; recipe nutrition is computed; FTS works', () {
-      final db = openNutriDb('assets/nutri.db');
+    test('dummy db opens; recipe nutrition is computed; FTS works', () {
+      final db = openNutriDb('test/nutri_test.db');
       final stirFry = db.select(
           'SELECT kcal, protein_g FROM recipe_nutrition WHERE recipe_id = 1').single;
       // (300 g chicken*1.65 + 250 broccoli*.34 + 30 soy*.53 + 15 oil*8.84 + 300 rice*1.23) / 2
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('install swaps in a valid file and keeps the old one otherwise', () {
-      final target = File('assets/nutri.db').copySync('${tmp.path}/nutri.db');
+      final target = File('test/nutri_test.db').copySync('${tmp.path}/nutri.db');
       final before = target.lengthSync();
       final bad = nutriCopy({'schema_version': '99'});
       expect(() => installNutriDb(bad, target), throwsA(isA<NutriDbException>()));

@@ -164,7 +164,9 @@ Decisions from these numbers:
 ## M1 results (2026-10-04)
 
 - `db/nutri_schema.sql` is the data contract; `tool/build_nutri_db.py` builds `nutri.db` from SQL files
-  (stdlib only, atomic, checks foreign keys and meta). Dummy data: `db/nutri_dummy.sql` → `assets/nutri.db`.
+  (stdlib only, atomic, checks foreign keys and meta). Dummy data: `db/nutri_dummy.sql` → `test/nutri_test.db`
+  (the fixture every host test uses). Real data (2026-10-06): `tool/build_real_nutri_db.py` → `assets/nutri.db`
+  (git-ignored, too big for GitHub), per-file report in `docs/DATA_SOURCES.md`, gate `test/real_nutri_db_test.dart`.
   Contract additions: ids are stable across releases; `meta.embedding_model = 'embeddinggemma-300m'`
   names the model, not the file variant.
 - user.db v1 tables: chat_messages, memory_facts, user_allergens, saved_recipes, meal_log (nutrition
@@ -291,7 +293,7 @@ Built:
   App content answers (Health apps, foreground service `dataSync`), Data safety (only purchase history is
   collected), store listing draft. Dependency scan: no analytics/telemetry left (RevenueCat diagnostics off).
 
-Open: the real `nutri.db` (≤ 300 MB) can't also be bundled — the base module limit is 500 MB and the app is
+Open: the real `nutri.db` (≤ 300 MB, now built into `assets/` for phone builds) can't also be bundled in the Play build — the base module limit is 500 MB and the app is
 already 257 MB. When the real data exists: an install-time asset pack (≤ 1.5 GB, read via a small native
 bridge) or a download like Gemma 4 (it holds no user data either).
 

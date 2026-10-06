@@ -127,7 +127,10 @@ class AgentTools {
     final scores = <int, double>{};
     // Each ingredient the user has counts double: using what's in the fridge matters most.
     for (final item in _split(ingredients)) {
-      final foodIds = _ftsIds(nutri, 'foods_fts', item, limit: 3);
+      // Only foods some recipe uses: among tens of thousands of foods the best text match
+      // is often a branded product no recipe contains.
+      final foodIds = _ftsIds(nutri, 'foods_fts', item, limit: 3,
+          where: 'rowid IN (SELECT food_id FROM recipe_ingredients)');
       if (foodIds.isEmpty) continue;
       for (final r in nutri.select(
           'SELECT DISTINCT recipe_id FROM recipe_ingredients WHERE food_id IN (${foodIds.join(',')})')) {
@@ -623,12 +626,13 @@ String? _ftsQuery(String text) {
 }
 
 /// Row ids from an FTS5 table, best match first.
-List<int> _ftsIds(Database db, String table, String text, {required int limit}) {
+List<int> _ftsIds(Database db, String table, String text, {required int limit, String? where}) {
   final query = _ftsQuery(text);
   if (query == null) return [];
   return [
     for (final r in db.select(
-        'SELECT rowid FROM $table WHERE $table MATCH ? ORDER BY bm25($table) LIMIT ?', [query, limit]))
+        'SELECT rowid FROM $table WHERE $table MATCH ?${where == null ? '' : ' AND $where'} '
+        'ORDER BY bm25($table) LIMIT ?', [query, limit]))
       r['rowid'] as int
   ];
 }

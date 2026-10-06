@@ -36,7 +36,7 @@ void main() {
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('myfoodmind_a11y_');
-    final nutri = openNutriDb('assets/nutri.db');
+    final nutri = openNutriDb('test/nutri_test.db');
     final user = openUserDb('${tmp.path}/user.db');
     data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
     saveBody(user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
