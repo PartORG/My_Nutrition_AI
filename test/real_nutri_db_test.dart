@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
+import 'package:myfoodmind/data/plan.dart';
 import 'package:myfoodmind/data/user_db.dart';
 
 /// Gate for the real assets/nutri.db (built by tool/build_real_nutri_db.py, not in git).
@@ -46,6 +47,19 @@ void main() {
     ];
     expect(titles.length, 12);
     expect(titles.toSet().length, 12);
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
+  test('a week plan fills all 21 meals with different recipes, fast', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final watch = Stopwatch()..start();
+    final plan = planWeek(AgentTools(db, user), DateTime(2026, 10, 5));
+    expect(watch.elapsedMilliseconds, lessThan(3000));
+    expect(plan.length, 21);
+    expect(plan.map((p) => p.recipeId).toSet().length, 21);
     db.close();
     user.close();
     tmp.deleteSync(recursive: true);

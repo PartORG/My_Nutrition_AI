@@ -985,6 +985,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get mealPlan => 'Meal plan';
+
+  @override
+  String get planTab => 'Plan';
+
+  @override
+  String get planEmpty =>
+      'Plan your week: breakfast, lunch and dinner from the recipe database, sized to your calorie goal, without your allergens, and with recipes you rated highly first.';
+
+  @override
+  String get planWeek => 'Plan my week';
+
+  @override
+  String get planAgain => 'Plan again';
+
+  @override
+  String get planSwap => 'Another recipe';
+
+  @override
+  String get planCardEmpty => 'Plan your week and get a shopping list';
+
+  @override
+  String get makeShoppingList => 'Shopping list';
+
+  @override
+  String get shoppingList => 'Shopping';
+
+  @override
+  String get shoppingAdd => 'Add an item';
+
+  @override
+  String get shoppingEmpty =>
+      'Nothing to buy. Make a list from your plan, or add a recipe\'s ingredients from the recipe.';
+
+  @override
+  String get clearTicked => 'Clear ticked';
+
+  @override
+  String get addToShopping => 'Add to shopping list';
+
+  @override
+  String get addedToShopping => 'Added to the shopping list';
+
+  @override
   String waterLine(int ml, int goal) {
     return 'Water $ml / $goal ml';
   }

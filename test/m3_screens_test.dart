@@ -51,6 +51,13 @@ void main() {
     await tester.pump();
   }
 
+  /// To the end of the screen's list. ensureVisible stops short on long lazy lists: their
+  /// extent is an estimate until the end is built.
+  Future<void> toEnd(WidgetTester tester) async {
+    await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('goals form: imperial input is stored metric', (tester) async {
     await pumpApp(tester, const GoalsScreen(onboarding: true));
     expect(find.text('Later'), findsOneWidget);
@@ -98,7 +105,7 @@ void main() {
     expect(find.text('over by 747 mg'), findsOneWidget);
     expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget, reason: 'never colour alone');
 
-    await tester.ensureVisible(find.byTooltip('Delete'));
+    await toEnd(tester);
     await tester.tap(find.byTooltip('Delete'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
@@ -125,11 +132,28 @@ void main() {
     setPref(data.user, 'fasting', '1');
     data.changed();
     await tester.pump();
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -1000)); // the card is at the end
-    await tester.pumpAndSettle();
+    await toEnd(tester);
     await tester.tap(find.text('Start now'));
     await tester.pump();
     expect(find.text('Fasting 0 h 0 min of 16 h'), findsOneWidget);
+  });
+
+  testWidgets('Meal plan: from Today, plan the week, shopping list from it', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    await tester.tap(find.text('Meal plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Plan my week'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Another recipe'), findsWidgets);
+    await toEnd(tester);
+    await tester.tap(find.text('Shopping list'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsWidgets);
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pump();
+    await tester.drag(find.byType(ListView).last, const Offset(0, -3000)); // the shopping list's end
+    await tester.pumpAndSettle();
+    expect(find.text('Clear ticked'), findsOneWidget);
   });
 
   testWidgets('Today: a recipe meal opens the recipe; stars saved and shown', (tester) async {

@@ -685,6 +685,13 @@ class AgentTools {
       'INSERT OR REPLACE INTO recipe_ratings (recipe_id, stars, rated_at) VALUES (?, ?, ?)',
       [recipeId, stars.clamp(1, 5), _ms()]);
 
+  /// Recipes never to suggest or plan: the profile's allergens, foods its conditions
+  /// avoid, and recipes the user rated 1-2 stars.
+  Set<int> excludedRecipes() => {..._blockedRecipes(), for (final e in _ratings().entries) if (e.value <= 2) e.key};
+
+  /// Recipe id -> the user's stars.
+  Map<int, int> ratings() => _ratings();
+
   Map<int, int> _ratings() =>
       {for (final r in user.select('SELECT recipe_id, stars FROM recipe_ratings')) r['recipe_id'] as int: r['stars'] as int};
 

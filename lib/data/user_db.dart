@@ -131,6 +131,24 @@ const userDbMigrations = <String>[
   );
   CREATE TABLE prefs (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   ''',
+  // v8: the week's meal plan and the shopping list (from the plan, a recipe, or typed in).
+  '''
+  CREATE TABLE meal_plan (
+    day       TEXT NOT NULL,      -- 'yyyy-mm-dd', local
+    meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
+    recipe_id INTEGER NOT NULL,   -- nutri.db recipes.id
+    title     TEXT NOT NULL,      -- kept like saved_recipes.title
+    PRIMARY KEY (day, meal_type)
+  );
+  CREATE TABLE shopping_list (
+    id      INTEGER PRIMARY KEY,
+    food_id INTEGER UNIQUE,       -- nutri.db foods.id; NULL = typed in
+    name    TEXT NOT NULL,
+    grams   REAL,                 -- NULL = typed in, no amount
+    checked INTEGER NOT NULL DEFAULT 0,
+    source  TEXT NOT NULL CHECK (source IN ('plan', 'recipe', 'manual'))
+  );
+  ''',
 ];
 
 Database openUserDb(String path) {

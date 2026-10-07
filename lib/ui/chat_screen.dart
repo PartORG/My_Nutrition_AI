@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
 import '../data/diary.dart';
+import '../data/plan.dart' show addRecipeToShopping;
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
 import 'nutrients.dart';
@@ -471,14 +472,21 @@ class _RecipeViewState extends State<RecipeView> {
             _Section(l.steps),
             Text(c.instructions),
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
+            Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
+              OutlinedButton.icon(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                label: Text(l.addToShopping),
+                onPressed: () {
+                  addRecipeToShopping(widget.tools, c.id);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.addedToShopping)));
+                },
+              ),
+              ElevatedButton.icon(
                 icon: const Icon(Icons.restaurant),
                 label: Text(l.iAteThis),
                 onPressed: widget.onAte,
               ),
-            ),
+            ]),
           ]),
         ),
       ]),

@@ -1738,6 +1738,90 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @mealPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan'**
+  String get mealPlan;
+
+  /// No description provided for @planTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get planTab;
+
+  /// No description provided for @planEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan your week: breakfast, lunch and dinner from the recipe database, sized to your calorie goal, without your allergens, and with recipes you rated highly first.'**
+  String get planEmpty;
+
+  /// No description provided for @planWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan my week'**
+  String get planWeek;
+
+  /// No description provided for @planAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan again'**
+  String get planAgain;
+
+  /// No description provided for @planSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Another recipe'**
+  String get planSwap;
+
+  /// No description provided for @planCardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan your week and get a shopping list'**
+  String get planCardEmpty;
+
+  /// No description provided for @makeShoppingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping list'**
+  String get makeShoppingList;
+
+  /// No description provided for @shoppingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping'**
+  String get shoppingList;
+
+  /// No description provided for @shoppingAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an item'**
+  String get shoppingAdd;
+
+  /// No description provided for @shoppingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to buy. Make a list from your plan, or add a recipe\'s ingredients from the recipe.'**
+  String get shoppingEmpty;
+
+  /// No description provided for @clearTicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear ticked'**
+  String get clearTicked;
+
+  /// No description provided for @addToShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to shopping list'**
+  String get addToShopping;
+
+  /// No description provided for @addedToShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to the shopping list'**
+  String get addedToShopping;
+
   /// No description provided for @waterLine.
   ///
   /// In en, this message translates to:

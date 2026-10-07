@@ -14,8 +14,33 @@ import 'goals_screen.dart';
 import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'nutrients.dart';
 import 'paywall_screen.dart';
+import 'plan_screen.dart';
+import '../data/plan.dart';
 import 'period_view.dart';
 import 'theme.dart';
+
+/// Today's planned meals, and the way into the plan and shopping list.
+class _PlanCard extends StatelessWidget {
+  const _PlanCard({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final today = [for (final p in plannedMealsFor(data.tools, DateTime.now(), days: 1)) p.title];
+    return Card(
+      child: ListTile(
+        leading: Icon(Icons.event_note_outlined, color: context.colors.primary),
+        title: Text(l.mealPlan, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(today.isEmpty ? l.planCardEmpty : today.join(' · '), maxLines: 2, overflow: TextOverflow.ellipsis),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context)
+            .push(MaterialPageRoute<void>(builder: (_) => PlanScreen(data: data)))
+            .then((_) => data.changed()),
+      ),
+    );
+  }
+}
 
 /// Today's water against the goal; "+" adds a glass, undo takes the last one back.
 class _WaterCard extends StatelessWidget {
@@ -320,6 +345,7 @@ class _DayView extends StatelessWidget {
               ),
             ),
           _WaterCard(data: data),
+          _PlanCard(data: data),
           if (pref(data.user, 'fasting') == '1') _FastCard(data: data),
           const SizedBox(height: 8),
           Text(l.todaysMeals, style: Theme.of(context).textTheme.titleMedium),
