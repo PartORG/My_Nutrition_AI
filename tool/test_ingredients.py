@@ -101,3 +101,23 @@ def test_iso_minutes_and_lists():
 
 def test_stable_id_is_stable():
     assert b.stable_id("recipe", "food.com", 38) == b.stable_id("recipe", "food.com", 38) < 2 ** 53
+
+
+def test_same_title_recipes_get_what_sets_them_apart():
+    def r(rid, rank, items, names):
+        return {"id": rid, "title": "Banana Bread", "rank": rank, "items": items, "names": names}
+    best = r(1, 9, {10: 300, 11: 100}, {10: "bananas", 11: "flour"})
+    nuts = r(2, 5, {10: 300, 11: 100, 12: 50}, {10: "bananas", 11: "flour", 12: "walnuts"})
+    choc = r(3, 4, {10: 250, 11: 120, 13: 80}, {10: "ripe bananas", 11: "flour", 13: "chocolate chips"})
+    same = r(4, 3, {10: 280, 11: 90, 12: 60, 14: 200, 15: 2}, {10: "bananas", 11: "all-purpose flour", 12: "walnuts",
+                                                             14: "buttermilk", 15: "salt"})
+    salty = r(5, 2, {10: 280, 15: 3}, {10: "bananas", 15: "salt"})  # only staples left: a number
+    assert b.retitle_duplicates([nuts, best, choc, same, salty]) == 4
+    assert [x["title"] for x in (best, nuts, choc, same, salty)] == [
+        "Banana Bread", "Banana Bread with walnuts", "Banana Bread with chocolate chips",
+        "Banana Bread with buttermilk", "Banana Bread (2)"]
+    sauce = {"id": 6, "title": "Chicken With Tomato Sauce", "rank": 1, "items": {20: 300, 21: 100},
+             "names": {20: "chicken", 21: "mushrooms"}}
+    plain = dict(sauce, id=7, rank=2, items={20: 300}, names={20: "chicken"})
+    b.retitle_duplicates([sauce, plain])
+    assert sauce["title"] == "Chicken With Tomato Sauce and mushrooms"

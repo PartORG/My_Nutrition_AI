@@ -1009,6 +1009,7 @@ class Recipes:
         if not servings or servings < 1 or servings > 60:
             return self._drop(rep, "no servings")
         items: dict[int, float] = {}
+        names: dict[int, str] = {}  # food id -> the line's own short name ('walnuts'), for retitling
         auto = False
         extra_allergens: dict[int, set] = defaultdict(set)
         for line in lines:
@@ -1027,6 +1028,7 @@ class Recipes:
             if food is None:
                 continue
             items[food["id"]] = items.get(food["id"], 0) + g
+            names.setdefault(food["id"], name)
             extra_allergens[food["id"]] |= extra
             auto |= was_auto
         if not items:
@@ -1048,7 +1050,7 @@ class Recipes:
             return self._drop(rep, "duplicate of a recipe already kept")
         self.kept[k] = {"id": stable_id("recipe", src, sid), "title": title[:200], "instructions": instructions,
                         "servings": servings, "minutes": minutes, "tags": tags, "texture": texture_of(title, tags),
-                        "items": items, "rank": rank, "src": src, "extra_allergens": extra_allergens, "file": rep}
+                        "items": items, "names": names, "rank": rank, "src": src, "extra_allergens": extra_allergens, "file": rep}
         rep["kept"] += 1
 
     @staticmethod
@@ -1272,6 +1274,47 @@ def pick_recipes(recipes: list[dict], budget_bytes: int) -> list[dict]:
     return out
 
 
+# Too common to tell two versions of a recipe apart.
+STAPLES = re.compile(r"\b(salt|pepper|water|sugar|flour|baking (powder|soda)|soda|cornstarch|corn starch|yeast|"
+                     r"vanilla|oil|shortening|cooking spray|spray|ground (cinnamon|nutmeg|cloves|ginger|allspice)|"
+                     r"cinnamon|nutmeg|eggs?|egg whites?|egg yolks?|ice|garlic clove|garlic cloves)\b", re.I)
+
+
+def retitle_duplicates(recipes: list[dict]) -> int:
+    """Same title, different ingredients (40 'Banana Bread's): the best-ranked keeps the title, the
+    others get what sets them apart, 'Banana Bread with walnuts', then a second ingredient, then a
+    number. Ids don't change. Returns how many were renamed."""
+    groups = defaultdict(list)
+    for r in sorted(recipes, key=lambda r: (-r["rank"], r["id"])):
+        groups[key(r["title"])].append(r)
+    renamed = 0
+    for group in groups.values():
+        if len(group) < 2:
+            continue
+        used = {key(group[0]["title"])}
+        count = Counter(fid for r in group for fid in r["items"])
+        for r in group[1:]:
+            def stems(s: str) -> set[str]:
+                return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in key(s).split()}
+            words = stems(r["title"])
+            # One no other version has first, then the biggest amount; never a staple ("with salt")
+            # or a word already in the title.
+            extras = sorted((fid for fid in r["items"] if r["names"].get(fid)
+                             and not STAPLES.search(r["names"][fid]) and not stems(r["names"][fid]) <= words),
+                            key=lambda fid: (count[fid] > 1, -r["items"][fid]))
+            names = list(dict.fromkeys(r["names"][fid] for fid in extras))
+            joint = " and " if " with " in r["title"].lower() else " with "
+            for title in ([f"{r['title']}{joint}{names[0]}"] if names else []) + \
+                    ([f"{r['title']}{joint}{names[0]} and {names[1]}"] if len(names) > 1 else []) + \
+                    [f"{r['title']} ({n})" for n in range(2, len(group) + 2)]:
+                if key(title) not in used:
+                    break
+            used.add(key(title))
+            r["title"] = title[:200]
+            renamed += 1
+    return renamed
+
+
 def report_copies(raw: Path) -> None:
     """Every file gets a report row: an unread file must be a byte-identical copy of one that was read."""
     files = [p for d in ("raw_nutritions", "raw_recipes") for p in sorted((raw / d).rglob("*")) if p.is_file()]
@@ -1337,9 +1380,11 @@ def main(raw: Path, out: Path) -> None:
     load_small_recipes(raw, R)
     load_unusable_recipes(raw)
     products = load_off_products(raw)
-    # Budget: 300 MB minus what the other tables measured on the first full build (~105 MB).
-    budget = int(sys.argv[3]) if len(sys.argv) > 3 else 170_000_000
+    # Budget, in pick_recipes' estimate: it runs ~1.35x the real bytes (2026-10-06: 170 MB estimated = 126 MB
+    # of recipes + FTS). 300 MB estimated ~ 222 MB real, plus ~62 MB other tables, stays under the contract.
+    budget = int(sys.argv[3]) if len(sys.argv) > 3 else 300_000_000
     recipes = pick_recipes(list(R.kept.values()), budget)
+    renamed = retitle_duplicates(recipes)
     used_foods = {fid for r in recipes for fid in r["items"]}
     notes = write_db(out, foods, dishes, products, recipes, m)
     size = out.stat().st_size
@@ -1350,9 +1395,12 @@ def main(raw: Path, out: Path) -> None:
     db.close()
     counts["nutri.db bytes"] = size
     counts["foods used by recipes"] = len(used_foods)
+    counts["recipes renamed (same title, other ingredients)"] = renamed
     report_copies(raw)
     write_report(ROOT / "docs/DATA_SOURCES.md", counts, notes)
     print(json.dumps(counts, indent=1))
+    # What to add to ingredient_map.txt next: each line here blocked that many recipes.
+    print("top unmatched ingredient lines:", *(f"  {n:6} {why}" for why, n in R.unmatched.most_common(30)), sep="\n")
     if size > MAX_DB_BYTES:
         raise SystemExit(f"nutri.db is {size:,} bytes, over the {MAX_DB_BYTES:,} contract: lower the budget")
 

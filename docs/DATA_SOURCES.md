@@ -1,21 +1,22 @@
 # nutri.db data sources
 
-Built by `tool/build_real_nutri_db.py` on 2026-10-06 from `nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; byte-identical copies are read once.
+Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; byte-identical copies are read once.
 
 | table | rows |
 |---|---|
 | foods | 50,518 |
 | allergens | 50,161 |
-| recipes | 95,872 |
-| recipe_ingredients | 783,944 |
+| recipes | 166,094 |
+| recipe_ingredients | 1,370,274 |
 | dishes | 620 |
 | products | 263,164 |
 | conditions | 5 |
 | condition_rules | 3 |
 | condition_avoid | 4 |
 | docs | 4 |
-| nutri.db bytes | 187,641,856 |
-| foods used by recipes | 1,846 |
+| nutri.db bytes | 289,574,912 |
+| foods used by recipes | 2,094 |
+| recipes renamed (same title, other ingredients) | 24,604 |
 
 ## Rules
 
@@ -89,10 +90,10 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-06 from `nutrition-ai-assistan
 | `raw_recipes/recipes.json` | 12,190 | 0 | - | German text and no servings (the app is English-only for now): 12,190 | chefkoch.de, 12k recipes in German. |
 | `raw_recipes/recipes.parquet` | 522,517 | 498,314 | recipe metadata (food.com) | no food.com row with ingredient amounts: 24,203 | food.com: total time, keywords, category, rating, published calories per serving. Ingredient amounts here have no units, so lines come from recipes_ingredients.csv / recipes_w_search_terms.csv. 498314 rows give metadata to recipes read from the files with amounts. |
 | `raw_recipes/recipes_97.json` | 1,022 | 17 | recipes (BBC Good Food) | ingredient not matched to a food: 947; ingredient amount not convertible to grams: 43; duplicate of a recipe already kept: 8; calories differ from the source's published value: 4; calories per serving implausible: 2; implausible amount: 1 | Metric ingredient lines, serves, published kcal per serving. |
-| `raw_recipes/recipes_99.csv` | 1,090 | 5 | recipes (allrecipes) | ingredient not matched to a food: 472; over the 300 MB size budget (lower-ranked): 340; ingredient amount not convertible to grams: 84; calories differ from the source's published value: 79; duplicate of a recipe already kept: 76; no servings: 29; calories per serving implausible: 3; no ingredient with nutrition: 1; implausible amount: 1 | Servings and per-serving fat/carbs/protein (kcal derived). |
+| `raw_recipes/recipes_99.csv` | 1,090 | 311 | recipes (allrecipes) | ingredient not matched to a food: 472; ingredient amount not convertible to grams: 84; calories differ from the source's published value: 79; duplicate of a recipe already kept: 76; over the 300 MB size budget (lower-ranked): 34; no servings: 29; calories per serving implausible: 3; no ingredient with nutrition: 1; implausible amount: 1 | Servings and per-serving fat/carbs/protein (kcal derived). |
 | `raw_recipes/recipes_extended.csv` | 62,126 | 0 | - | no servings (per-serving nutrition impossible): 62,126 | Same 62k allrecipes rows as 1_Recipe_csv.csv plus derived labels. |
-| `raw_recipes/recipes_ingredients.csv` | 500,471 | 94,078 | recipes (food.com) | ingredient not matched to a food: 231,862; over the 300 MB size budget (lower-ranked): 73,934; calories differ from the source's published value: 35,776; ingredient amount not convertible to grams: 32,432; calories per serving implausible: 18,697; same food.com recipe as recipes_ingredients.csv: 7,841; no servings: 2,378; duplicate of a recipe already kept: 1,523; implausible amount: 772; ingredient words imply an allergen the matched food lacks: 683; empty ingredient line: 439; no ingredient lines: 35; no ingredient with nutrition: 21 | food.com recipes with full ingredient lines, servings and serving weight. |
-| `raw_recipes/recipes_w_search_terms.csv` | 494,963 | 1,733 | recipes (food.com) | same food.com recipe as recipes_ingredients.csv: 487,125; ingredient not matched to a food: 3,396; over the 300 MB size budget (lower-ranked): 799; ingredient amount not convertible to grams: 718; calories differ from the source's published value: 654; calories per serving implausible: 421; duplicate of a recipe already kept: 51; no ingredient lines: 18; implausible amount: 13; no servings: 12; ingredient words imply an allergen the matched food lacks: 11; no ingredient with nutrition: 6; empty ingredient line: 5; no instructions: 1 | food.com recipes with full ingredient lines, servings and serving weight. |
+| `raw_recipes/recipes_ingredients.csv` | 500,471 | 163,235 | recipes (food.com) | ingredient not matched to a food: 231,862; calories differ from the source's published value: 35,776; ingredient amount not convertible to grams: 32,432; calories per serving implausible: 18,697; same food.com recipe as recipes_ingredients.csv: 7,841; over the 300 MB size budget (lower-ranked): 4,777; no servings: 2,378; duplicate of a recipe already kept: 1,523; implausible amount: 772; ingredient words imply an allergen the matched food lacks: 683; empty ingredient line: 439; no ingredient lines: 35; no ingredient with nutrition: 21 | food.com recipes with full ingredient lines, servings and serving weight. |
+| `raw_recipes/recipes_w_search_terms.csv` | 494,963 | 2,492 | recipes (food.com) | same food.com recipe as recipes_ingredients.csv: 487,125; ingredient not matched to a food: 3,396; ingredient amount not convertible to grams: 718; calories differ from the source's published value: 654; calories per serving implausible: 421; duplicate of a recipe already kept: 51; over the 300 MB size budget (lower-ranked): 40; no ingredient lines: 18; implausible amount: 13; no servings: 12; ingredient words imply an allergen the matched food lacks: 11; no ingredient with nutrition: 6; empty ingredient line: 5; no instructions: 1 | food.com recipes with full ingredient lines, servings and serving weight. |
 
 ## Carried over from the development data
 
