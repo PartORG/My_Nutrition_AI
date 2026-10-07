@@ -985,6 +985,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get widgetKcalTitle => 'Calories on the home-screen widget';
+
+  @override
+  String get widgetKcalHint =>
+      'Add the MyFoodMind widget to your home screen. Today\'s calories are then visible there without your PIN.';
+
+  @override
   String get welcomeTitle => 'Log your first meal';
 
   @override

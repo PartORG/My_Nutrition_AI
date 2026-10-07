@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">MyFoodMind · today</string>
+    <string name="widget_kcal">%1$s kcal</string>
+    <string name="widget_kcal_goal">%1$s / %2$s kcal</string>
+    <string name="widget_hidden">Open to see today</string>
+    <string name="widget_log">Log</string>
+    <string name="widget_description">Today\'s calories and a quick Log button</string>
+</resources>

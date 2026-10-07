@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">MyFoodMind · aujourd\'hui</string>
+    <string name="widget_kcal">%1$s kcal</string>
+    <string name="widget_kcal_goal">%1$s / %2$s kcal</string>
+    <string name="widget_hidden">Ouvrir pour voir la journée</string>
+    <string name="widget_log">Ajouter</string>
+    <string name="widget_description">Calories du jour et un bouton Ajouter</string>
+</resources>

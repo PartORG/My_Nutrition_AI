@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -92,6 +94,20 @@ class MeScreen extends ConsumerWidget {
           _RemindersCard(data: data),
           if (llmChoices().length > 1) const AiModelCard(),
           const _AppearanceCard(),
+          // Visible without the PIN, so only on a single-profile phone, and off until the owner says so.
+          if (Platform.isAndroid && ref.watch(profilesProvider).biometricAllowed)
+            Card(
+              child: SwitchListTile(
+                secondary: Icon(Icons.widgets_outlined, color: context.colors.primary),
+                title: Text(l.widgetKcalTitle),
+                subtitle: Text(l.widgetKcalHint),
+                value: widgetShowsKcal(ref.watch(profilesProvider)),
+                onChanged: (on) {
+                  ref.read(profilesProvider).setSetting('widget_kcal', on ? '1' : '0');
+                  data.changed(); // redraws this switch and the widget
+                },
+              ),
+            ),
           if (ref.watch(profilesProvider).biometricAllowed && ref.watch(biometricsAvailableProvider).value == true)
             Card(
               child: SwitchListTile(

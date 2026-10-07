@@ -1738,6 +1738,18 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @widgetKcalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories on the home-screen widget'**
+  String get widgetKcalTitle;
+
+  /// No description provided for @widgetKcalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the MyFoodMind widget to your home screen. Today\'s calories are then visible there without your PIN.'**
+  String get widgetKcalHint;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:

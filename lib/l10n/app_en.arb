@@ -596,6 +596,8 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "widgetKcalTitle": "Calories on the home-screen widget",
+  "widgetKcalHint": "Add the MyFoodMind widget to your home screen. Today's calories are then visible there without your PIN.",
   "welcomeTitle": "Log your first meal",
   "welcomeBody": "Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.",
   "nextMealTitle": "No {meal} logged yet",

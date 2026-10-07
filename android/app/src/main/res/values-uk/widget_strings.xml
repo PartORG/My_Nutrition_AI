@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">MyFoodMind · сьогодні</string>
+    <string name="widget_kcal">%1$s ккал</string>
+    <string name="widget_kcal_goal">%1$s / %2$s ккал</string>
+    <string name="widget_hidden">Відкрийте, щоб побачити день</string>
+    <string name="widget_log">Додати</string>
+    <string name="widget_description">Калорії за сьогодні і кнопка «Додати»</string>
+</resources>

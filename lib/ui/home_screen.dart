@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 
 import '../app_state.dart';
 import '../l10n/app_localizations.dart';
@@ -31,6 +35,27 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  StreamSubscription<Uri?>? _widgetTaps;
+
+  @override
+  void initState() {
+    super.initState();
+    // The widget's Log button opens the app on the Log tab (after the PIN).
+    if (Platform.isAndroid) {
+      HomeWidget.initiallyLaunchedFromHomeWidget().then(_fromWidget, onError: (_) {});
+      _widgetTaps = HomeWidget.widgetClicked.listen(_fromWidget, onError: (_) {});
+    }
+  }
+
+  void _fromWidget(Uri? uri) {
+    if (uri?.host == 'log' && mounted) ref.read(homeTabProvider.notifier).go(HomeTab.log);
+  }
+
+  @override
+  void dispose() {
+    _widgetTaps?.cancel();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;

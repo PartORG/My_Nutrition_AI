@@ -8,6 +8,8 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
+import 'package:intl/intl.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -19,6 +21,8 @@ import 'agent/gemma_chat_model.dart';
 import 'agent/memory.dart';
 import 'billing/billing.dart';
 import 'billing/revenuecat_billing.dart';
+import 'data/diary.dart';
+import 'data/goals.dart';
 import 'data/nutri_db.dart';
 import 'data/profiles.dart';
 import 'data/user_db.dart';
@@ -243,6 +247,10 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final nutri = openNutriDb('${dir.path}/nutri.db');
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
   final data = ProfileData(profile: profile, nutri: nutri, user: user, tools: AgentTools(nutri, user));
+  final profiles = ref.watch(profilesProvider);
+  void sync() => unawaited(syncHomeWidget(data, show: widgetShowsKcal(profiles)));
+  data.changes.addListener(sync);
+  sync();
   ref.onDispose(() {
     data.changes.dispose();
     nutri.close();
@@ -250,6 +258,25 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   });
   return data;
 });
+
+/// The home-screen widget shows today's calories only on a single-profile phone whose owner
+/// turned it on (Me tab): it is visible without the PIN.
+bool widgetShowsKcal(Profiles p) => p.biometricAllowed && p.setting('widget_kcal') == '1';
+
+/// Pushes today's numbers to the Android widget (TodayWidget.kt); empty = hidden.
+Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
+  if (!Platform.isAndroid) return;
+  try {
+    final now = DateTime.now();
+    final goal = currentTargets(data.user, nutri: data.nutri, now: now).values['kcal'];
+    await HomeWidget.saveWidgetData('day', DateFormat('yyyy-MM-dd').format(now));
+    await HomeWidget.saveWidgetData('kcal', show ? '${totalsOn(data.user, now)['kcal']!.round()}' : '');
+    await HomeWidget.saveWidgetData('goal', show && goal != null ? '${goal.round()}' : '');
+    await HomeWidget.updateWidget(qualifiedAndroidName: 'io.github.partorg.myfoodmind.TodayWidget');
+  } on Object catch (e) {
+    debugPrint('home widget: $e'); // no widget placed, or the plugin isn't there: nothing to update
+  }
+}
 
 /// The unlocked profile's agent, once the models are loaded.
 final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
