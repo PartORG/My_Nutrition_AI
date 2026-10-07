@@ -19,6 +19,10 @@ void main() {
     // Apache 2.0 (Gemma 4, EfficientDet) and the Gemma Terms notice EmbeddingGemma requires.
     yield LicenseEntryWithLineBreaks(
         ['Gemma 4 E2B', 'EmbeddingGemma', 'EfficientDet-Lite0'], await rootBundle.loadString('assets/licenses/models.txt'));
+    yield const LicenseEntryWithLineBreaks(['Open Food Facts'],
+        'Product data from Open Food Facts (https://world.openfoodfacts.org), available under the Open Database '
+        'License (ODbL) v1.0: https://opendatacommons.org/licenses/odbl/1-0/. Individual contents under the '
+        'Database Contents License.');
   });
   runApp(const ProviderScope(child: MyFoodMindApp()));
 }

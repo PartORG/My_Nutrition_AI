@@ -247,7 +247,8 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final dir = ref.watch(appDirProvider).requireValue;
   final nutri = openNutriDb('${dir.path}/nutri.db');
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
-  final data = ProfileData(profile: profile, nutri: nutri, user: user, tools: AgentTools(nutri, user));
+  final data = ProfileData(profile: profile, nutri: nutri, user: user,
+      tools: AgentTools(nutri, user, products: openProducts(dir)));
   final profiles = ref.watch(profilesProvider);
   void sync() => unawaited(syncHomeWidget(data, show: widgetShowsKcal(profiles)));
   data.changes.addListener(sync);
@@ -257,6 +258,7 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
     if (n > 0) data.changed();
   }));
   ref.onDispose(() {
+    data.tools.products?.close();
     data.changes.dispose();
     nutri.close();
     user.close();
@@ -280,6 +282,91 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
     await HomeWidget.updateWidget(qualifiedAndroidName: 'io.github.partorg.myfoodmind.TodayWidget');
   } on Object catch (e) {
     debugPrint('home widget: $e'); // no widget placed, or the plugin isn't there: nothing to update
+  }
+}
+
+// ---- all packaged products (optional download) -------------------------------
+
+/// Built by tool/build_products_db.py from the current Open Food Facts dump (ODbL), gzipped.
+// TODO(ievgen): publish products.db.gz as a GitHub release asset under this tag before release.
+const productsUrl = 'https://github.com/partorg/myfoodmind/releases/download/products-2026-10/products.db.gz';
+const productsDownloadMb = 104; // products.db.gz of 2026-10-07: 2,034,064 products, 276 MB unpacked
+
+File _productsFile(Directory dir) => File('${dir.path}/products.db');
+
+/// The downloaded products.db, read-only; null when not downloaded or unreadable.
+Database? openProducts(Directory dir) {
+  final f = _productsFile(dir);
+  if (!f.existsSync()) return null;
+  try {
+    final db = sqlite3.open(f.path, mode: OpenMode.readOnly);
+    db.select('SELECT 1 FROM products_fts LIMIT 1');
+    return db;
+  } on Object catch (e) {
+    debugPrint('products.db unreadable: $e');
+    return null;
+  }
+}
+
+/// How many products the download has and when it was built; null = not downloaded.
+({int rows, String builtAt})? productsInfo(Database? db) {
+  if (db == null) return null;
+  String meta(String k) => db.select('SELECT value FROM meta WHERE key = ?', [k]).firstOrNull?['value'] as String? ?? '';
+  return (rows: int.tryParse(meta('rows')) ?? 0, builtAt: meta('built_at'));
+}
+
+/// Download progress in %; null when idle.
+final productsDownloadProvider = NotifierProvider<ProductsDownload, int?>(ProductsDownload.new);
+
+class ProductsDownload extends Notifier<int?> {
+  HttpClient? _client;
+
+  @override
+  int? build() => null;
+
+  /// Unpacks while it downloads, checks the file opens, then swaps it in. Throws on failure.
+  // ponytail: not resumable (gzip streams straight to disk); keep the .gz and use Range if downloads fail often.
+  Future<void> start({String url = productsUrl}) async {
+    if (state != null) return;
+    state = 0;
+    final dir = ref.read(appDirProvider).requireValue;
+    final part = File('${_productsFile(dir).path}.part');
+    final client = _client = HttpClient();
+    try {
+      final res = await (await client.getUrl(Uri.parse(url))).close();
+      if (res.statusCode != 200) throw HttpException('products download: HTTP ${res.statusCode}');
+      final total = res.contentLength;
+      var got = 0;
+      final sink = part.openWrite();
+      await res.map((chunk) {
+        got += chunk.length;
+        if (total > 0) state = got * 100 ~/ total;
+        return chunk;
+      }).transform(gzip.decoder).pipe(sink);
+      sqlite3.open(part.path, mode: OpenMode.readOnly)
+        ..select('SELECT 1 FROM products_fts LIMIT 1')
+        ..close();
+      final tools = ref.read(profileDataProvider)?.tools;
+      tools?.products?.close();
+      part.renameSync(_productsFile(dir).path);
+      tools?.products = openProducts(dir);
+    } finally {
+      if (part.existsSync()) part.deleteSync();
+      client.close(force: true);
+      _client = null;
+      state = null;
+    }
+  }
+
+  void cancel() => _client?.close(force: true);
+
+  /// Back to the 2019 products in nutri.db; frees the space.
+  void remove() {
+    final dir = ref.read(appDirProvider).requireValue;
+    final tools = ref.read(profileDataProvider)?.tools;
+    tools?.products?.close();
+    tools?.products = null;
+    if (_productsFile(dir).existsSync()) _productsFile(dir).deleteSync();
   }
 }
 

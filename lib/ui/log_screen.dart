@@ -114,7 +114,13 @@ class _LogScreenState extends ConsumerState<LogScreen> {
         ),
       Expanded(
         child: list.isEmpty && searching
-            ? Center(child: Text(l.noResults))
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
+                      textAlign: TextAlign.center),
+                ),
+              )
             : ListView.builder(
                 itemCount: list.length,
                 itemBuilder: (_, i) {

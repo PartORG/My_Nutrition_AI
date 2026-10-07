@@ -985,6 +985,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get productsTitle => 'Packaged products';
+
+  @override
+  String get productsNone =>
+      'Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.';
+
+  @override
+  String productsHave(String count, String date) {
+    return '$count products from Open Food Facts, updated $date.';
+  }
+
+  @override
+  String productsDownload(int mb) {
+    return 'Download ($mb MB)';
+  }
+
+  @override
+  String get productsRemove => 'Remove';
+
+  @override
+  String get productsHint =>
+      'Missing a packaged product? Download all products in Me.';
+
+  @override
   String get healthConnect => 'Health Connect';
 
   @override

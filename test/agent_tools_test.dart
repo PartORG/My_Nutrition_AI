@@ -274,6 +274,21 @@ void main() {
       expect(currentFast(user), isNull);
     });
 
+    test('downloaded products.db replaces the built-in products; every word must match', () {
+      final off = sqlite3.openInMemory()
+        ..execute('CREATE TABLE products (barcode TEXT PRIMARY KEY, name TEXT NOT NULL, kcal REAL NOT NULL, '
+            'protein_g REAL NOT NULL, fat_g REAL NOT NULL, carbs_g REAL NOT NULL, fiber_g REAL, sugar_g REAL, sodium_mg REAL); '
+            "CREATE VIRTUAL TABLE products_fts USING fts5 (name, barcode UNINDEXED, content = 'products'); "
+            "INSERT INTO products VALUES ('4000417326102', 'Ritter Sport Alpenmilch', 532, 8, 32, 53, 2, 50, 100), "
+            "('7622201679958', 'Milka Alpenmilch', 539, 6, 31, 58, 2, 57, 300); "
+            "INSERT INTO products_fts(products_fts) VALUES ('rebuild');");
+      final withOff = AgentTools(nutri, user, clock: () => now, products: off);
+      final hits = withOff.searchFood('ritter alpenmilch').where((f) => f.kind == 'product');
+      expect(hits.map((f) => f.label), ['Ritter Sport Alpenmilch']);
+      expect(withOff.searchFood('yogurt').where((f) => f.kind == 'product'), isEmpty, reason: 'not the 2019 products');
+      off.close();
+    });
+
     test('unknown food is reported, known ones still logged', () {
       expect(tools.run('log_meal', {'items': 'unicorn steak'}).forModel['error'], isNotNull);
       final r = tools.run('log_meal', {'items': 'banana, unicorn steak'});

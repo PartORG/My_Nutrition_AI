@@ -596,6 +596,29 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "productsTitle": "Packaged products",
+  "productsNone": "Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.",
+  "productsHave": "{count} products from Open Food Facts, updated {date}.",
+  "@productsHave": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "productsDownload": "Download ({mb} MB)",
+  "@productsDownload": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "productsRemove": "Remove",
+  "productsHint": "Missing a packaged product? Download all products in Me.",
   "healthConnect": "Health Connect",
   "appleHealth": "Apple Health",
   "healthSyncHint": "Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.",

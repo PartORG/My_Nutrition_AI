@@ -112,10 +112,14 @@ const _pendingNote = 'NOT saved yet: the user must tap Save on the card. Tell th
 /// Runs the agent's tools against nutri.db (read-only) and the profile's
 /// user.db. Writes only happen through [ConfirmCard.apply].
 class AgentTools {
-  AgentTools(this.nutri, this.user, {DateTime Function()? clock})
+  AgentTools(this.nutri, this.user, {DateTime Function()? clock, this.products})
       : _now = clock ?? DateTime.now;
 
   final Database nutri, user;
+
+  /// The optional download of every Open Food Facts product (products.db); null = the
+  /// 2019 products inside nutri.db. Set when the download finishes.
+  Database? products;
   final DateTime Function() _now;
 
   /// Recipe ids of the last list shown, so "recipe 2" / "the first one" resolve.
@@ -723,9 +727,11 @@ class AgentTools {
       for (final id in _ftsIds(nutri, 'foods_fts', text, limit: limit))
         for (final r in nutri.select('SELECT * FROM foods WHERE id = ?', [id]))
           of('food', r, (r['serving_g'] as num?)?.toDouble(), _nutrientsOf(r)),
-      for (final r in nutri.select(
+      // Every word must match: among millions of products "any word" buries the one meant.
+      for (final r in (products ?? nutri).select(
           'SELECT p.*, p.barcode AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
-          'WHERE products_fts MATCH ? LIMIT 5', [_ftsQuery(text) ?? '""']))
+          'WHERE products_fts MATCH ? ORDER BY bm25(products_fts) LIMIT 8',
+          [_ftsQuery(text)?.replaceAll(' OR ', ' ') ?? '""']))
         of('product', r, null, _nutrientsOf(r)),
     ];
   }

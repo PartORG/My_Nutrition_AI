@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../data/diary.dart';
@@ -126,6 +127,7 @@ class MeScreen extends ConsumerWidget {
           ),
           if (llmChoices().length > 1) const AiModelCard(),
           const _AppearanceCard(),
+          _ProductsCard(data: data),
           if (healthSupported)
             Card(
               child: SwitchListTile(
@@ -390,6 +392,67 @@ class _AppearanceCard extends ConsumerWidget {
             subtitle: Text(l.wallpaperColorsHint),
             value: look.wallpaper,
             onChanged: (on) => set(wallpaper: on),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Every packaged product from Open Food Facts (all countries), as an optional download.
+class _ProductsCard extends ConsumerStatefulWidget {
+  const _ProductsCard({required this.data});
+  final ProfileData data;
+
+  @override
+  ConsumerState<_ProductsCard> createState() => _ProductsCardState();
+}
+
+class _ProductsCardState extends ConsumerState<_ProductsCard> {
+  var _failed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final progress = ref.watch(productsDownloadProvider);
+    final info = productsInfo(widget.data.tools.products);
+    final download = ref.read(productsDownloadProvider.notifier);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.productsTitle, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(info == null ? l.productsNone : l.productsHave(NumberFormat.decimalPattern().format(info.rows), info.builtAt)),
+          if (progress != null) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: progress / 100, semanticsLabel: l.aiDownloading),
+            Text('${l.aiDownloading} $progress %'),
+          ],
+          if (_failed) Text(l.aiDownloadFailed, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Align(
+            alignment: Alignment.centerRight,
+            child: progress != null
+                ? TextButton(onPressed: download.cancel, child: Text(l.cancel))
+                : info == null
+                    ? TextButton.icon(
+                        icon: const Icon(Icons.download),
+                        label: Text(l.productsDownload(productsDownloadMb)),
+                        onPressed: () async {
+                          setState(() => _failed = false);
+                          try {
+                            await download.start();
+                          } on Object catch (e) {
+                            debugPrint('products download: $e');
+                            if (mounted) setState(() => _failed = true);
+                          }
+                          if (mounted) setState(() {});
+                        },
+                      )
+                    : TextButton(
+                        onPressed: () => setState(download.remove),
+                        child: Text(l.productsRemove),
+                      ),
           ),
         ]),
       ),

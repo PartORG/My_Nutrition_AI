@@ -300,6 +300,12 @@ Built:
   App content answers (Health apps, foreground service `dataSync`), Data safety (only purchase history is
   collected), store listing draft. Dependency scan: no analytics/telemetry left (RevenueCat diagnostics off).
 
+Packaged products (Oct 2026): every Open Food Facts product with complete nutrition (2,034,064 of 4.5 M rows,
+1.27 M with European barcodes) is an **optional download** in Me → Packaged products: `tool/build_products_db.py`
+→ `products.db` (276 MB) → `products.db.gz` (104 MB), published as a GitHub release asset (`productsUrl` in
+`lib/app_state.dart`, tag `products-2026-10`; **not uploaded yet**). Search uses it instead of nutri.db's 2019
+products once it is on the phone. ODbL: credited on the licences page.
+
 Open: the real `nutri.db` (≤ 300 MB, now built into `assets/` for phone builds) can't also be bundled in the Play build — the base module limit is 500 MB and the app is
 already 257 MB. When the real data exists: an install-time asset pack (≤ 1.5 GB, read via a small native
 bridge) or a download like Gemma 4 (it holds no user data either).

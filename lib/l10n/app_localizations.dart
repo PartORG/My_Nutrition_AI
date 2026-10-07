@@ -1738,6 +1738,42 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @productsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Packaged products'**
+  String get productsTitle;
+
+  /// No description provided for @productsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.'**
+  String get productsNone;
+
+  /// No description provided for @productsHave.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} products from Open Food Facts, updated {date}.'**
+  String productsHave(String count, String date);
+
+  /// No description provided for @productsDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download ({mb} MB)'**
+  String productsDownload(int mb);
+
+  /// No description provided for @productsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get productsRemove;
+
+  /// No description provided for @productsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing a packaged product? Download all products in Me.'**
+  String get productsHint;
+
   /// No description provided for @healthConnect.
   ///
   /// In en, this message translates to:

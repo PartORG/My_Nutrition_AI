@@ -610,36 +610,45 @@ def load_off_products(raw: Path) -> list[dict]:
             if len(c) != len(head):
                 rep["dropped"]["malformed line"] += 1
                 continue
-            code = c[ix["code"]].strip()
-            if not re.fullmatch(r"\d{8,14}", code):
-                rep["dropped"]["no valid barcode"] += 1
+            got = off_product(lambda k: c[ix[k]] if k in ix else "")
+            if isinstance(got, str):
+                rep["dropped"][got] += 1
                 continue
-            name = tidy(c[ix["product_name"]])
-            if not name:
-                rep["dropped"]["no product name"] += 1
-                continue
-            brand = c[ix["brands"]].split(",")[0].strip()
-            if brand and brand.lower() not in name.lower():
-                name = f"{name} ({brand})"
-            kj = num(c[ix["energy_100g"]])
-            sod = num(c[ix["sodium_100g"]])
-            if sod is None and (salt := num(c[ix["salt_100g"]])) is not None:
-                sod = salt / 2.5
-            n = {"kcal": kj / 4.184 if kj is not None else None, "protein_g": num(c[ix["proteins_100g"]]),
-                 "fat_g": num(c[ix["fat_100g"]]), "carbs_g": num(c[ix["carbohydrates_100g"]]),
-                 "fiber_g": num(c[ix["fiber_100g"]]), "sugar_g": num(c[ix["sugars_100g"]]),
-                 "sodium_mg": sod * 1000 if sod is not None else None}
-            if why := check(n, name):
-                rep["dropped"][why] += 1
-                continue
-            code = code.zfill(13) if len(code) in (12, 13) else code
+            code = got["barcode"]
             if code in seen:
                 rep["dropped"]["duplicate barcode"] += 1
                 continue
             seen.add(code)
-            out.append({"barcode": code, "name": name[:200], **n})
+            out.append(got)
             rep["kept"] += 1
     return out
+
+
+def off_product(get) -> dict | str:
+    """One Open Food Facts row (get(column) -> text) -> a products row, or why it was dropped.
+    Shared by the 2019 dump in nutri.db and the current dump in products.db (tool/build_products_db.py)."""
+    code = get("code").strip()
+    if not re.fullmatch(r"\d{8,14}", code):
+        return "no valid barcode"
+    name = tidy(get("product_name"))
+    if not name:
+        return "no product name"
+    brand = get("brands").split(",")[0].strip()
+    if brand and brand.lower() not in name.lower():
+        name = f"{name} ({brand})"
+    kcal = num(get("energy-kcal_100g"))
+    if kcal is None and (kj := num(get("energy_100g"))) is not None:
+        kcal = kj / 4.184
+    sod = num(get("sodium_100g"))
+    if sod is None and (salt := num(get("salt_100g"))) is not None:
+        sod = salt / 2.5
+    n = {"kcal": kcal, "protein_g": num(get("proteins_100g")),
+         "fat_g": num(get("fat_100g")), "carbs_g": num(get("carbohydrates_100g")),
+         "fiber_g": num(get("fiber_100g")), "sugar_g": num(get("sugars_100g")),
+         "sodium_mg": sod * 1000 if sod is not None else None}
+    if why := check(n, name):
+        return why
+    return {"barcode": code.zfill(13) if len(code) in (12, 13) else code, "name": name[:200], **n}
 
 
 # --------------------------------------------------------------------------- foods -> one table
