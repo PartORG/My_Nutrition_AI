@@ -596,6 +596,84 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "weekReviewTitle": "Your week",
+  "reviewLoggedDays": "You logged food on {days} of 7 days.",
+  "@reviewLoggedDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewKcal": "On those days: {avg} kcal on average, goal {goal}.",
+  "@reviewKcal": {
+    "placeholders": {
+      "avg": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewUnder": "{nutrient} under 80 % of your goal on {days} days.",
+  "@reviewUnder": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewOver": "{nutrient} over your limit on {days} days.",
+  "@reviewOver": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewWater": "Water: {avg} ml a day, goal {goal} ml.",
+  "@reviewWater": {
+    "placeholders": {
+      "avg": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewTop": "Logged most: {food}.",
+  "@reviewTop": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewIdeas": "Ideas for next week",
+  "reviewAskHigh": "Suggest recipes high in {nutrient}",
+  "@reviewAskHigh": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewAskLow": "Suggest recipes low in {nutrient}",
+  "@reviewAskLow": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      }
+    }
+  },
   "calcium": "Calcium",
   "iron": "Iron",
   "magnesium": "Magnesium",

@@ -985,6 +985,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get weekReviewTitle => 'Your week';
+
+  @override
+  String reviewLoggedDays(int days) {
+    return 'You logged food on $days of 7 days.';
+  }
+
+  @override
+  String reviewKcal(int avg, int goal) {
+    return 'On those days: $avg kcal on average, goal $goal.';
+  }
+
+  @override
+  String reviewUnder(String nutrient, int days) {
+    return '$nutrient under 80 % of your goal on $days days.';
+  }
+
+  @override
+  String reviewOver(String nutrient, int days) {
+    return '$nutrient over your limit on $days days.';
+  }
+
+  @override
+  String reviewWater(int avg, int goal) {
+    return 'Water: $avg ml a day, goal $goal ml.';
+  }
+
+  @override
+  String reviewTop(String food) {
+    return 'Logged most: $food.';
+  }
+
+  @override
+  String get reviewIdeas => 'Ideas for next week';
+
+  @override
+  String reviewAskHigh(String nutrient) {
+    return 'Suggest recipes high in $nutrient';
+  }
+
+  @override
+  String reviewAskLow(String nutrient) {
+    return 'Suggest recipes low in $nutrient';
+  }
+
+  @override
   String get calcium => 'Calcium';
 
   @override

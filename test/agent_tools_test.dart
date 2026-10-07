@@ -300,6 +300,22 @@ void main() {
       expect(tools.run('lookup_nutrition', {'food': 'banana'}).forModel['per_100g'], containsPair('potassium_mg', 358));
     });
 
+    test('weekly review: from the logs; the weakest point twice in a week is the focus', () {
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      for (final d in [2, 3, 4]) {
+        now = DateTime(2026, 10, d, 8);
+        tools.logFood(egg, 100, 'breakfast'); // 143 kcal, 12.6 g protein
+      }
+      now = DateTime(2026, 10, 4, 20);
+      logWater(user, 1000, now);
+      final r = weeklyReview(user, {'kcal': 2000, 'protein_g': 100}, now);
+      expect((r.logged, r.avgKcal!.round(), r.lowProtein, r.overSugar), (3, 143, 3, 0));
+      expect(r.avgWater.round(), 143); // 1000 ml over 7 days
+      expect(r.topFood, 'egg');
+      expect(r.focus, 'protein_g');
+      expect(weeklyReview(user, {}, now).focus, isNull, reason: 'no goals, nothing to miss');
+    });
+
     test('unknown food is reported, known ones still logged', () {
       expect(tools.run('log_meal', {'items': 'unicorn steak'}).forModel['error'], isNotNull);
       final r = tools.run('log_meal', {'items': 'banana, unicorn steak'});

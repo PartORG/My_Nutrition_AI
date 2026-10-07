@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
@@ -8,7 +9,58 @@ import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
 import 'nutrients.dart';
 import 'theme.dart';
+import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'today_screen.dart';
+
+/// The week in a few lines, computed from the logs; "Ideas for next week" asks the
+/// assistant about the weakest point.
+class _WeekReviewCard extends ConsumerWidget {
+  const _WeekReviewCard({required this.review});
+  final WeekReview review;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final r = review;
+    final names = nutrientLabels(l);
+    final lines = [
+      l.reviewLoggedDays(r.logged),
+      if (r.avgKcal != null && r.kcalGoal != null) l.reviewKcal(r.avgKcal!.round(), r.kcalGoal!.round()),
+      if (r.lowProtein > 0) l.reviewUnder(names['protein_g']!.$1, r.lowProtein),
+      if (r.lowFiber > 0) l.reviewUnder(names['fiber_g']!.$1, r.lowFiber),
+      if (r.overSugar > 0) l.reviewOver(names['sugar_g']!.$1, r.overSugar),
+      if (r.overSodium > 0) l.reviewOver(names['sodium_mg']!.$1, r.overSodium),
+      l.reviewWater(r.avgWater.round(), r.waterGoal.round()),
+      if (r.topFood != null) l.reviewTop(r.topFood!),
+    ];
+    final focus = r.focus;
+    return Card(
+      color: context.colors.cardGreen,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.weekReviewTitle, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 6),
+          for (final t in lines) Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('• $t')),
+          if (focus != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: const Icon(Icons.lightbulb_outline),
+                label: Text(l.reviewIdeas),
+                onPressed: () {
+                  final name = inSentence(context, names[focus]!.$1);
+                  ref.read(homeTabProvider.notifier).go(HomeTab.chat);
+                  ref.read(agentProvider).value?.send(
+                      focus == 'sugar_g' || focus == 'sodium_mg' ? l.reviewAskLow(name) : l.reviewAskHigh(name));
+                },
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+}
 
 /// Basic: the last [days] days — calories per day, daily averages vs goals,
 /// streak, weight trend.
@@ -33,6 +85,7 @@ class PeriodView extends StatelessWidget {
         final streak = loggingStreak(data.user, now);
         final body = loadBody(data.user);
         return ListView(padding: const EdgeInsets.all(16), children: [
+          if (days == 7) _WeekReviewCard(review: weeklyReview(data.user, targets, now)),
           ChartSection(
             title: l.caloriesPerDay,
             child: SizedBox(height: 200, child: DailyBarChart(series: series, nutrient: 'kcal', goal: targets['kcal'])),

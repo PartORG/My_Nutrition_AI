@@ -238,3 +238,42 @@ DateTime? lastMealAt(Database user) {
   final at = user.select('SELECT MAX(eaten_at) AS at FROM meal_log').single['at'] as int?;
   return at == null ? null : DateTime.fromMillisecondsSinceEpoch(at);
 }
+
+// ---- weekly review ------------------------------------------------------------------
+
+typedef WeekReview = ({
+  int logged, // days with any log, of 7
+  double? avgKcal, double? kcalGoal,
+  int lowProtein, int lowFiber, // logged days under 80% of the goal
+  int overSugar, int overSodium, // logged days over the limit
+  double avgWater, double waterGoal,
+  String? topFood,
+  String? focus, // the weakest point: 'protein_g', 'fiber_g', 'sugar_g', 'sodium_mg'; null = nothing stands out
+});
+
+/// The 7 days ending [now], from the logs only (no model): what went well and what to work on.
+WeekReview weeklyReview(Database user, Nutrients targets, DateTime now) {
+  final days = dailyTotals(user, now, 7).where((d) => d.entries > 0).toList();
+  int count(bool Function(Nutrients t) f) => days.where((d) => f(d.totals)).length;
+  int under(String k) => targets[k] == null ? 0 : count((t) => t[k]! < targets[k]! * .8);
+  int over(String k) => targets[k] == null ? 0 : count((t) => t[k]! > targets[k]!);
+  final first = DateTime(now.year, now.month, now.day - 6);
+  final water = [for (var i = 0; i < 7; i++) waterOn(user, DateTime(first.year, first.month, first.day + i))];
+  final top = user.select(
+      'SELECT description, COUNT(*) AS n FROM meal_log WHERE eaten_at >= ? GROUP BY description '
+      'HAVING n >= 2 ORDER BY n DESC LIMIT 1', [first.millisecondsSinceEpoch]).firstOrNull?['description'] as String?;
+  final misses = {
+    'protein_g': under('protein_g'), 'fiber_g': under('fiber_g'), 'sugar_g': over('sugar_g'), 'sodium_mg': over('sodium_mg'),
+  };
+  final worst = misses.entries.reduce((a, b) => b.value > a.value ? b : a);
+  return (
+    logged: days.length,
+    avgKcal: days.isEmpty ? null : days.fold(0.0, (s, d) => s + d.totals['kcal']!) / days.length,
+    kcalGoal: targets['kcal'],
+    lowProtein: misses['protein_g']!, lowFiber: misses['fiber_g']!,
+    overSugar: misses['sugar_g']!, overSodium: misses['sodium_mg']!,
+    avgWater: water.fold(0.0, (s, v) => s + v) / 7, waterGoal: waterGoal(user),
+    topFood: top,
+    focus: worst.value >= 2 ? worst.key : null, // twice in a week, not a one-off
+  );
+}

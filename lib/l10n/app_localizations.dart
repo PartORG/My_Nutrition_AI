@@ -1738,6 +1738,66 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @weekReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your week'**
+  String get weekReviewTitle;
+
+  /// No description provided for @reviewLoggedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'You logged food on {days} of 7 days.'**
+  String reviewLoggedDays(int days);
+
+  /// No description provided for @reviewKcal.
+  ///
+  /// In en, this message translates to:
+  /// **'On those days: {avg} kcal on average, goal {goal}.'**
+  String reviewKcal(int avg, int goal);
+
+  /// No description provided for @reviewUnder.
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient} under 80 % of your goal on {days} days.'**
+  String reviewUnder(String nutrient, int days);
+
+  /// No description provided for @reviewOver.
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient} over your limit on {days} days.'**
+  String reviewOver(String nutrient, int days);
+
+  /// No description provided for @reviewWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water: {avg} ml a day, goal {goal} ml.'**
+  String reviewWater(int avg, int goal);
+
+  /// No description provided for @reviewTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged most: {food}.'**
+  String reviewTop(String food);
+
+  /// No description provided for @reviewIdeas.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas for next week'**
+  String get reviewIdeas;
+
+  /// No description provided for @reviewAskHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest recipes high in {nutrient}'**
+  String reviewAskHigh(String nutrient);
+
+  /// No description provided for @reviewAskLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest recipes low in {nutrient}'**
+  String reviewAskLow(String nutrient);
+
   /// No description provided for @calcium.
   ///
   /// In en, this message translates to:
