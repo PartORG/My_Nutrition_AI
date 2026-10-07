@@ -9,6 +9,18 @@ import 'me_screen.dart';
 import 'theme.dart';
 import 'today_screen.dart';
 
+/// The selected tab: Today's buttons open Chat or Log.
+final homeTabProvider = NotifierProvider<HomeTab, int>(HomeTab.new);
+
+class HomeTab extends Notifier<int> {
+  static const today = 0, chat = 1, log = 2, me = 3;
+
+  @override
+  int build() => today;
+
+  void go(int tab) => state = tab;
+}
+
 /// The unlocked profile: Today · Chat · Log · Me.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.name});
@@ -19,8 +31,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  var _tab = 0;
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -28,7 +38,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // both are auto-dispose and close only when this screen goes (Lock).
     ref.watch(profileDataProvider);
     ref.watch(agentProvider);
-    final body = switch (_tab) {
+    final tab = ref.watch(homeTabProvider);
+    final body = switch (tab) {
       0 => const TodayScreen(),
       1 => const _ChatTab(),
       2 => const LogScreen(),
@@ -47,8 +58,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: body,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
+        selectedIndex: tab,
+        onDestinationSelected: ref.read(homeTabProvider.notifier).go,
         destinations: [
           NavigationDestination(icon: const Icon(Icons.today_outlined), selectedIcon: const Icon(Icons.today), label: l.tabToday),
           NavigationDestination(icon: const Icon(Icons.chat_bubble_outline), selectedIcon: const Icon(Icons.chat_bubble), label: l.tabChat),

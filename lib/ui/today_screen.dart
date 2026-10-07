@@ -9,10 +9,60 @@ import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
+import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'period_view.dart';
 import 'theme.dart';
+
+String _mealName(AppLocalizations l, String type) => switch (type) {
+      'breakfast' => l.mealBreakfast,
+      'lunch' => l.mealLunch,
+      'dinner' => l.mealDinner,
+      _ => l.mealSnack,
+    };
+
+/// A nudge with the two ways forward: log it, or ask the assistant for an idea.
+class _NextStep extends ConsumerWidget {
+  const _NextStep({required this.title, required this.body, required this.meal});
+  final String title, body, meal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final tab = ref.read(homeTabProvider.notifier);
+    return Card(
+      color: context.colors.cardGreen,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(body),
+          Wrap(alignment: WrapAlignment.end, spacing: 8, children: [
+            TextButton.icon(
+              icon: const Icon(Icons.lightbulb_outline),
+              label: Text(l.getIdea),
+              onPressed: () {
+                tab.go(HomeTab.chat);
+                // Sent once the assistant is loaded; before that the tab shows its progress.
+                ref.read(agentProvider).value?.send(l.suggestIdea(inSentence(context, _mealName(l, meal))));
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.add_circle_outline),
+              label: Text(l.logIt),
+              onPressed: () => tab.go(HomeTab.log),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Macros shown as rings next to calories (the others are bars).
+const _ringed = ['protein_g', 'carbs_g', 'fat_g'];
 
 /// Nutrients where the goal is a ceiling, not something to reach.
 const limitNutrients = {'sugar_g', 'sodium_mg'};
@@ -83,18 +133,28 @@ class _DayView extends StatelessWidget {
             .push(MaterialPageRoute<void>(
                 builder: (_) => RecipeScreen(tools: data.tools, recipeId: id, onLogged: data.changed)))
             .then((_) => data.changed());
+        final nowType = data.tools.mealTypeNow();
         return ListView(padding: const EdgeInsets.all(16), children: [
+          // Day one: how to log. Later: the main meal of this hour, if it isn't logged yet.
+          if (data.user.select('SELECT 1 FROM meal_log LIMIT 1').isEmpty)
+            _NextStep(title: l.welcomeTitle, body: l.welcomeBody, meal: nowType)
+          else if (nowType != 'snack' && !meals.any((m) => m.type == nowType))
+            _NextStep(title: l.nextMealTitle(inSentence(context, _mealName(l, nowType))), body: l.nextMealBody, meal: nowType),
           if (targets['kcal'] == null)
             _SetGoalsCard(eaten: eaten)
           else
-            _CaloriesCard(eaten: eaten['kcal']!, goal: targets['kcal']!),
-          if (targets.length > 1)
+            _CaloriesCard(eaten: eaten['kcal']!, goal: targets['kcal']!, macros: {
+              // Rings for the macros the user aims at; ceilings (a condition's limit) stay bars with warnings.
+              for (final key in _ringed)
+                if (targets[key] != null && !t.limited.containsKey(key)) key: (eaten[key]!, targets[key]!),
+            }),
+          if (targets.keys.any((k) => k != 'kcal' && !(_ringed.contains(k) && !t.limited.containsKey(k))))
             Card(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Column(children: [
                   for (final key in ['protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
-                    if (targets[key] != null)
+                    if (targets[key] != null && !(_ringed.contains(key) && !t.limited.containsKey(key)))
                       NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!, limited: t.limited.containsKey(key)),
                 ]),
               ),
@@ -171,44 +231,59 @@ class _SetGoalsCard extends StatelessWidget {
   }
 }
 
-/// Hero figure: calories eaten against the goal.
+/// Hero: a calorie ring (eaten of the goal) and small rings for the macros that have goals.
 class _CaloriesCard extends StatelessWidget {
-  const _CaloriesCard({required this.eaten, required this.goal});
+  const _CaloriesCard({required this.eaten, required this.goal, required this.macros});
   final double eaten, goal;
+  final Map<String, (double eaten, double goal)> macros;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final left = goal - eaten;
     final over = left < 0;
+    final error = Theme.of(context).colorScheme.error;
+    final kcalColor = nutrientColors['kcal']!;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Wrap, not Row: at large text sizes "of 2759 kcal" moves under the number.
-          Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
-            Text('${eaten.round()}',
-                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(l.eatenOfGoal(goal.round()), style: TextStyle(color: context.colors.textSecondary)),
+          // Wrap, not Row: at large text sizes the macro rings move under the calorie ring.
+          Wrap(spacing: 20, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            SizedBox.square(
+              dimension: 132,
+              child: Stack(alignment: Alignment.center, children: [
+                SizedBox.expand(
+                  child: CircularProgressIndicator(
+                    value: (eaten / goal).clamp(0, 1),
+                    strokeWidth: 11,
+                    strokeCap: StrokeCap.round,
+                    color: over ? error : kcalColor,
+                    backgroundColor: kcalColor.withValues(alpha: .15),
+                    // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
+                    semanticsLabel: '${l.kcal}: ${eaten.round()} ${l.eatenOfGoal(goal.round())}',
+                  ),
+                ),
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  FittedBox(
+                    child: Text('${eaten.round()}',
+                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
+                  ),
+                  FittedBox(
+                    child: Text(l.eatenOfGoal(goal.round()),
+                        style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
+                  ),
+                ]),
+              ]),
             ),
+            if (macros.isNotEmpty)
+              Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                for (final MapEntry(key: k, value: (e, g)) in macros.entries) _MacroRing(nutrient: k, eaten: e, goal: g),
+              ]),
           ]),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (eaten / goal).clamp(0, 1),
-              minHeight: 8,
-              color: over ? Theme.of(context).colorScheme.error : nutrientColors['kcal'],
-              backgroundColor: nutrientColors['kcal']!.withValues(alpha: .15),
-              // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
-              semanticsLabel: '${l.kcal}: ${eaten.round()} ${l.eatenOfGoal(goal.round())}',
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(children: [
-            if (over) Icon(Icons.warning_amber_rounded, size: 18, color: Theme.of(context).colorScheme.error),
+            if (over) Icon(Icons.warning_amber_rounded, size: 18, color: error),
             if (over) const SizedBox(width: 4),
             Flexible(
               child: Text(over ? l.kcalOver((-left).round()) : l.kcalLeft(left.round()),
@@ -217,6 +292,43 @@ class _CaloriesCard extends StatelessWidget {
           ]),
         ]),
       ),
+    );
+  }
+}
+
+class _MacroRing extends StatelessWidget {
+  const _MacroRing({required this.nutrient, required this.eaten, required this.goal});
+  final String nutrient;
+  final double eaten, goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final color = nutrientColors[nutrient]!;
+    final name = nutrientLabels(l)[nutrient]!.$1;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        SizedBox.square(
+          dimension: 30,
+          child: CircularProgressIndicator(
+            value: (eaten / goal).clamp(0, 1),
+            strokeWidth: 5,
+            strokeCap: StrokeCap.round,
+            color: color,
+            backgroundColor: color.withValues(alpha: .15),
+            semanticsLabel: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text.rich(TextSpan(children: [
+            TextSpan(text: '$name ', style: TextStyle(fontWeight: FontWeight.w600, color: context.colors.textPrimary)),
+            TextSpan(text: '${eaten.round()} / ${formatNutrient(nutrient, goal, l)}',
+                style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
+          ])),
+        ),
+      ]),
     );
   }
 }

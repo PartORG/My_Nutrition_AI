@@ -107,6 +107,14 @@ void main() {
     expect(find.text('over by 747 mg'), findsNothing);
   });
 
+  testWidgets('Today: day-one welcome; "Log it" opens the Log tab', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    expect(find.text('Log your first meal'), findsOneWidget);
+    await tester.tap(find.text('Log it'));
+    await tester.pumpAndSettle();
+    expect(find.text('Search foods, dishes, recipes…'), findsOneWidget);
+  });
+
   testWidgets('Today: a recipe meal opens the recipe; stars saved and shown', (tester) async {
     (data.tools.logRecipe(2).card! as ConfirmCard).apply(); // Shakshuka
     await pumpApp(tester, const HomeScreen(name: 'Anna'));

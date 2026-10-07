@@ -59,6 +59,10 @@ class NutrientTiles extends StatelessWidget {
   }
 }
 
+/// A word inside a sentence: "breakfast" — but German nouns keep their capital ("Frühstück").
+String inSentence(BuildContext context, String word) =>
+    Localizations.localeOf(context).languageCode == 'de' ? word : word.toLowerCase();
+
 /// Privacy policy and terms (GitHub Pages, source in site/).
 const legalBase = 'https://partorg.github.io/myfoodmind';
 

@@ -627,7 +627,7 @@ class _Suggestions extends StatelessWidget {
     final texts = [
       // Before the comma: "Bananas, raw" would split into two foods.
       if (usual != null) l.suggestAte('${usual.servingG!.round()} g ${usual.label.split(',').first}'),
-      l.suggestIdea(meal.toLowerCase()),
+      l.suggestIdea(inSentence(context, meal)),
       l.suggestLeft,
     ];
     return SingleChildScrollView(

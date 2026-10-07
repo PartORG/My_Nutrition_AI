@@ -94,7 +94,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
               if (yesterday[type] case final kcal?)
                 ActionChip(
                   avatar: const Icon(Icons.replay, size: 18),
-                  label: Text(l.repeatYesterday(meal(type), kcal.round())),
+                  label: Text(l.repeatYesterday(inSentence(context, meal(type)), kcal.round())),
                   onPressed: () {
                     final n = repeatMeal(data.user, now.subtract(const Duration(days: 1)), type, DateTime.now());
                     data.changed();

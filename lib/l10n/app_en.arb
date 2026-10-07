@@ -596,6 +596,19 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "welcomeTitle": "Log your first meal",
+  "welcomeBody": "Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.",
+  "nextMealTitle": "No {meal} logged yet",
+  "@nextMealTitle": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "nextMealBody": "Log what you had, or get an idea for what to eat.",
+  "getIdea": "Get an idea",
+  "logIt": "Log it",
   "themeSystem": "System",
   "themeLight": "Light",
   "themeDark": "Dark",

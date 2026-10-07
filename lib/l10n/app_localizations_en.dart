@@ -985,6 +985,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get welcomeTitle => 'Log your first meal';
+
+  @override
+  String get welcomeBody =>
+      'Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.';
+
+  @override
+  String nextMealTitle(String meal) {
+    return 'No $meal logged yet';
+  }
+
+  @override
+  String get nextMealBody =>
+      'Log what you had, or get an idea for what to eat.';
+
+  @override
+  String get getIdea => 'Get an idea';
+
+  @override
+  String get logIt => 'Log it';
+
+  @override
   String get themeSystem => 'System';
 
   @override

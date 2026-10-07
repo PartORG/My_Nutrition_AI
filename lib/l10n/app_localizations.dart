@@ -1738,6 +1738,42 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log your first meal'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.'**
+  String get welcomeBody;
+
+  /// No description provided for @nextMealTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No {meal} logged yet'**
+  String nextMealTitle(String meal);
+
+  /// No description provided for @nextMealBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Log what you had, or get an idea for what to eat.'**
+  String get nextMealBody;
+
+  /// No description provided for @getIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'Get an idea'**
+  String get getIdea;
+
+  /// No description provided for @logIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Log it'**
+  String get logIt;
+
   /// No description provided for @themeSystem.
   ///
   /// In en, this message translates to:
