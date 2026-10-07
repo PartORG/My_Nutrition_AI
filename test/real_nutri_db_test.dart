@@ -35,6 +35,22 @@ void main() {
     db.close();
   }, skip: skip);
 
+  test('recipe ideas never repeat a title, even across 40 "Banana bread" recipes', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final tools = AgentTools(db, user);
+    final titles = [
+      for (var i = 0; i < 4; i++)
+        for (final r in (tools.run('search_recipes', {'query': 'banana bread'}).card! as RecipeListCard).recipes)
+          r.title.toLowerCase().trim()
+    ];
+    expect(titles.length, 12);
+    expect(titles.toSet().length, 12);
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
   test('plain foods win over products that repeat the word (bananas are not banana chips)', () {
     final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
     final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');

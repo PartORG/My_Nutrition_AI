@@ -102,6 +102,10 @@ class AgentTools {
   /// Every recipe suggested since the app started, so asking again shows new ones.
   final _suggested = <int>{};
 
+  /// Their titles, lower case: nutri.db has 40 different "Banana bread" recipes,
+  /// and a second one is not "something new".
+  final _suggestedTitles = <String>{};
+
   /// [said] is the user's message: a small model sometimes picks the wrong
   /// tool, so "I ate peanuts" never adds an allergy and "I had 2 eggs" never
   /// turns into recipe ideas.
@@ -179,9 +183,15 @@ class AgentTools {
       ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
     // A vague ask ("something new for dinner") matches nothing: random ideas for the meal.
     if (ranked.isEmpty && _split(ingredients).isEmpty) ranked = _randomRecipes(query, blocked);
-    final fresh = ranked.where((id) => !_suggested.contains(id)).toList();
+    final titles = {
+      for (final r in nutri.select('SELECT id, title FROM recipes WHERE id IN (${ranked.join(',')})'))
+        r['id'] as int: (r['title'] as String).toLowerCase().trim()
+    };
+    final seen = {..._suggestedTitles};
+    final fresh = [for (final id in ranked) if (!_suggested.contains(id) && seen.add(titles[id]!)) id];
     _lastRecipes = (fresh.isEmpty ? ranked : fresh).take(3).toList();
     _suggested.addAll(_lastRecipes);
+    _suggestedTitles.addAll([for (final id in _lastRecipes) titles[id]!]);
     if (_lastRecipes.isEmpty) {
       return ToolResult({'recipes': [], 'note': 'no matching recipe in the database'});
     }
