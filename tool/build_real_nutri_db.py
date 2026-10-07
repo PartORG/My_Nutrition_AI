@@ -40,6 +40,11 @@ csv.field_size_limit(sys.maxsize)
 ROOT = Path(__file__).resolve().parent.parent
 MAX_DB_BYTES = 300_000_000
 NUTRIENTS = ("kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "sugar_g", "sodium_mg")
+# Per 100 g, from USDA SR28 only for now (other sources leave them NULL = unknown).
+MICROS = ("calcium_mg", "iron_mg", "magnesium_mg", "potassium_mg", "vitamin_c_mg", "vitamin_d_ug", "vitamin_b12_ug")
+SR_MICROS = {"calcium_mg": "Calcium_(mg)", "iron_mg": "Iron_(mg)", "magnesium_mg": "Magnesium_(mg)",
+             "potassium_mg": "Potassium_(mg)", "vitamin_c_mg": "Vit_C_(mg)", "vitamin_d_ug": "Vit_D_µg",
+             "vitamin_b12_ug": "Vit_B12_(µg)"}
 REPORT: dict[str, dict] = {}  # file -> {"rows": n, "kept": n, "target": str, "dropped": Counter, "note": str}
 
 
@@ -227,6 +232,7 @@ def load_sr(raw: Path) -> list[dict]:
             if (gv := num(g)) and d:
                 weights.append((d.lower(), gv))
         out.append({"name": tidy(name), "src": "usda_sr28", "skey": r["NDB_No"], "generic": True, **n,
+                    **{m: num(r[col]) for m, col in SR_MICROS.items()},
                     "serving_g": weights[0][1] if weights else None, "weights": weights,
                     "refuse": num(r["Refuse_Pct"]) or 0})
         rep["kept"] += 1
@@ -1242,10 +1248,11 @@ def write_db(out: Path, foods, dishes, products, recipes, m: Matcher) -> list[st
     db.execute("PRAGMA journal_mode = OFF")
     db.executescript((ROOT / "db/nutri_schema.sql").read_text())
     db.executemany("INSERT INTO meta VALUES (?, ?)", [
-        ("schema_version", "1"), ("embedding_model", "embeddinggemma-300m"), ("built_at", date.today().isoformat()),
+        ("schema_version", "2"), ("embedding_model", "embeddinggemma-300m"), ("built_at", date.today().isoformat()),
         ("source", "tool/build_real_nutri_db.py; per-file report in docs/DATA_SOURCES.md")])
-    db.executemany("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?)", [
-        (f["id"], f["name"], *(r3(f.get(k)) for k in NUTRIENTS), r3(f["serving_g"])) for f in foods])
+    db.executemany("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        (f["id"], f["name"], *(r3(f.get(k)) for k in NUTRIENTS), r3(f["serving_g"]), *(r3(f.get(m)) for m in MICROS))
+        for f in foods])
     db.executemany("INSERT INTO allergens VALUES (?, ?)", [(f["id"], a) for f in foods for a in sorted(f["allergens"])])
     db.executemany("INSERT INTO recipes VALUES (?,?,?,?,?,?,?)", [
         (r["id"], r["title"], r["instructions"], r["servings"], r["minutes"], r["tags"], r["texture"]) for r in recipes])

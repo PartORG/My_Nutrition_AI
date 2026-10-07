@@ -43,6 +43,53 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
+/// Today's micronutrients against EU reference intakes, folded by default. Only meals made of
+/// foods with known values count, and the card says how many those were.
+class _MicrosCard extends StatelessWidget {
+  const _MicrosCard({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final m = microTotalsOn(data.user, DateTime.now());
+    final labels = microLabels(l);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        leading: Icon(Icons.eco_outlined, color: context.colors.primary),
+        title: Text(l.microsTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(l.microsCoverage(m.known, m.meals), style: const TextStyle(fontSize: 12)),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        children: [
+          for (final MapEntry(key: k, value: (name, unit)) in labels.entries)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
+                  Text('${formatMicro(m.totals[k]!, unit)} / ${formatMicro(microReference[k]!, unit)}',
+                      style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
+                ]),
+                const SizedBox(height: 3),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: (m.totals[k]! / microReference[k]!).clamp(0, 1),
+                    minHeight: 4,
+                    color: context.colors.primary,
+                    backgroundColor: context.colors.primary.withValues(alpha: .15),
+                    semanticsLabel: '$name ${formatMicro(m.totals[k]!, unit)} / ${formatMicro(microReference[k]!, unit)}',
+                  ),
+                ),
+              ]),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Today's water against the goal; "+" adds a glass, undo takes the last one back.
 class _WaterCard extends StatelessWidget {
   const _WaterCard({required this.data});
@@ -345,6 +392,7 @@ class _DayView extends StatelessWidget {
                 ]),
               ),
             ),
+          if (meals.isNotEmpty) _MicrosCard(data: data),
           _WaterCard(data: data),
           if (healthSyncOn(data.user))
             FutureBuilder(

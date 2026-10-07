@@ -14,7 +14,7 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 | condition_rules | 3 |
 | condition_avoid | 4 |
 | docs | 4 |
-| nutri.db bytes | 289,574,912 |
+| nutri.db bytes | 290,131,968 |
 | foods used by recipes | 2,094 |
 | recipes renamed (same title, other ingredients) | 24,604 |
 

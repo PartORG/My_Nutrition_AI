@@ -1,6 +1,6 @@
 import 'package:sqlite3/sqlite3.dart';
 
-import '../agent/agent_tools.dart' show FoodChoice, Nutrients, nutrients;
+import '../agent/agent_tools.dart' show FoodChoice, Nutrients, micronutrients, nutrients;
 import 'journal.dart';
 
 typedef MealEntry = ({
@@ -46,6 +46,20 @@ Nutrients totalsOn(Database user, DateTime day) {
   return {for (final n in nutrients) n: (r[n] as num).toDouble()};
 }
 
+/// Micronutrients eaten on [day], from the meals that know them; [known] = how many of the
+/// day's meals had values (the rest add nothing).
+({Nutrients totals, int known, int meals}) microTotalsOn(Database user, DateTime day) {
+  final (from, to) = _dayRange(day);
+  final r = user.select(
+      'SELECT COUNT(*) AS meals, COUNT(iron_mg) AS known, ${[for (final m in micronutrients) 'TOTAL($m) AS $m'].join(', ')} '
+      'FROM meal_log WHERE eaten_at >= ? AND eaten_at < ?', [from, to]).single;
+  return (
+    totals: {for (final m in micronutrients) m: (r[m] as num).toDouble()},
+    known: r['known'] as int,
+    meals: r['meals'] as int,
+  );
+}
+
 void deleteMeal(Database user, int id) => user.execute('DELETE FROM meal_log WHERE id = ?', [id]);
 
 /// A new amount scales the logged nutrition (it is a per-gram snapshot); [type] moves it to another meal.
@@ -53,7 +67,7 @@ void updateMeal(Database user, int id, {double? grams, String? type}) {
   final old = user.select('SELECT grams FROM meal_log WHERE id = ?', [id]).single['grams'] as num?;
   if (grams != null && grams > 0 && old != null && old > 0) {
     final f = grams / old;
-    user.execute('UPDATE meal_log SET grams = ?, ${[for (final n in nutrients) '$n = $n * $f'].join(', ')} '
+    user.execute('UPDATE meal_log SET grams = ?, ${[for (final n in [...nutrients, ...micronutrients]) '$n = $n * $f'].join(', ')} '
         'WHERE id = ?', [grams, id]);
   }
   if (type != null) user.execute('UPDATE meal_log SET meal_type = ? WHERE id = ?', [type, id]);
@@ -63,7 +77,7 @@ void updateMeal(Database user, int id, {double? grams, String? type}) {
 /// Values are from the latest log of each, per 100 g; the last amount is the serving.
 List<FoodChoice> recentFoods(Database user, DateTime now, {int limit = 12}) => [
       for (final r in user.select(
-          'SELECT description, grams, recipe_id, estimated, ${nutrients.join(', ')}, COUNT(*) AS n, '
+          'SELECT description, grams, recipe_id, estimated, ${[...nutrients, ...micronutrients].join(', ')}, COUNT(*) AS n, '
           'MAX(eaten_at) AS last FROM meal_log WHERE eaten_at >= ? AND grams > 0 '
           'GROUP BY description ORDER BY n DESC, last DESC LIMIT ?',
           [now.subtract(const Duration(days: 30)).millisecondsSinceEpoch, limit]))
@@ -72,7 +86,11 @@ List<FoodChoice> recentFoods(Database user, DateTime now, {int limit = 12}) => [
           id: r['recipe_id'],
           label: r['description'] as String,
           servingG: (r['grams'] as num).toDouble(),
-          per100: {for (final n in nutrients) n: ((r[n] as num?) ?? 0) * 100 / (r['grams'] as num)},
+          per100: {
+            for (final n in nutrients) n: ((r[n] as num?) ?? 0) * 100 / (r['grams'] as num),
+            for (final m in micronutrients)
+              if (r[m] case final num v) m: v * 100 / (r['grams'] as num),
+          },
           estimated: r['estimated'] == 1,
         )
     ];
@@ -92,8 +110,8 @@ Map<String, double> mealTotalsOn(Database user, DateTime day) {
 int repeatMeal(Database user, DateTime day, String type, DateTime at) {
   final (from, to) = _dayRange(day);
   user.execute(
-      'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${nutrients.join(', ')}, estimated, recipe_id) '
-      'SELECT ?, meal_type, description, grams, ${nutrients.join(', ')}, estimated, recipe_id FROM meal_log '
+      'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${[...nutrients, ...micronutrients].join(', ')}, estimated, recipe_id) '
+      'SELECT ?, meal_type, description, grams, ${[...nutrients, ...micronutrients].join(', ')}, estimated, recipe_id FROM meal_log '
       'WHERE eaten_at >= ? AND eaten_at < ? AND meal_type = ? ORDER BY eaten_at',
       [at.millisecondsSinceEpoch, from, to, type]);
   return user.updatedRows;

@@ -289,6 +289,17 @@ void main() {
       off.close();
     });
 
+    test('micronutrients: known ones flow from foods and recipes into the log; unknown stays unknown', () {
+      confirmOf(tools.run('log_meal', {'items': '2 eggs, 100 g broccoli'})).apply(); // broccoli: no values in the test db
+      final m = microTotalsOn(user, now);
+      expect((m.known, m.meals), (1, 2));
+      expect(m.totals['iron_mg'], closeTo(1.75, .01)); // 100 g egg
+      expect(user.select("SELECT iron_mg FROM meal_log WHERE description = 'broccoli'").single['iron_mg'], isNull);
+      final shakshuka = tools.showRecipeById(2).card! as RecipeCard;
+      expect(shakshuka.perServing['iron_mg'], closeTo(1.75, .01)); // 100 g egg per serving
+      expect(tools.run('lookup_nutrition', {'food': 'banana'}).forModel['per_100g'], containsPair('potassium_mg', 358));
+    });
+
     test('unknown food is reported, known ones still logged', () {
       expect(tools.run('log_meal', {'items': 'unicorn steak'}).forModel['error'], isNotNull);
       final r = tools.run('log_meal', {'items': 'banana, unicorn steak'});

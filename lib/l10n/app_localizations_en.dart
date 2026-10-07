@@ -985,6 +985,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get calcium => 'Calcium';
+
+  @override
+  String get iron => 'Iron';
+
+  @override
+  String get magnesium => 'Magnesium';
+
+  @override
+  String get potassium => 'Potassium';
+
+  @override
+  String get vitaminC => 'Vitamin C';
+
+  @override
+  String get vitaminD => 'Vitamin D';
+
+  @override
+  String get vitaminB12 => 'Vitamin B12';
+
+  @override
+  String get microsTitle => 'Vitamins and minerals';
+
+  @override
+  String microsCoverage(int known, int meals) {
+    return 'From $known of $meals meals with known values; EU reference intakes';
+  }
+
+  @override
   String get productsTitle => 'Packaged products';
 
   @override

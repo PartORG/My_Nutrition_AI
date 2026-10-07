@@ -8,6 +8,12 @@ import '../data/journal.dart';
 /// Nutrient columns shared by foods, dishes, products, meal_log and the
 /// recipe_nutrition view.
 const nutrients = ['kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
+
+/// Per 100 g where known (USDA SR28 foods, recipes made of them, meals logged from those);
+/// a missing key means unknown, not zero. Dishes and packaged products have none.
+const micronutrients = [
+  'calcium_mg', 'iron_mg', 'magnesium_mg', 'potassium_mg', 'vitamin_c_mg', 'vitamin_d_ug', 'vitamin_b12_ug',
+];
 typedef Nutrients = Map<String, double>;
 
 typedef RecipeSummary = ({int id, String title, int? minutes, double kcal});
@@ -561,7 +567,9 @@ class AgentTools {
 
   Nutrients _recipePer100(int recipeId) {
     final r = nutri.select(
-        'SELECT ${[for (final n in nutrients) 'TOTAL(f.$n * ri.grams) / TOTAL(ri.grams) AS $n'].join(', ')} '
+        // SUM for micronutrients: NULL when no ingredient knows them (unknown, not 0).
+        'SELECT ${[for (final n in nutrients) 'TOTAL(f.$n * ri.grams) / TOTAL(ri.grams) AS $n'].join(', ')}, '
+        '${[for (final m in micronutrients) 'SUM(f.$m * ri.grams) / TOTAL(ri.grams) AS $m'].join(', ')} '
         'FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id WHERE ri.recipe_id = ?',
         [recipeId]).single;
     return _nutrientsOf(r);
@@ -673,9 +681,9 @@ class AgentTools {
   void _insertMeal(int at, String type, String label, double? grams, Nutrients values, bool estimated,
           [int? recipeId]) =>
       user.execute(
-        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${nutrients.join(', ')}, estimated, '
-        'recipe_id) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')}, ?, ?)',
-        [at, type, label, grams, for (final n in nutrients) values[n], estimated ? 1 : 0, recipeId],
+        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${[...nutrients, ...micronutrients].join(', ')}, '
+        'estimated, recipe_id) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length + micronutrients.length, '?').join(', ')}, ?, ?)',
+        [at, type, label, grams, for (final n in [...nutrients, ...micronutrients]) values[n], estimated ? 1 : 0, recipeId],
       );
 
   // ---- ratings ----------------------------------------------------------------
@@ -822,8 +830,11 @@ String mealFoods(String text) => text
     .replaceAll(RegExp(r'\s+'), ' ')
     .replaceAll(RegExp(r'^[\s,.:;-]*(?:and\s+)?|[\s,.!:;-]*$'), '');
 
-Nutrients _nutrientsOf(Row r) =>
-    {for (final n in nutrients) n: ((r[n] as num?) ?? 0).toDouble()};
+Nutrients _nutrientsOf(Row r) => {
+      for (final n in nutrients) n: ((r[n] as num?) ?? 0).toDouble(),
+      for (final m in micronutrients)
+        if (r[m] case final num v) m: v.toDouble(),
+    };
 
 num _round(double v) => v >= 10 ? v.round() : double.parse(v.toStringAsFixed(1));
 

@@ -159,6 +159,7 @@ void main() {
   testWidgets('Today: a recipe meal opens the recipe; stars saved and shown', (tester) async {
     (data.tools.logRecipe(2).card! as ConfirmCard).apply(); // Shakshuka
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    await toEnd(tester);
     expect(find.text('Recipes you ate'), findsOneWidget);
     await tester.tap(find.text('Shakshuka').first);
     await tester.pumpAndSettle();

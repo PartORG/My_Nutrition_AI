@@ -1738,6 +1738,60 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @calcium.
+  ///
+  /// In en, this message translates to:
+  /// **'Calcium'**
+  String get calcium;
+
+  /// No description provided for @iron.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron'**
+  String get iron;
+
+  /// No description provided for @magnesium.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnesium'**
+  String get magnesium;
+
+  /// No description provided for @potassium.
+  ///
+  /// In en, this message translates to:
+  /// **'Potassium'**
+  String get potassium;
+
+  /// No description provided for @vitaminC.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin C'**
+  String get vitaminC;
+
+  /// No description provided for @vitaminD.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin D'**
+  String get vitaminD;
+
+  /// No description provided for @vitaminB12.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin B12'**
+  String get vitaminB12;
+
+  /// No description provided for @microsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamins and minerals'**
+  String get microsTitle;
+
+  /// No description provided for @microsCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'From {known} of {meals} meals with known values; EU reference intakes'**
+  String microsCoverage(int known, int meals);
+
   /// No description provided for @productsTitle.
   ///
   /// In en, this message translates to:

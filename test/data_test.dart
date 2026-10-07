@@ -40,7 +40,10 @@ void main() {
     });
 
     test('refuses wrong version, wrong embedder, or a non-nutri file', () {
-      expect(() => openNutriDb(nutriCopy({'schema_version': '2'}).path),
+      expect(() => openNutriDb(nutriCopy({'schema_version': '3'}).path),
+          throwsA(isA<NutriDbException>()));
+      // An older file (no micronutrients) is refused too, so the app reinstalls the bundled one.
+      expect(() => openNutriDb(nutriCopy({'schema_version': '1'}).path),
           throwsA(isA<NutriDbException>()));
       expect(() => openNutriDb(nutriCopy({'schema_version': null}).path),
           throwsA(isA<NutriDbException>()));

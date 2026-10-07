@@ -12,6 +12,22 @@ Map<String, (String, String)> nutrientLabels(AppLocalizations l) => {
       'fiber_g': (l.fiber, 'g'), 'sugar_g': (l.sugar, 'g'), 'sodium_mg': (l.sodium, 'mg'),
     };
 
+/// Display name and unit per micronutrient key.
+Map<String, (String, String)> microLabels(AppLocalizations l) => {
+      'calcium_mg': (l.calcium, 'mg'), 'iron_mg': (l.iron, 'mg'), 'magnesium_mg': (l.magnesium, 'mg'),
+      'potassium_mg': (l.potassium, 'mg'), 'vitamin_c_mg': (l.vitaminC, 'mg'), 'vitamin_d_ug': (l.vitaminD, 'µg'),
+      'vitamin_b12_ug': (l.vitaminB12, 'µg'),
+    };
+
+/// EU reference intakes for adults (Regulation 1169/2011, Annex XIII), the "%" on labels.
+const microReference = {
+  'calcium_mg': 800.0, 'iron_mg': 14.0, 'magnesium_mg': 375.0, 'potassium_mg': 2000.0,
+  'vitamin_c_mg': 80.0, 'vitamin_d_ug': 5.0, 'vitamin_b12_ug': 2.5,
+};
+
+/// "8.2 mg", "350 mg": one decimal below 10.
+String formatMicro(double v, String unit) => '${v < 10 ? v.toStringAsFixed(1) : v.round()} $unit';
+
 /// "56 g", "1200 mg", "540 kcal".
 String formatNutrient(String key, double value, AppLocalizations l) {
   final unit = nutrientLabels(l)[key]!.$2;

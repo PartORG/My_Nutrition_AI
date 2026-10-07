@@ -1,4 +1,4 @@
--- nutri.db data contract, schema_version 1. Shared by all profiles, read-only
+-- nutri.db data contract, schema_version 2 (2: micronutrients on foods and in recipe_nutrition). Shared by all profiles, read-only
 -- on the phone, replaced as a whole file. Build with tool/build_nutri_db.py.
 --
 -- Rules:
@@ -6,7 +6,8 @@
 --  * ids are stable across releases: never renumber or reuse an id. Users' saved
 --    recipes and logs point at them.
 --  * Adding tables or columns needs no version bump (the app selects named columns).
---    Renaming, removing or changing meaning bumps meta.schema_version.
+--    Renaming, removing or changing meaning bumps meta.schema_version, and so does a
+--    column a new app requires (2: the micronutrients), so the app reinstalls an older file.
 --  * docs.embedding: float32 little-endian x 768, made with meta.embedding_model and
 --    the prefix 'title: none | text: '. Chunks <= 512 tokens, <= ~50k docs.
 
@@ -25,7 +26,15 @@ CREATE TABLE foods (
   fiber_g   REAL,
   sugar_g   REAL,
   sodium_mg REAL,
-  serving_g REAL   -- one typical piece/portion ("2 eggs" = 2 x serving_g); NULL = unknown
+  serving_g REAL,  -- one typical piece/portion ("2 eggs" = 2 x serving_g); NULL = unknown
+  -- Micronutrients per 100 g, USDA SR28 foods only for now; NULL = unknown (not zero).
+  calcium_mg     REAL,
+  iron_mg        REAL,
+  magnesium_mg   REAL,
+  potassium_mg   REAL,
+  vitamin_c_mg   REAL,
+  vitamin_d_ug   REAL,
+  vitamin_b12_ug REAL
 );
 
 CREATE TABLE recipes (
@@ -121,7 +130,15 @@ SELECT r.id AS recipe_id,
        SUM(f.carbs_g   * ri.grams / 100) / r.servings AS carbs_g,
        SUM(f.fiber_g   * ri.grams / 100) / r.servings AS fiber_g,
        SUM(f.sugar_g   * ri.grams / 100) / r.servings AS sugar_g,
-       SUM(f.sodium_mg * ri.grams / 100) / r.servings AS sodium_mg
+       SUM(f.sodium_mg * ri.grams / 100) / r.servings AS sodium_mg,
+       -- Micronutrients: ingredients with unknown values add nothing, so these are at least values.
+       SUM(f.calcium_mg * ri.grams / 100) / r.servings AS calcium_mg,
+       SUM(f.iron_mg * ri.grams / 100) / r.servings AS iron_mg,
+       SUM(f.magnesium_mg * ri.grams / 100) / r.servings AS magnesium_mg,
+       SUM(f.potassium_mg * ri.grams / 100) / r.servings AS potassium_mg,
+       SUM(f.vitamin_c_mg * ri.grams / 100) / r.servings AS vitamin_c_mg,
+       SUM(f.vitamin_d_ug * ri.grams / 100) / r.servings AS vitamin_d_ug,
+       SUM(f.vitamin_b12_ug * ri.grams / 100) / r.servings AS vitamin_b12_ug
 FROM recipes r
 JOIN recipe_ingredients ri ON ri.recipe_id = r.id
 JOIN foods f ON f.id = ri.food_id

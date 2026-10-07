@@ -596,6 +596,25 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "calcium": "Calcium",
+  "iron": "Iron",
+  "magnesium": "Magnesium",
+  "potassium": "Potassium",
+  "vitaminC": "Vitamin C",
+  "vitaminD": "Vitamin D",
+  "vitaminB12": "Vitamin B12",
+  "microsTitle": "Vitamins and minerals",
+  "microsCoverage": "From {known} of {meals} meals with known values; EU reference intakes",
+  "@microsCoverage": {
+    "placeholders": {
+      "known": {
+        "type": "int"
+      },
+      "meals": {
+        "type": "int"
+      }
+    }
+  },
   "productsTitle": "Packaged products",
   "productsNone": "Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.",
   "productsHave": "{count} products from Open Food Facts, updated {date}.",

@@ -149,6 +149,16 @@ const userDbMigrations = <String>[
     source  TEXT NOT NULL CHECK (source IN ('plan', 'recipe', 'manual'))
   );
   ''',
+  // v9: micronutrients of a logged meal (snapshot like the macros; NULL = unknown).
+  '''
+  ALTER TABLE meal_log ADD COLUMN calcium_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN iron_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN magnesium_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN potassium_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_c_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_d_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b12_ug REAL;
+  ''',
 ];
 
 Database openUserDb(String path) {

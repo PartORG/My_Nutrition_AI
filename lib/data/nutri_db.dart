@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:sqlite3/sqlite3.dart';
 
 /// nutri.db schema versions this app build can read (see db/nutri_schema.sql).
-const nutriSchemaMin = 1;
-const nutriSchemaMax = 1;
+// 2: micronutrients. An older file on the phone fails the check and the bundled one is reinstalled.
+const nutriSchemaMin = 2;
+const nutriSchemaMax = 2;
 
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';

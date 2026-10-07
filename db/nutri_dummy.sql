@@ -2,7 +2,7 @@
 -- The real nutri.db replaces this file's output entirely.
 
 INSERT INTO meta VALUES
-  ('schema_version', '1'),
+  ('schema_version', '2'),
   ('embedding_model', 'embeddinggemma-300m'),
   ('built_at', 'dummy');
 
@@ -104,3 +104,9 @@ INSERT INTO docs (id, source, text) VALUES
   (2, 'DUMMY', 'DUMMY TEXT. A lower sodium intake is commonly recommended for people with high blood pressure.'),
   (3, 'DUMMY', 'DUMMY TEXT. People with ALS may need texture-modified food and extra calories to maintain weight.'),
   (4, 'DUMMY', 'DUMMY TEXT. No single diet is proven for multiple sclerosis; a balanced diet with vitamin D is commonly discussed.');
+
+-- Micronutrients (USDA SR28 values) for the foods the tests log.
+UPDATE foods SET calcium_mg = 56, iron_mg = 1.75, magnesium_mg = 12, potassium_mg = 138, vitamin_c_mg = 0,
+  vitamin_d_ug = 2.0, vitamin_b12_ug = 0.89 WHERE name = 'egg';
+UPDATE foods SET calcium_mg = 5, iron_mg = 0.26, magnesium_mg = 27, potassium_mg = 358, vitamin_c_mg = 8.7,
+  vitamin_d_ug = 0, vitamin_b12_ug = 0 WHERE name = 'banana';

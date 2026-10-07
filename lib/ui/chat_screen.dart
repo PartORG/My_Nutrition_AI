@@ -456,6 +456,14 @@ class _RecipeViewState extends State<RecipeView> {
             const SizedBox(height: 10),
             _Section(l.perServing),
             NutrientTiles(values: c.perServing),
+            if (microLabels(l).entries.where((e) => c.perServing[e.key] != null).toList() case final micros
+                when micros.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                    micros.map((e) => '${e.value.$1} ${formatMicro(c.perServing[e.key]!, e.value.$2)}').join(' · '),
+                    style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
+              ),
             const SizedBox(height: 14),
             _Section(l.ingredients),
             for (final i in c.ingredients)
