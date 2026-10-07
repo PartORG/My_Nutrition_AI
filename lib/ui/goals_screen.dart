@@ -123,7 +123,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       body: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(l.goalsIntro, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(l.goalsIntro, style: TextStyle(color: context.colors.textSecondary)),
           gap,
           SegmentedButton<bool>(
             segments: [

@@ -1732,6 +1732,42 @@ abstract class AppLocalizations {
   /// **'Edit meal'**
   String get editMeal;
 
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @wallpaperColors.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper colours'**
+  String get wallpaperColors;
+
+  /// No description provided for @wallpaperColorsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your phone\'s colours (Android 12 and newer).'**
+  String get wallpaperColorsHint;
+
   /// No description provided for @suggestAte.
   ///
   /// In en, this message translates to:

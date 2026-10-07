@@ -38,7 +38,7 @@ class MeScreen extends ConsumerWidget {
                 Text(l.goalsTitle, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 6),
                 Text(body == null ? l.setGoalsBody : _describe(body, l)),
-                if (!adult) ...[const SizedBox(height: 8), Text(l.under18, style: const TextStyle(color: AppColors.textSecondary))],
+                if (!adult) ...[const SizedBox(height: 8), Text(l.under18, style: TextStyle(color: context.colors.textSecondary))],
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   OutlinedButton(
@@ -82,7 +82,7 @@ class MeScreen extends ConsumerWidget {
           ),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.monitor_heart_outlined, color: AppColors.primary),
+              leading: Icon(Icons.monitor_heart_outlined, color: context.colors.primary),
               title: Text(l.healthTitle),
               subtitle: Text(l.healthMeHint),
               trailing: const Icon(Icons.chevron_right),
@@ -91,10 +91,11 @@ class MeScreen extends ConsumerWidget {
           ),
           _RemindersCard(data: data),
           if (llmChoices().length > 1) const AiModelCard(),
+          const _AppearanceCard(),
           if (ref.watch(profilesProvider).biometricAllowed && ref.watch(biometricsAvailableProvider).value == true)
             Card(
               child: SwitchListTile(
-                secondary: const Icon(Icons.fingerprint, color: AppColors.primary),
+                secondary: Icon(Icons.fingerprint, color: context.colors.primary),
                 title: Text(l.fingerprintTitle),
                 subtitle: Text(l.fingerprintHint),
                 value: ref.watch(profilesProvider).biometricEnabled(data.profile.id),
@@ -108,7 +109,7 @@ class MeScreen extends ConsumerWidget {
             ),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.psychology_outlined, color: AppColors.primary),
+              leading: Icon(Icons.psychology_outlined, color: context.colors.primary),
               title: Text(l.aiKnowsTitle),
               subtitle: agent.hasValue ? null : Text(l.aiKnowsLoading),
               trailing: const Icon(Icons.chevron_right),
@@ -119,7 +120,7 @@ class MeScreen extends ConsumerWidget {
           Card(
             child: Column(children: [
               ListTile(
-                leading: const Icon(Icons.info_outline, color: AppColors.primary),
+                leading: Icon(Icons.info_outline, color: context.colors.primary),
                 title: Text(l.licenses),
                 onTap: () => showLicensePage(context: context, applicationName: l.appTitle),
               ),
@@ -128,7 +129,7 @@ class MeScreen extends ConsumerWidget {
           ),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+              leading: Icon(Icons.lock_outline, color: context.colors.primary),
               title: Text(l.switchProfile),
               onTap: () => ref.read(unlockedProvider.notifier).lock(),
             ),
@@ -283,11 +284,49 @@ class _PlanCard extends ConsumerWidget {
       valueListenable: billing.tier,
       builder: (context, tier, _) => Card(
         child: ListTile(
-          leading: const Icon(Icons.workspace_premium_outlined, color: AppColors.primary),
+          leading: Icon(Icons.workspace_premium_outlined, color: context.colors.primary),
           title: Text(l.yourPlan),
           subtitle: Text(tierName(tier, l)),
           trailing: TextButton(onPressed: onOpen, child: Text(l.seePlans)),
         ),
+      ),
+    );
+  }
+}
+
+/// System / light / dark, and the phone's wallpaper colours (Android 12+).
+class _AppearanceCard extends ConsumerWidget {
+  const _AppearanceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final look = ref.watch(appearanceProvider);
+    final set = ref.read(appearanceProvider.notifier).set;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.appearance, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          SegmentedButton<ThemeMode>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(value: ThemeMode.system, label: Text(l.themeSystem)),
+              ButtonSegment(value: ThemeMode.light, label: Text(l.themeLight)),
+              ButtonSegment(value: ThemeMode.dark, label: Text(l.themeDark)),
+            ],
+            selected: {look.mode},
+            onSelectionChanged: (s) => set(mode: s.single),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.wallpaperColors),
+            subtitle: Text(l.wallpaperColorsHint),
+            value: look.wallpaper,
+            onChanged: (on) => set(wallpaper: on),
+          ),
+        ]),
       ),
     );
   }

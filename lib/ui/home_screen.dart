@@ -153,7 +153,7 @@ class _AiModelCardState extends ConsumerState<AiModelCard> {
                 l,
                 m,
                 snap.data == m
-                    ? Text(l.aiModelInUse, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))
+                    ? Text(l.aiModelInUse, style: TextStyle(color: context.colors.primary, fontWeight: FontWeight.w600))
                     : OutlinedButton(onPressed: progress == null ? () => _switch(m) : null, child: Text(l.aiModelSwitch)),
               ),
             if (progress != null) _progress(l, ref, progress),
@@ -193,7 +193,7 @@ class _DownloadAiState extends ConsumerState<_DownloadAi> {
     final progress = ref.watch(llmDownloadProvider);
     final choices = llmChoices();
     return ListView(padding: const EdgeInsets.all(24), children: [
-      const Icon(Icons.download_for_offline_outlined, size: 48, color: AppColors.primary),
+      Icon(Icons.download_for_offline_outlined, size: 48, color: context.colors.primary),
       const SizedBox(height: 12),
       Text(l.aiDownloadTitle, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
       const SizedBox(height: 8),

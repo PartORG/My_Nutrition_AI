@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
@@ -45,6 +46,30 @@ final profilesProvider = Provider<Profiles>((ref) {
   ref.onDispose(profiles.close);
   return profiles;
 });
+
+/// Light / dark / follow the phone, and wallpaper colours (Android 12+). Per phone.
+typedef Appearance = ({ThemeMode mode, bool wallpaper});
+
+final appearanceProvider = NotifierProvider<AppearanceSettings, Appearance>(AppearanceSettings.new);
+
+class AppearanceSettings extends Notifier<Appearance> {
+  @override
+  Appearance build() {
+    // Before the app folder is ready (first frames): follow the phone.
+    final p = ref.watch(appDirProvider).hasValue ? ref.watch(profilesProvider) : null;
+    return (
+      mode: ThemeMode.values.asNameMap()[p?.setting('theme')] ?? ThemeMode.system,
+      wallpaper: p?.setting('wallpaper_colors') == '1',
+    );
+  }
+
+  void set({ThemeMode? mode, bool? wallpaper}) {
+    final p = ref.read(profilesProvider);
+    if (mode != null) p.setSetting('theme', mode.name);
+    if (wallpaper != null) p.setSetting('wallpaper_colors', wallpaper ? '1' : '0');
+    state = (mode: mode ?? state.mode, wallpaper: wallpaper ?? state.wallpaper);
+  }
+}
 
 /// The profile currently unlocked with its PIN; null = locked.
 final unlockedProvider =

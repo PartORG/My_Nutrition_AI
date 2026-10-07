@@ -99,7 +99,7 @@ class DailyBarChart extends StatelessWidget {
     final month = series.length > 7;
     final quarter = series.length > 31;
     final maxY = [goal ?? 0, ...series.map((d) => d.totals[nutrient]!)].reduce((a, b) => a > b ? a : b) * 1.15;
-    const muted = TextStyle(color: AppColors.textSecondary, fontSize: 11);
+    final muted = TextStyle(color: context.colors.textSecondary, fontSize: 11);
     return BarChart(BarChartData(
       maxY: maxY <= 0 ? 100 : maxY,
       alignment: BarChartAlignment.spaceBetween,
@@ -118,7 +118,7 @@ class DailyBarChart extends StatelessWidget {
         if (goal != null)
           HorizontalLine(
             y: goal!,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             strokeWidth: 1.5,
             dashArray: [6, 4],
             label: HorizontalLineLabel(
@@ -131,7 +131,7 @@ class DailyBarChart extends StatelessWidget {
       ]),
       gridData: FlGridData(
         drawVerticalLine: false,
-        getDrawingHorizontalLine: (_) => FlLine(color: AppColors.accent.withValues(alpha: .25), strokeWidth: 1),
+        getDrawingHorizontalLine: (_) => FlLine(color: context.colors.accent.withValues(alpha: .25), strokeWidth: 1),
       ),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(
@@ -161,10 +161,10 @@ class DailyBarChart extends StatelessWidget {
       ),
       barTouchData: BarTouchData(
         touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (_) => AppColors.textPrimary,
+          getTooltipColor: (_) => context.colors.textPrimary,
           getTooltipItem: (group, _, rod, _) => BarTooltipItem(
             '${DateFormat('EEE d MMM').format(series[group.x].day)}\n${formatNutrient(nutrient, rod.toY, l)}',
-            const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            TextStyle(color: context.colors.surface, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -187,9 +187,9 @@ typedef TrendPoint = ({DateTime at, double y});
 /// spans the same dates, so charts stacked on the timeline line up.
 class TrendChart extends StatelessWidget {
   const TrendChart({super.key, required this.lines, required this.unit, required this.empty,
-      this.colors = const [AppColors.primary, Color(0xFFEB6834)], this.from, this.days});
+      this.colors, this.from, this.days});
   final List<List<TrendPoint>> lines;
-  final List<Color> colors;
+  final List<Color>? colors; // default: the theme's primary, then orange
   final String unit, empty;
   final DateTime? from;
   final int? days;
@@ -198,14 +198,15 @@ class TrendChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final all = lines.expand((l) => l).toList();
     if (all.length < 2) {
-      return Text(empty, style: const TextStyle(color: AppColors.textSecondary));
+      return Text(empty, style: TextStyle(color: context.colors.textSecondary));
     }
     final t0 = from ?? all.map((p) => p.at).reduce((a, b) => a.isBefore(b) ? a : b);
     double x(DateTime at) => at.difference(t0).inMinutes / (24 * 60);
     final ys = all.map((p) => p.y);
     final (lo, hi) = (ys.reduce((a, b) => a < b ? a : b), ys.reduce((a, b) => a > b ? a : b));
     final pad = ((hi - lo) * .1).clamp(2, double.infinity);
-    const muted = TextStyle(color: AppColors.textSecondary, fontSize: 11);
+    final muted = TextStyle(color: context.colors.textSecondary, fontSize: 11);
+    final palette = colors ?? [context.colors.primary, const Color(0xFFEB6834)];
     return SizedBox(
       height: 180,
       child: LineChart(LineChartData(
@@ -217,17 +218,17 @@ class TrendChart extends StatelessWidget {
           for (final (i, line) in lines.indexed)
             LineChartBarData(
               spots: [for (final p in line) FlSpot(x(p.at), p.y)],
-              color: colors[i % colors.length],
+              color: palette[i % palette.length],
               barWidth: 2,
               dotData: FlDotData(
                 getDotPainter: (_, _, _, _) => FlDotCirclePainter(
-                    radius: 4, color: colors[i % colors.length], strokeWidth: 2, strokeColor: Colors.white),
+                    radius: 4, color: palette[i % palette.length], strokeWidth: 2, strokeColor: context.colors.surface),
               ),
             ),
         ],
         gridData: FlGridData(
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(color: AppColors.accent.withValues(alpha: .25), strokeWidth: 1),
+          getDrawingHorizontalLine: (_) => FlLine(color: context.colors.accent.withValues(alpha: .25), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
@@ -253,12 +254,12 @@ class TrendChart extends StatelessWidget {
         ),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.textPrimary,
+            getTooltipColor: (_) => context.colors.textPrimary,
             getTooltipItems: (spots) => [
               for (final s in spots)
                 LineTooltipItem(
                   '${DateFormat('d MMM').format(lines[s.barIndex][s.spotIndex].at)}\n${s.y.toStringAsFixed(s.y % 1 == 0 ? 0 : 1)} $unit',
-                  const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  TextStyle(color: context.colors.surface, fontWeight: FontWeight.w600),
                 ),
             ],
           ),

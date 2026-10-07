@@ -121,6 +121,13 @@ class Profiles {
         : PinWrong(freePinAttempts - failed);
   }
 
+  /// Per-phone settings (theme, …); null = never set.
+  String? setting(String key) =>
+      _db.select('SELECT value FROM settings WHERE key = ?', [key]).firstOrNull?['value'] as String?;
+
+  void setSetting(String key, String value) =>
+      _db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
+
   /// Fingerprint unlock is offered only while the phone has one profile.
   bool get biometricAllowed => list().length == 1;
 

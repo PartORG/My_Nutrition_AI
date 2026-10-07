@@ -189,20 +189,20 @@ class _Bubble extends StatelessWidget {
         ? Container(
             margin: const EdgeInsets.only(left: 8, top: 4),
             padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(Icons.person, size: 18, color: Colors.white),
+            decoration: BoxDecoration(color: context.colors.primary, shape: BoxShape.circle),
+            child: Icon(Icons.person, size: 18, color: Theme.of(context).colorScheme.onPrimary),
           )
         : Container(
             margin: const EdgeInsets.only(right: 8, top: 4),
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(color: AppColors.cardGreen, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: context.colors.cardGreen, shape: BoxShape.circle),
             child: Image.asset('assets/icons/icon_chat.png', width: 40, height: 40),
           );
     final bubble = Flexible(
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
         decoration: BoxDecoration(
-          color: mine ? AppColors.primary : Colors.white,
+          color: mine ? context.colors.primary : context.colors.surface,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -213,7 +213,7 @@ class _Bubble extends StatelessWidget {
             BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2)),
           ],
         ),
-        child: Text(text, style: TextStyle(color: mine ? Colors.white : AppColors.textPrimary)),
+        child: Text(text, style: TextStyle(color: mine ? Theme.of(context).colorScheme.onPrimary : context.colors.textPrimary)),
       ),
     );
     final l = AppLocalizations.of(context)!;
@@ -301,18 +301,18 @@ class _CardView extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   child: Text('${i + 1}'),
                 ),
                 title: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Wrap(spacing: 6, children: [
                   _Chip(icon: Icons.local_fire_department, color: nutrientColors['kcal']!,
                       label: '${r.kcal.round()} ${l.kcal}'),
-                  if (r.minutes != null) _Chip(icon: Icons.schedule, color: AppColors.textSecondary,
+                  if (r.minutes != null) _Chip(icon: Icons.schedule, color: context.colors.textSecondary,
                       label: '${r.minutes} min'),
                 ]),
-                trailing: const Icon(Icons.chevron_right, color: AppColors.primary),
+                trailing: Icon(Icons.chevron_right, color: context.colors.primary),
                 onTap: () => agent.showRecipe(r.id),
               ),
           ]),
@@ -355,7 +355,7 @@ class _CardView extends StatelessWidget {
             false => Icons.cancel_outlined,
           },
           title: c.title,
-          color: c.accepted == false ? AppColors.textSecondary : AppColors.primary,
+          color: c.accepted == false ? context.colors.textSecondary : context.colors.primary,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (c.accepted == null && c.items.isNotEmpty) ...[
               // Chat guesses amounts: each one is editable before Save (0 = leave it out).
@@ -382,7 +382,7 @@ class _CardView extends StatelessWidget {
                     onPressed: () => agent.decide(c, true),
                   ),
                 ]),
-              true => Text('✓ ${l.confirmSaved}', style: text.labelLarge?.copyWith(color: AppColors.primary)),
+              true => Text('✓ ${l.confirmSaved}', style: text.labelLarge?.copyWith(color: context.colors.primary)),
               false => Text('✕ ${l.confirmDiscarded}', style: text.labelLarge),
             },
           ]),
@@ -417,8 +417,8 @@ class _RecipeViewState extends State<RecipeView> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primaryLight]),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [context.colors.primaryDark, context.colors.primaryLight]),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(c.title, style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -461,10 +461,10 @@ class _RecipeViewState extends State<RecipeView> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(children: [
-                  const Icon(Icons.check_circle, size: 18, color: AppColors.primaryLight),
+                  Icon(Icons.check_circle, size: 18, color: context.colors.primaryLight),
                   const SizedBox(width: 8),
                   Expanded(child: Text(i.name)),
-                  Text('${i.grams.round()} g', style: const TextStyle(color: AppColors.textSecondary)),
+                  Text('${i.grams.round()} g', style: TextStyle(color: context.colors.textSecondary)),
                 ]),
               ),
             const SizedBox(height: 14),
@@ -496,7 +496,7 @@ class _Stars extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     // Wrap: at 200% text the label and five stars don't fit one line.
     return Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
-      Text(l.yourRating, style: const TextStyle(color: AppColors.textSecondary)),
+      Text(l.yourRating, style: TextStyle(color: context.colors.textSecondary)),
       for (var n = 1; n <= 5; n++)
         IconButton(
           tooltip: l.rateStars(n),
@@ -539,14 +539,16 @@ class RecipeScreen extends StatelessWidget {
 
 /// A card with a tinted header strip: icon + title in the card's accent colour.
 class _Framed extends StatelessWidget {
-  const _Framed({required this.icon, required this.title, required this.child, this.color = AppColors.primary});
+  const _Framed({required this.icon, required this.title, required this.child, this.color});
   final IconData icon;
   final String title;
   final Widget child;
-  final Color color;
+  final Color? color; // default: the theme's primary
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final color = this.color ?? context.colors.primary;
+    return Card(
         clipBehavior: Clip.antiAlias,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
@@ -559,13 +561,14 @@ class _Framed extends StatelessWidget {
               Expanded(
                 child: Text(title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                        color: context.colors.textPrimary, fontWeight: FontWeight.w600)),
               ),
             ]),
           ),
           Padding(padding: const EdgeInsets.fromLTRB(14, 10, 14, 12), child: child),
         ]),
       );
+  }
 }
 
 class _Section extends StatelessWidget {
@@ -577,7 +580,7 @@ class _Section extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(label.toUpperCase(),
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.textSecondary, letterSpacing: .8, fontWeight: FontWeight.w700)),
+                color: context.colors.textSecondary, letterSpacing: .8, fontWeight: FontWeight.w700)),
       );
 }
 
@@ -593,13 +596,13 @@ class _Chip extends StatelessWidget {
         margin: const EdgeInsets.only(top: 4),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: onDark ? Colors.white.withValues(alpha: .2) : (color ?? AppColors.primary).withValues(alpha: .12),
+          color: onDark ? Colors.white.withValues(alpha: .2) : (color ?? context.colors.primary).withValues(alpha: .12),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 14, color: onDark ? Colors.white : color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : AppColors.textPrimary)),
+          Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : context.colors.textPrimary)),
         ]),
       );
 }

@@ -55,7 +55,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.aiKnowsTitle)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.aiKnowsIntro, style: const TextStyle(color: AppColors.textSecondary)),
+        Text(l.aiKnowsIntro, style: TextStyle(color: context.colors.textSecondary)),
         _Section(icon: Icons.lightbulb_outline, title: l.factsSection, children: [
           if (facts.isEmpty) Text(l.factsEmpty),
           for (final f in facts)
@@ -111,7 +111,7 @@ class _Section extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(icon, color: AppColors.primary),
+              Icon(icon, color: context.colors.primary),
               const SizedBox(width: 8),
               Text(title, style: Theme.of(context).textTheme.titleMedium),
             ]),

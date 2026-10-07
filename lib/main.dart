@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,17 +23,23 @@ void main() {
   runApp(const ProviderScope(child: MyFoodMindApp()));
 }
 
-class MyFoodMindApp extends StatelessWidget {
+class MyFoodMindApp extends ConsumerWidget {
   const MyFoodMindApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final look = ref.watch(appearanceProvider);
+    // Null schemes below Android 12: the app's own green then.
+    return DynamicColorBuilder(builder: (light, dark) => MaterialApp(
         onGenerateTitle: (c) => AppLocalizations.of(c)!.appTitle,
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.build(Brightness.light, system: look.wallpaper ? light : null),
+        darkTheme: AppTheme.build(Brightness.dark, system: look.wallpaper ? dark : null),
+        themeMode: look.mode,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: const AppGate(),
-      );
+      ));
+  }
 }
 
 /// Unsupported phone → loading → profile picker (locked) → home (unlocked).

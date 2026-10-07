@@ -73,7 +73,7 @@ class _Health extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(l.conditionsTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            Text(l.conditionsHint, style: const TextStyle(color: AppColors.textSecondary)),
+            Text(l.conditionsHint, style: TextStyle(color: context.colors.textSecondary)),
             const SizedBox(height: 12),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final c in allConditions(data.nutri))
@@ -96,7 +96,7 @@ class _Health extends StatelessWidget {
       _JournalCard(data: data, now: now),
       Card(
         child: ListTile(
-          leading: const Icon(Icons.timeline, color: AppColors.primary),
+          leading: Icon(Icons.timeline, color: context.colors.primary),
           title: Text(l.timelineTitle),
           subtitle: Text(l.timelineHint),
           trailing: const Icon(Icons.chevron_right),
@@ -105,7 +105,7 @@ class _Health extends StatelessWidget {
       ),
       Card(
         child: ListTile(
-          leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+          leading: Icon(Icons.description_outlined, color: context.colors.primary),
           title: Text(l.reportButton),
           subtitle: Text(l.reportHint),
           trailing: const Icon(Icons.chevron_right),
@@ -158,11 +158,11 @@ class _JournalCard extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         if (entries.isEmpty)
-          ListTile(title: Text(l.journalEmpty, style: const TextStyle(color: AppColors.textSecondary))),
+          ListTile(title: Text(l.journalEmpty, style: TextStyle(color: context.colors.textSecondary))),
         for (final e in entries)
           ListTile(
             dense: true,
-            leading: Icon(e.icon, color: AppColors.primary),
+            leading: Icon(e.icon, color: context.colors.primary),
             title: Text(e.text),
             subtitle: Text(DateFormat('EEE d MMM, HH:mm').format(e.at)),
             trailing: IconButton(
@@ -272,7 +272,7 @@ class _EntryDialogState extends State<_EntryDialog> {
                       onSelected: (on) => setState(() => _severity = on ? s : null),
                     ),
                 ]),
-                Text(l.severityHint, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(l.severityHint, style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
               ],
             'glucose' => [
                 TextField(controller: _a, autofocus: true, keyboardType: number, decoration: label(l.reportValue), onChanged: changed),
@@ -322,11 +322,11 @@ class _LockedHealth extends StatelessWidget {
     final mine = myConditions(data.user);
     return ListView(padding: const EdgeInsets.all(16), children: [
       Card(
-        color: AppColors.cardGreen,
+        color: context.colors.cardGreen,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.monitor_heart_outlined, color: AppColors.primary, size: 32),
+            Icon(Icons.monitor_heart_outlined, color: context.colors.primary, size: 32),
             const SizedBox(height: 8),
             Text(l.healthLockedTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
@@ -436,7 +436,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ChartSection(
           title: l.symptomsTitle,
           child: symptoms.isEmpty
-              ? Text(l.timelineEmpty, style: const TextStyle(color: AppColors.textSecondary))
+              ? Text(l.timelineEmpty, style: TextStyle(color: context.colors.textSecondary))
               : Column(children: [
                   for (final s in symptoms)
                     ListTile(

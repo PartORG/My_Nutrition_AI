@@ -75,13 +75,13 @@ class _LogScreenState extends ConsumerState<LogScreen> {
           IconButton(
             tooltip: l.cameraOpen,
             iconSize: 28,
-            icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+            icon: Icon(Icons.photo_camera_outlined, color: context.colors.primary),
             onPressed: () => openCamera(context, 'photo'),
           ),
           IconButton(
             tooltip: l.quickAdd,
             iconSize: 28,
-            icon: const Icon(Icons.bolt, color: AppColors.primary),
+            icon: Icon(Icons.bolt, color: context.colors.primary),
             onPressed: () => showDialog<void>(context: context, builder: (_) => _QuickAddDialog(data: data)),
           ),
         ]),
@@ -125,12 +125,12 @@ class _LogScreenState extends ConsumerState<LogScreen> {
                       : l.perServing2((f.per100['kcal']! * f.servingG! / 100).round());
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.cardGreen,
-                      child: Icon(icon, color: AppColors.primary),
+                      backgroundColor: context.colors.cardGreen,
+                      child: Icon(icon, color: context.colors.primary),
                     ),
                     title: Text(f.label),
                     subtitle: Text('$kind · ${f.estimated ? '≈' : ''}$per'),
-                    trailing: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                    trailing: Icon(Icons.add_circle_outline, color: context.colors.primary),
                     onTap: () => _pick(f),
                   );
                 },

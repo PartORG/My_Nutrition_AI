@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/data/migrate.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
+import 'package:myfoodmind/ui/theme.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
 import 'package:myfoodmind/agent/memory.dart';
 import 'package:myfoodmind/app_state.dart';
@@ -51,7 +52,7 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  Widget app(Widget home, {List overrides = const []}) => ProviderScope(
+  Widget app(Widget home, {List overrides = const [], ThemeData? theme}) => ProviderScope(
         overrides: [
           profileDataProvider.overrideWithValue(data),
           profilesProvider.overrideWithValue(Profiles.open(tmp)), // Me reads the profile list
@@ -59,6 +60,7 @@ void main() {
           ...overrides.cast(),
         ],
         child: MaterialApp(
+          theme: theme,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
@@ -101,6 +103,23 @@ void main() {
     await tester.tap(find.text('Me'));
     await tester.pumpAndSettle();
     await scrollAll(tester, 'Me');
+  });
+
+  testWidgets('dark theme: Today with meals, Log, Me', (tester) async {
+    smallPhone(tester);
+    (data.tools.logRecipe(2).card! as ConfirmCard).apply();
+    data.tools.quickAdd('Restaurant pasta', {'kcal': 650}, 'dinner');
+    await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), theme: AppTheme.build(Brightness.dark)));
+    await tester.pump();
+    expect(tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor ?? Theme.of(tester.element(find.byType(Scaffold).first)).scaffoldBackgroundColor,
+        AppPalette.dark.background);
+    await scrollAll(tester, 'Today (dark)');
+    await tester.tap(find.text('Log'));
+    await tester.pumpAndSettle();
+    await scrollAll(tester, 'Log (dark)');
+    await tester.tap(find.text('Me'));
+    await tester.pumpAndSettle();
+    await scrollAll(tester, 'Me (dark)');
   });
 
   testWidgets('Health, journal entry, timeline and report sheet at 200 % text (Medium)', (tester) async {

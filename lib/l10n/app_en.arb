@@ -595,6 +595,12 @@
   "quickAdd": "Quick add",
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "wallpaperColors": "Wallpaper colours",
+  "wallpaperColorsHint": "Use your phone's colours (Android 12 and newer).",
   "suggestAte": "I ate {food}",
   "@suggestAte": {
     "placeholders": {

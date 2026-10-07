@@ -210,9 +210,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                     height: d.box.height * box.maxHeight,
                                     child: Container(
                                       alignment: Alignment.topLeft,
-                                      decoration: BoxDecoration(border: Border.all(color: AppColors.accent, width: 3)),
+                                      decoration: BoxDecoration(border: Border.all(color: context.colors.accent, width: 3)),
                                       child: Container(
-                                        color: AppColors.accent,
+                                        color: context.colors.accent,
                                         padding: const EdgeInsets.symmetric(horizontal: 4),
                                         child: Text('${d.label} ${(d.score * 100).round()}%',
                                             style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
@@ -311,7 +311,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.reviewTitle)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.reviewHint, style: const TextStyle(color: AppColors.textSecondary)),
+        Text(l.reviewHint, style: TextStyle(color: context.colors.textSecondary)),
         const SizedBox(height: 8),
         if (_items.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(l.reviewEmpty)),
         for (final i in _items)
@@ -324,7 +324,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     child: Text(i.food?.label ?? l.notInDatabase(i.name),
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: i.food == null ? Theme.of(context).colorScheme.error : AppColors.textPrimary)),
+                            color: i.food == null ? Theme.of(context).colorScheme.error : context.colors.textPrimary)),
                   ),
                   IconButton(tooltip: l.reviewChange, icon: const Icon(Icons.edit_outlined), onPressed: () => _pick(i)),
                   IconButton(

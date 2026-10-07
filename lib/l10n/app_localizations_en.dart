@@ -982,6 +982,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editMeal => 'Edit meal';
 
   @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get wallpaperColors => 'Wallpaper colours';
+
+  @override
+  String get wallpaperColorsHint =>
+      'Use your phone\'s colours (Android 12 and newer).';
+
+  @override
   String suggestAte(String food) {
     return 'I ate $food';
   }

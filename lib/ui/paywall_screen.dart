@@ -58,7 +58,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             return ListView(padding: const EdgeInsets.all(16), children: [
               if (billing.isDev)
                 Card(
-                  color: AppColors.cardGreen,
+                  color: context.colors.cardGreen,
                   child: Padding(padding: const EdgeInsets.all(12), child: Text(l.devBillingBanner)),
                 ),
               Center(
@@ -93,7 +93,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               else if (offers.isEmpty)
                 Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(l.plansUnavailable))),
               const SizedBox(height: 8),
-              Text(l.subscriptionTerms, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(l.subscriptionTerms, style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
               TextButton(onPressed: _busy ? null : billing.restore, child: Text(l.restorePurchases)),
               legalLinks(context),
               if (billing case DevBilling dev when current != Tier.free)
@@ -129,7 +129,7 @@ class _TierCard extends StatelessWidget {
     return Card(
       shape: current
           ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.primary, width: 2))
+              borderRadius: BorderRadius.circular(16), side: BorderSide(color: context.colors.primary, width: 2))
           : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -143,7 +143,7 @@ class _TierCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(children: [
-                const Icon(Icons.check_circle, size: 18, color: AppColors.primaryLight),
+                Icon(Icons.check_circle, size: 18, color: context.colors.primaryLight),
                 const SizedBox(width: 8),
                 Expanded(child: Text(f)),
               ]),
@@ -151,7 +151,7 @@ class _TierCard extends StatelessWidget {
           const SizedBox(height: 10),
           // The full price is always next to the button, with the trial spelled out.
           Text(offer.trial && !current ? l.trialThen(price) : price,
-              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              style: TextStyle(fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
           if (action != null) ...[
             const SizedBox(height: 8),
             SizedBox(width: double.infinity, child: ElevatedButton(onPressed: onBuy, child: Text(action!))),

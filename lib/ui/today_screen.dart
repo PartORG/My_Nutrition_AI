@@ -102,7 +102,7 @@ class _DayView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(l.todaysMeals, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          if (meals.isEmpty) Text(l.noMealsYet, style: const TextStyle(color: AppColors.textSecondary)),
+          if (meals.isEmpty) Text(l.noMealsYet, style: TextStyle(color: context.colors.textSecondary)),
           for (final type in ['breakfast', 'lunch', 'dinner', 'snack', null])
             if (meals.where((m) => m.type == type).toList() case final group when group.isNotEmpty)
               _MealGroup(type: type, meals: group, onOpen: open, onEdit: (m) async {
@@ -142,7 +142,7 @@ class _SetGoalsCard extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     return Column(children: [
       Card(
-        color: AppColors.cardGreen,
+        color: context.colors.cardGreen,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -188,10 +188,10 @@ class _CaloriesCard extends StatelessWidget {
           // Wrap, not Row: at large text sizes "of 2759 kcal" moves under the number.
           Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
             Text('${eaten.round()}',
-                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text(l.eatenOfGoal(goal.round()), style: const TextStyle(color: AppColors.textSecondary)),
+              child: Text(l.eatenOfGoal(goal.round()), style: TextStyle(color: context.colors.textSecondary)),
             ),
           ]),
           const SizedBox(height: 6),
@@ -212,7 +212,7 @@ class _CaloriesCard extends StatelessWidget {
             if (over) const SizedBox(width: 4),
             Flexible(
               child: Text(over ? l.kcalOver((-left).round()) : l.kcalLeft(left.round()),
-                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.w600)),
             ),
           ]),
         ]),
@@ -246,7 +246,7 @@ class NutrientBar extends StatelessWidget {
           Flexible(
             child: Text(
               '${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
               textAlign: TextAlign.end,
             ),
           ),
@@ -307,7 +307,7 @@ class _MealGroup extends StatelessWidget {
         for (final m in meals)
           ListTile(
             dense: true,
-            leading: m.recipeId == null ? null : const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+            leading: m.recipeId == null ? null : Icon(Icons.menu_book_outlined, color: context.colors.primary),
             // A recipe opens (to see and rate it); anything else edits. Long press always edits.
             onTap: m.recipeId == null ? () => onEdit(m) : () => onOpen(m.recipeId!),
             onLongPress: () => onEdit(m),
@@ -418,7 +418,7 @@ class _RecipesYouAte extends StatelessWidget {
         for (final r in recipes)
           ListTile(
             dense: true,
-            leading: const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+            leading: Icon(Icons.menu_book_outlined, color: context.colors.primary),
             title: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text(DateFormat('EEE d MMM').format(r.at)),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -441,11 +441,11 @@ class _LockedPeriod extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     return ListView(padding: const EdgeInsets.all(16), children: [
       Card(
-        color: AppColors.cardGreen,
+        color: context.colors.cardGreen,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.insights, color: AppColors.primary, size: 32),
+            Icon(Icons.insights, color: context.colors.primary, size: 32),
             const SizedBox(height: 8),
             Text(l.lockedTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),

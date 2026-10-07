@@ -51,8 +51,8 @@ class NutrientTiles extends StatelessWidget {
               ),
               TextSpan(
                   text: '$approx${values[e.key]!.round()}${e.value.$2.isEmpty ? '' : ' ${e.value.$2}'} ',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-              TextSpan(text: e.value.$1, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
+              TextSpan(text: e.value.$1, style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
             ])),
           ),
     ]);
