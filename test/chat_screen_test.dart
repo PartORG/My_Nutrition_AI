@@ -56,7 +56,12 @@ void main() {
 
     expect(find.text('Breakfast was 2 eggs'), findsOneWidget);
     expect(find.text('Log breakfast'), findsOneWidget);
-    expect(find.text('egg · 100 g · 143 kcal'), findsOneWidget);
+    // Editable before Save: the amount is a field, kcal follows it.
+    expect(find.text('egg'), findsOneWidget);
+    expect(find.text('143 kcal'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextFormField, '100'), '150');
+    await tester.pump();
+    expect(find.text('215 kcal'), findsOneWidget);
     expect(find.text('Please confirm your breakfast.'), findsOneWidget);
     expect(find.byIcon(Icons.flag_outlined), findsNothing, reason: 'no flag icon on messages');
     await tester.longPress(find.text('Please confirm your breakfast.'));
@@ -71,7 +76,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('✓ Saved'), findsOneWidget);
     expect(find.text('Save'), findsNothing);
-    expect(user.select('SELECT description FROM meal_log').single['description'], 'egg');
+    expect(user.select('SELECT description, grams FROM meal_log').single.values, ['egg', 150.0]);
 
     // Crisis text gets the helpline card, not the model.
     await tester.enterText(find.byType(TextField), "I don't want to live anymore");

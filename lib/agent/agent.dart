@@ -217,6 +217,13 @@ class Agent extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The user changed an amount on a meal card before saving.
+  void setGrams(ConfirmCard card, MealItem item, double grams) {
+    if (card.accepted != null) return;
+    item.grams = grams < 0 ? 0 : grams;
+    notifyListeners();
+  }
+
   /// The user tapped ✓ or ✕ on a card. Only ✓ writes.
   Future<void> decide(ConfirmCard card, bool accept) async {
     if (card.accepted != null) return;

@@ -105,7 +105,11 @@ class _DayView extends StatelessWidget {
           if (meals.isEmpty) Text(l.noMealsYet, style: const TextStyle(color: AppColors.textSecondary)),
           for (final type in ['breakfast', 'lunch', 'dinner', 'snack', null])
             if (meals.where((m) => m.type == type).toList() case final group when group.isNotEmpty)
-              _MealGroup(type: type, meals: group, onOpen: open, onDelete: (m) async {
+              _MealGroup(type: type, meals: group, onOpen: open, onEdit: (m) async {
+                final changed = await showModalBottomSheet<bool>(
+                    context: context, isScrollControlled: true, builder: (_) => _EditMealSheet(meal: m, data: data));
+                if (changed == true) data.changed();
+              }, onDelete: (m) async {
                 final ok = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
@@ -277,10 +281,11 @@ class NutrientBar extends StatelessWidget {
 }
 
 class _MealGroup extends StatelessWidget {
-  const _MealGroup({required this.type, required this.meals, required this.onDelete, required this.onOpen});
+  const _MealGroup(
+      {required this.type, required this.meals, required this.onDelete, required this.onOpen, required this.onEdit});
   final String? type;
   final List<MealEntry> meals;
-  final ValueChanged<MealEntry> onDelete;
+  final ValueChanged<MealEntry> onDelete, onEdit;
   final ValueChanged<int> onOpen; // a recipe id
 
   @override
@@ -303,7 +308,9 @@ class _MealGroup extends StatelessWidget {
           ListTile(
             dense: true,
             leading: m.recipeId == null ? null : const Icon(Icons.menu_book_outlined, color: AppColors.primary),
-            onTap: m.recipeId == null ? null : () => onOpen(m.recipeId!),
+            // A recipe opens (to see and rate it); anything else edits. Long press always edits.
+            onTap: m.recipeId == null ? () => onEdit(m) : () => onOpen(m.recipeId!),
+            onLongPress: () => onEdit(m),
             title: Text(m.label),
             subtitle: Text([
               DateFormat.Hm().format(m.at),
@@ -314,6 +321,80 @@ class _MealGroup extends StatelessWidget {
               IconButton(tooltip: l.delete, icon: const Icon(Icons.delete_outline), onPressed: () => onDelete(m)),
             ]),
           ),
+      ]),
+    );
+  }
+}
+
+/// Fix a logged meal: amount (nutrition scales with it) and which meal it was.
+class _EditMealSheet extends StatefulWidget {
+  const _EditMealSheet({required this.meal, required this.data});
+  final MealEntry meal;
+  final ProfileData data;
+
+  @override
+  State<_EditMealSheet> createState() => _EditMealSheetState();
+}
+
+class _EditMealSheetState extends State<_EditMealSheet> {
+  late final _grams = TextEditingController(text: widget.meal.grams?.round().toString() ?? '');
+  late String _type = widget.meal.type ?? 'snack';
+
+  @override
+  void dispose() {
+    _grams.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final m = widget.meal;
+    final grams = double.tryParse(_grams.text.replaceAll(',', '.'));
+    final kcal = m.grams == null || grams == null || m.grams == 0 ? m.kcal : m.kcal * grams / m.grams!;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(l.editMeal, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(m.label),
+        const SizedBox(height: 12),
+        // Quick adds have no grams: only the meal can change.
+        if (m.grams != null)
+          TextField(
+            controller: _grams,
+            decoration: InputDecoration(labelText: l.grams, suffixText: 'g'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+          ),
+        const SizedBox(height: 12),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: 'breakfast', label: Text(l.mealBreakfast)),
+            ButtonSegment(value: 'lunch', label: Text(l.mealLunch)),
+            ButtonSegment(value: 'dinner', label: Text(l.mealDinner)),
+            ButtonSegment(value: 'snack', label: Text(l.mealSnack)),
+          ],
+          selected: {_type},
+          onSelectionChanged: (s) => setState(() => _type = s.single),
+        ),
+        const SizedBox(height: 12),
+        Text('${m.estimated ? '≈' : ''}${kcal.round()} ${l.kcal}', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.check),
+            label: Text(l.confirmSave),
+            onPressed: m.grams != null && (grams == null || grams <= 0 || grams > 5000)
+                ? null
+                : () {
+                    updateMeal(widget.data.user, m.id, grams: grams, type: _type);
+                    Navigator.pop(context, true);
+                  },
+          ),
+        ),
       ]),
     );
   }

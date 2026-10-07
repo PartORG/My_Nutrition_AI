@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
+import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
 import 'nutrients.dart';
@@ -44,7 +45,20 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     final tools = ref.watch(profileDataProvider)?.tools;
     if (tools == null) return const SizedBox.shrink();
     final kinds = {'food': (l.kindFood, Icons.eco_outlined), 'dish': (l.kindDish, Icons.dinner_dining_outlined),
-        'recipe': (l.kindRecipe, Icons.menu_book_outlined), 'product': (l.kindProduct, Icons.qr_code_2)};
+        'recipe': (l.kindRecipe, Icons.menu_book_outlined), 'product': (l.kindProduct, Icons.qr_code_2),
+        'recent': (l.kindRecent, Icons.history)};
+    final data = ref.watch(profileDataProvider)!;
+    final searching = _search.text.trim().length >= 2;
+    final now = DateTime.now();
+    // Empty search: what the user eats most, and yesterday's meals to repeat in one tap.
+    final list = searching ? _results : recentFoods(data.user, now);
+    final yesterday = searching ? const <String, double>{} : mealTotalsOn(data.user, now.subtract(const Duration(days: 1)));
+    String meal(String t) => switch (t) {
+          'breakfast' => l.mealBreakfast,
+          'lunch' => l.mealLunch,
+          'dinner' => l.mealDinner,
+          _ => l.mealSnack,
+        };
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(16),
@@ -64,15 +78,47 @@ class _LogScreenState extends ConsumerState<LogScreen> {
             icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
             onPressed: () => openCamera(context, 'photo'),
           ),
+          IconButton(
+            tooltip: l.quickAdd,
+            iconSize: 28,
+            icon: const Icon(Icons.bolt, color: AppColors.primary),
+            onPressed: () => showDialog<void>(context: context, builder: (_) => _QuickAddDialog(data: data)),
+          ),
         ]),
       ),
+      if (yesterday.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final type in ['breakfast', 'lunch', 'dinner', 'snack'])
+              if (yesterday[type] case final kcal?)
+                ActionChip(
+                  avatar: const Icon(Icons.replay, size: 18),
+                  label: Text(l.repeatYesterday(meal(type), kcal.round())),
+                  onPressed: () {
+                    final n = repeatMeal(data.user, now.subtract(const Duration(days: 1)), type, DateTime.now());
+                    data.changed();
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
+                  },
+                ),
+          ]),
+        ),
+      if (!searching && list.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(l.recentFoods, style: Theme.of(context).textTheme.titleSmall),
+          ),
+        ),
       Expanded(
-        child: _results.isEmpty && _search.text.trim().length >= 2
+        child: list.isEmpty && searching
             ? Center(child: Text(l.noResults))
             : ListView.builder(
-                itemCount: _results.length,
+                itemCount: list.length,
                 itemBuilder: (_, i) {
-                  final f = _results[i];
+                  final f = list[i];
                   final (kind, icon) = kinds[f.kind]!;
                   final per = f.servingG == null
                       ? l.per100g(f.per100['kcal']!.round())
@@ -91,6 +137,81 @@ class _LogScreenState extends ConsumerState<LogScreen> {
               ),
       ),
     ]);
+  }
+}
+
+/// "Just 350 kcal" for a meal no search finds; macros optional.
+class _QuickAddDialog extends StatefulWidget {
+  const _QuickAddDialog({required this.data});
+  final ProfileData data;
+
+  @override
+  State<_QuickAddDialog> createState() => _QuickAddDialogState();
+}
+
+class _QuickAddDialogState extends State<_QuickAddDialog> {
+  final _name = TextEditingController();
+  final _values = {for (final k in ['kcal', 'protein_g', 'carbs_g', 'fat_g']) k: TextEditingController()};
+  late String _meal = widget.data.tools.mealTypeNow();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    for (final c in _values.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  double? _num(String k) => double.tryParse(_values[k]!.text.replaceAll(',', '.'));
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final labels = nutrientLabels(l);
+    final kcal = _num('kcal');
+    return AlertDialog(
+      title: Text(l.quickAdd),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: _name, decoration: InputDecoration(labelText: l.quickAddName)),
+          for (final k in _values.keys)
+            TextField(
+              controller: _values[k],
+              decoration: InputDecoration(labelText: labels[k]!.$1, suffixText: labels[k]!.$2.isEmpty ? l.kcal : labels[k]!.$2),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => setState(() {}),
+            ),
+          const SizedBox(height: 12),
+          DropdownButton<String>(
+            value: _meal,
+            isExpanded: true,
+            items: [
+              DropdownMenuItem(value: 'breakfast', child: Text(l.mealBreakfast)),
+              DropdownMenuItem(value: 'lunch', child: Text(l.mealLunch)),
+              DropdownMenuItem(value: 'dinner', child: Text(l.mealDinner)),
+              DropdownMenuItem(value: 'snack', child: Text(l.mealSnack)),
+            ],
+            onChanged: (m) => setState(() => _meal = m!),
+          ),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
+        TextButton(
+          onPressed: kcal == null || kcal <= 0 || kcal > 5000
+              ? null
+              : () {
+                  final name = _name.text.trim();
+                  widget.data.tools.quickAdd(name.isEmpty ? l.quickAdd : name,
+                      {for (final k in _values.keys) k: _num(k) ?? 0}, _meal);
+                  widget.data.changed();
+                  Navigator.pop(context);
+                },
+          child: Text(l.logButton),
+        ),
+      ],
+    );
   }
 }
 

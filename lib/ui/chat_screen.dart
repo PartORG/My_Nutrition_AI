@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
+import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
 import 'nutrients.dart';
@@ -98,6 +99,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (widget.agent.busy) const LinearProgressIndicator(minHeight: 2),
+          if (!widget.agent.busy) _Suggestions(agent: widget.agent, onTap: _send),
           SafeArea(
             top: false,
             child: Padding(
@@ -355,7 +357,12 @@ class _CardView extends StatelessWidget {
           title: c.title,
           color: c.accepted == false ? AppColors.textSecondary : AppColors.primary,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (final line in c.lines) Text(line),
+            if (c.accepted == null && c.items.isNotEmpty) ...[
+              // Chat guesses amounts: each one is editable before Save (0 = leave it out).
+              for (final i in c.items) _MealItemRow(item: i, onGrams: (g) => agent.setGrams(c, i, g)),
+              for (final line in c.lines.skip(c.items.length)) Text(line),
+            ] else
+              for (final line in c.lines) Text(line),
             if (c.mealType != null && c.accepted == null) ...[
               const SizedBox(height: 8),
               _MealTypePicker(card: c, agent: agent),
@@ -595,6 +602,72 @@ class _Chip extends StatelessWidget {
           Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : AppColors.textPrimary)),
         ]),
       );
+}
+
+/// One-tap messages above the input: the food logged most ("I ate…" goes straight to a
+/// card), an idea for the meal now, what's left today.
+class _Suggestions extends StatelessWidget {
+  const _Suggestions({required this.agent, required this.onTap});
+  final Agent agent;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final usual = recentFoods(agent.user, DateTime.now(), limit: 1).firstOrNull;
+    final meal = switch (agent.tools.mealTypeNow()) {
+      'breakfast' => l.mealBreakfast,
+      'lunch' => l.mealLunch,
+      'dinner' => l.mealDinner,
+      _ => l.mealSnack,
+    };
+    final texts = [
+      // Before the comma: "Bananas, raw" would split into two foods.
+      if (usual != null) l.suggestAte('${usual.servingG!.round()} g ${usual.label.split(',').first}'),
+      l.suggestIdea(meal.toLowerCase()),
+      l.suggestLeft,
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      child: Row(children: [
+        for (final t in texts)
+          Padding(padding: const EdgeInsets.only(right: 8), child: ActionChip(label: Text(t), onPressed: () => onTap(t))),
+      ]),
+    );
+  }
+}
+
+/// A food on a meal card: name, grams (editable), kcal for those grams.
+class _MealItemRow extends StatelessWidget {
+  const _MealItemRow({required this.item, required this.onGrams});
+  final MealItem item;
+  final ValueChanged<double> onGrams;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(children: [
+        Expanded(child: Text(item.label)),
+        SizedBox(
+          width: 84,
+          child: TextFormField(
+            initialValue: '${item.grams.round()}',
+            decoration: InputDecoration(isDense: true, suffixText: 'g', labelText: l.grams),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (t) => onGrams(double.tryParse(t.replaceAll(',', '.')) ?? 0),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 72,
+          child: Text('${item.estimated ? '≈' : ''}${item.values['kcal']!.round()} ${l.kcal}', textAlign: TextAlign.end),
+        ),
+      ]),
+    );
+  }
 }
 
 /// Breakfast · Lunch · Dinner · Snack on a meal card, before Save.

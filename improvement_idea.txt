@@ -1,0 +1,86 @@
+Your app's edge
+
+  Most competitors are cloud apps. Yours runs the AI fully on the phone, works offline, has no account, and supports health conditions and a doctor report. Very few
+  apps combine those, so new features should strengthen this position rather than copy cloud features.
+
+  The strongest point across the sources is that people quit tracking mostly because logging takes too many taps. The clearest gaps I found in your app are about
+  exactly that.
+
+  1. Logging friction: biggest impact, mostly small work
+
+  ┌────────────────────────────────────────┬────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────┐
+  │                Feature                 │               Today in your app                │                            Why it matters                            │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Change grams on the chat card before   │ Card shows "Banana · 200 g" and can only be    │ Chat estimates are often off (the 110 g protein bar, 100 g bananas). │
+  │ Save                                   │ accepted or declined                           │  This fixes most wrong logs                                          │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Recent and frequent foods at the top   │ Empty until you type                           │ Most people eat the same 20–30 things                                │
+  │ of the Log tab                         │                                                │                                                                      │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ "Repeat yesterday's breakfast" / copy  │ Missing                                        │ One tap instead of re-logging                                        │
+  │ a meal                                 │                                                │                                                                      │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Edit a logged meal (grams, meal type,  │ Only delete                                    │ Fixing a mistake shouldn't mean deleting and re-adding               │
+  │ time)                                  │                                                │                                                                      │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Quick add ("just 350 kcal")            │ Missing                                        │ For restaurant meals with no match                                   │
+  ├────────────────────────────────────────┼────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Smarter chat suggestions               │ —                                              │ Show "Log my usual breakfast" or "Repeat lunch" from your habits     │
+  └────────────────────────────────────────┴────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────┘
+
+  2. Home screen (Today) UI
+
+  - One summary ring for calories, with small protein/carbs/fat rings beside it. It's denser than the current bars and is the pattern Yazio, Lifesum and MacroFactor
+    use.
+  - A "next action" card: "No lunch logged yet: log it or get an idea". It uses the meal times your app already learns.
+  - Dark mode: the app has no dark theme at all, and users expect it.
+  - Android home-screen widget: today's kcal plus a "Log" button. Packages like glance_widget let you build it in Dart, but they're community packages, so check them
+    first.
+  - Dynamic colour (Material You) from the wallpaper. Built into Flutter, a one-line change.
+  - Empty first day: the first day has empty charts everywhere. Show a short "log your first meal" walkthrough instead.
+
+  3. New features that fit offline, on-device AI
+
+  ┌──────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────┬─────────────┐
+  │                         Feature                          │                                          Fit                                          │   Effort    │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Meal plan for the week from rated and liked recipes,     │ Uses your ratings, goals, and allergy and condition filters                           │ Medium      │
+  │ within your goals and conditions                         │                                                                                       │             │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Shopping list made from the plan or from a recipe, with  │ Pairs with the plan; works offline                                                    │ Small to    │
+  │ "I already have this"                                    │                                                                                       │ medium      │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Water tracking (glasses per day, reminder)               │ Common and expected; reminders already exist                                          │ Small       │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Intermittent fasting timer                               │ Yazio's signature feature; simple and offline                                         │ Small       │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Health Connect / Apple Health sync (write meals, read    │ The Flutter health package supports both platforms. Data stays on the device. Writing │ Medium      │
+  │ weight and steps)                                        │  meals out needs a careful privacy-policy update                                      │             │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Micronutrients (iron, calcium, vitamin D, potassium…)    │ Cronometer's main selling point; matters for your condition users. Needs new nutrient │ Medium to   │
+  │                                                          │  columns in the food database (USDA has them)                                         │ large       │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ Weekly AI review ("protein low 4 of 7 days; try these 3  │ Shows off the on-device model; can be generated overnight while charging              │ Medium      │
+  │ recipes")                                                │                                                                                       │             │
+  ├──────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ More languages (Ukrainian, German, Polish…)              │ The app is English-only (485 strings); Gemma handles many languages                   │ Medium      │
+  └──────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────┴─────────────┘
+
+  4. Data quality (from the earlier database checks)
+
+  - Newer Open Food Facts dump: your packaged-product data is from 2019, which is why European products are missing. A current dump would fix name search, and would
+    let barcode scanning come back later.
+  - More ingredient mappings: 232,000 recipes are still blocked by unmatched ingredients. The build now lists the top offenders, so adding mappings gradually brings
+    recipes back.
+  - Medical data: waits for your PDFs, as agreed.
+
+  My recommended order
+
+  1. Logging friction: grams on the chat card, recent/frequent foods, repeat meal, edit meal.
+  2. Today screen: dark mode, dynamic colour, rings, next-action card.
+  3. Water tracking and fasting timer: small, and expected by users.
+  4. Meal plan and shopping list: builds on the ratings work.
+  5. Health Connect and the newer Open Food Facts data.
+  6. Micronutrients and more languages: the larger efforts.
+
+  Which of these should I start with? I'd begin with group 1. I can also put this research on a shareable page if you want to keep it.

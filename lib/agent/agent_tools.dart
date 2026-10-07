@@ -57,15 +57,37 @@ class CameraCard extends AgentCard {
   final String mode;
 }
 
+/// One food on a meal card. [grams] can change on the card before Save.
+class MealItem {
+  MealItem({required this.label, required this.grams, required this.per100, this.estimated = false, this.recipeId});
+  final String label;
+  double grams;
+  final Nutrients per100;
+  final bool estimated;
+  final int? recipeId;
+  Nutrients get values => per100.map((k, v) => MapEntry(k, v * grams / 100));
+}
+
 /// A write the model proposed. Nothing is stored until the user taps ✓.
 class ConfirmCard extends AgentCard {
-  ConfirmCard({required String title, required this.lines, required void Function(ConfirmCard) apply, this.mealType})
+  ConfirmCard({required String title, List<String> lines = const [], required void Function(ConfirmCard) apply,
+      this.mealType, this.items = const []})
       // ignore: prefer_initializing_formals
       : _title = title,
         // ignore: prefer_initializing_formals
+        _lines = lines,
+        // ignore: prefer_initializing_formals
         _apply = apply;
   final String _title;
-  final List<String> lines;
+  final List<String> _lines;
+
+  /// Meal cards: the foods, editable; [lines] then also lists them.
+  final List<MealItem> items;
+
+  List<String> get lines => [
+        for (final i in items) '${i.label} · ${i.grams.round()} g · ${i.estimated ? '≈' : ''}${i.values['kcal']!.round()} kcal',
+        ..._lines,
+      ];
   final void Function(ConfirmCard) _apply;
   bool? accepted; // null = not decided yet
 
@@ -316,13 +338,12 @@ class AgentTools {
   ToolResult logRecipe(int recipeId, {double servings = 1}) {
     final title = _summary(recipeId).title;
     final grams = servings * _recipeServingGrams(recipeId);
-    final values = _recipePer100(recipeId).map((k, v) => MapEntry(k, v * grams / 100));
     final at = _ms();
     return ToolResult({'status': _pendingNote, 'recipe': title}, ConfirmCard(
       title: 'Log meal',
       mealType: _mealTypeForRecipe(recipeId),
-      lines: ['$title · ${grams.round()} g · ${values['kcal']!.round()} kcal'],
-      apply: (c) => _insertMeal(at, c.mealType!, title, grams, values, false, recipeId),
+      items: [MealItem(label: title, grams: grams, per100: _recipePer100(recipeId), recipeId: recipeId)],
+      apply: (c) => _insertItems(at, c),
     ));
   }
 
@@ -432,15 +453,13 @@ class AgentTools {
     }, ConfirmCard(
       title: 'Log meal',
       mealType: type,
-      lines: [
-        for (final p in found) '${p.label} · ${p.grams.round()} g · ${p.estimated ? '≈' : ''}${p.values['kcal']!.round()} kcal',
-        if (missing.isNotEmpty) 'Not found: ${missing.join(', ')}',
+      items: [
+        for (final p in found)
+          MealItem(label: p.label, grams: p.grams, per100: _per100(p.values, p.grams), estimated: p.estimated,
+              recipeId: p.recipeId),
       ],
-      apply: (c) {
-        for (final p in found) {
-          _insertMeal(at, c.mealType!, p.label, p.grams, p.values, p.estimated, p.recipeId);
-        }
-      },
+      lines: [if (missing.isNotEmpty) 'Not found: ${missing.join(', ')}'],
+      apply: (c) => _insertItems(at, c),
     ));
   }
 
@@ -628,8 +647,18 @@ class AgentTools {
 
   int _ms() => _now().millisecondsSinceEpoch;
 
+  /// A meal card's items as the user left them (0 g = removed).
+  void _insertItems(int at, ConfirmCard c) {
+    for (final i in c.items) {
+      if (i.grams > 0) _insertMeal(at, c.mealType!, i.label, i.grams, i.values, i.estimated, i.recipeId);
+    }
+  }
+
+  static Nutrients _per100(Nutrients values, double grams) =>
+      values.map((k, v) => MapEntry(k, grams > 0 ? v * 100 / grams : 0));
+
   /// The one place a meal_log row is written (chat card, "I ate this", Log tab).
-  void _insertMeal(int at, String type, String label, double grams, Nutrients values, bool estimated,
+  void _insertMeal(int at, String type, String label, double? grams, Nutrients values, bool estimated,
           [int? recipeId]) =>
       user.execute(
         'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${nutrients.join(', ')}, estimated, '
@@ -690,6 +719,10 @@ class AgentTools {
   /// user's confirmation.
   void logFood(FoodChoice food, double grams, String mealType) => _insertMeal(_ms(), mealType, food.label, grams,
       food.per100.map((k, v) => MapEntry(k, v * grams / 100)), food.estimated, food.kind == 'recipe' ? food.id as int : null);
+
+  /// "Just 350 kcal": no food, no grams; the button is the confirmation.
+  void quickAdd(String label, Nutrients values, String mealType) => _insertMeal(
+      _ms(), mealType, label, null, {for (final n in nutrients) n: values[n] ?? 0}, true);
 
   double _recipeServingGrams(int recipeId) => (nutri.select(
           'SELECT TOTAL(grams) / r.servings AS g FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id '

@@ -579,6 +579,39 @@
   },
   "reviewCook": "What can I cook?",
   "yourRating": "Your rating",
+  "kindRecent": "Recent",
+  "recentFoods": "Recent and frequent",
+  "repeatYesterday": "Yesterday's {meal} · {kcal} kcal",
+  "@repeatYesterday": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "quickAdd": "Quick add",
+  "quickAddName": "Name (optional)",
+  "editMeal": "Edit meal",
+  "suggestAte": "I ate {food}",
+  "@suggestAte": {
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "suggestIdea": "Something new for {meal}",
+  "@suggestIdea": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "suggestLeft": "What's left for today?",
   "rateStars": "{count, plural, =1{Rate 1 star} other{Rate {count} stars}}",
   "@rateStars": {
     "placeholders": {

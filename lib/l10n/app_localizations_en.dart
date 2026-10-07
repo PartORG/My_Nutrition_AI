@@ -962,6 +962,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourRating => 'Your rating';
 
   @override
+  String get kindRecent => 'Recent';
+
+  @override
+  String get recentFoods => 'Recent and frequent';
+
+  @override
+  String repeatYesterday(String meal, int kcal) {
+    return 'Yesterday\'s $meal · $kcal kcal';
+  }
+
+  @override
+  String get quickAdd => 'Quick add';
+
+  @override
+  String get quickAddName => 'Name (optional)';
+
+  @override
+  String get editMeal => 'Edit meal';
+
+  @override
+  String suggestAte(String food) {
+    return 'I ate $food';
+  }
+
+  @override
+  String suggestIdea(String meal) {
+    return 'Something new for $meal';
+  }
+
+  @override
+  String get suggestLeft => 'What\'s left for today?';
+
+  @override
   String rateStars(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

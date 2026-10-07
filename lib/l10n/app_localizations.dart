@@ -1696,6 +1696,60 @@ abstract class AppLocalizations {
   /// **'Your rating'**
   String get yourRating;
 
+  /// No description provided for @kindRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get kindRecent;
+
+  /// No description provided for @recentFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent and frequent'**
+  String get recentFoods;
+
+  /// No description provided for @repeatYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday\'s {meal} · {kcal} kcal'**
+  String repeatYesterday(String meal, int kcal);
+
+  /// No description provided for @quickAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick add'**
+  String get quickAdd;
+
+  /// No description provided for @quickAddName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get quickAddName;
+
+  /// No description provided for @editMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meal'**
+  String get editMeal;
+
+  /// No description provided for @suggestAte.
+  ///
+  /// In en, this message translates to:
+  /// **'I ate {food}'**
+  String suggestAte(String food);
+
+  /// No description provided for @suggestIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'Something new for {meal}'**
+  String suggestIdea(String meal);
+
+  /// No description provided for @suggestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s left for today?'**
+  String get suggestLeft;
+
   /// No description provided for @rateStars.
   ///
   /// In en, this message translates to:

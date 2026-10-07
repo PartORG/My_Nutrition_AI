@@ -211,6 +211,39 @@ void main() {
           isA<RecipeListCard>());
     });
 
+    test('meal cards: grams edited before Save are what is logged; 0 g leaves a food out', () {
+      final c = confirmOf(tools.run('log_meal', {'items': '2 eggs, 1 apple'}));
+      c.items[0].grams = 150; // three eggs, not two
+      c.items[1].grams = 0;
+      expect(c.lines.first, 'egg · 150 g · 215 kcal');
+      c.apply();
+      final rows = user.select('SELECT description, grams, kcal FROM meal_log');
+      expect(rows.map((r) => (r['description'], r['grams'], (r['kcal'] as num).round())), [('egg', 150.0, 215)]);
+    });
+
+    test('Log tab: recent foods, repeat yesterday, edit a meal, quick add', () {
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      now = DateTime(2026, 10, 3, 8);
+      tools.logFood(egg, 100, 'breakfast');
+      tools.logFood(egg, 100, 'breakfast');
+      now = DateTime(2026, 10, 4, 8, 30);
+      final recent = recentFoods(user, now).single;
+      expect((recent.label, recent.servingG, recent.per100['kcal']!.round()), ('egg', 100.0, 143));
+
+      expect(mealTotalsOn(user, DateTime(2026, 10, 3)), {'breakfast': 286.0});
+      expect(repeatMeal(user, DateTime(2026, 10, 3), 'breakfast', now), 2);
+      expect(totalsOn(user, now)['kcal'], 286);
+
+      final id = mealsOn(user, now).first.id;
+      updateMeal(user, id, grams: 50, type: 'snack');
+      final m = mealsOn(user, now).first;
+      expect((m.grams, m.kcal.round(), m.type), (50.0, 72, 'snack'));
+
+      tools.quickAdd('Restaurant pasta', {'kcal': 650, 'protein_g': 20}, 'dinner');
+      expect(mealsOn(user, now).last.label, 'Restaurant pasta');
+      expect(totalsOn(user, now)['kcal']!.round(), 865);
+    });
+
     test('unknown food is reported, known ones still logged', () {
       expect(tools.run('log_meal', {'items': 'unicorn steak'}).forModel['error'], isNotNull);
       final r = tools.run('log_meal', {'items': 'banana, unicorn steak'});
