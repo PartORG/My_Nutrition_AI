@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
 import 'home_screen.dart' show AiModelCard;
+import '../data/health_sync.dart';
 import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -125,6 +126,23 @@ class MeScreen extends ConsumerWidget {
           ),
           if (llmChoices().length > 1) const AiModelCard(),
           const _AppearanceCard(),
+          if (healthSupported)
+            Card(
+              child: SwitchListTile(
+                secondary: Icon(Icons.favorite_border, color: context.colors.primary),
+                title: Text(Platform.isIOS ? l.appleHealth : l.healthConnect),
+                subtitle: Text(l.healthSyncHint),
+                value: healthSyncOn(data.user),
+                onChanged: (on) async {
+                  if (!on) {
+                    disconnectHealth(data.user);
+                  } else if (!await connectHealth(data.user) && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.healthSyncDenied)));
+                  }
+                  data.changed();
+                },
+              ),
+            ),
           // Visible without the PIN, so only on a single-profile phone, and off until the owner says so.
           if (Platform.isAndroid && ref.watch(profilesProvider).biometricAllowed)
             Card(

@@ -985,6 +985,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get healthConnect => 'Health Connect';
+
+  @override
+  String get appleHealth => 'Apple Health';
+
+  @override
+  String get healthSyncHint =>
+      'Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.';
+
+  @override
+  String get healthSyncDenied =>
+      'No access. Allow weight and steps in the health app\'s settings, then try again.';
+
+  @override
+  String stepsToday(String steps) {
+    return '$steps steps today';
+  }
+
+  @override
   String get mealPlan => 'Meal plan';
 
   @override

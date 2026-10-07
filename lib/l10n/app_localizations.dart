@@ -1738,6 +1738,36 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @healthConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Connect'**
+  String get healthConnect;
+
+  /// No description provided for @appleHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Health'**
+  String get appleHealth;
+
+  /// No description provided for @healthSyncHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.'**
+  String get healthSyncHint;
+
+  /// No description provided for @healthSyncDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'No access. Allow weight and steps in the health app\'s settings, then try again.'**
+  String get healthSyncDenied;
+
+  /// No description provided for @stepsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{steps} steps today'**
+  String stepsToday(String steps);
+
   /// No description provided for @mealPlan.
   ///
   /// In en, this message translates to:

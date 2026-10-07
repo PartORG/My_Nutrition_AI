@@ -596,6 +596,18 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "healthConnect": "Health Connect",
+  "appleHealth": "Apple Health",
+  "healthSyncHint": "Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.",
+  "healthSyncDenied": "No access. Allow weight and steps in the health app's settings, then try again.",
+  "stepsToday": "{steps} steps today",
+  "@stepsToday": {
+    "placeholders": {
+      "steps": {
+        "type": "String"
+      }
+    }
+  },
   "mealPlan": "Meal plan",
   "planTab": "Plan",
   "planEmpty": "Plan your week: breakfast, lunch and dinner from the recipe database, sized to your calorie goal, without your allergens, and with recipes you rated highly first.",

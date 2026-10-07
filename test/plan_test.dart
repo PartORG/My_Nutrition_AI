@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
+import 'package:myfoodmind/data/health_sync.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/plan.dart';
 import 'package:myfoodmind/data/user_db.dart';
@@ -67,5 +68,14 @@ void main() {
     expect(shoppingName('Cheese, feta'), 'Cheese, feta');
     expect(shoppingName('Spices, pepper, black'), 'Spices, pepper');
     expect(shoppingName('lentils, cooked'), 'lentils');
+  });
+
+  test('health weights: new ones in, same minute or a glitch out; the latest sets the goal weight', () {
+    final at = DateTime(2026, 10, 4, 7, 30);
+    expect(importWeights(user, [(at: at, kg: 80.04), (at: at.add(const Duration(seconds: 20)), kg: 80.1),
+        (at: at.add(const Duration(days: 1)), kg: 79.6), (at: at, kg: 3)]), 2);
+    expect(importWeights(user, [(at: at.add(const Duration(days: 1)), kg: 79.6)]), 0, reason: 'already there');
+    expect(user.select("SELECT value FROM readings WHERE kind = 'weight' ORDER BY logged_at").map((r) => r['value']),
+        [80.0, 79.6]);
   });
 }

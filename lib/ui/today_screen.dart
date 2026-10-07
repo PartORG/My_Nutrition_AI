@@ -16,6 +16,7 @@ import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'plan_screen.dart';
 import '../data/plan.dart';
+import '../data/health_sync.dart' show healthSyncOn, stepsToday;
 import 'period_view.dart';
 import 'theme.dart';
 
@@ -345,6 +346,19 @@ class _DayView extends StatelessWidget {
               ),
             ),
           _WaterCard(data: data),
+          if (healthSyncOn(data.user))
+            FutureBuilder(
+              future: stepsToday(data.user),
+              builder: (context, snap) => snap.data == null
+                  ? const SizedBox.shrink()
+                  : Card(
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(Icons.directions_walk, color: context.colors.primary),
+                        title: Text(l.stepsToday(NumberFormat.decimalPattern().format(snap.data))),
+                      ),
+                    ),
+            ),
           _PlanCard(data: data),
           if (pref(data.user, 'fasting') == '1') _FastCard(data: data),
           const SizedBox(height: 8),

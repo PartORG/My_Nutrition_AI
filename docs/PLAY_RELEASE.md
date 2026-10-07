@@ -78,6 +78,10 @@ Backup is the user's own Google backup (end-to-end encrypted with a screen lock)
 developer. The doctor report and the "report response" email are user-initiated sharing through other apps.
 The model download (Hugging Face) sends no user data. ML Kit was removed in M7 because it sends usage
 diagnostics. Barcode scanning was removed (Oct 2026): its product data missed most European packets.
+Health Connect (Oct 2026) is **read only** (weight, steps) and stays on the device, so still not collected —
+but Play requires the **Health Connect permissions declaration** in App content (READ_WEIGHT: keep daily
+goals current; READ_STEPS: show steps on Today) and the privacy policy section "Health Connect and Apple
+Health". iOS: switch on the HealthKit capability in Xcode (Runner → Signing & Capabilities) before an iOS build.
 
 | Question | Answer |
 |---|---|

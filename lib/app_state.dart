@@ -23,6 +23,7 @@ import 'billing/billing.dart';
 import 'billing/revenuecat_billing.dart';
 import 'data/diary.dart';
 import 'data/goals.dart';
+import 'data/health_sync.dart' show syncHealthWeights;
 import 'data/nutri_db.dart';
 import 'data/profiles.dart';
 import 'data/user_db.dart';
@@ -251,6 +252,10 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   void sync() => unawaited(syncHomeWidget(data, show: widgetShowsKcal(profiles)));
   data.changes.addListener(sync);
   sync();
+  // New weights from Health Connect / Apple Health (if connected) update the goals.
+  unawaited(syncHealthWeights(user).then((n) {
+    if (n > 0) data.changed();
+  }));
   ref.onDispose(() {
     data.changes.dispose();
     nutri.close();
