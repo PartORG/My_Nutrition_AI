@@ -45,7 +45,7 @@ Play Console → create app "MyFoodMind", default language English, app, free (w
 3. Open the opt-in link on the phone, install from Play, then check:
    - first start, create profile, log a meal, Today shows it;
    - Chat → Download (Wi-Fi) → progress → chat works; airplane mode → restart → chat still works;
-   - camera + barcode (Pro via a licence-tester purchase, see BILLING_SETUP);
+   - camera (Pro via a licence-tester purchase, see BILLING_SETUP);
    - Me → Licenses and AI models, Privacy policy, Terms open.
 
 ## 4. Device catalog
@@ -77,7 +77,7 @@ journal, camera frames, voice and the AI all stay on the phone, so they are *not
 Backup is the user's own Google backup (end-to-end encrypted with a screen lock) — not collected by the
 developer. The doctor report and the "report response" email are user-initiated sharing through other apps.
 The model download (Hugging Face) sends no user data. ML Kit was removed in M7 because it sends usage
-diagnostics; barcodes are decoded by zxing-cpp on the device.
+diagnostics. Barcode scanning was removed (Oct 2026): its product data missed most European packets.
 
 | Question | Answer |
 |---|---|

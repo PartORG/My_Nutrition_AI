@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
+import 'package:myfoodmind/data/user_db.dart';
 
 /// Gate for the real assets/nutri.db (built by tool/build_real_nutri_db.py, not in git).
 /// The other tests use the dummy fixture test/nutri_test.db.
@@ -31,5 +33,17 @@ void main() {
     expect(butter.map((r) => r['allergen']), contains('milk'));
     expect(db.select("SELECT rowid FROM recipes_fts WHERE recipes_fts MATCH 'chicken' LIMIT 1"), isNotEmpty);
     db.close();
+  }, skip: skip);
+
+  test('plain foods win over products that repeat the word (bananas are not banana chips)', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final r = AgentTools(db, user).run('log_meal', {'items': '2 bananas, 1 protein bar and grapes 100 gramms'});
+    final lines = (r.card! as ConfirmCard).lines;
+    expect(lines[0], startsWith('Banana ·'));
+    expect(lines[2], matches(RegExp(r'^Grapes? · 100 g')));
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
   }, skip: skip);
 }

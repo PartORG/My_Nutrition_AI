@@ -637,7 +637,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get featPro1 => 'Everything in Medium';
 
   @override
-  String get featPro2 => 'Photo, live camera and barcode recognition';
+  String get featPro2 => 'Photo and live camera food recognition';
 
   @override
   String get featPro3 => 'Logs meals and finds recipes from what you see';
@@ -921,20 +921,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get barcodeTitle => 'Barcode';
-
-  @override
-  String get barcodeScan => 'Scan barcode';
-
-  @override
-  String barcodeUnknown(String code) {
-    return 'Barcode $code isn\'t in the food database.';
-  }
-
-  @override
-  String get barcodeUnknownHint => 'Tap \"Add item\" to find it by name.';
-
-  @override
   String get reviewTitle => 'Check what was found';
 
   @override
@@ -973,6 +959,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewCook => 'What can I cook?';
 
   @override
+  String get yourRating => 'Your rating';
+
+  @override
+  String rateStars(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Rate $count stars',
+      one: 'Rate 1 star',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recipesYouAte => 'Recipes you ate';
+
+  @override
+  String get recipesYouAteHint =>
+      'Tap one to see it again and rate it. Recipe ideas follow your stars.';
+
+  @override
   String get cookNone => 'No recipe in the database uses these foods.';
 
   @override
@@ -988,6 +995,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiDownloadButton => 'Download';
+
+  @override
+  String get aiModelTitle => 'AI model';
+
+  @override
+  String aiModelStandard(String gb) {
+    return 'Standard · $gb GB';
+  }
+
+  @override
+  String get aiModelStandardHint =>
+      'Faster answers. Works on every supported phone.';
+
+  @override
+  String aiModelLarge(String gb) {
+    return 'Larger · $gb GB';
+  }
+
+  @override
+  String get aiModelLargeHint =>
+      'Understands more, answers about 2-3x slower. For phones with 8 GB RAM.';
+
+  @override
+  String get aiModelSwitch => 'Switch';
+
+  @override
+  String get aiModelSwitchBody =>
+      'The other model downloads first; the current one is deleted when it\'s done.';
+
+  @override
+  String get aiModelInUse => 'In use';
 
   @override
   String get aiDownloading => 'Downloading';

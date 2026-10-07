@@ -99,17 +99,30 @@ class AgentTools {
   List<int> _lastRecipes = [];
   int? _lastShown;
 
-  ToolResult run(String name, Map<String, dynamic> args) {
+  /// Every recipe suggested since the app started, so asking again shows new ones.
+  final _suggested = <int>{};
+
+  /// [said] is the user's message: a small model sometimes picks the wrong
+  /// tool, so "I ate peanuts" never adds an allergy and "I had 2 eggs" never
+  /// turns into recipe ideas.
+  ToolResult run(String name, Map<String, dynamic> args, {String said = ''}) {
     String arg(String k) => '${args[k] ?? ''}'.trim();
+    final remove = args['remove'] == true || args['remove'] == 'true';
     return switch (name) {
+      'set_allergen' when !remove && said.isNotEmpty && !_allergyWords.hasMatch(said) => _ateWords.hasMatch(said)
+          ? _logMeal(said, '')
+          : ToolResult.error('the user did not say they are allergic or intolerant, so no allergy was added. '
+              'Never add an allergy unless they say so'),
+      'search_recipes' when _ateWords.hasMatch(said) && !_recipeWords.hasMatch(said) => _logMeal(said, ''),
       'search_recipes' => _searchRecipes(arg('query'), arg('ingredients')),
       'show_recipe' => _showRecipe(arg('recipe')),
       'save_recipe' => _saveRecipe(arg('recipe')),
+      'rate_recipe' => _rateRecipe(arg('recipe'), int.tryParse(arg('stars'))),
       'lookup_nutrition' => _lookupNutrition(arg('food')),
       'nutrition_status' => _nutritionStatus(arg('period')),
       'log_meal' => _logMeal(arg('items'), arg('meal_type')),
       'remember_fact' => _remember(arg('fact')),
-      'set_allergen' => _setAllergen(arg('allergen'), args['remove'] == true || args['remove'] == 'true'),
+      'set_allergen' => _setAllergen(arg('allergen'), remove),
       'log_symptom' => _logSymptom(arg('symptom'), int.tryParse(arg('severity'))),
       'log_reading' => _logReading(arg('kind'), arg('value')),
       'condition_info' => _conditionInfo(arg('question')),
@@ -119,6 +132,21 @@ class AgentTools {
         }, CameraCard(arg('mode'))),
       _ => ToolResult.error('unknown tool $name'),
     };
+  }
+
+  /// The intent router: a message that plainly logs food ("I ate 2 eggs") or
+  /// states an allergy ("I'm allergic to peanuts") gets its card at once, without
+  /// the model (seconds faster, and it can't pick the wrong tool). Null = ask the model.
+  ToolResult? route(String said) {
+    if (said.contains('?') || _recipeWords.hasMatch(said)) return null;
+    if (_allergyStatement.hasMatch(said)) {
+      final allergen = normalizeAllergen(said);
+      return _allergenNames.contains(allergen) ? _setAllergen(allergen, false) : null;
+    }
+    if (!_ateStatement.hasMatch(said) || _allergyWords.hasMatch(said)) return null;
+    final r = _logMeal(said, '');
+    // Nothing found → the model asks what was meant.
+    return r.card is ConfirmCard && !r.forModel.containsKey('not_found') ? r : null;
   }
 
   // ---- recipes ------------------------------------------------------------
@@ -137,13 +165,23 @@ class AgentTools {
         scores.update(r['recipe_id'] as int, (s) => s + 2, ifAbsent: () => 2);
       }
     }
-    for (final id in _ftsIds(nutri, 'recipes_fts', '$query $ingredients', limit: 20)) {
+    for (final id in _ftsIds(nutri, 'recipes_fts', '$query $ingredients', limit: 60)) {
       scores.update(id, (s) => s + 1, ifAbsent: () => 1);
     }
-    final blocked = _blockedRecipes();
-    final ranked = scores.keys.where((id) => !blocked.contains(id)).toList()
+    // Stars steer ideas: 4-5 rank higher, 1-2 are never suggested again.
+    final stars = _ratings();
+    for (final MapEntry(key: id, value: s) in stars.entries) {
+      if (scores.containsKey(id)) scores[id] = scores[id]! + (s - 3) * 0.75;
+    }
+    final unsafe = _blockedRecipes();
+    final blocked = {...unsafe, for (final e in stars.entries) if (e.value <= 2) e.key};
+    var ranked = scores.keys.where((id) => !blocked.contains(id)).toList()
       ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
-    _lastRecipes = ranked.take(3).toList();
+    // A vague ask ("something new for dinner") matches nothing: random ideas for the meal.
+    if (ranked.isEmpty && _split(ingredients).isEmpty) ranked = _randomRecipes(query, blocked);
+    final fresh = ranked.where((id) => !_suggested.contains(id)).toList();
+    _lastRecipes = (fresh.isEmpty ? ranked : fresh).take(3).toList();
+    _suggested.addAll(_lastRecipes);
     if (_lastRecipes.isEmpty) {
       return ToolResult({'recipes': [], 'note': 'no matching recipe in the database'});
     }
@@ -153,8 +191,19 @@ class AgentTools {
         for (final (i, r) in list.indexed)
           '${i + 1}. ${r.title} (${r.kcal.round()} kcal per serving${r.minutes == null ? '' : ', ${r.minutes} min'})'
       ],
-      if (blocked.isNotEmpty) 'note': 'recipes with the user\'s allergens or foods to avoid for their conditions were excluded',
+      if (unsafe.isNotEmpty) 'note': 'recipes with the user\'s allergens or foods to avoid for their conditions were excluded',
+      if (fresh.isEmpty) 'repeated': 'no new recipe matches; these were suggested before, so say so and ask for other ingredients',
     }, RecipeListCard(list));
+  }
+
+  /// Up to 20 random recipes tagged with the meal named in [query], else the meal for now.
+  List<int> _randomRecipes(String query, Set<int> blocked) {
+    final meal = _mealTypes.firstWhere(query.toLowerCase().contains, orElse: () => _mealTypeFor(_now()));
+    return [
+      for (final r in nutri.select(
+          "SELECT id FROM recipes WHERE ',' || tags || ',' LIKE ? ORDER BY RANDOM() LIMIT 40", ['%,$meal,%']))
+        if (!blocked.contains(r['id'])) r['id'] as int
+    ].take(20).toList();
   }
 
   /// Recipes containing any allergen the profile has, or any food its
@@ -201,7 +250,9 @@ class AgentTools {
   int? _resolveRecipe(String ref) {
     final lower = ref.toLowerCase();
     // Before ordinals: "that one" means the recipe just shown, not recipe #1.
-    if (RegExp(r'\b(that|this|it)\b').hasMatch(lower) && _lastShown != null) return _lastShown;
+    // "rate it" with nothing shown yet: the recipe eaten last.
+    final shown = _lastShown ?? recentRecipes(limit: 1).firstOrNull?.id;
+    if (RegExp(r'\b(that|this|it|last)\b').hasMatch(lower) && shown != null) return shown;
     const ordinals = {'first': 1, 'second': 2, 'third': 3, 'one': 1, 'two': 2, 'three': 3};
     final n = int.tryParse(RegExp(r'\d+').firstMatch(lower)?[0] ?? '') ??
         ordinals.entries.where((e) => RegExp('\\b${e.key}\\b').hasMatch(lower)).firstOrNull?.value;
@@ -261,7 +312,7 @@ class AgentTools {
       title: 'Log meal',
       mealType: _mealTypeForRecipe(recipeId),
       lines: ['$title · ${grams.round()} g · ${values['kcal']!.round()} kcal'],
-      apply: (c) => _insertMeal(at, c.mealType!, title, grams, values, false),
+      apply: (c) => _insertMeal(at, c.mealType!, title, grams, values, false, recipeId),
     ));
   }
 
@@ -280,6 +331,19 @@ class AgentTools {
           'INSERT OR REPLACE INTO saved_recipes (recipe_id, title, saved_at) VALUES (?, ?, ?)',
           [id, title, _ms()]),
     ));
+  }
+
+  ToolResult _rateRecipe(String ref, int? stars) {
+    final id = _resolveRecipe(ref);
+    if (id == null) return ToolResult.error('no recipe matches "$ref"');
+    if (stars == null || stars < 1 || stars > 5) return ToolResult.error('ask the user for 1 to 5 stars');
+    final title = _summary(id).title;
+    return ToolResult({
+      'status': _pendingNote,
+      'recipe': title,
+      'stars': stars,
+      'note': stars <= 2 ? 'it will not be suggested again' : 'liked recipes are suggested more often',
+    }, ConfirmCard(title: 'Rate recipe', lines: ['$title · ${'★' * stars}${'☆' * (5 - stars)}'], apply: (_) => rate(id, stars)));
   }
 
   // ---- nutrition ----------------------------------------------------------
@@ -322,6 +386,12 @@ class AgentTools {
   }
 
   ToolResult _logMeal(String items, String mealType) {
+    // The model (or the user's own words) may say "I ate ... for breakfast": keep only the foods.
+    mealType = _mealTypes.contains(mealType)
+        ? mealType
+        : _mealTypes.firstWhere(items.toLowerCase().contains, orElse: () => '');
+    items = mealFoods(items);
+    if (items.isEmpty) return ToolResult.error('the user did not say what they ate; ask them');
     // "overnight oats with banana" is one recipe; "chicken with rice" is two foods.
     final parts = _isDishName(items) ? [items] : _split(items);
     final parsed = [for (final item in parts) _portion(item)];
@@ -358,7 +428,7 @@ class AgentTools {
       ],
       apply: (c) {
         for (final p in found) {
-          _insertMeal(at, c.mealType!, p.label, p.grams, p.values, p.estimated);
+          _insertMeal(at, c.mealType!, p.label, p.grams, p.values, p.estimated, p.recipeId);
         }
       },
     ));
@@ -376,10 +446,14 @@ class AgentTools {
 
   /// "2 eggs", "200 g greek yogurt", "3 slices of pizza", "lasagna".
   ({String label, double grams, Nutrients values, bool estimated, int? recipeId})? _portion(String item) {
+    // "grapes 100 gramms" → "100 g grapes"
+    item = item.trim().replaceFirstMapped(
+        RegExp(r'^([^\d]+?)\s*[-:]?\s*(\d+(?:[.,]\d+)?)\s*([a-z]*)\.?$', caseSensitive: false),
+        (m) => '${m[2]} ${m[3]} ${m[1]}');
     final m = RegExp(
       // \b after the quantity word and unit: "almonds" is not "a lmonds", "greek" not "g reek".
       r'^(?:(\d+(?:[.,]\d+)?)|(an?|one|two|three|four|five|half(?: a)?)\b)?\s*'
-      r'(?:(kg|g|grams?|ml|slices?|pieces?|portions?|servings?|bowls?|cups?|plates?|handfuls?)\b)?\s*'
+      r'(?:(kg|g|gr|grams?|gramm?e?s?|ml|slices?|pieces?|portions?|servings?|bowls?|cups?|plates?|handfuls?)\b)?\s*'
       r'(?:of\s+)?(.+)$',
       caseSensitive: false,
     ).firstMatch(item.trim())!;
@@ -391,7 +465,8 @@ class AgentTools {
     final name = m[4]!;
     double grams(double? serving) => switch (unit) {
           'kg' => qty * 1000,
-          'g' || 'gram' || 'grams' || 'ml' => qty,
+          'ml' => qty,
+          _ when unit.startsWith('g') => qty, // g, gr, gram(s), gramm(s)
           _ => qty * (serving ?? 100),
         };
     Nutrients scale(Nutrients per100, double g) => per100.map((k, v) => MapEntry(k, v * g / 100));
@@ -408,6 +483,16 @@ class AgentTools {
       for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 3))
         ('food', id, nutri.select('SELECT name FROM foods WHERE id = ?', [id]).single['name'] as String),
     ];
+    // The plain food first: "banana" is "Banana", not "Banana chips, banana",
+    // which search ranks higher for repeating the word.
+    final n = name.trim();
+    final forms = {n, if (n.length > 3 && n.endsWith('s')) n.substring(0, n.length - 1),
+        if (n.length > 4 && n.endsWith('es')) n.substring(0, n.length - 2)};
+    final names = [for (final f in forms) ...[f, '$f, raw']];
+    final plain = nutri.select(
+        'SELECT id FROM foods WHERE name COLLATE NOCASE IN (${List.filled(names.length, '?').join(',')}) '
+        'ORDER BY length(name) LIMIT 1', names).firstOrNull;
+    if (plain != null) candidates.insert(0, ('food', plain['id'] as int, name));
     if (candidates.isEmpty) return null;
     final said = _words(name);
     double coverage(String label) {
@@ -534,12 +619,38 @@ class AgentTools {
   int _ms() => _now().millisecondsSinceEpoch;
 
   /// The one place a meal_log row is written (chat card, "I ate this", Log tab).
-  void _insertMeal(int at, String type, String label, double grams, Nutrients values, bool estimated) =>
+  void _insertMeal(int at, String type, String label, double grams, Nutrients values, bool estimated,
+          [int? recipeId]) =>
       user.execute(
-        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, '
-        '${nutrients.join(', ')}, estimated) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')}, ?)',
-        [at, type, label, grams, for (final n in nutrients) values[n], estimated ? 1 : 0],
+        'INSERT INTO meal_log (eaten_at, meal_type, description, grams, ${nutrients.join(', ')}, estimated, '
+        'recipe_id) VALUES (?, ?, ?, ?, ${List.filled(nutrients.length, '?').join(', ')}, ?, ?)',
+        [at, type, label, grams, for (final n in nutrients) values[n], estimated ? 1 : 0, recipeId],
       );
+
+  // ---- ratings ----------------------------------------------------------------
+
+  /// 1-5 stars; null = not rated.
+  int? rating(int recipeId) =>
+      user.select('SELECT stars FROM recipe_ratings WHERE recipe_id = ?', [recipeId]).firstOrNull?['stars'] as int?;
+
+  /// A tap on a star is the user's confirmation, as on the Log tab.
+  void rate(int recipeId, int stars) => user.execute(
+      'INSERT OR REPLACE INTO recipe_ratings (recipe_id, stars, rated_at) VALUES (?, ?, ?)',
+      [recipeId, stars.clamp(1, 5), _ms()]);
+
+  Map<int, int> _ratings() =>
+      {for (final r in user.select('SELECT recipe_id, stars FROM recipe_ratings')) r['recipe_id'] as int: r['stars'] as int};
+
+  /// The newest distinct recipes the user logged as eaten, with their stars.
+  List<({int id, String title, DateTime at, int? stars})> recentRecipes({int limit = 5}) => [
+        for (final r in user.select(
+            'SELECT m.recipe_id, MAX(m.eaten_at) AS at, r.stars FROM meal_log m '
+            'LEFT JOIN recipe_ratings r ON r.recipe_id = m.recipe_id WHERE m.recipe_id IS NOT NULL '
+            'GROUP BY m.recipe_id ORDER BY at DESC LIMIT ?', [limit]))
+          for (final t in nutri.select('SELECT title FROM recipes WHERE id = ?', [r['recipe_id']]))
+            (id: r['recipe_id'] as int, title: t['title'] as String,
+                at: DateTime.fromMillisecondsSinceEpoch(r['at'] as int), stars: r['stars'] as int?)
+      ];
 
   // ---- Log tab: search and log without the model ---------------------------------
 
@@ -565,18 +676,10 @@ class AgentTools {
     ];
   }
 
-  /// A packaged product by its barcode; null when nutri.db doesn't have it.
-  FoodChoice? productByBarcode(String code) {
-    final r = nutri.select('SELECT *, barcode AS id FROM products WHERE barcode = ?', [code.trim()]).firstOrNull;
-    return r == null
-        ? null
-        : (kind: 'product', id: r['id'], label: r['name'] as String, servingG: null, per100: _nutrientsOf(r), estimated: false);
-  }
-
   /// Logs [grams] of [food] right away: pressing "Log" on that screen is the
   /// user's confirmation.
-  void logFood(FoodChoice food, double grams, String mealType) => _insertMeal(
-      _ms(), mealType, food.label, grams, food.per100.map((k, v) => MapEntry(k, v * grams / 100)), food.estimated);
+  void logFood(FoodChoice food, double grams, String mealType) => _insertMeal(_ms(), mealType, food.label, grams,
+      food.per100.map((k, v) => MapEntry(k, v * grams / 100)), food.estimated, food.kind == 'recipe' ? food.id as int : null);
 
   double _recipeServingGrams(int recipeId) => (nutri.select(
           'SELECT TOTAL(grams) / r.servings AS g FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id '
@@ -594,6 +697,46 @@ List<String> _split(String s) => [
         if (p.trim().isNotEmpty) p.trim()
     ];
 
+/// The user says they have an allergy or intolerance.
+final _allergyWords = RegExp(
+    r"allerg|intoleran|celiac|coeliac|anaphyla|sensitive to|(?:can'?t|cannot|can not) (?:eat|have|tolerate)",
+    caseSensitive: false);
+
+/// The user reports something eaten or asks to log a meal.
+final _ateWords = RegExp(r'\b(?:ate|eaten|had|drank|drunk|log|logged|add|record|track)\b', caseSensitive: false);
+
+/// The user asks for ideas, not to log.
+final _recipeWords = RegExp(
+    r'\b(?:recipes?|suggest\w*|ideas?|cook\w*|make|bake|inspir\w*|menu|plan|different|another|else|new|what (?:should|can|could|to) (?:i |we )?(?:eat|have))\b',
+    caseSensitive: false);
+
+/// Starts like a report of a meal: "I ate…", "I had…", "Log 2 eggs", "add breakfast: …".
+final _ateStatement = RegExp(
+    r"^\s*(?:(?:i|i've|i have|we|just|also|and|so)\s+)*(?:ate|eaten|had|drank|drunk|log|add|record|track)\b",
+    caseSensitive: false);
+
+/// "I'm allergic to peanuts", "I have a gluten intolerance" (not "is my kid allergic…?").
+final _allergyStatement = RegExp(
+    r"^\s*(?:i'?m|i am|i have|i've got|i got)\b.*\b(?:allergic|allergy|intolerant|intolerance|celiac|coeliac)\b",
+    caseSensitive: false);
+
+/// nutri.db allergen names ([_allergenAliases] targets).
+final _allergenNames = {for (final (_, name) in _allergenAliases) name};
+
+/// "I ate 2 bananas for breakfast today" → "2 bananas"; "add breakfast" → "".
+String mealFoods(String text) => text
+    .replaceFirst(
+        RegExp(r"^\s*(?:(?:please|can you|could you|i|i've|i have|we|just|also|and|so)\s+)*"
+            r'(?:ate|eaten|had|drank|drunk|log|add|record|track|eat)\b[\s:,-]*', caseSensitive: false),
+        '')
+    .replaceAll(
+        RegExp(r'\b(?:(?:for|to|as|at|in|with)\s+)?(?:my\s+)?(?:breakfast|lunch|dinner|supper|snack)\b\s*:?|'
+            r'\b(?:today|yesterday|this morning|this evening|tonight|just now|earlier|please)\b',
+            caseSensitive: false),
+        ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .replaceAll(RegExp(r'^[\s,.:;-]*(?:and\s+)?|[\s,.!:;-]*$'), '');
+
 Nutrients _nutrientsOf(Row r) =>
     {for (final n in nutrients) n: ((r[n] as num?) ?? 0).toDouble()};
 
@@ -603,6 +746,8 @@ const _stopwords = {
   'a', 'an', 'the', 'and', 'or', 'of', 'for', 'with', 'in', 'on', 'to', 'is', 'are', 'i', 'me', 'my',
   'can', 'what', 'how', 'much', 'many', 'some', 'something', 'please', 'make', 'cook', 'recipe',
   'recipes', 'idea', 'ideas', 'give', 'find', 'suggest', 'want', 'have', 'eat', 'food', 'foods',
+  'new', 'different', 'another', 'other', 'else', 'more', 'anything', 'dish', 'meal', 'meals',
+  'today', 'tonight', 'now', 'good', 'nice', 'tasty', 'healthy', 'should', 'could', 'like', 'not', 'same',
 };
 
 /// Content words, crudely singular ("eggs" → "egg"), for comparing names.

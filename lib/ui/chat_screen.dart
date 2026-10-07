@@ -315,73 +315,7 @@ class _CardView extends StatelessWidget {
               ),
           ]),
         ),
-      RecipeCard c => Card(
-          clipBehavior: Clip.antiAlias,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primaryLight]),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(c.title, style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Wrap(spacing: 6, children: [
-                  if (c.minutes != null) _Chip(icon: Icons.schedule, label: '${c.minutes} min', onDark: true),
-                  _Chip(icon: Icons.people_outline, label: l.servingsCount(c.servings), onDark: true),
-                ]),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                for (final w in c.cautions)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(children: [
-                      Icon(Icons.warning_amber_rounded, size: 20, color: Theme.of(context).colorScheme.error),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          w.allergen != null
-                              ? l.cautionAllergy(w.food, w.allergen!)
-                              : l.cautionCondition(w.food, conditionLabel(w.condition!, l)),
-                          style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ]),
-                  ),
-                _Section(l.perServing),
-                NutrientTiles(values: c.perServing),
-                const SizedBox(height: 14),
-                _Section(l.ingredients),
-                for (final i in c.ingredients)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(children: [
-                      const Icon(Icons.check_circle, size: 18, color: AppColors.primaryLight),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(i.name)),
-                      Text('${i.grams.round()} g', style: const TextStyle(color: AppColors.textSecondary)),
-                    ]),
-                  ),
-                const SizedBox(height: 14),
-                _Section(l.steps),
-                Text(c.instructions),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.restaurant),
-                    label: Text(l.iAteThis),
-                    onPressed: () => agent.ateRecipe(c.id),
-                  ),
-                ),
-              ]),
-            ),
-          ]),
-        ),
+      RecipeCard c => RecipeView(card: c, tools: agent.tools, onAte: () => agent.ateRecipe(c.id)),
       NutritionCard c => _Framed(
           icon: Icons.pie_chart_outline,
           title: c.title,
@@ -401,13 +335,13 @@ class _CardView extends StatelessWidget {
           ]),
         ),
       CameraCard c => _Framed(
-          icon: c.mode == 'barcode' ? Icons.qr_code_scanner : Icons.photo_camera_outlined,
-          title: c.mode == 'barcode' ? l.barcodeTitle : l.cameraTitle,
+          icon: Icons.photo_camera_outlined,
+          title: l.cameraTitle,
           child: Align(
             alignment: Alignment.centerLeft,
             child: ElevatedButton.icon(
-              icon: Icon(c.mode == 'barcode' ? Icons.qr_code_scanner : Icons.photo_camera),
-              label: Text(c.mode == 'barcode' ? l.barcodeScan : l.cameraOpen),
+              icon: const Icon(Icons.photo_camera),
+              label: Text(l.cameraOpen),
               onPressed: () => openCamera(context, c.mode, onCook: (names) => cookOrSay(context, agent, names)),
             ),
           ),
@@ -447,6 +381,152 @@ class _CardView extends StatelessWidget {
           ]),
         ),
     };
+  }
+}
+
+/// A recipe with its 1-5 stars (a tap saves them; search uses them) and "I ate this".
+/// In chat and on the recipe screen opened from Today.
+class RecipeView extends StatefulWidget {
+  const RecipeView({super.key, required this.card, required this.tools, required this.onAte});
+  final RecipeCard card;
+  final AgentTools tools;
+  final VoidCallback onAte;
+
+  @override
+  State<RecipeView> createState() => _RecipeViewState();
+}
+
+class _RecipeViewState extends State<RecipeView> {
+  late int? _stars = widget.tools.rating(widget.card.id);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final text = Theme.of(context).textTheme;
+    final c = widget.card;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primaryLight]),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(c.title, style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, children: [
+              if (c.minutes != null) _Chip(icon: Icons.schedule, label: '${c.minutes} min', onDark: true),
+              _Chip(icon: Icons.people_outline, label: l.servingsCount(c.servings), onDark: true),
+            ]),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (final w in c.cautions)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  Icon(Icons.warning_amber_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      w.allergen != null
+                          ? l.cautionAllergy(w.food, w.allergen!)
+                          : l.cautionCondition(w.food, conditionLabel(w.condition!, l)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ]),
+              ),
+            _Stars(stars: _stars, onRate: (n) {
+              widget.tools.rate(c.id, n);
+              setState(() => _stars = n);
+            }),
+            const SizedBox(height: 10),
+            _Section(l.perServing),
+            NutrientTiles(values: c.perServing),
+            const SizedBox(height: 14),
+            _Section(l.ingredients),
+            for (final i in c.ingredients)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(children: [
+                  const Icon(Icons.check_circle, size: 18, color: AppColors.primaryLight),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(i.name)),
+                  Text('${i.grams.round()} g', style: const TextStyle(color: AppColors.textSecondary)),
+                ]),
+              ),
+            const SizedBox(height: 14),
+            _Section(l.steps),
+            Text(c.instructions),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.restaurant),
+                label: Text(l.iAteThis),
+                onPressed: widget.onAte,
+              ),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _Stars extends StatelessWidget {
+  const _Stars({required this.stars, required this.onRate});
+  final int? stars;
+  final ValueChanged<int> onRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    // Wrap: at 200% text the label and five stars don't fit one line.
+    return Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+      Text(l.yourRating, style: const TextStyle(color: AppColors.textSecondary)),
+      for (var n = 1; n <= 5; n++)
+        IconButton(
+          tooltip: l.rateStars(n),
+          visualDensity: VisualDensity.compact,
+          icon: Icon(n <= (stars ?? 0) ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber.shade700),
+          onPressed: () => onRate(n),
+        ),
+    ]);
+  }
+}
+
+/// A recipe opened again from Today (a meal logged from it, or "Recipes you ate").
+class RecipeScreen extends StatelessWidget {
+  const RecipeScreen({super.key, required this.tools, required this.recipeId, required this.onLogged});
+  final AgentTools tools;
+  final int recipeId;
+  final VoidCallback onLogged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final card = tools.showRecipeById(recipeId).card! as RecipeCard;
+    return Scaffold(
+      appBar: AppBar(title: Text(card.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      body: ListView(padding: const EdgeInsets.all(12), children: [
+        RecipeView(
+          card: card,
+          tools: tools,
+          // The button is the confirmation here, as on the Log tab.
+          onAte: () {
+            (tools.logRecipe(recipeId).card! as ConfirmCard).apply();
+            onLogged();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(1))));
+          },
+        ),
+      ]),
+    );
   }
 }
 

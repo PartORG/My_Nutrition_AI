@@ -11,8 +11,13 @@ recipe, remember a fact, set an allergy, log a symptom or a reading). Never clai
 did something without calling the tool.
 Changes are stored only when the user taps Save on the card: tell them to tap Save,
 never say it is already saved.
-"Eaten" means logged with log_meal. Bookmarking a recipe does not count as eating it;
-if the user cooked or ate a recipe, log it as a meal.
+When the user says they ate or drank something, or asks to add a meal, call log_meal
+with exactly the foods and amounts they said. Do not suggest recipes then.
+Suggest recipes only when asked for ideas; if they want something new or different,
+search again: the app never repeats a recipe it already suggested.
+Add an allergy only when the user says they are allergic or intolerant. Eating a food
+is never an allergy.
+Bookmarking a recipe does not count as eating it.
 Never mention tool names. Never invent numbers, recipes or medical advice; details are
 shown in cards, so don't repeat long lists.
 You are not a doctor: for health conditions use condition_info and suggest asking a doctor.
@@ -46,6 +51,10 @@ final agentTools = <Tool>[
   _tool('save_recipe', 'Bookmark a recipe to find it later. Does NOT record that the user ate it.', {
     'recipe': _str('Recipe name or its number in the last list'),
   }, ['recipe']),
+  _tool('rate_recipe', 'Rate a recipe the user cooked or tried, 1 to 5 stars (e.g. "loved it" = 5).', {
+    'recipe': _str('Recipe name or its number in the last list'),
+    'stars': {'type': 'integer', 'description': '1 (bad) to 5 (great)'},
+  }, ['recipe', 'stars']),
   _tool('lookup_nutrition',
       'Nutrition facts of a food or ingredient: calories, protein, vitamins.', {
     'food': _str('Food name'),
@@ -63,7 +72,7 @@ final agentTools = <Tool>[
           'kitchen equipment, family, routine). Not for allergies.', {
     'fact': _str('The fact in one short sentence'),
   }, ['fact']),
-  _tool('set_allergen', 'Add or remove a food allergy or intolerance.', {
+  _tool('set_allergen', 'Add or remove an allergy or intolerance the user says they have. Not for food they ate.', {
     'allergen': _str('Allergen, e.g. "peanuts"'),
     'remove': {'type': 'boolean', 'description': 'True to remove it'},
   }, ['allergen']),
@@ -79,7 +88,7 @@ final agentTools = <Tool>[
       'Diet questions about a medical condition (diabetes, ALS, MS, gout...).', {
     'question': _str('The question'),
   }, ['question']),
-  _tool('open_camera', 'Open the camera to scan food, the fridge, a dish or a barcode.', {
-    'mode': _enum('Camera mode', ['photo', 'live', 'barcode']),
+  _tool('open_camera', 'Open the camera to scan food, the fridge or a dish.', {
+    'mode': _enum('Camera mode', ['photo', 'live']),
   }, ['mode']),
 ];

@@ -105,6 +105,15 @@ class Agent extends ChangeNotifier {
         items.add(CrisisItem()); // never routed through the model
         return;
       }
+      if (tools.route(text) case final routed?) {
+        // Plain "I ate…" / "I'm allergic to…": the card at once, no model, not counted.
+        final at = _now();
+        final id = _store('user', text, at);
+        _store('tool', 'routed -> ${routed.forModel}', at);
+        items.add(CardItem(routed.card!));
+        unawaited(memory.index('chat', id, at, text).then((_) {}, onError: (Object e) => debugPrint('index: $e')));
+        return;
+      }
       if (!limit.tryConsume(unlimited: unlimited())) {
         items.add(LimitItem(limit.dailyFree));
         return;
@@ -120,7 +129,7 @@ class Agent extends ChangeNotifier {
       }
       final prompt = '[Context]\n$context\n[/Context]\n$text';
       _sessionChars += prompt.length;
-      await _runTurn(_session!.sendUser(prompt));
+      await _runTurn(_session!.sendUser(prompt), text);
     } catch (e, st) {
       debugPrint('agent error: $e\n$st');
       items.add(ErrorItem());
@@ -132,7 +141,7 @@ class Agent extends ChangeNotifier {
     }
   }
 
-  Future<void> _runTurn(Stream<ModelEvent> stream) async {
+  Future<void> _runTurn(Stream<ModelEvent> stream, String said) async {
     for (var calls = 0;; calls++) {
       ModelItem? reply;
       ToolCall? call;
@@ -159,7 +168,7 @@ class Agent extends ChangeNotifier {
         }
         return;
       }
-      final result = tools.run(call.name, call.args);
+      final result = tools.run(call.name, call.args, said: said);
       // Recorded so a chat can be debugged later ("did it really call save?").
       _store('tool', '${call.name} ${call.args} -> ${result.card is ConfirmCard ? 'confirm card' : result.forModel.keys.join(',')}', _now());
       if (result.card != null) items.add(CardItem(result.card!));

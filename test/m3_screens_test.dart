@@ -107,6 +107,21 @@ void main() {
     expect(find.text('over by 747 mg'), findsNothing);
   });
 
+  testWidgets('Today: a recipe meal opens the recipe; stars saved and shown', (tester) async {
+    (data.tools.logRecipe(2).card! as ConfirmCard).apply(); // Shakshuka
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    expect(find.text('Recipes you ate'), findsOneWidget);
+    await tester.tap(find.text('Shakshuka').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Your rating'), findsOneWidget);
+    await tester.tap(find.byTooltip('Rate 4 stars'));
+    await tester.pump();
+    expect(data.tools.rating(2), 4);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('★★★★'), findsOneWidget);
+  });
+
   testWidgets('Log tab: search → servings → Log → shows on Today', (tester) async {
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
     await tester.tap(find.text('Log'));

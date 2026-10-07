@@ -8,6 +8,7 @@ import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
+import 'home_screen.dart' show AiModelCard;
 import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -63,9 +64,11 @@ class MeScreen extends ConsumerWidget {
               for (final key in nutrientLabels(l).keys)
                 if (targets.values[key] != null || !adult)
                   ListTile(
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
                     leading: Container(
-                      width: 12,
-                      height: 12,
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(color: nutrientColors[key], shape: BoxShape.circle),
                     ),
                     title: Text(nutrientLabels(l)[key]!.$1),
@@ -87,6 +90,7 @@ class MeScreen extends ConsumerWidget {
             ),
           ),
           _RemindersCard(data: data),
+          if (llmChoices().length > 1) const AiModelCard(),
           if (ref.watch(profilesProvider).biometricAllowed && ref.watch(biometricsAvailableProvider).value == true)
             Card(
               child: SwitchListTile(

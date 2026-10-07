@@ -38,6 +38,10 @@ medical notes are rendered as cards from the database, never as model-generated 
 - **Agent model:** **Gemma 4 E2B** (`gemma-4-E2B-it.litertlm`, 2.6 GB, Apache 2.0, ungated) via `flutter_gemma`,
   GPU with CPU fallback, native tool calling. Chosen in M0 (95.2% tool accuracy on device); also multimodal,
   so it is a candidate to replace the photo detector for Pro later. Runtime budget ≈2 GB RAM.
+  **Optional: Gemma 4 E4B** (`gemma-4-E4B-it.litertlm`, 3.66 GB, Apache 2.0) on phones reporting ≥7 GB RAM
+  (8 GB phones), chosen at first download or switched in Me → AI model (the other file is deleted). ~3x slower
+  prefill than E2B (1,293 vs 3,808 tok/s GPU, S26 Ultra, model card). Tool accuracy not measured yet:
+  run `integration_test/agent_eval_test.dart` with `MODEL_PATH` on the phone before recommending it.
 - **Tools:** plain Dart functions over SQL returning structs (see `lib/agent/tools.dart`).
 - **Embeddings:** EmbeddingGemma 512 (768-d). Fixed prefixes: query `task: search result | query: {q}`,
   document `title: none | text: {t}`. Same model + prefixes on PC and phone.

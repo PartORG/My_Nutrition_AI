@@ -49,12 +49,12 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: ChatScreen(agent: agent)),
     ));
-    await tester.enterText(find.byType(TextField), 'I had 2 eggs for breakfast');
+    await tester.enterText(find.byType(TextField), 'Breakfast was 2 eggs');
     await tester.tap(find.byTooltip('Send'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 
-    expect(find.text('I had 2 eggs for breakfast'), findsOneWidget);
+    expect(find.text('Breakfast was 2 eggs'), findsOneWidget);
     expect(find.text('Log breakfast'), findsOneWidget);
     expect(find.text('egg · 100 g · 143 kcal'), findsOneWidget);
     expect(find.text('Please confirm your breakfast.'), findsOneWidget);

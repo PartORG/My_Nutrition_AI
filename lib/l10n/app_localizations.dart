@@ -1171,7 +1171,7 @@ abstract class AppLocalizations {
   /// No description provided for @featPro2.
   ///
   /// In en, this message translates to:
-  /// **'Photo, live camera and barcode recognition'**
+  /// **'Photo and live camera food recognition'**
   String get featPro2;
 
   /// No description provided for @featPro3.
@@ -1636,30 +1636,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{Continue} =1{Use 1 item} other{Use {count} items}}'**
   String cameraUseFound(int count);
 
-  /// No description provided for @barcodeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Barcode'**
-  String get barcodeTitle;
-
-  /// No description provided for @barcodeScan.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan barcode'**
-  String get barcodeScan;
-
-  /// No description provided for @barcodeUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Barcode {code} isn\'t in the food database.'**
-  String barcodeUnknown(String code);
-
-  /// No description provided for @barcodeUnknownHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap \"Add item\" to find it by name.'**
-  String get barcodeUnknownHint;
-
   /// No description provided for @reviewTitle.
   ///
   /// In en, this message translates to:
@@ -1714,6 +1690,30 @@ abstract class AppLocalizations {
   /// **'What can I cook?'**
   String get reviewCook;
 
+  /// No description provided for @yourRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating'**
+  String get yourRating;
+
+  /// No description provided for @rateStars.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Rate 1 star} other{Rate {count} stars}}'**
+  String rateStars(int count);
+
+  /// No description provided for @recipesYouAte.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes you ate'**
+  String get recipesYouAte;
+
+  /// No description provided for @recipesYouAteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap one to see it again and rate it. Recipe ideas follow your stars.'**
+  String get recipesYouAteHint;
+
   /// No description provided for @cookNone.
   ///
   /// In en, this message translates to:
@@ -1743,6 +1743,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download'**
   String get aiDownloadButton;
+
+  /// No description provided for @aiModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI model'**
+  String get aiModelTitle;
+
+  /// No description provided for @aiModelStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard · {gb} GB'**
+  String aiModelStandard(String gb);
+
+  /// No description provided for @aiModelStandardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Faster answers. Works on every supported phone.'**
+  String get aiModelStandardHint;
+
+  /// No description provided for @aiModelLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger · {gb} GB'**
+  String aiModelLarge(String gb);
+
+  /// No description provided for @aiModelLargeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Understands more, answers about 2-3x slower. For phones with 8 GB RAM.'**
+  String get aiModelLargeHint;
+
+  /// No description provided for @aiModelSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get aiModelSwitch;
+
+  /// No description provided for @aiModelSwitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The other model downloads first; the current one is deleted when it\'s done.'**
+  String get aiModelSwitchBody;
+
+  /// No description provided for @aiModelInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'In use'**
+  String get aiModelInUse;
 
   /// No description provided for @aiDownloading.
   ///

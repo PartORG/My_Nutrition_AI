@@ -6,7 +6,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' show InferenceModel;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
@@ -18,7 +17,7 @@ import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'theme.dart';
 
-/// Pro: camera (photo / live) or barcode → review → "What can I cook?" or
+/// Pro: camera (photo / live) → review → "What can I cook?" or
 /// "Log this meal". [onCook] is null where cooking ideas can't be shown (Log tab).
 Future<void> openCamera(BuildContext context, String mode, {void Function(List<String> names)? onCook}) async {
   final container = ProviderScope.containerOf(context, listen: false);
@@ -33,28 +32,24 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   if (data == null) return;
   final captured = await container.read(captureProvider)(context, mode);
   if (captured == null || !context.mounted) return;
-  final (items, unknownCode, usedMode) = switch (captured) {
-    (String code) => switch (data.tools.productByBarcode(code)) {
-        final p? => ([ScanItem(name: p.label, food: p, grams: 100)], null, 'barcode'),
-        null => (<ScanItem>[], code, 'barcode'),
-      },
-    (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found), null, live ? 'live' : 'photo'),
-    (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), null, 'photo'),
+  final (items, usedMode) = switch (captured) {
+    (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found), live ? 'live' : 'photo'),
+    (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
   };
   await nav.push(MaterialPageRoute<void>(
-    builder: (_) => ReviewScreen(data: data, items: items, mode: usedMode, unknownCode: unknownCode, onCook: onCook),
+    builder: (_) => ReviewScreen(data: data, items: items, mode: usedMode, onCook: onCook),
   ));
 }
 
-/// What a capture returns: a barcode (String), Gemma's foods from a photo
+/// What a capture returns: Gemma's foods from a photo
 /// (`List<SeenFood>`), or detections and whether they came from live mode
 /// (a `(List<Detection>, bool)` record); null = cancelled. Tests
 /// replace it with a dummy detector, since there is no camera on the host.
 typedef Capture = Future<Object?> Function(BuildContext context, String mode);
 
 final captureProvider = Provider<Capture>((ref) => (context, mode) => Navigator.of(context).push<Object>(
-      MaterialPageRoute(builder: (_) => mode == 'barcode' ? const BarcodeScreen() : CameraScreen(live: mode == 'live')),
+      MaterialPageRoute(builder: (_) => CameraScreen(live: mode == 'live')),
     ));
 
 final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
@@ -273,47 +268,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   }
 }
 
-/// EAN/UPC only: what packaged food carries. zxing-cpp decodes on the phone
-/// with no network (ML Kit would send usage diagnostics to Google).
-class BarcodeScreen extends StatefulWidget {
-  const BarcodeScreen({super.key});
-
-  @override
-  State<BarcodeScreen> createState() => _BarcodeScreenState();
-}
-
-class _BarcodeScreenState extends State<BarcodeScreen> {
-  var _done = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(l.barcodeTitle)),
-      body: ReaderWidget(
-        codeFormat: Format.ean13 | Format.ean8 | Format.upca | Format.upce,
-        showGallery: false, // a photo from the gallery isn't "scan a packet"
-        showToggleCamera: false,
-        onScan: (code) {
-          final text = code.text;
-          if (!code.isValid || text == null || _done) return;
-          _done = true;
-          Navigator.pop(context, text);
-        },
-      ),
-    );
-  }
-}
-
 /// Everything detected is checked here before use: rename (re-match), amount,
 /// remove, add. Values are ≈ for photos. Nothing is saved before a button.
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen(
-      {super.key, required this.data, required this.items, required this.mode, this.unknownCode, this.onCook});
+  const ReviewScreen({super.key, required this.data, required this.items, required this.mode, this.onCook});
   final ProfileData data;
   final List<ScanItem> items;
   final String mode;
-  final String? unknownCode;
   final void Function(List<String> names)? onCook;
 
   @override
@@ -350,15 +311,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.reviewTitle)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        if (widget.unknownCode != null)
-          Card(
-            color: AppColors.cardGreen,
-            child: ListTile(
-              leading: const Icon(Icons.qr_code_2, color: AppColors.primary),
-              title: Text(l.barcodeUnknown(widget.unknownCode!)),
-              subtitle: Text(l.barcodeUnknownHint),
-            ),
-          ),
         Text(l.reviewHint, style: const TextStyle(color: AppColors.textSecondary)),
         const SizedBox(height: 8),
         if (_items.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(l.reviewEmpty)),

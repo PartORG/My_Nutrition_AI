@@ -75,13 +75,42 @@ const minRamMb = 5000;
 
 // ---- on-device AI -----------------------------------------------------------
 
-/// Gemma 4 E2B (Apache 2.0, ungated) downloads once from Hugging Face when the
-/// user asks: at 2.2 GB compressed it is over Play's 1.5 GB asset-pack limit.
-/// Same SHA-256 as the file measured in M0. Only the model comes over the
-/// network; nothing about the user goes out.
-const llmFile = 'gemma-4-E2B-it.litertlm';
-const llmUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/$llmFile';
-const llmDownloadMb = 2468;
+/// A chat model the user can download. Both are Gemma 4 (Apache 2.0, ungated)
+/// from Hugging Face, downloaded once when the user asks: over Play's 1.5 GB
+/// asset-pack limit. Only the model comes over the network; nothing about the user goes out.
+typedef Llm = ({String file, String url, int downloadMb, int minRamMb});
+
+/// E2B: the default, measured in M0 (95.2% tool accuracy; same SHA-256 as that file).
+const e2b = (
+  file: 'gemma-4-E2B-it.litertlm',
+  url: 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+  downloadMb: 2468,
+  minRamMb: minRamMb,
+);
+
+/// E4B: larger and smarter, ~3x slower prefill; offered on 8 GB phones only
+/// (they report ~7.2-7.6 GB). The full file, not "-gpu": photo mode needs its vision part.
+// ponytail: tool accuracy not measured yet; run integration_test/agent_eval_test.dart with MODEL_PATH on the phone.
+const e4b = (
+  file: 'gemma-4-E4B-it.litertlm',
+  url: 'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+  downloadMb: 3490,
+  minRamMb: 7000,
+);
+
+/// Models this phone can run, smallest first. Unknown RAM (not Android): E2B only.
+List<Llm> llmChoices() {
+  final ram = Platform.isAndroid ? totalRamMb() : null;
+  return [e2b, if (ram != null && ram >= e4b.minRamMb) e4b];
+}
+
+/// The model the chat uses: the larger one the user downloaded, if this phone can run it.
+Future<Llm?> installedLlm() async {
+  for (final m in llmChoices().reversed) {
+    if (await FlutterGemma.isModelInstalled(m.file)) return m;
+  }
+  return null;
+}
 
 /// EmbeddingGemma is gated on Hugging Face (Gemma terms allow redistribution),
 /// so it ships inside the app from git-ignored files in assets/models/.
@@ -105,11 +134,15 @@ InferenceInstallationBuilder _llmInstall() =>
 /// (see integration_test/agent_latency_test.dart).
 final llmProvider = FutureProvider<InferenceModel>((ref) async {
   await ref.watch(_gemmaReadyProvider.future);
-  final dev = File('${(await getExternalStorageDirectory())?.path}/models/$llmFile');
-  if (dev.existsSync()) {
+  final devDir = (await getExternalStorageDirectory())?.path;
+  final dev = [for (final m in llmChoices().reversed) File('$devDir/models/${m.file}')]
+      .where((f) => f.existsSync())
+      .firstOrNull;
+  final installed = await installedLlm();
+  if (dev != null) {
     await _llmInstall().fromFile(dev.path).install();
-  } else if (await FlutterGemma.isModelInstalled(llmFile)) {
-    await _llmInstall().fromNetwork(llmUrl).install(); // already downloaded: no network, just activates it
+  } else if (installed != null) {
+    await _llmInstall().fromNetwork(installed.url).install(); // already downloaded: no network, just activates it
   } else {
     throw LlmNotDownloaded();
   }
@@ -130,13 +163,22 @@ class LlmDownload extends Notifier<int?> {
   int? build() => null;
 
   /// Resumable (flutter_gemma's background downloader). Throws on failure.
-  Future<void> start() async {
+  /// Switching models: the other one is deleted once [model] is in, so the
+  /// phone never keeps 6 GB of models.
+  Future<void> start([Llm model = e2b]) async {
     if (state != null) return;
     state = 0;
     _cancel = CancelToken();
     try {
       await ref.read(_gemmaReadyProvider.future);
-      await _llmInstall().fromNetwork(llmUrl).withProgress((p) => state = p).withCancelToken(_cancel!).install();
+      await _llmInstall().fromNetwork(model.url).withProgress((p) => state = p).withCancelToken(_cancel!).install();
+      // Delete first, so the reload can't pick the old one. A loaded model keeps
+      // its open file until the reload closes it.
+      for (final other in [e2b, e4b]) {
+        if (other != model && await FlutterGemma.isModelInstalled(other.file)) {
+          await FlutterGemma.uninstallModel(other.file);
+        }
+      }
       ref.invalidate(llmProvider);
     } finally {
       state = null;

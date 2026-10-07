@@ -97,7 +97,7 @@ void main() {
       [ToolCall('log_meal', {'items': '2 eggs', 'meal_type': 'breakfast'})],
       [TextChunk('Here is your breakfast, '), TextChunk('please confirm.')],
     ]);
-    await agent.send('I had 2 eggs for breakfast');
+    await agent.send('Breakfast was 2 eggs');
 
     expect(agent.items.map((i) => i.runtimeType), [UserItem, CardItem, ModelItem]);
     expect((agent.items.last as ModelItem).text, 'Here is your breakfast, please confirm.');
@@ -109,6 +109,22 @@ void main() {
     await agent.decide(card, false); // a second tap changes nothing
     expect(meals(), 1);
     expect(card.accepted, isTrue);
+  });
+
+  test('plain "I ate…" and "I\'m allergic to…" get their card without the model or the daily count', () async {
+    await agent.send('I ate 2 eggs and a banana for breakfast');
+    await agent.send("I'm allergic to peanuts");
+    expect(model.sent, isEmpty);
+    final cards = [for (final i in agent.items) if (i is CardItem) i.card as ConfirmCard];
+    expect(cards.map((c) => c.title), ['Log breakfast', 'Add allergy']);
+    expect(cards[0].lines.length, 2);
+    expect(cards[1].lines, ['peanuts']);
+    expect(ChatLimit(profilesDb, clock: () => DateTime(2026, 10, 4, 8)).usedToday, 0);
+
+    // Questions and unknown foods still go to the model.
+    await agent.send('I ate a dragonfruit smoothie');
+    await agent.send('Did I eat enough protein?');
+    expect(model.sent.length, 2);
   });
 
   test('tool calls are recorded in the chat log, but not shown or replayed', () async {

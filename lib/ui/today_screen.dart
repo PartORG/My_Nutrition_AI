@@ -7,6 +7,7 @@ import '../data/diary.dart';
 import '../billing/billing.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'chat_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -76,6 +77,12 @@ class _DayView extends StatelessWidget {
         final targets = t.values;
         final eaten = totalsOn(data.user, now);
         final meals = mealsOn(data.user, now);
+        final recipes = data.tools.recentRecipes();
+        // Redrawn on return: stars or an "I ate this" there change this screen.
+        void open(int id) => Navigator.of(context)
+            .push(MaterialPageRoute<void>(
+                builder: (_) => RecipeScreen(tools: data.tools, recipeId: id, onLogged: data.changed)))
+            .then((_) => data.changed());
         return ListView(padding: const EdgeInsets.all(16), children: [
           if (targets['kcal'] == null)
             _SetGoalsCard(eaten: eaten)
@@ -84,7 +91,7 @@ class _DayView extends StatelessWidget {
           if (targets.length > 1)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Column(children: [
                   for (final key in ['protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg'])
                     if (targets[key] != null)
@@ -98,7 +105,7 @@ class _DayView extends StatelessWidget {
           if (meals.isEmpty) Text(l.noMealsYet, style: const TextStyle(color: AppColors.textSecondary)),
           for (final type in ['breakfast', 'lunch', 'dinner', 'snack', null])
             if (meals.where((m) => m.type == type).toList() case final group when group.isNotEmpty)
-              _MealGroup(type: type, meals: group, onDelete: (m) async {
+              _MealGroup(type: type, meals: group, onOpen: open, onDelete: (m) async {
                 final ok = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
@@ -115,6 +122,7 @@ class _DayView extends StatelessWidget {
                   data.changed();
                 }
               }),
+          if (recipes.isNotEmpty) _RecipesYouAte(recipes: recipes, onOpen: open),
         ]);
       },
     );
@@ -171,23 +179,23 @@ class _CaloriesCard extends StatelessWidget {
     final over = left < 0;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Wrap, not Row: at large text sizes "of 2759 kcal" moves under the number.
           Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
             Text('${eaten.round()}',
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 6),
               child: Text(l.eatenOfGoal(goal.round()), style: const TextStyle(color: AppColors.textSecondary)),
             ),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (eaten / goal).clamp(0, 1),
-              minHeight: 12,
+              minHeight: 8,
               color: over ? Theme.of(context).colorScheme.error : nutrientColors['kcal'],
               backgroundColor: nutrientColors['kcal']!.withValues(alpha: .15),
               // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
@@ -225,26 +233,26 @@ class NutrientBar extends StatelessWidget {
     final color = nutrientColors[nutrient]!;
     final name = nutrientLabels(l)[nutrient]!.$1;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
           Flexible(
             child: Text(
               '${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
               textAlign: TextAlign.end,
             ),
           ),
         ]),
-        const SizedBox(height: 6),
+        const SizedBox(height: 3),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
             value: (eaten / goal).clamp(0, 1),
-            minHeight: 8,
+            minHeight: 5,
             color: over ? Theme.of(context).colorScheme.error : color,
             backgroundColor: color.withValues(alpha: .15),
             semanticsLabel: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
@@ -269,10 +277,11 @@ class NutrientBar extends StatelessWidget {
 }
 
 class _MealGroup extends StatelessWidget {
-  const _MealGroup({required this.type, required this.meals, required this.onDelete});
+  const _MealGroup({required this.type, required this.meals, required this.onDelete, required this.onOpen});
   final String? type;
   final List<MealEntry> meals;
   final ValueChanged<MealEntry> onDelete;
+  final ValueChanged<int> onOpen; // a recipe id
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +302,8 @@ class _MealGroup extends StatelessWidget {
         for (final m in meals)
           ListTile(
             dense: true,
+            leading: m.recipeId == null ? null : const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+            onTap: m.recipeId == null ? null : () => onOpen(m.recipeId!),
             title: Text(m.label),
             subtitle: Text([
               DateFormat.Hm().format(m.at),
@@ -302,6 +313,38 @@ class _MealGroup extends StatelessWidget {
               Text('${m.estimated ? '≈' : ''}${m.kcal.round()} ${l.kcal}'),
               IconButton(tooltip: l.delete, icon: const Icon(Icons.delete_outline), onPressed: () => onDelete(m)),
             ]),
+          ),
+      ]),
+    );
+  }
+}
+
+/// The newest recipes logged as eaten, with their stars; a tap opens one to rate it.
+class _RecipesYouAte extends StatelessWidget {
+  const _RecipesYouAte({required this.recipes, required this.onOpen});
+  final List<({int id, String title, DateTime at, int? stars})> recipes;
+  final ValueChanged<int> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Card(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ListTile(
+          title: Text(l.recipesYouAte, style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(l.recipesYouAteHint),
+        ),
+        for (final r in recipes)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+            title: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(DateFormat('EEE d MMM').format(r.at)),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(r.stars == null ? '☆' : '★' * r.stars!, style: TextStyle(color: Colors.amber.shade700)),
+              const Icon(Icons.chevron_right),
+            ]),
+            onTap: () => onOpen(r.id),
           ),
       ]),
     );

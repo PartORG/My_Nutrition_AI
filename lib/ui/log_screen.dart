@@ -57,18 +57,12 @@ class _LogScreenState extends ConsumerState<LogScreen> {
               onChanged: (t) => setState(() => _results = t.trim().length < 2 ? [] : tools.searchFood(t)),
             ),
           ),
-          // Pro: log from a photo or a packet. The paywall opens below Pro.
+          // Pro: log from a photo. The paywall opens below Pro.
           IconButton(
             tooltip: l.cameraOpen,
             iconSize: 28,
             icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
             onPressed: () => openCamera(context, 'photo'),
-          ),
-          IconButton(
-            tooltip: l.barcodeScan,
-            iconSize: 28,
-            icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
-            onPressed: () => openCamera(context, 'barcode'),
           ),
         ]),
       ),

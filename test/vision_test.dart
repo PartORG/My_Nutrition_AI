@@ -186,39 +186,6 @@ void main() {
       expect(scans(), ['live: banana, broccoli']);
     });
 
-    testWidgets('barcode → product → log exact values', (tester) async {
-      capture = (_) => '2000000000022';
-      agent.items.add(CardItem(CameraCard('barcode')));
-      await pumpChat(tester);
-      await tester.tap(find.text('Scan barcode'));
-      await tester.pumpAndSettle();
-      expect(find.text('Dummy plain yogurt 2%'), findsOneWidget);
-      expect(find.text('63 kcal'), findsOneWidget); // 100 g, no ≈: label values
-      await tester.tap(find.textContaining('Log this meal'));
-      await tester.pumpAndSettle();
-      expect(meals().map((r) => (r['description'], r['grams'], r['estimated'])), [('Dummy plain yogurt 2%', 100.0, 0)]);
-    });
-
-    testWidgets('unknown barcode → find it by name, offline', (tester) async {
-      capture = (_) => '4006381333931';
-      agent.items.add(CardItem(CameraCard('barcode')));
-      await pumpChat(tester);
-      await tester.tap(find.text('Scan barcode'));
-      await tester.pumpAndSettle();
-      expect(find.text("Barcode 4006381333931 isn't in the food database."), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Log this meal')).onPressed, isNull);
-
-      await tester.tap(find.text('Add item'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)), 'apple');
-      await tester.pump();
-      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('apple')).last);
-      await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('Log this meal'));
-      await tester.pumpAndSettle();
-      expect(meals().map((r) => (r['description'], r['grams'])), [('apple', 180.0)]);
-    });
-
     testWidgets('below Pro the camera opens the plans instead', (tester) async {
       billing.setTier(Tier.medium);
       capture = (_) => fail('the camera must not open below Pro');

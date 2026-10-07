@@ -11,6 +11,7 @@ typedef MealEntry = ({
   double? grams,
   double kcal,
   bool estimated,
+  int? recipeId, // logged from a recipe: Today opens it again
 });
 
 /// Local-day window [start, end) for [day].
@@ -23,7 +24,7 @@ List<MealEntry> mealsOn(Database user, DateTime day) {
   final (from, to) = _dayRange(day);
   return [
     for (final r in user.select(
-        'SELECT id, eaten_at, meal_type, description, grams, kcal, estimated FROM meal_log '
+        'SELECT id, eaten_at, meal_type, description, grams, kcal, estimated, recipe_id FROM meal_log '
         'WHERE eaten_at >= ? AND eaten_at < ? ORDER BY eaten_at', [from, to]))
       (
         id: r['id'] as int,
@@ -33,6 +34,7 @@ List<MealEntry> mealsOn(Database user, DateTime day) {
         grams: (r['grams'] as num?)?.toDouble(),
         kcal: (r['kcal'] as num).toDouble(),
         estimated: r['estimated'] == 1,
+        recipeId: r['recipe_id'] as int?,
       )
   ];
 }

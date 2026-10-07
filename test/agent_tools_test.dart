@@ -91,6 +91,40 @@ void main() {
       expect(confirmOf(tools.run('log_meal', {'items': 'banana'})).mealType, 'dinner');
     });
 
+    test('asking again shows recipes not suggested yet; a vague ask gets random ideas', () {
+      List<String> titles(Map<String, String> args) =>
+          [for (final r in (tools.run('search_recipes', args).card! as RecipeListCard).recipes) r.title];
+      const have = 'chicken, rice, broccoli, egg, lentils, salmon, oats';
+      final first = titles({'query': 'dinner', 'ingredients': have});
+      final again = titles({'query': 'something different', 'ingredients': have});
+      expect(again.toSet().intersection(first.toSet()), isEmpty);
+      expect(titles({'query': 'something new for breakfast'}), isNotEmpty);
+    });
+
+    test('stars steer ideas: 1-2 never again, 4-5 first; eaten recipes are listed with stars', () {
+      List<String> titles() => [
+            for (final r in (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, rice, broccoli'})
+                    .card! as RecipeListCard)
+                .recipes)
+              r.title
+          ];
+      final before = titles();
+      final stir = (tools.run('show_recipe', {'recipe': 'chicken broccoli stir-fry'}).card! as RecipeCard).id;
+      tools.rate(stir, 1);
+      expect(tools.rating(stir), 1);
+      expect(AgentTools(nutri, user, clock: () => now).run('search_recipes',
+          {'query': 'dinner', 'ingredients': 'chicken, rice, broccoli'}).forModel['recipes'].toString(),
+          isNot(contains('stir-fry')));
+      expect(before, contains('Chicken broccoli stir-fry'));
+
+      confirmOf(tools.logRecipe(stir)).apply();
+      expect(user.select('SELECT recipe_id FROM meal_log').single['recipe_id'], stir);
+      expect(tools.recentRecipes().single, (id: stir, title: 'Chicken broccoli stir-fry', at: now, stars: 1));
+      // "rate it 5 stars" with nothing on screen: the recipe eaten last.
+      confirmOf(AgentTools(nutri, user, clock: () => now).run('rate_recipe', {'recipe': 'it', 'stars': 5})).apply();
+      expect(tools.rating(stir), 5);
+    });
+
     test('unknown recipe is an error for the model, not a crash', () {
       expect(tools.run('show_recipe', {'recipe': 'unicorn pie'}).forModel['error'], isNotNull);
     });
@@ -148,6 +182,33 @@ void main() {
       // Splitting still happens when the phrase isn't one dish's name.
       expect(confirmOf(tools.run('log_meal', {'items': 'lasagna and banana'})).lines.length, 2);
       expect(confirmOf(tools.run('log_meal', {'items': 'chicken with rice'})).lines.length, 2);
+    });
+
+    test('the user\'s own words: lead-in, meal and trailing amounts are understood', () {
+      expect(mealFoods('I ate 2 bananas, 1 apple and grapes 100 gramms for breakfast today'),
+          '2 bananas, 1 apple and grapes 100 gramms');
+      expect(mealFoods('Add breakfast: oats and milk'), 'oats and milk');
+      expect(mealFoods('can you add breakfast'), '');
+      final r = tools.run('log_meal', {'items': 'I had 2 bananas and peanuts 50 gramms for lunch'});
+      expect(confirmOf(r).mealType, 'lunch');
+      expect(confirmOf(r).lines, ['banana · 236 g · 210 kcal', 'peanuts · 50 g · 284 kcal']);
+      expect(tools.run('log_meal', {'items': 'add breakfast'}).forModel['error'], contains('ask'));
+    });
+
+    test('"I ate peanuts" is a meal, never an allergy; "I ate…" never becomes recipe ideas', () {
+      const said = 'I ate peanuts 50 gramms';
+      final r = tools.run('set_allergen', {'allergen': 'peanuts'}, said: said);
+      expect(confirmOf(r).title, 'Log breakfast');
+      expect(confirmOf(r).lines.single, startsWith('peanuts · 50 g'));
+      expect(tools.run('set_allergen', {'allergen': 'peanuts'}, said: 'what is in peanuts?').forModel['error'],
+          contains('no allergy'));
+      expect(confirmOf(tools.run('set_allergen', {'allergen': 'peanuts'}, said: "I'm allergic to peanuts")).title,
+          'Add allergy');
+      expect(tools.run('search_recipes', {'query': 'banana'}, said: 'I had a banana').card, isA<ConfirmCard>());
+      expect(tools.run('search_recipes', {'query': 'banana'}, said: 'I had a banana, what should I cook?').card,
+          isA<RecipeListCard>());
+      expect(tools.run('search_recipes', {'query': 'dinner'}, said: 'I had chicken yesterday, something different').card,
+          isA<RecipeListCard>());
     });
 
     test('unknown food is reported, known ones still logged', () {

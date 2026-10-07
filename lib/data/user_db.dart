@@ -105,6 +105,16 @@ const userDbMigrations = <String>[
     text       TEXT NOT NULL   -- what the user kept on the review screen: 'banana, broccoli'
   );
   ''',
+  // v6: which recipe a logged meal was (to open it again), and the user's 1-5 stars,
+  // which recipe search uses (2 or fewer = never suggested again).
+  '''
+  ALTER TABLE meal_log ADD COLUMN recipe_id INTEGER;   -- nutri.db recipes.id; NULL = not a recipe
+  CREATE TABLE recipe_ratings (
+    recipe_id INTEGER PRIMARY KEY,
+    stars     INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5),
+    rated_at  INTEGER NOT NULL
+  );
+  ''',
 ];
 
 Database openUserDb(String path) {

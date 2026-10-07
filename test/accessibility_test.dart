@@ -160,8 +160,7 @@ void main() {
         (label: 'hot dog', score: .8, box: Rect.zero), // not in the dummy db
       ]),
     ];
-    await tester.pumpWidget(app(ReviewScreen(data: data, items: items, mode: 'photo', unknownCode: '4006381333931',
-        onCook: (_) {})));
+    await tester.pumpWidget(app(ReviewScreen(data: data, items: items, mode: 'photo', onCook: (_) {})));
     await tester.pump();
     await scrollAll(tester, 'Review');
   });

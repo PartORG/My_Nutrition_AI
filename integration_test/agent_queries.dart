@@ -38,6 +38,13 @@ const List<Q> agentQueries = [
   (q: 'Bookmark the salmon bowl', tool: 'save_recipe', args: {'recipe': 'salmon'}),
   (q: 'Like that omelette recipe', tool: 'save_recipe', args: {'recipe': 'omelette'}),
 
+  // rate_recipe — 5
+  (q: 'The shakshuka was amazing, 5 stars', tool: 'rate_recipe', args: {'stars': '5'}),
+  (q: 'Rate the lentil soup 2 stars, too bland', tool: 'rate_recipe', args: {'stars': '2'}),
+  (q: 'I loved that recipe, give it 5', tool: 'rate_recipe', args: {'stars': '5'}),
+  (q: 'That stir-fry deserves 4 stars', tool: 'rate_recipe', args: {'stars': '4'}),
+  (q: 'One star for the overnight oats, I hated it', tool: 'rate_recipe', args: {'stars': '1'}),
+
   // lookup_nutrition — 10
   (q: 'How many calories are in an avocado?', tool: 'lookup_nutrition', args: {'food': 'avocado'}),
   (q: 'How much protein is in Greek yogurt?', tool: 'lookup_nutrition', args: {'food': 'yogurt'}),
@@ -117,7 +124,7 @@ const List<Q> agentQueries = [
   // open_camera — 5
   (q: 'Scan my fridge', tool: 'open_camera', args: {'mode': 'photo'}),
   (q: 'Let me take a photo of my plate', tool: 'open_camera', args: {'mode': 'photo'}),
-  (q: 'Scan this barcode', tool: 'open_camera', args: {'mode': 'barcode'}),
+  (q: 'Use the camera to see what I am eating', tool: 'open_camera', args: {}),
   (q: 'Open the live camera', tool: 'open_camera', args: {'mode': 'live'}),
   (q: 'What can I cook from what is in my shopping cart? I will show you', tool: 'open_camera', args: {}),
 
