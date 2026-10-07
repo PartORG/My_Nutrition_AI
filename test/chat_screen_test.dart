@@ -131,7 +131,7 @@ void main() {
     ));
     // The list builds lazily: scroll through so every card is laid out, and
     // check each step (off-screen cards are disposed again).
-    const titles = ['Recipe ideas', 'INGREDIENTS', 'avocado · per 100 g', 'Today', 'Health information',
+    const titles = ['Recipe ideas', 'INGREDIENTS', 'avocado / 100 g', 'Today', 'Health information',
         'Camera', 'Log lunch', "You don't have to go through this alone"];
     final seen = <String>{};
     for (var i = 0; i < 16; i++) {

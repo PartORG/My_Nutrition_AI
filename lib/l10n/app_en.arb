@@ -596,6 +596,24 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "cardLogMeal": "Log {meal}",
+  "@cardLogMeal": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "cardSaveRecipe": "Save recipe",
+  "cardRateRecipe": "Rate recipe",
+  "cardRemember": "Remember",
+  "cardAddAllergy": "Add allergy",
+  "cardRemoveAllergy": "Remove allergy",
+  "cardLogSymptom": "Log symptom",
+  "cardLogGlucose": "Log blood glucose",
+  "cardLogBloodPressure": "Log blood pressure",
+  "cardLogWater": "Log water",
+  "last7Days": "Last 7 days",
   "weekReviewTitle": "Your week",
   "reviewLoggedDays": "You logged food on {days} of 7 days.",
   "@reviewLoggedDays": {

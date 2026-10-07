@@ -5,7 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_uk.dart';
 
 // ignore_for_file: type=lint
 
@@ -92,7 +95,12 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en'),
+    Locale('fr'),
+    Locale('uk'),
+  ];
 
   /// No description provided for @appTitle.
   ///
@@ -1738,6 +1746,72 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @cardLogMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Log {meal}'**
+  String cardLogMeal(String meal);
+
+  /// No description provided for @cardSaveRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Save recipe'**
+  String get cardSaveRecipe;
+
+  /// No description provided for @cardRateRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate recipe'**
+  String get cardRateRecipe;
+
+  /// No description provided for @cardRemember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember'**
+  String get cardRemember;
+
+  /// No description provided for @cardAddAllergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Add allergy'**
+  String get cardAddAllergy;
+
+  /// No description provided for @cardRemoveAllergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove allergy'**
+  String get cardRemoveAllergy;
+
+  /// No description provided for @cardLogSymptom.
+  ///
+  /// In en, this message translates to:
+  /// **'Log symptom'**
+  String get cardLogSymptom;
+
+  /// No description provided for @cardLogGlucose.
+  ///
+  /// In en, this message translates to:
+  /// **'Log blood glucose'**
+  String get cardLogGlucose;
+
+  /// No description provided for @cardLogBloodPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Log blood pressure'**
+  String get cardLogBloodPressure;
+
+  /// No description provided for @cardLogWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Log water'**
+  String get cardLogWater;
+
+  /// No description provided for @last7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get last7Days;
+
   /// No description provided for @weekReviewTitle.
   ///
   /// In en, this message translates to:
@@ -2308,7 +2382,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['de', 'en', 'fr', 'uk'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -2317,8 +2391,14 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'uk':
+      return AppLocalizationsUk();
   }
 
   throw FlutterError(

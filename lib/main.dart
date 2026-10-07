@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'app_state.dart';
 import 'l10n/app_localizations.dart';
@@ -39,6 +40,11 @@ class MyFoodMindApp extends ConsumerWidget {
         theme: AppTheme.build(Brightness.light, system: look.wallpaper ? light : null),
         darkTheme: AppTheme.build(Brightness.dark, system: look.wallpaper ? dark : null),
         themeMode: look.mode,
+        // Dates and numbers (DateFormat, NumberFormat) in the app's language, not always English.
+        builder: (context, child) {
+          Intl.defaultLocale = Localizations.localeOf(context).toLanguageTag();
+          return child!;
+        },
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: const AppGate(),

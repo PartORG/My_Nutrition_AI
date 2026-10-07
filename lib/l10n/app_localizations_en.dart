@@ -985,6 +985,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String cardLogMeal(String meal) {
+    return 'Log $meal';
+  }
+
+  @override
+  String get cardSaveRecipe => 'Save recipe';
+
+  @override
+  String get cardRateRecipe => 'Rate recipe';
+
+  @override
+  String get cardRemember => 'Remember';
+
+  @override
+  String get cardAddAllergy => 'Add allergy';
+
+  @override
+  String get cardRemoveAllergy => 'Remove allergy';
+
+  @override
+  String get cardLogSymptom => 'Log symptom';
+
+  @override
+  String get cardLogGlucose => 'Log blood glucose';
+
+  @override
+  String get cardLogBloodPressure => 'Log blood pressure';
+
+  @override
+  String get cardLogWater => 'Log water';
+
+  @override
+  String get last7Days => 'Last 7 days';
+
+  @override
   String get weekReviewTitle => 'Your week';
 
   @override

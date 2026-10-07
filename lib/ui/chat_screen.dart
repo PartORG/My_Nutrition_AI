@@ -321,7 +321,7 @@ class _CardView extends StatelessWidget {
       RecipeCard c => RecipeView(card: c, tools: agent.tools, onAte: () => agent.ateRecipe(c.id)),
       NutritionCard c => _Framed(
           icon: Icons.pie_chart_outline,
-          title: c.title,
+          title: _nutritionTitle(l, c.title),
           child: NutrientTiles(values: c.values, estimated: c.estimated),
         ),
       InfoCard(:final passages) => _Framed(
@@ -355,7 +355,7 @@ class _CardView extends StatelessWidget {
             true => Icons.check_circle,
             false => Icons.cancel_outlined,
           },
-          title: c.title,
+          title: _confirmTitle(l, c),
           color: c.accepted == false ? context.colors.textSecondary : context.colors.primary,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (c.accepted == null && c.items.isNotEmpty) ...[
@@ -391,6 +391,39 @@ class _CardView extends StatelessWidget {
     };
   }
 }
+
+/// The tools write card titles in English (the model reads them too); shown in the app's language.
+String _confirmTitle(AppLocalizations l, ConfirmCard c) {
+  if (c.mealType != null) {
+    final meal = switch (c.mealType) {
+      'breakfast' => l.mealBreakfast,
+      'lunch' => l.mealLunch,
+      'dinner' => l.mealDinner,
+      _ => l.mealSnack,
+    };
+    return l.cardLogMeal(l.localeName == 'de' ? meal : meal.toLowerCase()); // German nouns keep the capital
+  }
+  return switch (c.title) {
+        'Save recipe' => l.cardSaveRecipe,
+        'Rate recipe' => l.cardRateRecipe,
+        'Remember' => l.cardRemember,
+        'Add allergy' => l.cardAddAllergy,
+        'Remove allergy' => l.cardRemoveAllergy,
+        'Log symptom' => l.cardLogSymptom,
+        'Log glucose' => l.cardLogGlucose,
+        'Log blood pressure' => l.cardLogBloodPressure,
+        'Log weight' => l.logWeight,
+        'Log water' => l.cardLogWater,
+        _ => c.title,
+      };
+}
+
+String _nutritionTitle(AppLocalizations l, String title) => switch (title) {
+      'Today' => l.tabToday,
+      'Last 7 days' => l.last7Days,
+      _ when title.endsWith(' · per 100 g') => '${title.substring(0, title.length - 12)}${l.per100Suffix}',
+      _ => title,
+    };
 
 /// A recipe with its 1-5 stars (a tap saves them; search uses them) and "I ate this".
 /// In chat and on the recipe screen opened from Today.

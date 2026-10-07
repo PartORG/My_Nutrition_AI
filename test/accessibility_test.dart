@@ -52,7 +52,7 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  Widget app(Widget home, {List overrides = const [], ThemeData? theme}) => ProviderScope(
+  Widget app(Widget home, {List overrides = const [], ThemeData? theme, Locale? locale}) => ProviderScope(
         overrides: [
           profileDataProvider.overrideWithValue(data),
           profilesProvider.overrideWithValue(Profiles.open(tmp)), // Me reads the profile list
@@ -61,6 +61,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: theme,
+          locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
@@ -104,6 +105,22 @@ void main() {
     await tester.pumpAndSettle();
     await scrollAll(tester, 'Me');
   });
+
+  for (final lang in ['uk', 'de', 'fr']) {
+    testWidgets('$lang: Today, Log and Me at 200 % text', (tester) async {
+      smallPhone(tester);
+      (data.tools.logRecipe(2).card! as ConfirmCard).apply();
+      await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang)));
+      await tester.pump();
+      await scrollAll(tester, 'Today ($lang)');
+      await tester.tap(find.byIcon(Icons.add_circle_outline).last); // the Log tab
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'Log ($lang)');
+      await tester.tap(find.byIcon(Icons.person_outline));
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'Me ($lang)');
+    });
+  }
 
   testWidgets('dark theme: Today with meals, Log, Me', (tester) async {
     smallPhone(tester);

@@ -354,7 +354,9 @@ class _PlanCard extends ConsumerWidget {
           leading: Icon(Icons.workspace_premium_outlined, color: context.colors.primary),
           title: Text(l.yourPlan),
           subtitle: Text(tierName(tier, l)),
-          trailing: TextButton(onPressed: onOpen, child: Text(l.seePlans)),
+          // The whole tile, not a trailing button: "See plans" translated doesn't fit there at large text.
+          trailing: Icon(Icons.chevron_right, semanticLabel: l.seePlans),
+          onTap: onOpen,
         ),
       ),
     );

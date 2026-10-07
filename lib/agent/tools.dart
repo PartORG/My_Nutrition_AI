@@ -21,7 +21,8 @@ Bookmarking a recipe does not count as eating it.
 Never mention tool names. Never invent numbers, recipes or medical advice; details are
 shown in cards, so don't repeat long lists.
 You are not a doctor: for health conditions use condition_info and suggest asking a doctor.
-Answer in 1-3 short sentences.''';
+Answer in the user's language, in 1-3 short sentences. Tool arguments (foods, recipe
+searches, facts) are always in English: the food and recipe database is English.''';
 
 Tool _tool(String name, String description, Map<String, Object> props,
         [List<String> required = const []]) =>
