@@ -1738,6 +1738,78 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @waterLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Water {ml} / {goal} ml'**
+  String waterLine(int ml, int goal);
+
+  /// No description provided for @waterAddGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a glass (250 ml)'**
+  String get waterAddGlass;
+
+  /// No description provided for @waterUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo the last glass'**
+  String get waterUndo;
+
+  /// No description provided for @waterGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily water goal'**
+  String get waterGoal;
+
+  /// No description provided for @fasting.
+  ///
+  /// In en, this message translates to:
+  /// **'Fasting'**
+  String get fasting;
+
+  /// No description provided for @fastingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Fasting {h} h {m} min of {target} h'**
+  String fastingLine(int h, int m, int target);
+
+  /// No description provided for @fastStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start now'**
+  String get fastStart;
+
+  /// No description provided for @fastSinceMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Since last meal ({time})'**
+  String fastSinceMeal(String time);
+
+  /// No description provided for @fastEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End fast'**
+  String get fastEnd;
+
+  /// No description provided for @fastDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal reached. End the fast whenever you eat.'**
+  String get fastDone;
+
+  /// No description provided for @fastingSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fasting timer'**
+  String get fastingSwitch;
+
+  /// No description provided for @fastingCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Not advised in pregnancy, with an eating disorder, or with diabetes treated with insulin or sulfonylureas. Ask your doctor first.'**
+  String get fastingCaution;
+
   /// No description provided for @widgetKcalTitle.
   ///
   /// In en, this message translates to:

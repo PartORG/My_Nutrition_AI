@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../data/conditions.dart';
+import '../data/diary.dart' show waterGoal, waterOn;
 import '../data/goals.dart';
 import '../data/migrate.dart';
 
@@ -166,6 +167,7 @@ class Memory {
           '${(today['c'] as num).round()} g carbs, ${(today['s'] as num).round()} g sugar '
           '(${today['n']} items).',
       _goalsLine(now, today),
+      'Water today: ${waterOn(user, now).round()} of ${waterGoal(user).round()} ml.',
       'Allergies: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
       ?_conditionsLine(),
       if (facts.isNotEmpty) 'About the user: ${facts.join('; ')}.',

@@ -596,6 +596,48 @@
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
   "appearance": "Appearance",
+  "waterLine": "Water {ml} / {goal} ml",
+  "@waterLine": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "waterAddGlass": "Add a glass (250 ml)",
+  "waterUndo": "Undo the last glass",
+  "waterGoal": "Daily water goal",
+  "fasting": "Fasting",
+  "fastingLine": "Fasting {h} h {m} min of {target} h",
+  "@fastingLine": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "fastStart": "Start now",
+  "fastSinceMeal": "Since last meal ({time})",
+  "@fastSinceMeal": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fastEnd": "End fast",
+  "fastDone": "Goal reached. End the fast whenever you eat.",
+  "fastingSwitch": "Fasting timer",
+  "fastingCaution": "Not advised in pregnancy, with an eating disorder, or with diabetes treated with insulin or sulfonylureas. Ask your doctor first.",
   "widgetKcalTitle": "Calories on the home-screen widget",
   "widgetKcalHint": "Add the MyFoodMind widget to your home screen. Today's calories are then visible there without your PIN.",
   "welcomeTitle": "Log your first meal",

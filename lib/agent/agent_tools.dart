@@ -1,6 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../data/conditions.dart';
+import '../data/diary.dart' show logWater;
 import '../data/goals.dart';
 import '../data/journal.dart';
 
@@ -170,6 +171,13 @@ class AgentTools {
       return _allergenNames.contains(allergen) ? _setAllergen(allergen, false) : null;
     }
     if (!_ateStatement.hasMatch(said) || _allergyWords.hasMatch(said)) return null;
+    if (waterMl(mealFoods(said)) case final ml?) {
+      return ToolResult({'status': _pendingNote, 'water_ml': ml}, ConfirmCard(
+        title: 'Log water',
+        lines: ['Water · ${ml.round()} ml'],
+        apply: (_) => logWater(user, ml, _now()),
+      ));
+    }
     final r = _logMeal(said, '');
     // Nothing found → the model asks what was meant.
     return r.card is ConfirmCard && !r.forModel.containsKey('not_found') ? r : null;
@@ -752,6 +760,27 @@ final _ateWords = RegExp(r'\b(?:ate|eaten|had|drank|drunk|log|logged|add|record|
 final _recipeWords = RegExp(
     r'\b(?:recipes?|suggest\w*|ideas?|cook\w*|make|bake|inspir\w*|menu|plan|different|another|else|new|what (?:should|can|could|to) (?:i |we )?(?:eat|have))\b',
     caseSensitive: false);
+
+/// "2 glasses of water" → 500, "500 ml water" → 500, "a bottle of water" → 500; null = not just water.
+double? waterMl(String text) {
+  final m = RegExp(
+    r'^(?:(\d+(?:[.,]\d+)?)|(an?|one|two|three|four|five))?\s*'
+    r'(ml|l|liters?|litres?|glass(?:es)?|cups?|bottles?|mugs?)?\s*(?:of\s+)?(?:still\s+|sparkling\s+|mineral\s+|plain\s+)?water$',
+    caseSensitive: false,
+  ).firstMatch(text.trim());
+  if (m == null) return null;
+  const words = {'a': 1, 'an': 1, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5};
+  final qty = double.tryParse((m[1] ?? '').replaceAll(',', '.')) ?? (words[m[2]?.toLowerCase()] ?? 1).toDouble();
+  final unit = m[3]?.toLowerCase() ?? '';
+  final ml = switch (unit) {
+    'ml' => qty,
+    'l' || 'liter' || 'liters' || 'litre' || 'litres' => qty * 1000,
+    _ when unit.startsWith('bottle') => qty * 500,
+    '' when qty >= 50 => qty, // "500 water": millilitres
+    _ => qty * 250, // glasses, cups, mugs
+  };
+  return ml > 0 && ml <= 5000 ? ml : null;
+}
 
 /// Starts like a report of a meal: "I ate…", "I had…", "Log 2 eggs", "add breakfast: …".
 final _ateStatement = RegExp(

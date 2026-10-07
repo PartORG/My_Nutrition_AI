@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +16,164 @@ import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'period_view.dart';
 import 'theme.dart';
+
+/// Today's water against the goal; "+" adds a glass, undo takes the last one back.
+class _WaterCard extends StatelessWidget {
+  const _WaterCard({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final ml = waterOn(data.user, now), goal = waterGoal(data.user);
+    const blue = Color(0xFF2A78D6); // the kcal slot of the palette: readable on light and dark
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(children: [
+          const Icon(Icons.water_drop_outlined, color: blue),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.waterLine(ml.round(), goal.round()), style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: (ml / goal).clamp(0, 1),
+                  minHeight: 5,
+                  color: blue,
+                  backgroundColor: blue.withValues(alpha: .15),
+                  semanticsLabel: l.waterLine(ml.round(), goal.round()),
+                ),
+              ),
+            ]),
+          ),
+          if (ml > 0)
+            IconButton(
+              tooltip: l.waterUndo,
+              icon: const Icon(Icons.undo),
+              onPressed: () {
+                undoWater(data.user, now);
+                data.changed();
+              },
+            ),
+          IconButton.filledTonal(
+            tooltip: l.waterAddGlass,
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              logWater(data.user, glassMl, DateTime.now());
+              data.changed();
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Opt-in (Me tab): a running fast against its target, or how to start one.
+class _FastCard extends StatefulWidget {
+  const _FastCard({required this.data});
+  final ProfileData data;
+
+  @override
+  State<_FastCard> createState() => _FastCardState();
+}
+
+class _FastCardState extends State<_FastCard> {
+  Timer? _tick;
+  late int _hours = int.tryParse(pref(widget.data.user, 'fast_hours') ?? '') ?? 16;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(minutes: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  void _start(DateTime at) {
+    setPref(widget.data.user, 'fast_hours', '$_hours');
+    startFast(widget.data.user, at, _hours);
+    widget.data.changed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final user = widget.data.user;
+    final fast = currentFast(user);
+    final now = DateTime.now();
+    final color = nutrientColors['sodium_mg']!;
+    if (fast != null) {
+      final gone = now.difference(fast.start);
+      final done = gone.inMinutes >= fast.targetHours * 60;
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(Icons.timer_outlined, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(l.fastingLine(gone.inHours, gone.inMinutes % 60, fast.targetHours),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () {
+                  endFast(user, DateTime.now());
+                  widget.data.changed();
+                },
+                child: Text(l.fastEnd),
+              ),
+            ]),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: (gone.inMinutes / (fast.targetHours * 60)).clamp(0, 1),
+                minHeight: 5,
+                color: color,
+                backgroundColor: color.withValues(alpha: .15),
+                semanticsLabel: l.fastingLine(gone.inHours, gone.inMinutes % 60, fast.targetHours),
+              ),
+            ),
+            if (done) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.fastDone)),
+          ]),
+        ),
+      );
+    }
+    final last = lastMealAt(user);
+    final sinceMeal = last != null && now.difference(last).inHours < 24 ? last : null;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.timer_outlined, color: color),
+            const SizedBox(width: 12),
+            Text(l.fasting, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ]),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, children: [
+            for (final h in [12, 14, 16, 18])
+              ChoiceChip(label: Text('$h h'), selected: _hours == h, onSelected: (_) => setState(() => _hours = h)),
+          ]),
+          Wrap(alignment: WrapAlignment.end, spacing: 8, children: [
+            if (sinceMeal != null)
+              TextButton(onPressed: () => _start(sinceMeal), child: Text(l.fastSinceMeal(DateFormat.Hm().format(sinceMeal)))),
+            TextButton(onPressed: () => _start(DateTime.now()), child: Text(l.fastStart)),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
 
 String _mealName(AppLocalizations l, String type) => switch (type) {
       'breakfast' => l.mealBreakfast,
@@ -159,6 +319,8 @@ class _DayView extends StatelessWidget {
                 ]),
               ),
             ),
+          _WaterCard(data: data),
+          if (pref(data.user, 'fasting') == '1') _FastCard(data: data),
           const SizedBox(height: 8),
           Text(l.todaysMeals, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

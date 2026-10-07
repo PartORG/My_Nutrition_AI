@@ -115,6 +115,23 @@ void main() {
     expect(find.text('Search foods, dishes, recipes…'), findsOneWidget);
   });
 
+  testWidgets('Today: + adds a glass of water; fasting card only when turned on', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    expect(find.text('Water 0 / 2000 ml'), findsOneWidget);
+    await tester.tap(find.byTooltip('Add a glass (250 ml)'));
+    await tester.pump();
+    expect(find.text('Water 250 / 2000 ml'), findsOneWidget);
+    expect(find.text('Fasting'), findsNothing);
+    setPref(data.user, 'fasting', '1');
+    data.changed();
+    await tester.pump();
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -1000)); // the card is at the end
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start now'));
+    await tester.pump();
+    expect(find.text('Fasting 0 h 0 min of 16 h'), findsOneWidget);
+  });
+
   testWidgets('Today: a recipe meal opens the recipe; stars saved and shown', (tester) async {
     (data.tools.logRecipe(2).card! as ConfirmCard).apply(); // Shakshuka
     await pumpApp(tester, const HomeScreen(name: 'Anna'));

@@ -156,3 +156,67 @@ List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
 /// Free: anyone can log their weight (goals use it); the trend is Basic.
 void logWeight(Database user, double value, {required bool imperial, required DateTime at}) =>
     logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);
+
+// ---- per-profile preferences --------------------------------------------------
+
+String? pref(Database user, String key) =>
+    user.select('SELECT value FROM prefs WHERE key = ?', [key]).firstOrNull?['value'] as String?;
+
+void setPref(Database user, String key, String value) =>
+    user.execute('INSERT OR REPLACE INTO prefs (key, value) VALUES (?, ?)', [key, value]);
+
+// ---- water ------------------------------------------------------------------------
+
+/// One glass, the "+" on Today.
+const glassMl = 250.0;
+
+double waterOn(Database user, DateTime day) {
+  final (from, to) = _dayRange(day);
+  return (user.select('SELECT TOTAL(ml) AS ml FROM water_log WHERE drunk_at >= ? AND drunk_at < ?', [from, to])
+          .single['ml'] as num)
+      .toDouble();
+}
+
+void logWater(Database user, double ml, DateTime at) =>
+    user.execute('INSERT INTO water_log (drunk_at, ml) VALUES (?, ?)', [at.millisecondsSinceEpoch, ml]);
+
+/// Takes back the last glass logged on [day] (a mistaken tap).
+void undoWater(Database user, DateTime day) {
+  final (from, to) = _dayRange(day);
+  user.execute('DELETE FROM water_log WHERE id = (SELECT id FROM water_log WHERE drunk_at >= ? AND drunk_at < ? '
+      'ORDER BY drunk_at DESC LIMIT 1)', [from, to]);
+}
+
+/// The user's own goal, else 30 ml per kg of body weight (EFSA-style rule of thumb), else 2 litres.
+double waterGoal(Database user) {
+  final own = double.tryParse(pref(user, 'water_goal_ml') ?? '');
+  if (own != null && own > 0) return own;
+  final kg = user.select('SELECT weight_kg FROM body').firstOrNull?['weight_kg'] as num?;
+  return kg == null ? 2000 : (kg * 30 / 250).round() * 250.0; // whole glasses
+}
+
+// ---- fasting ----------------------------------------------------------------------
+
+typedef Fast = ({int id, DateTime start, int targetHours});
+
+/// The running fast, if any.
+Fast? currentFast(Database user) => [
+      for (final r in user.select('SELECT * FROM fasts WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1'))
+        (id: r['id'] as int, start: DateTime.fromMillisecondsSinceEpoch(r['started_at'] as int),
+            targetHours: r['target_hours'] as int)
+    ].firstOrNull;
+
+/// Starts now, or at the last meal ("I stopped eating at 20:00").
+void startFast(Database user, DateTime start, int targetHours) {
+  user.execute('UPDATE fasts SET ended_at = ? WHERE ended_at IS NULL', [start.millisecondsSinceEpoch]);
+  user.execute('INSERT INTO fasts (started_at, target_hours) VALUES (?, ?)', [start.millisecondsSinceEpoch, targetHours]);
+}
+
+void endFast(Database user, DateTime at) =>
+    user.execute('UPDATE fasts SET ended_at = ? WHERE ended_at IS NULL', [at.millisecondsSinceEpoch]);
+
+/// When the user last logged food; null = never.
+DateTime? lastMealAt(Database user) {
+  final at = user.select('SELECT MAX(eaten_at) AS at FROM meal_log').single['at'] as int?;
+  return at == null ? null : DateTime.fromMillisecondsSinceEpoch(at);
+}

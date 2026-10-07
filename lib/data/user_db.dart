@@ -115,6 +115,22 @@ const userDbMigrations = <String>[
     rated_at  INTEGER NOT NULL
   );
   ''',
+  // v7: water, fasting, and per-profile preferences (water goal, fasting on).
+  '''
+  CREATE TABLE water_log (
+    id       INTEGER PRIMARY KEY,
+    drunk_at INTEGER NOT NULL,
+    ml       REAL NOT NULL CHECK (ml > 0 AND ml <= 5000)
+  );
+  CREATE INDEX water_log_drunk_at ON water_log (drunk_at);
+  CREATE TABLE fasts (
+    id           INTEGER PRIMARY KEY,
+    started_at   INTEGER NOT NULL,
+    ended_at     INTEGER,           -- NULL = running
+    target_hours INTEGER NOT NULL CHECK (target_hours BETWEEN 8 AND 72)
+  );
+  CREATE TABLE prefs (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  ''',
 ];
 
 Database openUserDb(String path) {

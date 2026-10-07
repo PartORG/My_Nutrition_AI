@@ -244,6 +244,36 @@ void main() {
       expect(totalsOn(user, now)['kcal']!.round(), 865);
     });
 
+    test('water: "2 glasses of water" is a water card, not food; goal from weight', () {
+      expect(waterMl('2 glasses of water'), 500);
+      expect(waterMl('500 ml water'), 500);
+      expect(waterMl('a bottle of sparkling water'), 500);
+      expect(waterMl('1.5 l water'), 1500);
+      expect(waterMl('water'), 250);
+      expect(waterMl('water and a banana'), isNull);
+      final r = tools.route('I drank 2 glasses of water')!;
+      expect(confirmOf(r).lines, ['Water · 500 ml']);
+      confirmOf(r).apply();
+      expect(waterOn(user, now), 500);
+      undoWater(user, now);
+      expect(waterOn(user, now), 0);
+      expect(waterGoal(user), 2000);
+      setPref(user, 'water_goal_ml', '2500');
+      expect(waterGoal(user), 2500);
+    });
+
+    test('fasting: start since the last meal, one running fast, end', () {
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      tools.logFood(egg, 50, 'dinner');
+      expect(lastMealAt(user), now);
+      startFast(user, lastMealAt(user)!, 16);
+      startFast(user, now.add(const Duration(hours: 1)), 14); // a second start ends the first
+      expect(user.select('SELECT COUNT(*) AS n FROM fasts WHERE ended_at IS NULL').single['n'], 1);
+      expect(currentFast(user)!.targetHours, 14);
+      endFast(user, now.add(const Duration(hours: 15)));
+      expect(currentFast(user), isNull);
+    });
+
     test('unknown food is reported, known ones still logged', () {
       expect(tools.run('log_meal', {'items': 'unicorn steak'}).forModel['error'], isNotNull);
       final r = tools.run('log_meal', {'items': 'banana, unicorn steak'});

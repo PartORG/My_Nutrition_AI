@@ -985,6 +985,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String waterLine(int ml, int goal) {
+    return 'Water $ml / $goal ml';
+  }
+
+  @override
+  String get waterAddGlass => 'Add a glass (250 ml)';
+
+  @override
+  String get waterUndo => 'Undo the last glass';
+
+  @override
+  String get waterGoal => 'Daily water goal';
+
+  @override
+  String get fasting => 'Fasting';
+
+  @override
+  String fastingLine(int h, int m, int target) {
+    return 'Fasting $h h $m min of $target h';
+  }
+
+  @override
+  String get fastStart => 'Start now';
+
+  @override
+  String fastSinceMeal(String time) {
+    return 'Since last meal ($time)';
+  }
+
+  @override
+  String get fastEnd => 'End fast';
+
+  @override
+  String get fastDone => 'Goal reached. End the fast whenever you eat.';
+
+  @override
+  String get fastingSwitch => 'Fasting timer';
+
+  @override
+  String get fastingCaution =>
+      'Not advised in pregnancy, with an eating disorder, or with diabetes treated with insulin or sulfonylureas. Ask your doctor first.';
+
+  @override
   String get widgetKcalTitle => 'Calories on the home-screen widget';
 
   @override

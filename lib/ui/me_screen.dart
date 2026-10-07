@@ -92,6 +92,37 @@ class MeScreen extends ConsumerWidget {
             ),
           ),
           _RemindersCard(data: data),
+          Card(
+            child: Column(children: [
+              ListTile(
+                leading: Icon(Icons.water_drop_outlined, color: context.colors.primary),
+                title: Text(l.waterGoal),
+                trailing: Text('${waterGoal(data.user).round()} ml'),
+                onTap: () async {
+                  // null = cancelled, -1 = back to the computed goal.
+                  final ml = await showDialog<double>(
+                      context: context,
+                      builder: (_) => _TargetDialog(title: l.waterGoal, initial: waterGoal(data.user)));
+                  if (ml == null) return;
+                  setPref(data.user, 'water_goal_ml', ml < 0 ? '' : '${ml.clamp(500, 6000)}');
+                  data.changed();
+                },
+              ),
+              // Not offered under 18; the caution stays visible next to the switch.
+              if (adult)
+                SwitchListTile(
+                  secondary: Icon(Icons.timer_outlined, color: context.colors.primary),
+                  title: Text(l.fastingSwitch),
+                  subtitle: Text(l.fastingCaution),
+                  value: pref(data.user, 'fasting') == '1',
+                  onChanged: (on) {
+                    setPref(data.user, 'fasting', on ? '1' : '0');
+                    if (!on) endFast(data.user, DateTime.now());
+                    data.changed();
+                  },
+                ),
+            ]),
+          ),
           if (llmChoices().length > 1) const AiModelCard(),
           const _AppearanceCard(),
           // Visible without the PIN, so only on a single-profile phone, and off until the owner says so.
