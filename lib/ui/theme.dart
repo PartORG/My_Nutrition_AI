@@ -1,5 +1,5 @@
 // Reused from NutriAI (nutrition_ai_assistent/lib/theme/app_theme.dart).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The light palette's values (and the seed). Widgets use `context.colors`, which follows the theme.
 class AppColors {

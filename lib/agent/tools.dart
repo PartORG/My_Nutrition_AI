@@ -1,4 +1,4 @@
-import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 
 const _languages = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr': 'French'};
 

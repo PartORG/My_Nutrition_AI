@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' show InferenceModel;
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart' show InferenceModel;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agent/agent_tools.dart';
@@ -92,7 +92,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
           enableAudio: false, imageFormatGroup: ImageFormatGroup.yuv420);
       await cam.initialize();
       await cam.startImageStream((img) => _frame = img);
-      if (!mounted) return cam.dispose();
+      if (!mounted) return await cam.dispose();
       setState(() => _cam = cam);
       _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
         if (_live) _detect();

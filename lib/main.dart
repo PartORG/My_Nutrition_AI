@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +12,10 @@ import 'l10n/app_localizations.dart';
 import 'ui/home_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
+
+/// The generated [AppLocalizations.localizationsDelegates] register flutter_localizations'
+/// Material strings; material_ui widgets need material_ui's own.
+const appLocalizationsDelegates = [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates];
 
 Future<void> main() async {
   // The doctor report embeds Noto Sans; OFL asks for its licence to ship along.
@@ -48,7 +52,7 @@ class MyFoodMindApp extends ConsumerWidget {
           Intl.defaultLocale = Localizations.localeOf(context).toLanguageTag();
           return child!;
         },
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: const AppGate(),
       ));

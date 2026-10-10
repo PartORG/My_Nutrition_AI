@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/data/migrate.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
@@ -50,7 +51,7 @@ void main() {
     expect(model.opens.length, 1);
 
     await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: MemoryScreen(agent: agent),
     ));

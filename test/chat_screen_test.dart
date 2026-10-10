@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/data/migrate.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
@@ -44,7 +45,7 @@ void main() {
     );
 
     await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: ChatScreen(agent: agent)),
     ));
@@ -131,7 +132,7 @@ void main() {
     tester.view.devicePixelRatio = 2.5;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: ChatScreen(agent: agent)),
     ));

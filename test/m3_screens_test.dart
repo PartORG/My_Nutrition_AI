@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/app_state.dart';
@@ -44,7 +45,7 @@ void main() {
         agentProvider.overrideWith((ref) => Completer<Agent>().future), // model "still loading"
       ],
       child: MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: home,
       ),

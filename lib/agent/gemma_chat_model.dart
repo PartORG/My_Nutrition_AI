@@ -1,9 +1,9 @@
-import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 
 import 'chat_model.dart';
 import 'tools.dart';
 
-/// [ChatModel] on Gemma 4 E2B via flutter_gemma (native tool calling, M0).
+/// [ChatModel] on Gemma 4 E2B via flutter_edge_ai (native tool calling, M0).
 class GemmaChatModel implements ChatModel {
   GemmaChatModel(this.model);
   final InferenceModel model;
@@ -42,7 +42,7 @@ class _GemmaSession implements ChatSession {
     yield* _generate();
   }
 
-  // flutter_gemma stages chunks until the next generate, which sends the result as text
+  // flutter_edge_ai stages chunks until the next generate, which sends the result as text
   // ahead of the user's message; a model-role reply can't be added between turns.
   @override
   Future<void> stageToolResult(String tool, Map<String, Object?> result) =>

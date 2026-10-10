@@ -6,9 +6,9 @@
 //     --dart-define=MODEL_PATH=.../gemma-4-E2B-it.litertlm \
 //     --dart-define=EMBEDDER_PATH=.../embeddinggemma-300M_seq512.tflite \
 //     --dart-define=TOKENIZER_PATH=.../embeddinggemma_sentencepiece.model
-import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
-import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
+import 'package:flutter_edge_ai_embeddings/flutter_edge_ai_embeddings.dart';
+import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:myfoodmind/agent/tools.dart';
@@ -58,25 +58,25 @@ void main() {
     }
 
     final rss0 = rssMb();
-    await FlutterGemma.initialize(
+    await FlutterEdgeAi.initialize(
       inferenceEngines: [LiteRtLmEngine()],
       embeddingBackends: [LiteRtEmbeddingBackend()],
       embeddingTokenizers: [GemmaEmbeddingTokenizers()],
     );
 
-    await FlutterGemma.installEmbedder()
+    await FlutterEdgeAi.installEmbedder()
         .modelFromFile(_embedder)
         .tokenizerFromFile(_tokenizer)
         .install();
-    final embedder = await FlutterGemma.getActiveEmbedder(
+    final embedder = await FlutterEdgeAi.getActiveEmbedder(
         preferredBackend: PreferredBackend.values.byName(_embedBackend));
     out.writeln('embedder on ${embedder.activeBackend}');
     out.writeln('embedder ready: ${lap()}ms, RSS ${rssMb()}MB');
 
-    await FlutterGemma.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm)
+    await FlutterEdgeAi.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm)
         .fromFile(_model)
         .install();
-    final model = await FlutterGemma.getActiveModel(
+    final model = await FlutterEdgeAi.getActiveModel(
       maxTokens: 4096,
       preferredBackend: PreferredBackend.values.byName(_backend),
     );

@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
@@ -120,7 +121,7 @@ void main() {
             captureProvider.overrideWithValue((context, mode) async => capture(mode)),
           ],
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ChatScreen(agent: agent)),
           ),

@@ -8,8 +8,8 @@
 // the native log. --no-uninstall keeps the app, and the models pushed into its folder.
 import 'dart:io';
 
-import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
+import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:myfoodmind/agent/crisis.dart';
@@ -33,15 +33,15 @@ void main() {
     final type = ModelType.values.byName(_type);
     final rssBefore = rssMb();
     if (const bool.fromEnvironment('VERBOSE')) {
-      FlutterGemma.logLevel = GemmaLogLevel.verbose;
+      FlutterEdgeAi.logLevel = EdgeAiLogLevel.verbose;
     }
 
-    await FlutterGemma.initialize(inferenceEngines: [LiteRtLmEngine()]);
+    await FlutterEdgeAi.initialize(inferenceEngines: [LiteRtLmEngine()]);
     final loadWatch = Stopwatch()..start();
-    await FlutterGemma.installModel(modelType: type, fileType: ModelFileType.litertlm)
+    await FlutterEdgeAi.installModel(modelType: type, fileType: ModelFileType.litertlm)
         .fromFile(_path)
         .install();
-    final model = await FlutterGemma.getActiveModel(
+    final model = await FlutterEdgeAi.getActiveModel(
       maxTokens: 2048,
       preferredBackend: PreferredBackend.values.byName(_backend),
     );

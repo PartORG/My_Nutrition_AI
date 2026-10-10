@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart' hide Database;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show ThemeMode, WidgetsBinding, basicLocaleListResolution;
+import 'package:material_ui/material_ui.dart' show ThemeMode, WidgetsBinding, basicLocaleListResolution;
 import 'package:flutter/services.dart';
-import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
-import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
+import 'package:flutter_edge_ai/flutter_edge_ai.dart';
+import 'package:flutter_edge_ai_embeddings/flutter_edge_ai_embeddings.dart';
+import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
@@ -275,7 +275,7 @@ List<Llm> llmChoices() {
 /// The model the chat uses: the larger one the user downloaded, if this phone can run it.
 Future<Llm?> installedLlm() async {
   for (final m in llmChoices().reversed) {
-    if (await FlutterGemma.isModelInstalled(m.file)) return m;
+    if (await FlutterEdgeAi.isModelInstalled(m.file)) return m;
   }
   return null;
 }
@@ -288,14 +288,14 @@ const tokenizerAsset = 'assets/models/embeddinggemma_sentencepiece.model';
 /// The chat model isn't on the phone yet: the Chat tab offers the download.
 class LlmNotDownloaded implements Exception {}
 
-final _gemmaReadyProvider = FutureProvider<void>((ref) => FlutterGemma.initialize(
+final _gemmaReadyProvider = FutureProvider<void>((ref) => FlutterEdgeAi.initialize(
       inferenceEngines: [LiteRtLmEngine()],
       embeddingBackends: [LiteRtEmbeddingBackend()],
       embeddingTokenizers: [GemmaEmbeddingTokenizers()],
     ));
 
 InferenceInstallationBuilder _llmInstall() =>
-    FlutterGemma.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm);
+    FlutterEdgeAi.installModel(modelType: ModelType.gemma4, fileType: ModelFileType.litertlm);
 
 /// Loaded once per app run; first launch ~38 s (GPU setup), then ~3 s.
 /// Development: a file `adb push`ed into the external files dir's models/ wins
@@ -312,7 +312,7 @@ final llmProvider = FutureProvider<InferenceModel>((ref) async {
   } else if (installed != null && File(await _llmPath(installed)).existsSync()) {
     await _llmInstall().fromFile(await _llmPath(installed)).install();
   } else if (installed != null) {
-    // Installed by an older version through flutter_gemma's own downloader: no network, just activates it.
+    // Installed by an older version through the plugin's own downloader: no network, just activates it.
     await _llmInstall().fromNetwork(installed.url).install();
   } else {
     throw LlmNotDownloaded();
@@ -321,7 +321,7 @@ final llmProvider = FutureProvider<InferenceModel>((ref) async {
   // GPU, falling back to CPU inside the plugin. MTP (speculative decoding): up to 2.2x faster
   // answers on mobile GPUs, same output (LiteRT-LM model card).
   // ponytail: also on after a CPU fallback, where Google calls it slightly slower for free text.
-  final model = await FlutterGemma.getActiveModel(
+  final model = await FlutterEdgeAi.getActiveModel(
       maxTokens: llmContextTokens, preferredBackend: PreferredBackend.gpu, supportImage: true, maxNumImages: 1,
       enableSpeculativeDecoding: true);
   debugPrint('LLM running on ${model.activeBackend?.name ?? 'unknown'}');
@@ -348,7 +348,7 @@ class LlmDownload extends FileDownload {
     // its open file until the reload closes it.
     for (final other in [e2b, e4b]) {
       if (path.endsWith('/${other.file}')) continue;
-      if (await FlutterGemma.isModelInstalled(other.file)) await FlutterGemma.uninstallModel(other.file);
+      if (await FlutterEdgeAi.isModelInstalled(other.file)) await FlutterEdgeAi.uninstallModel(other.file);
       final f = File(await _llmPath(other)); // uninstall leaves files it didn't download itself
       if (f.existsSync()) f.deleteSync();
     }
@@ -362,8 +362,8 @@ Future<String> _llmPath(Llm m) =>
 
 final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
   await ref.watch(_gemmaReadyProvider.future);
-  await FlutterGemma.installEmbedder().modelFromAsset(embedderAsset).tokenizerFromAsset(tokenizerAsset).install();
-  return FlutterGemma.getActiveEmbedder();
+  await FlutterEdgeAi.installEmbedder().modelFromAsset(embedderAsset).tokenizerFromAsset(tokenizerAsset).install();
+  return FlutterEdgeAi.getActiveEmbedder();
 });
 
 /// The unlocked profile's databases, open as soon as the PIN is accepted so

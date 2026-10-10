@@ -93,7 +93,7 @@ version, then re-upload the file to the `build-inputs` release.
 
 ## Privacy
 
-- All inference runs on the device through [`flutter_gemma`](https://pub.dev/packages/flutter_gemma)
+- All inference runs on the device through [`flutter_edge_ai`](https://pub.dev/packages/flutter_edge_ai)
   (LiteRT-LM, GPU with a CPU fallback).
 - Personal data lives in per-profile SQLite databases on the phone. Android Auto Backup includes
   only the profile data, never the models or caches.
@@ -106,7 +106,7 @@ version, then re-upload the file to the `build-inputs` release.
 |---|---|
 | Device | Android 10 (API 29) or later, arm64, **6 GB RAM or more** |
 | Chat model | Gemma 4 E2B (2.6 GB), downloaded in the app on first use; Gemma 4 E4B is optional on 8 GB phones |
-| Build | Flutter 3.44 (stable), JDK 17, Android SDK |
+| Build | Flutter 3.47 (stable), Dart 3.13, JDK 17, Android SDK |
 
 ## Getting started
 

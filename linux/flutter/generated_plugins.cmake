@@ -4,7 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
-  flutter_gemma
+  flutter_edge_ai
   flutter_timezone
   url_launcher_linux
 )
