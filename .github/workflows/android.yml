@@ -3,8 +3,8 @@
 # `version:` in pubspec.yaml to ship a new one.
 #
 # One-time setup:
-#   * Release "build-inputs" holding the git-ignored assets (repo must stay private:
-#     Gemma terms and data licences):
+#   * Release "build-inputs" holding the git-ignored assets. Public: Gemma's terms allow
+#     redistribution with its notice (assets/licenses/models.txt ships in the APK):
 #       gh release create build-inputs --prerelease --title "Build inputs (not an app release)" \
 #         assets/nutri.db assets/models/embeddinggemma-300M_seq256.tflite \
 #         assets/models/embeddinggemma_sentencepiece.model
