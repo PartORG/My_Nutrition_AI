@@ -22,11 +22,15 @@ accounts, no cloud inference and no analytics SDK.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
   (lose, maintain or gain), with a manual override for every value. Micronutrients: calcium, iron,
   magnesium, potassium and vitamins C, D and B12.
-- **Dashboards:** Today, Week (with a weekly review) and Month views, a weight trend, water
-  tracking, fasting, streaks and an Android home-screen widget.
+- **Dashboards:** Today, Week (with a weekly review) and Month views, a weight card on Today and
+  Me (latest weight, 30-day change, quick log), water tracking, fasting, streaks and an Android
+  home-screen widget.
 - **Meal plan and shopping list:** plan the week and turn the plan into a shopping list.
 - **Allergies and conditions:** recipes containing your allergens are always filtered out.
-  Condition rules (for example diabetes) only ever *tighten* daily limits.
+  Conditions (type 2 diabetes, high blood pressure, gout, ALS, multiple sclerosis) come from
+  published clinical guidelines: they cap daily limits (they only ever *tighten*), hide recipes
+  with foods the guidelines say to avoid, and back the assistant's health answers with cited
+  passages. See [Medical data](#medical-data).
 - **Health journal:** symptoms and readings on a timeline, plus a PDF/CSV export for your doctor.
   The app records data and never interprets it.
 - **Camera:** photo and live modes. Gemma 4 vision names the foods and estimates portions, and
@@ -36,7 +40,11 @@ accounts, no cloud inference and no analytics SDK.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
   edit or delete everything it knows about you.
 - **Multiple profiles:** each profile is protected by a PIN or biometrics and has its own database.
-- **Languages:** English, Ukrainian, German and French.
+- **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
+  follow the phone). The assistant answers in the chosen language.
+- **Safety:** a medical disclaimer under the chat input, on every health-information card and in
+  Settings → About. The assistant never diagnoses or advises on medicines, and a keyword check
+  shows helpline information before the model runs when a message suggests a crisis.
 
 ### Plans
 
@@ -49,6 +57,39 @@ accounts, no cloud inference and no analytics SDK.
 
 One subscription per phone unlocks all of its profiles. Billing runs through RevenueCat (see
 [`docs/BILLING_SETUP.md`](docs/BILLING_SETUP.md)).
+
+## Medical data
+
+The medical part of `nutri.db` is curated by hand in [`db/medical.sql`](db/medical.sql) from
+clinical guidelines (ADA Standards of Care 2026, Diabetes Canada, Diabetes UK, NICE NG17/18/28/42/
+69/136/219/220, ESC 2024 hypertension, Hypertension Canada 2025, NHLBI DASH, ACR 2012/2020 gout,
+ESPEN 2018 neurology, EAN 2024 ALS, MND Association, MS Society, HealthLinkBC, AED, RCPsych MEED,
+US and Canadian dietary guidelines). Every row names its guideline; passages are paraphrased, not
+copied.
+
+| Condition | Daily limits | Recipes hidden (foods to avoid) |
+|---|---|---|
+| Type 2 diabetes | sodium ≤ 2,300 mg, sugar ≤ 50 g | sugar-sweetened drinks |
+| High blood pressure | sodium ≤ 2,000 mg, sugar ≤ 50 g | – |
+| Gout | – | organ meats, sugar-sweetened drinks |
+| ALS | – (needs *more* energy: covered in passages) | – |
+| Multiple sclerosis | – | – |
+
+Only foods a guideline says to **avoid** are hidden; foods it says to *limit* are explained in the
+passages instead. 51 passages cover these conditions plus eating disorders (refeeding risk, warning
+signs) and general healthy eating; the assistant's `condition_info` tool shows the best two with
+their source. The guideline PDFs themselves are not in this repository (publisher copyright).
+
+To change the medical data, edit `db/medical.sql` and apply it to an existing database in under a
+second (the full build applies it too):
+
+```bash
+python3 tool/build_medical.py assets/nutri.db
+```
+
+When the data changes, bump `data_version` in `db/medical.sql` **and** `nutriDataVersion` in
+`lib/data/nutri_db.dart`: phones replace their installed `nutri.db` once when the app expects a newer
+version, then re-upload the file to the `build-inputs` release.
 
 ## Privacy
 
@@ -79,7 +120,7 @@ Two large assets are git-ignored and have to be in place before a build:
 
 | File | Source |
 |---|---|
-| `assets/nutri.db` (≈290 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db`, or downloaded from the [`build-inputs`](https://github.com/PartORG/myfoodmind/releases/tag/build-inputs) release |
+| `assets/nutri.db` (≈290 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/myfoodmind/releases/tag/build-inputs) release |
 | `assets/models/embeddinggemma-300M_seq256.tflite`, `assets/models/embeddinggemma_sentencepiece.model` | EmbeddingGemma (Gemma terms, gated on Hugging Face), or the `build-inputs` release |
 
 ```bash
@@ -119,10 +160,13 @@ release builds fall back to the debug key. For the Play Store steps, see
 ```bash
 flutter test                                    # host tests (fake model, test/nutri_test.db)
 flutter test integration_test/agent_eval_test.dart   # on a phone: tool-calling accuracy of the real model
+cd tool && uv run --with pytest --with duckdb --with openpyxl pytest   # nutri.db builders and medical data
 ```
 
 The host tests cover the agent and its tools, memory, goal formulas, migrations, billing tiers and
 the camera review flow. They also run every main screen at 200 % text size in all four languages.
+When `assets/nutri.db` is present, `test/real_nutri_db_test.dart` checks the real database too,
+including its medical data and `data_version`.
 
 ## CI/CD
 
@@ -133,7 +177,8 @@ arm64 APK and publishes it as a GitHub Release. **To ship a new version, bump `v
 
 Repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
 `ANDROID_KEY_PASSWORD`. The large assets come from the `build-inputs` release. To change one, run
-`gh release upload build-inputs <file> --clobber`.
+`gh release upload build-inputs <file> --clobber`. The build fails if that `nutri.db` has an older
+`data_version` than the app's `nutriDataVersion`, so stale data never ships.
 
 ## Project structure
 
@@ -145,7 +190,8 @@ lib/
   ui/         screens (Today, Chat, Log, Me, camera, settings, …)
   vision/     EfficientDet detector and Gemma photo naming
   l10n/       .arb translations (en, uk, de, fr) and generated localizations
-tool/         Python builders for nutri.db and the products database
+db/           nutri.db schema, test fixture data and the curated medical data (medical.sql)
+tool/         Python builders for nutri.db (incl. build_medical.py) and the products database
 test/         host tests
 integration_test/  on-device evaluation and latency tests
 docs/         plan and decisions, data sources, billing and Play release guides
@@ -157,8 +203,13 @@ site/         privacy policy and terms (GitHub Pages)
 
 ## Disclaimer
 
-MyFoodMind offers general nutrition suggestions. It is not a medical device and does not diagnose
-or treat any condition. Talk to your doctor before changing your diet.
+MyFoodMind and its AI assistant give general information about food and nutrition. They are not a
+medical device and do not diagnose, treat, cure or prevent any disease. Nothing in the app,
+including the assistant's answers, condition limits and health information, replaces advice from a
+doctor, dietitian or other qualified health professional, and the on-device AI can make mistakes.
+Talk to your doctor before changing your diet, medicines or treatment, especially with a medical
+condition, in pregnancy, or with a current or past eating disorder. In an emergency, call your local
+emergency number.
 
 ## License
 
