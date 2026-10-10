@@ -14,6 +14,18 @@ typedef Embed = Future<List<List<double>>> Function(List<String> texts);
 
 typedef Recall = ({DateTime at, String kind, String text, double score});
 
+/// The message points at the past, so related past events are worth looking up.
+/// Most messages don't, and the lookup's embedding costs ~0.8 s before the model can start.
+bool refersToPast(String text) => _pastWords.hasMatch(text);
+
+// ponytail: keywords in the app's four languages; a miss only means no "related past events" line.
+final _pastWords = RegExp(
+    r"\b(?:last (?:time|week|month|night)|yesterday|before|ago|earlier|previous(?:ly)?|again|remember|"
+    r"usual(?:ly)?|used to|that (?:recipe|dish|meal|one)|when did|gestern|letzte[ns]? (?:mal|woche)|früher|"
+    r"vorher|wieder|erinnerst|neulich|hier|avant|la dernière fois|encore|déjà|souviens|d'habitude)\b|"
+    r"вчора|минулого|раніше|знову|пам['’]ятаєш|зазвичай|тому назад|того разу",
+    caseSensitive: false);
+
 /// `vectors/<id>.db` — episodic memory index. Not backed up: everything in it
 /// is derived from user.db and [Memory.backfill] rebuilds it.
 const vectorsDbMigrations = <String>[
@@ -168,7 +180,7 @@ class Memory {
           '(${today['n']} items).',
       _goalsLine(now, today),
       'Water today: ${waterOn(user, now).round()} of ${waterGoal(user).round()} ml.',
-      'Allergies: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
+      'Allergies and diet: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
       ?_conditionsLine(),
       if (facts.isNotEmpty) 'About the user: ${facts.join('; ')}.',
       ?_habits(now),

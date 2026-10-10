@@ -447,7 +447,7 @@ abstract class AppLocalizations {
   /// No description provided for @allergiesSection.
   ///
   /// In en, this message translates to:
-  /// **'Allergies'**
+  /// **'Allergies and diet'**
   String get allergiesSection;
 
   /// No description provided for @allergiesEmpty.
@@ -858,11 +858,29 @@ abstract class AppLocalizations {
   /// **'For people under 18 these formulas don\'t apply. Set targets with your pediatrician below.'**
   String get under18;
 
-  /// No description provided for @targetsTitle.
+  /// No description provided for @aboutMe.
   ///
   /// In en, this message translates to:
-  /// **'Daily targets'**
-  String get targetsTitle;
+  /// **'About me'**
+  String get aboutMe;
+
+  /// No description provided for @sexShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex'**
+  String get sexShort;
+
+  /// No description provided for @height.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get height;
+
+  /// No description provided for @weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get weight;
 
   /// No description provided for @targetsNone.
   ///
@@ -1287,7 +1305,7 @@ abstract class AppLocalizations {
   /// No description provided for @cautionAllergy.
   ///
   /// In en, this message translates to:
-  /// **'Contains {food}, on your allergy list ({allergen})'**
+  /// **'Contains {food}, which your allergies or diet exclude ({allergen})'**
   String cautionAllergy(String food, String allergen);
 
   /// No description provided for @cautionCondition.
@@ -1635,7 +1653,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraNamingFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t recognize the food. Try again.'**
+  /// **'AI recognition failed: showing quick detection instead. Check the items.'**
   String get cameraNamingFailed;
 
   /// No description provided for @cameraUseFound.
@@ -1781,6 +1799,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove allergy'**
   String get cardRemoveAllergy;
+
+  /// No description provided for @cardAddDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add diet'**
+  String get cardAddDiet;
+
+  /// No description provided for @cardRemoveDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove diet'**
+  String get cardRemoveDiet;
+
+  /// No description provided for @captionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Check it and tap Save.'**
+  String get captionConfirm;
+
+  /// No description provided for @captionIdeas.
+  ///
+  /// In en, this message translates to:
+  /// **'Here are some ideas. Tap one to see the recipe.'**
+  String get captionIdeas;
+
+  /// No description provided for @captionIdeasAvoiding.
+  ///
+  /// In en, this message translates to:
+  /// **'Careful: you\'re allergic to or avoid {foods}, so I left it out. Here are recipes without it; tap one to see it.'**
+  String captionIdeasAvoiding(String foods);
+
+  /// No description provided for @captionRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s the recipe.'**
+  String get captionRecipe;
+
+  /// No description provided for @captionNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Here are the numbers.'**
+  String get captionNumbers;
+
+  /// No description provided for @captionCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the button to open the camera.'**
+  String get captionCamera;
 
   /// No description provided for @cardLogSymptom.
   ///
@@ -2319,7 +2385,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiModelLargeHint.
   ///
   /// In en, this message translates to:
-  /// **'Understands more, answers about 2-3x slower. For phones with 8 GB RAM.'**
+  /// **'Understands more, answers about 2-3x slower. For phones with 12 GB RAM.'**
   String get aiModelLargeHint;
 
   /// No description provided for @aiModelSwitch.
@@ -2352,6 +2418,78 @@ abstract class AppLocalizations {
   /// **'The download stopped. Check your connection and free space, then try again; it continues where it stopped.'**
   String get aiDownloadFailed;
 
+  /// No description provided for @downloadNoWifiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on Wi-Fi'**
+  String get downloadNoWifiTitle;
+
+  /// No description provided for @downloadNoWifiBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not connected to Wi-Fi. This download is {mb} MB; over mobile data it can use up your data plan or cost money.'**
+  String downloadNoWifiBody(int mb);
+
+  /// No description provided for @downloadWaitWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for Wi-Fi'**
+  String get downloadWaitWifi;
+
+  /// No description provided for @downloadUseMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Use mobile data'**
+  String get downloadUseMobile;
+
+  /// No description provided for @downloadOnMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile data allowed: this download can use your data plan.'**
+  String get downloadOnMobile;
+
+  /// No description provided for @downloadWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get downloadWaitingWifi;
+
+  /// No description provided for @downloadWaitingNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a connection'**
+  String get downloadWaitingNetwork;
+
+  /// No description provided for @downloadRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost; it continues when it\'s back'**
+  String get downloadRetrying;
+
+  /// No description provided for @downloadPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get downloadPaused;
+
+  /// No description provided for @downloadInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing…'**
+  String get downloadInstalling;
+
+  /// No description provided for @downloadPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get downloadPause;
+
+  /// No description provided for @downloadResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get downloadResume;
+
   /// No description provided for @privacyPolicy.
   ///
   /// In en, this message translates to:
@@ -2369,6 +2507,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Licenses and AI models'**
   String get licenses;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @drawerFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get drawerFood;
+
+  /// No description provided for @drawerAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get drawerAssistant;
+
+  /// No description provided for @shoppingListNav.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping list'**
+  String get shoppingListNav;
+
+  /// No description provided for @healthJournalNav.
+  ///
+  /// In en, this message translates to:
+  /// **'Health journal and report'**
+  String get healthJournalNav;
+
+  /// No description provided for @settingsAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI and data'**
+  String get settingsAi;
+
+  /// No description provided for @settingsTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking'**
+  String get settingsTracking;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and security'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAbout;
+
+  /// No description provided for @settingsDanger.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get settingsDanger;
+
+  /// No description provided for @deleteThisProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this profile'**
+  String get deleteThisProfile;
+
+  /// No description provided for @deleteThisProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the profile and all its meals, journal and chat history from this phone. This can\'t be undone.'**
+  String get deleteThisProfileBody;
 }
 
 class _AppLocalizationsDelegate

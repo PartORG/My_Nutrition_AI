@@ -13,7 +13,7 @@ import 'ui/home_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
 
-void main() {
+Future<void> main() async {
   // The doctor report embeds Noto Sans; OFL asks for its licence to ship along.
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(['Noto Sans'], await rootBundle.loadString('assets/fonts/OFL.txt'));
@@ -25,6 +25,8 @@ void main() {
         'License (ODbL) v1.0: https://opendatacommons.org/licenses/odbl/1-0/. Individual contents under the '
         'Database Contents License.');
   });
+  WidgetsFlutterBinding.ensureInitialized();
+  await trackDownloads();
   runApp(const ProviderScope(child: MyFoodMindApp()));
 }
 
@@ -105,10 +107,20 @@ class _AppGateState extends ConsumerState<AppGate> {
       );
     }
     return switch (ref.watch(appDirProvider)) {
-      AsyncData() => switch (ref.watch(unlockedProvider)) {
-          null => const ProfilesScreen(),
-          final profile => HomeScreen(name: profile.name),
-        },
+      // Unlocking fades and grows the home screen in; locking fades it out.
+      AsyncData() => AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Durations.medium4,
+          switchInCurve: Easing.emphasizedDecelerate,
+          switchOutCurve: Easing.emphasizedAccelerate,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: Tween(begin: .96, end: 1.0).animate(animation), child: child),
+          ),
+          child: switch (ref.watch(unlockedProvider)) {
+            null => const ProfilesScreen(key: ValueKey('locked')),
+            final profile => HomeScreen(key: ValueKey(profile.id), name: profile.name),
+          },
+        ),
       AsyncError(:final error) => Scaffold(body: Center(child: Text('$error'))),
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };

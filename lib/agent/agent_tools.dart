@@ -1,7 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../data/conditions.dart';
-import '../data/diary.dart' show logWater;
+import '../data/diary.dart' show logWater, pref, setPref;
 import '../data/goals.dart';
 import '../data/journal.dart';
 
@@ -24,8 +24,11 @@ typedef Passage = ({String source, String text});
 sealed class AgentCard {}
 
 class RecipeListCard extends AgentCard {
-  RecipeListCard(this.recipes);
+  RecipeListCard(this.recipes, {this.avoided = const []});
   final List<RecipeSummary> recipes;
+
+  /// What the user asked for but can't have (allergy or diet), left out of these recipes.
+  final List<String> avoided;
 }
 
 class RecipeCard extends AgentCard {
@@ -129,7 +132,9 @@ class AgentTools {
   final DateTime Function() _now;
 
   /// Recipe ids of the last list shown, so "recipe 2" / "the first one" resolve.
-  List<int> _lastRecipes = [];
+  /// Kept in user.db: after a restart the replayed chat still shows that list.
+  List<int> get _lastRecipes => [for (final id in (pref(user, 'last_recipes') ?? '').split(',')) ?int.tryParse(id)];
+  set _lastRecipes(List<int> ids) => setPref(user, 'last_recipes', ids.join(','));
   int? _lastShown;
 
   /// Every recipe suggested since the app started, so asking again shows new ones.
@@ -146,22 +151,30 @@ class AgentTools {
     String arg(String k) => '${args[k] ?? ''}'.trim();
     final remove = args['remove'] == true || args['remove'] == 'true';
     return switch (name) {
-      'set_allergen' when !remove && said.isNotEmpty && !_allergyWords.hasMatch(said) => _ateWords.hasMatch(said)
+      'set_allergen' when !remove && said.isNotEmpty && !_lasting(said) => _ateWords.hasMatch(said)
           ? _logMeal(said, '')
-          : ToolResult.error('the user did not say they are allergic or intolerant, so no allergy was added. '
-              'Never add an allergy unless they say so'),
+          : ToolResult.error('the user did not state a lasting allergy, intolerance or diet, so nothing was added. '
+              '"Vegan tonight" or "vegetarian dinner ideas" is a recipe wish: search recipes instead'),
+      // "Vegan tonight" is not a fact about the user; "I'm vegan" is a diet, which filters recipes.
+      'remember_fact' when _dietWords.hasMatch(arg('fact')) && _oneOff.hasMatch(said) =>
+        ToolResult.error('a wish for one meal is not a lasting fact, so nothing was remembered; help with the request'),
+      'remember_fact' when _dietStatement.hasMatch(said) && _dietAllergens.containsKey(normalizeAllergen(arg('fact'))) =>
+        _setAllergen(normalizeAllergen(arg('fact')), false),
       'search_recipes' when _ateWords.hasMatch(said) && !_recipeWords.hasMatch(said) => _logMeal(said, ''),
-      'search_recipes' => _searchRecipes(arg('query'), arg('ingredients')),
-      'show_recipe' => _showRecipe(arg('recipe')),
-      'save_recipe' => _saveRecipe(arg('recipe')),
-      'rate_recipe' => _rateRecipe(arg('recipe'), int.tryParse(arg('stars'))),
+      'search_recipes' => _searchRecipes(arg('query'), arg('ingredients'), said),
+      // Anything but save/rate shows: the one action that writes nothing.
+      'recipe' => switch (arg('action')) {
+          'save' => _saveRecipe(arg('recipe')),
+          'rate' => _rateRecipe(arg('recipe'), int.tryParse(arg('stars'))),
+          _ => _showRecipe(arg('recipe')),
+        },
       'lookup_nutrition' => _lookupNutrition(arg('food')),
       'nutrition_status' => _nutritionStatus(arg('period')),
       'log_meal' => _logMeal(arg('items'), arg('meal_type')),
       'remember_fact' => _remember(arg('fact')),
       'set_allergen' => _setAllergen(arg('allergen'), remove),
-      'log_symptom' => _logSymptom(arg('symptom'), int.tryParse(arg('severity'))),
-      'log_reading' => _logReading(arg('kind'), arg('value')),
+      'log_health' when arg('kind') == 'symptom' => _logSymptom(arg('value'), int.tryParse(arg('severity'))),
+      'log_health' => _logReading(arg('kind'), arg('value')),
       'condition_info' => _conditionInfo(arg('question')),
       'open_camera' => ToolResult({
           'status': 'a card with a camera button is shown; the user taps it (Pro plan). Nothing is logged '
@@ -175,8 +188,20 @@ class AgentTools {
   /// states an allergy ("I'm allergic to peanuts") gets its card at once, without
   /// the model (seconds faster, and it can't pick the wrong tool). Null = ask the model.
   ToolResult? route(String said) {
+    if (_statusAsk.hasMatch(said)) return _nutritionStatus(_weekWords.hasMatch(said) ? 'week' : 'today');
+    if (_recipeRef.firstMatch(said) case final m?) {
+      final id = _resolveRecipe(m[2]!);
+      if (id == null) return null; // no list to point into: the model asks which one
+      return _saveWords.hasMatch(m[1]!) ? _saveRecipeById(id) : showRecipeById(id);
+    }
+    // "Can you suggest good dinner recipes? Maybe with fish?": the search itself picks the food
+    // words out of the sentence, so fish is never lost on the way through the model.
+    if (_ideasAsk.hasMatch(said) && !_notIdeas.hasMatch(said)) {
+      final r = _searchRecipes(said, '', said);
+      return r.card == null ? null : r; // nothing found: the model asks what they'd like
+    }
     if (said.contains('?') || _recipeWords.hasMatch(said)) return null;
-    if (_allergyStatement.hasMatch(said)) {
+    if (_allergyStatement.hasMatch(said) || (_dietStatement.hasMatch(said) && !_oneOff.hasMatch(said))) {
       final allergen = normalizeAllergen(said);
       return _allergenNames.contains(allergen) ? _setAllergen(allergen, false) : null;
     }
@@ -195,22 +220,36 @@ class AgentTools {
 
   // ---- recipes ------------------------------------------------------------
 
-  ToolResult _searchRecipes(String query, String ingredients) {
-    final scores = <int, double>{};
-    // Each ingredient the user has counts double: using what's in the fridge matters most.
-    for (final item in _split(ingredients)) {
-      // Only foods some recipe uses: among tens of thousands of foods the best text match
-      // is often a branded product no recipe contains.
-      final foodIds = _ftsIds(nutri, 'foods_fts', item, limit: 3,
-          where: 'rowid IN (SELECT food_id FROM recipe_ingredients)');
-      if (foodIds.isEmpty) continue;
+  ToolResult _searchRecipes(String query, String ingredients, [String said = '']) {
+    var wanted = _wanted(query, ingredients);
+    // "More" / "other ideas" naming no food and no meal: the last ask again, so salmon and
+    // tomatoes aren't lost on the way through the model (the app never repeats a recipe).
+    if (_lastAsk case (final q, final i)
+        when wanted.isEmpty && _moreAsk.hasMatch('$query $said') && !_mealTypes.any('$query $said'.toLowerCase().contains)) {
+      (query, ingredients) = (q, i);
+      wanted = _wanted(query, ingredients);
+    }
+    _lastAsk = (query, ingredients);
+    // Asked for something the profile can't have ("peanut recipes", allergic to peanuts):
+    // it's left out, and the card says why instead of quietly showing other recipes.
+    final unsafeFoods = _unsafeFoods();
+    final avoided = {
+      for (final MapEntry(key: item, value: foods) in wanted.entries)
+        if (foods.every(unsafeFoods.contains)) _allergenNames.contains(normalizeAllergen(item)) ? normalizeAllergen(item) : item
+    };
+    wanted.removeWhere((_, foods) => foods.every(unsafeFoods.contains));
+    final has = <int, Set<String>>{};
+    for (final MapEntry(key: item, value: foods) in wanted.entries) {
       for (final r in nutri.select(
-          'SELECT DISTINCT recipe_id FROM recipe_ingredients WHERE food_id IN (${foodIds.join(',')})')) {
-        scores.update(r['recipe_id'] as int, (s) => s + 2, ifAbsent: () => 2);
+          'SELECT DISTINCT recipe_id FROM recipe_ingredients WHERE food_id IN (${foods.join(',')})')) {
+        (has[r['recipe_id'] as int] ??= {}).add(item);
       }
     }
-    for (final id in _ftsIds(nutri, 'recipes_fts', '$query $ingredients', limit: 60)) {
-      scores.update(id, (s) => s + 1, ifAbsent: () => 1);
+    // Every wanted ingredient a recipe has outranks any title match: beef, mustard and honey
+    // first, honey-mustard chicken after.
+    final scores = <int, double>{for (final e in has.entries) e.key: 10.0 * e.value.length};
+    for (final id in _ftsIds(nutri, 'recipes_fts', '$query $ingredients', limit: 200)) {
+      if (wanted.isEmpty || scores.containsKey(id)) scores.update(id, (s) => s + 1, ifAbsent: () => 1);
     }
     // Stars steer ideas: 4-5 rank higher, 1-2 are never suggested again.
     final stars = _ratings();
@@ -222,29 +261,105 @@ class AgentTools {
     var ranked = scores.keys.where((id) => !blocked.contains(id)).toList()
       ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
     // A vague ask ("something new for dinner") matches nothing: random ideas for the meal.
-    if (ranked.isEmpty && _split(ingredients).isEmpty) ranked = _randomRecipes(query, blocked);
+    // Everything asked for is ruled out: titles naming it ("peanut noodles, peanut-free") don't count either.
+    if (wanted.isEmpty && avoided.isNotEmpty) ranked = [];
+    if (ranked.isEmpty && (_split(ingredients).isEmpty || avoided.isNotEmpty)) ranked = _randomRecipes(query, blocked);
     final titles = {
       for (final r in nutri.select('SELECT id, title FROM recipes WHERE id IN (${ranked.join(',')})'))
         r['id'] as int: (r['title'] as String).toLowerCase().trim()
     };
     final seen = {..._suggestedTitles};
     final fresh = [for (final id in ranked) if (!_suggested.contains(id) && seen.add(titles[id]!)) id];
-    _lastRecipes = (fresh.isEmpty ? ranked : fresh).take(3).toList();
-    _suggested.addAll(_lastRecipes);
-    _suggestedTitles.addAll([for (final id in _lastRecipes) titles[id]!]);
-    if (_lastRecipes.isEmpty) {
-      return ToolResult({'recipes': [], 'note': 'no matching recipe in the database'});
+    final shown = (fresh.isEmpty ? ranked : fresh).take(5).toList();
+    _suggested.addAll(shown);
+    _suggestedTitles.addAll([for (final id in shown) titles[id]!]);
+    if (shown.isEmpty) {
+      return ToolResult({
+        'recipes': [],
+        'note': 'no matching recipe in the database',
+        if (avoided.isNotEmpty) 'avoided': 'the user is allergic to or avoids ${avoided.join(', ')}: say so',
+      });
     }
-    final list = [for (final id in _lastRecipes) _summary(id)];
+    _lastRecipes = shown;
+    final list = [for (final id in shown) _summary(id)];
     return ToolResult({
       'recipes': [
         for (final (i, r) in list.indexed)
-          '${i + 1}. ${r.title} (${r.kcal.round()} kcal per serving${r.minutes == null ? '' : ', ${r.minutes} min'})'
+          '${i + 1}. ${r.title} (${r.kcal.round()} kcal per serving${r.minutes == null ? '' : ', ${r.minutes} min'}'
+              '${_missing(wanted.keys, has[r.id])})'
       ],
       if (unsafe.isNotEmpty) 'note': 'recipes with the user\'s allergens or foods to avoid for their conditions were excluded',
+      if (avoided.isNotEmpty) 'avoided': 'the user is allergic to or avoids ${avoided.join(', ')}, so these recipes are without it',
       if (fresh.isEmpty) 'repeated': 'no new recipe matches; these were suggested before, so say so and ask for other ingredients',
-    }, RecipeListCard(list));
+    }, RecipeListCard(list, avoided: avoided.toList()));
   }
+
+  /// What the user wants in it: the ingredients the model passed, plus the food words of the
+  /// query ("dinner recipes with fish" -> fish), each with the recipe foods it names.
+  Map<String, Set<int>> _wanted(String query, String ingredients) {
+    final items = _split(ingredients).map((i) => i.toLowerCase()).toList();
+    return {
+      for (final item in [
+        ...items,
+        for (final w in _words(query))
+          if (!_notIngredients.contains(w) && int.tryParse(w) == null && !items.any((i) => i.contains(w))) w,
+      ])
+        if (_ingredientFoods(item) case final foods when foods.isNotEmpty) item: foods,
+    };
+  }
+
+  /// The last recipe search's (query, ingredients).
+  (String, String)? _lastAsk;
+
+  /// Recipe foods with one of the profile's allergens, or that its diets exclude.
+  Set<int> _unsafeFoods() {
+    final diets = _myAllergens();
+    final mine = {for (final a in diets) ...(_dietAllergens[a] ?? [a])}.toList();
+    return {
+      if (mine.isNotEmpty)
+        for (final r in nutri.select(
+            'SELECT food_id FROM allergens WHERE allergen IN (${List.filled(mine.length, '?').join(',')})', mine))
+          r['food_id'] as int,
+      ..._dietFoods(diets),
+    };
+  }
+
+  /// ", without honey" for a recipe that lacks some of what the user asked for.
+  static String _missing(Iterable<String> wanted, Set<String>? has) {
+    final missing = [for (final w in wanted) if (!(has?.contains(w) ?? false)) w];
+    return missing.isEmpty ? '' : ', without ${missing.join(', ')}';
+  }
+
+  /// The foods recipes use that [item] names: every word of it in the food's name ("ground
+  /// beef" -> "Beef, ground, 80% lean"), and for a group ("fish", "nuts") every food of it.
+  Set<int> _ingredientFoods(String item) => _foodsFor.putIfAbsent(item, () {
+        final words = _words(item);
+        if (words.isEmpty) return {};
+        final patterns = [
+          for (final w in words)
+            RegExp(w.endsWith('y') ? '\\b${w.substring(0, w.length - 1)}(?:y|ies)\\b' : '\\b$w(?:e?s)?\\b')
+        ];
+        final ids = {for (final f in _recipeFoods) if (patterns.every((p) => p.hasMatch(f.name))) f.id};
+        final group = normalizeAllergen(item);
+        if (words.length == 1 && _allergenNames.contains(group) && !_dietAllergens.containsKey(group)) {
+          ids.addAll([
+            for (final r in nutri.select(
+                'SELECT food_id FROM allergens WHERE allergen = ? AND food_id IN (SELECT food_id FROM recipe_ingredients)',
+                [group]))
+              r['food_id'] as int
+          ]);
+        }
+        return ids;
+      });
+
+  final _foodsFor = <String, Set<int>>{};
+
+  // ponytail: ~2k names held in memory and scanned per new ingredient word; an FTS table would scale.
+  late final _recipeFoods = [
+    for (final r in nutri.select(
+        'SELECT id, lower(name) AS name FROM foods WHERE id IN (SELECT DISTINCT food_id FROM recipe_ingredients)'))
+      (id: r['id'] as int, name: r['name'] as String)
+  ];
 
   /// Up to 20 random recipes tagged with the meal named in [query], else the meal for now.
   List<int> _randomRecipes(String query, Set<int> blocked) {
@@ -259,8 +374,9 @@ class AgentTools {
   /// Recipes containing any allergen the profile has, or any food its
   /// conditions say to avoid. Kept even after a downgrade from Medium.
   Set<int> _blockedRecipes() {
-    final mine = [for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen']];
-    final avoid = avoidedFoods(nutri, user).keys;
+    final diets = _myAllergens();
+    final mine = {for (final a in diets) ...(_dietAllergens[a] ?? [a])}.toList();
+    final avoid = {...avoidedFoods(nutri, user).keys, ..._dietFoods(diets)};
     if (mine.isEmpty && avoid.isEmpty) return {};
     return {
       for (final r in nutri.select(
@@ -272,16 +388,43 @@ class AgentTools {
     };
   }
 
+  /// The profile's allergies and diets, as stored in user_allergens.
+  List<String> _myAllergens() =>
+      [for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen'] as String];
+
+  /// Recipe foods a diet in [mine] excludes by name (meat; for vegans also honey and
+  /// gelatin). Fish, eggs and milk come from nutri.db's allergens via [_dietAllergens].
+  Set<int> _dietFoods(List<String> mine) {
+    if (!mine.any(_dietAllergens.containsKey)) return {};
+    return {
+      ...(_meatIds ??= _recipeFoodsNamed(_meat)),
+      if (mine.contains('vegan')) ...(_veganIds ??= _recipeFoodsNamed(_notVegan)),
+    };
+  }
+
+  Set<int>? _meatIds, _veganIds;
+
+  // ponytail: name keywords, like the cloud app's RESTRICTION_INGREDIENT_MAP; a food group
+  // column in nutri.db would be exact. Scans only the ~2k foods recipes use.
+  Set<int> _recipeFoodsNamed(RegExp re) => {
+        for (final r in nutri.select('SELECT id, name FROM foods WHERE id IN (SELECT food_id FROM recipe_ingredients)'))
+          if (re.hasMatch(r['name'] as String) && !_meatFree.hasMatch(r['name'] as String)) r['id'] as int
+      };
+
   /// Ingredients of [recipeId] on the profile's allergy or condition lists, one per food.
   List<Caution> _cautions(int recipeId) {
     final avoid = avoidedFoods(nutri, user);
-    final mine = {for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen'] as String};
+    final mine = _myAllergens();
+    // nutri.db allergen -> what the user said: 'fish' -> 'fish', or 'vegetarian' for a vegetarian.
+    final why = {for (final a in mine) for (final x in _dietAllergens[a] ?? [a]) x: a};
+    final diet = mine.where(_dietAllergens.containsKey).firstOrNull;
+    final dietFoods = _dietFoods(mine);
     final byFood = <int, Caution>{};
     for (final r in nutri.select(
         'SELECT f.id, f.name, a.allergen FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id '
         'LEFT JOIN allergens a ON a.food_id = f.id WHERE ri.recipe_id = ? ORDER BY f.name', [recipeId])) {
       final id = r['id'] as int;
-      final allergen = mine.contains(r['allergen']) ? r['allergen'] as String : null;
+      final allergen = why[r['allergen']] ?? (dietFoods.contains(id) ? diet : null);
       if (allergen == null && !avoid.containsKey(id)) continue;
       byFood[id] = (food: r['name'] as String, allergen: allergen ?? byFood[id]?.allergen, condition: avoid[id]);
     }
@@ -306,7 +449,10 @@ class AgentTools {
     const ordinals = {'first': 1, 'second': 2, 'third': 3, 'one': 1, 'two': 2, 'three': 3};
     final n = int.tryParse(RegExp(r'\d+').firstMatch(lower)?[0] ?? '') ??
         ordinals.entries.where((e) => RegExp('\\b${e.key}\\b').hasMatch(lower)).firstOrNull?.value;
-    if (n != null && n >= 1 && n <= _lastRecipes.length) return _lastRecipes[n - 1];
+    final last = _lastRecipes;
+    if (n != null && n >= 1 && n <= last.length) return last[n - 1];
+    // "recipe 2" with no such list: a title search for "2" would open a random recipe.
+    if (_bareRecipeRef.hasMatch(lower)) return null;
     return _ftsIds(nutri, 'recipes_fts', ref, limit: 1).firstOrNull;
   }
 
@@ -368,6 +514,10 @@ class AgentTools {
   ToolResult _saveRecipe(String ref) {
     final id = _resolveRecipe(ref);
     if (id == null) return ToolResult.error('no recipe matches "$ref"');
+    return _saveRecipeById(id);
+  }
+
+  ToolResult _saveRecipeById(int id) {
     final title = _summary(id).title;
     return ToolResult({
       'status': _pendingNote,
@@ -604,7 +754,9 @@ class AgentTools {
     final allergen = normalizeAllergen(raw);
     if (allergen.isEmpty) return ToolResult.error('which allergen?');
     return ToolResult({'status': _pendingNote, 'allergen': allergen, 'remove': remove}, ConfirmCard(
-      title: remove ? 'Remove allergy' : 'Add allergy',
+      title: _dietAllergens.containsKey(allergen)
+          ? (remove ? 'Remove diet' : 'Add diet')
+          : (remove ? 'Remove allergy' : 'Add allergy'),
       lines: [allergen],
       apply: (_) => remove
           ? user.execute('DELETE FROM user_allergens WHERE allergen = ?', [allergen])
@@ -769,10 +921,91 @@ List<String> _split(String s) => [
         if (p.trim().isNotEmpty) p.trim()
     ];
 
-/// The user says they have an allergy or intolerance.
+/// The user says they have an allergy or intolerance (English, Ukrainian, German, French).
 final _allergyWords = RegExp(
-    r"allerg|intoleran|celiac|coeliac|anaphyla|sensitive to|(?:can'?t|cannot|can not) (?:eat|have|tolerate)",
+    r"allerg|intoleran|intoléran|celiac|coeliac|cœliaque|zöliakie|unverträglich|anaphyla|sensitive to|"
+    r"(?:can'?t|cannot|can not) (?:eat|have|tolerate)|алерг|непереносим|целіак",
     caseSensitive: false);
+
+/// Diets kept with the allergies (user_allergens) -> the nutri.db allergens they also
+/// exclude. Meat (and, for vegans, honey and gelatin) is matched by food name: [_meat].
+const _dietAllergens = {
+  'vegetarian': ['fish', 'shellfish'],
+  'vegan': ['fish', 'shellfish', 'egg', 'milk'],
+  'pescatarian': <String>[],
+};
+
+/// Words for a diet, including the free-from ones that map to allergens ("gluten-free").
+final _dietWords = RegExp(
+    r'vegetari|vegan|végan|végétarien|pesc[ae]tari|plant[- ]based|(?:gluten|lactose|dairy|milk)[- ]free|'
+    r'glutenfrei|laktosefrei|sans (?:gluten|lactose)|вегетаріан|веган|пескетаріан|без глютену|без лактози',
+    caseSensitive: false);
+
+/// "I'm vegetarian", "ich bin Veganerin", "je suis végétarienne", "я вегетаріанка".
+final _dietStatement = RegExp(
+    "(?:\\b(?:i'?m|i am|we'?re|we are|i've (?:been|gone|become|turned)|i (?:went|became|turned|follow|eat only|only eat)|"
+    "ich bin|wir sind|ich esse|ich lebe|je suis|nous sommes|je mange)\\b|(?:^|\\s)(?:я|ми)(?=\\s)).*(?:${_dietWords.pattern})",
+    caseSensitive: false);
+
+/// A wish for now, not a lasting diet: "vegan tonight", "vegetarian dinner ideas".
+final _oneOff = RegExp(
+    r"\b(?:today|tonight|this (?:time|evening|morning|week|weekend)|for (?:now|once|a change)|breakfast|lunch|"
+    r"dinner|supper|snack|recipes?|ideas?|want|wanna|like to|would like|heute|diesmal|frühstück|mittag|abend|"
+    r"rezept|idee|möchte|aujourd|ce soir|cette fois|petit[- ]déj|déjeuner|dîner|recette|idée|veux|voudrais|"
+    // Not strict either: "vegetarian on weekdays", "mostly vegan".
+    r"weekdays?|weekends?|sometimes|mostly|flexitarian|wochentag\w*|wochenende|manchmal|meistens|semaine|parfois|surtout)|"
+    r"будн|вихідн|іноді|переважно|"
+    r"сьогодні|ввечері|цього разу|сніданок|обід|вечер|рецепт|ідеї|ідею|хочу|хотів|хотіла",
+    caseSensitive: false);
+
+/// Said as lasting: an allergy, or a diet that isn't just for this meal.
+bool _lasting(String said) => _allergyWords.hasMatch(said) || (_dietStatement.hasMatch(said) && !_oneOff.hasMatch(said));
+
+/// Meat in a food's name; [_meatFree] names are exempt ("Bacon bits, meatless").
+final _meat = RegExp(
+    r'\b(?:beef|veal|pork|ham|bacon|pancetta|lamb|mutton|goat|venison|bison|elk|rabbit|chicken|turkey|duck|goose|'
+    r'quail|pheasant|meats?|meatballs?|sausages?|salami|pepperoni|prosciutto|chorizo|bratwurst|frankfurters?|'
+    r'hot ?dogs?|bologna|pastrami|liverwurst|liver|giblets|tripe|jerky|steaks?|burgers?|hamburgers?|ribs|lard|gelatin)\b',
+    caseSensitive: false);
+final _notVegan = RegExp(r'\b(?:honey|gelatin|lard)\b', caseSensitive: false);
+final _meatFree = RegExp(r'\b(?:meatless|vegetarian|vegan|imitation|meat substitute|plant[- ]based|veggie)\b',
+    caseSensitive: false);
+
+/// "How many calories do I have left?", "what did I eat today", "Wie viele Kalorien habe
+/// ich noch übrig?", "combien de calories me reste-t-il", "скільки калорій залишилось".
+final _statusAsk = RegExp(
+    r"\b(?:calories|kcal|protein|carbs|sugar)\b.*\b(?:left|remaining)\b|"
+    r"\bwhat (?:have i|did i) (?:eaten|eat|had)\b|\bhow (?:much|many)\b.*\b(?:have i|did i) (?:eaten|eat|had)\b|"
+    r"\b(?:kalorien|eiweiß|protein)\b.*(?:übrig|verbleibend)|was habe ich .*gegessen|"
+    r"\b(?:calories|protéines)\b.*\brest|qu'?est-ce que j'?ai mangé|"
+    r"(?:калорі|білк).*(?:лишил|залишил)|що я .*(?:з['’]?їв|з['’]?їла)",
+    caseSensitive: false);
+final _weekWords = RegExp(r'week|7 days|woche|semaine|тиждень|тижня|тижні', caseSensitive: false);
+
+/// "show me recipe 2", "save the second one", "zeig mir Rezept 2", "montre-moi la recette 2",
+/// "збережи рецепт 1". Group 1: the verb, group 2: the number.
+final _recipeRef = RegExp(
+    r"^\s*(?:please\s+)?(show|open|see|view|save|bookmark|zeig\w*|öffne|speicher\w*|montre\w*|ouvre|affiche|"
+    r"enregistre|sauvegarde|покажи|відкрий|збережи)(?:\s*-?\s*(?:me|mir|moi|мені))?\s+"
+    r"(?:(?:the|recipe|number|no\.?|das|rezept|nummer|la|recette|numéro|рецепт|номер)\s+)*"
+    r"(#?\d+|first|second|third)(?:\s+(?:one|recipe))?\s*[.!]?\s*$",
+    caseSensitive: false);
+/// Asks for recipe ideas (English; other languages go through the model).
+final _ideasAsk = RegExp(
+    r"\b(?:recipes?|ideas?|suggest\w*|inspir\w*|what (?:should|can|could|to) (?:i |we )?(?:cook|make|eat|have))\b",
+    caseSensitive: false);
+
+/// ...but about one recipe, a log or a rating, which the model handles.
+final _notIdeas = RegExp(
+    r"\b(?:show|open|see|view|save|bookmark|rate|rated|stars?|log|logged|ate|eaten|had|steps|details?|"
+    r"how (?:do|to|long|many|much)|calories in|that|this|it|number|\d+)\b",
+    caseSensitive: false);
+
+final _saveWords = RegExp(r'save|bookmark|speicher|enregistre|sauvegarde|збережи', caseSensitive: false);
+
+/// A reference only by position: "2", "recipe 2", "number 3", "the second one".
+final _bareRecipeRef = RegExp(
+    r'^\s*(?:(?:the|recipe|number|no\.?|#)\s*)*(?:\d+|first|second|third|one|two|three)(?:\s+(?:one|recipe))?\s*$');
 
 /// The user reports something eaten or asks to log a meal.
 final _ateWords = RegExp(r'\b(?:ate|eaten|had|drank|drunk|log|logged|add|record|track)\b', caseSensitive: false);
@@ -808,12 +1041,18 @@ final _ateStatement = RegExp(
     r"^\s*(?:(?:i|i've|i have|we|just|also|and|so)\s+)*(?:ate|eaten|had|drank|drunk|log|add|record|track)\b",
     caseSensitive: false);
 
-/// "I'm allergic to peanuts", "I have a gluten intolerance" (not "is my kid allergic…?").
+/// "I'm allergic to peanuts", "I have a gluten intolerance" (not "is my kid allergic…?"),
+/// "Ich bin allergisch gegen Nüsse", "J'ai une allergie aux arachides", "У мене алергія на арахіс".
 final _allergyStatement = RegExp(
-    r"^\s*(?:i'?m|i am|i have|i've got|i got)\b.*\b(?:allergic|allergy|intolerant|intolerance|celiac|coeliac)\b",
+    r"^\s*(?:i'?m|i am|i have|i've got|i got|ich bin|ich habe|ich hab|je suis|j'ai|у мене|в мене|я)(?=[\s,]).*"
+    r"(?:allerg|intoleran|intoléran|unverträglich|celiac|coeliac|cœliaque|zöliakie|алерг|непереносим|целіак)",
     caseSensitive: false);
 
 /// nutri.db allergen names ([_allergenAliases] targets).
+/// "More", "other ideas", "ще", "andere", "d'autres": another round of the last recipe search.
+final _moreAsk = RegExp(r"\b(?:more|others?|another|different|else|instead|again|mehr|andere\w*|weitere\w*|autres?|encore)\b|ще|інш",
+    caseSensitive: false);
+
 final _allergenNames = {for (final (_, name) in _allergenAliases) name};
 
 /// "I ate 2 bananas for breakfast today" → "2 bananas"; "add breakfast" → "".
@@ -850,8 +1089,28 @@ const _stopwords = {
 Set<String> _words(String text) => {
       for (final m in RegExp(r'[a-z0-9]+').allMatches(text.toLowerCase()))
         if (m[0]!.length > 1 && !_stopwords.contains(m[0]))
-          m[0]!.length > 3 && m[0]!.endsWith('s') ? m[0]!.substring(0, m[0]!.length - 1) : m[0]!
+          _singular(m[0]!)
     };
+
+String _singular(String w) => w.endsWith('ies') && w.length > 4
+    ? '${w.substring(0, w.length - 3)}y'
+    : w.endsWith('oes') && w.length > 4
+        ? w.substring(0, w.length - 2)
+        : w.length > 3 && w.endsWith('s') && !w.endsWith('ss')
+            ? w.substring(0, w.length - 1)
+            : w;
+
+/// Query words that describe the meal, not what goes in it ("quick high protein dinner"),
+/// though some are in food names ("Rolls, dinner", "Salt, table").
+const _notIngredients = {
+  'breakfast', 'brunch', 'lunch', 'dinner', 'supper', 'snack', 'dessert', 'appetizer', 'starter', 'side', 'main',
+  'course', 'quick', 'easy', 'simple', 'fast', 'light', 'great', 'best', 'delicious', 'high', 'low', 'rich',
+  'free', 'protein', 'carb', 'fat', 'fiber', 'fibre', 'sugar', 'calorie', 'kcal', 'sodium', 'salt', 'gluten',
+  'lactose', 'dairy', 'vegetarian', 'vegan', 'keto', 'paleo', 'spicy', 'sweet', 'savory', 'savoury', 'hot',
+  'cold', 'warm', 'cozy', 'soft', 'green', 'red', 'white', 'black', 'fresh', 'frozen', 'raw', 'cooked', 'baked',
+  'fried', 'grilled', 'roasted', 'minute', 'hour', 'person', 'people', 'kid', 'family', 'week', 'weekend',
+  'night', 'evening', 'morning', 'maybe', 'you', 'friendly', 'style', 'prep', 'meal', 'plain', 'whole',
+};
 
 /// FTS5 query: words OR-ed with prefix match, so "eggs" finds "egg" and
 /// "chickpea" finds "chickpeas". Null when nothing searchable is left.
@@ -878,9 +1137,24 @@ List<int> _ftsIds(Database db, String table, String text, {required int limit, S
   ];
 }
 
-/// Maps what people say to nutri.db allergen names. Order matters:
-/// "peanuts" must hit 'peanut' before 'nuts'.
+/// Maps what people say (English, Ukrainian, German, French) to nutri.db allergen names
+/// and diets. Order matters: "peanuts" must hit 'peanut' before 'nuts'.
 const _allergenAliases = [
+  ('vegetari', 'vegetarian'), ('végétarien', 'vegetarian'), ('вегетаріан', 'vegetarian'),
+  ('pescatari', 'pescatarian'), ('pescetari', 'pescatarian'), ('пескетаріан', 'pescatarian'),
+  ('vegan', 'vegan'), ('végan', 'vegan'), ('веган', 'vegan'), ('plant-based', 'vegan'), ('plant based', 'vegan'),
+  ('erdnuss', 'peanuts'), ('arachide', 'peanuts'), ('cacahu', 'peanuts'), ('арахіс', 'peanuts'),
+  ('nuss', 'tree nuts'), ('nüsse', 'tree nuts'), ('noix', 'tree nuts'), ('fruits à coque', 'tree nuts'),
+  ('горіх', 'tree nuts'), ('laktose', 'milk'), ('milch', 'milk'), ('lait', 'milk'), ('лактоз', 'milk'),
+  ('молок', 'milk'), ('молоч', 'milk'), ('eier', 'egg'), ('œuf', 'egg'), ('oeuf', 'egg'), ('яйц', 'egg'),
+  ('яєц', 'egg'), ('weizen', 'gluten'), ('zöliakie', 'gluten'), ('blé', 'gluten'), ('cœliaque', 'gluten'),
+  ('coeliaque', 'gluten'), ('глютен', 'gluten'), ('пшениц', 'gluten'), ('целіак', 'gluten'),
+  ('garnele', 'shellfish'), ('krebstier', 'shellfish'), ('schalentier', 'shellfish'),
+  ('meeresfrüchte', 'shellfish'), ('crustac', 'shellfish'), ('fruits de mer', 'shellfish'),
+  ('crevette', 'shellfish'), ('креветк', 'shellfish'), ('молюск', 'shellfish'), ('ракоподіб', 'shellfish'),
+  ('морепродукт', 'shellfish'), ('fisch', 'fish'), ('poisson', 'fish'), (' риб', 'fish'), /* not гриби, mushrooms */ ('soja', 'soy'),
+  ('соя', 'soy'), ('сої', 'soy'), ('сою', 'soy'), ('sesam', 'sesame'), ('sésame', 'sesame'),
+  ('кунжут', 'sesame'),
   ('peanut', 'peanuts'), ('tree nut', 'tree nuts'), ('almond', 'tree nuts'), ('walnut', 'tree nuts'),
   ('cashew', 'tree nuts'), ('nut', 'tree nuts'), ('lactose', 'milk'), ('dairy', 'milk'),
   ('milk', 'milk'), ('egg', 'egg'), ('gluten', 'gluten'), ('wheat', 'gluten'), ('celiac', 'gluten'),
@@ -890,8 +1164,9 @@ const _allergenAliases = [
 
 String normalizeAllergen(String raw) {
   final s = raw.toLowerCase().replaceAll(RegExp(r'\b(allerg\w*|intoleran\w*)\b'), '').trim();
+  // "gluten-free" is the gluten allergen, "lactose-free" milk: the aliases below find them.
   for (final (alias, name) in _allergenAliases) {
-    if (s.contains(alias)) return name;
+    if (' $s'.contains(alias)) return name;
   }
   return s;
 }

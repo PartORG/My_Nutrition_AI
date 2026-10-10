@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/agent/tool_call_parser.dart';
 
 void main() {
-  const tools = {'log_reading', 'search_recipes', 'reply'};
+  const tools = {'log_health', 'search_recipes', 'reply'};
   // Records compare maps by identity, so compare fields.
   void expectCall(String raw, String name, Map<String, dynamic> args) {
     final r = parseToolCall(raw, tools);
@@ -24,8 +24,8 @@ void main() {
   });
 
   test('name: {args} inside fences', () {
-    const raw = '```json log_reading: {"kind": "glucose", "value": "140"} ```';
-    expectCall(raw, 'log_reading', {'kind': 'glucose', 'value': '140'});
+    const raw = '```json log_health: {"kind": "glucose", "value": "140"} ```';
+    expectCall(raw, 'log_health', {'kind': 'glucose', 'value': '140'});
   });
 
   test('unknown tool or plain prose gives null', () {

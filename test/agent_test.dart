@@ -53,6 +53,12 @@ class _FakeSession implements ChatSession {
   }
 
   @override
+  Future<int> countTokens(String text) async => (text.length / 4).ceil();
+
+  @override
+  Future<void> stageToolResult(String tool, Map<String, Object?> result) async => m.toolResults.add((tool, result));
+
+  @override
   Future<void> close() async {}
 }
 
@@ -92,16 +98,18 @@ void main() {
 
   int meals() => user.select('SELECT COUNT(*) AS n FROM meal_log').single['n'] as int;
 
-  test('log meal: tool → card → "not saved" to model → reply; ✓ writes', () async {
+  test('log meal: tool → captioned card, no second model pass; ✓ writes', () async {
     model.script.addAll([
       [ToolCall('log_meal', {'items': '2 eggs', 'meal_type': 'breakfast'})],
-      [TextChunk('Here is your breakfast, '), TextChunk('please confirm.')],
+      [TextChunk('never generated')],
     ]);
     await agent.send('Breakfast was 2 eggs');
 
-    expect(agent.items.map((i) => i.runtimeType), [UserItem, CardItem, ModelItem]);
-    expect((agent.items.last as ModelItem).text, 'Here is your breakfast, please confirm.');
+    expect(agent.items.map((i) => i.runtimeType), [UserItem, CardItem]);
+    expect((agent.items.last as CardItem).caption, isTrue);
+    // Staged for the model's next turn, so it knows the card is waiting for Save.
     expect(model.toolResults.single.$2['status'], contains('NOT saved'));
+    expect(model.script.length, 1, reason: 'the follow-up was not generated');
     expect(meals(), 0);
 
     final card = (agent.items[1] as CardItem).card as ConfirmCard;
@@ -119,6 +127,7 @@ void main() {
     expect(cards.map((c) => c.title), ['Log breakfast', 'Add allergy']);
     expect(cards[0].lines.length, 2);
     expect(cards[1].lines, ['peanuts']);
+    expect(agent.items.whereType<CardItem>().every((c) => c.caption), isTrue, reason: 'a fixed line, no model');
     expect(ChatLimit(profilesDb, clock: () => DateTime(2026, 10, 4, 8)).usedToday, 0);
 
     // Questions and unknown foods still go to the model.
@@ -129,16 +138,15 @@ void main() {
 
   test('tool calls are recorded in the chat log, but not shown or replayed', () async {
     model.script.addAll([
-      [ToolCall('save_recipe', {'recipe': 'shakshuka'})],
-      [TextChunk('Tap Save to bookmark it.')],
+      [ToolCall('recipe', {'action': 'save', 'recipe': 'shakshuka'})],
     ]);
     await agent.send('bookmark the shakshuka');
     final roles = [for (final r in user.select('SELECT role FROM chat_messages ORDER BY id')) r['role']];
-    expect(roles, ['user', 'tool', 'model']);
+    expect(roles, ['user', 'tool']);
     expect(user.select("SELECT text FROM chat_messages WHERE role = 'tool'").single['text'],
-        'save_recipe {recipe: shakshuka} -> confirm card');
+        'recipe {action: save, recipe: shakshuka} -> confirm card');
     agent.loadHistory();
-    expect(agent.items.map((i) => i.runtimeType), [UserItem, ModelItem]);
+    expect(agent.items.map((i) => i.runtimeType), [UserItem]);
   });
 
   test('"I ate this" adds a ✓ card without the model or the daily count', () async {
@@ -152,14 +160,14 @@ void main() {
   });
 
   test('tapping a listed recipe opens exactly it, and "save it" then means that one', () async {
-    model.script.add([ToolCall('search_recipes', {'query': 'breakfast'})]);
-    await agent.send('breakfast ideas');
+    model.script.add([ToolCall('search_recipes', {'query': 'breakfast', 'ingredients': 'egg, oats, lentils'})]);
+    await agent.send('something for breakfast'); // "ideas" would skip the model (the router)
     final list = (agent.items.whereType<CardItem>().last.card as RecipeListCard).recipes;
     agent.showRecipe(list[1].id); // tap on the second one
     expect((agent.items.last as CardItem).card, isA<RecipeCard>());
     expect(((agent.items.last as CardItem).card as RecipeCard).title, list[1].title);
     expect(model.sent.length, 1, reason: 'the tap did not go through the model');
-    model.script.add([ToolCall('save_recipe', {'recipe': 'it'})]);
+    model.script.add([ToolCall('recipe', {'action': 'save', 'recipe': 'it'})]);
     await agent.send('save it');
     final save = agent.items.whereType<CardItem>().last.card as ConfirmCard;
     expect(save.lines, [list[1].title]);
@@ -177,7 +185,7 @@ void main() {
     user.execute("INSERT INTO user_allergens VALUES ('peanuts', 0)");
     await agent.send('Hi!');
     expect(model.sent.single, startsWith('[Context]\nNow: Sun 4 Oct, 08:00.'));
-    expect(model.sent.single, contains('Allergies: peanuts.'));
+    expect(model.sent.single, contains('Allergies and diet: peanuts.'));
     expect(model.sent.single, endsWith('[/Context]\nHi!'));
     final stored = [for (final r in user.select('SELECT role, text FROM chat_messages')) '${r['role']}:${r['text']}'];
     expect(stored, ['user:Hi!', 'model:ok']);
@@ -208,8 +216,9 @@ void main() {
     await agent.send('Hello');
     expect((agent.items.last as ModelItem).text, 'Hello there!');
 
-    model.script.addAll(List.generate(10, (_) => [ToolCall('lookup_nutrition', {'food': 'banana'})]));
-    await agent.send('banana?');
+    // Errors go back to the model (cards don't), so a confused model could loop.
+    model.script.addAll(List.generate(10, (_) => [ToolCall('lookup_nutrition', {'food': 'unicorn'})]));
+    await agent.send('unicorn?');
     expect(model.toolResults.length, 3);
     expect(agent.busy, isFalse);
   });
@@ -237,5 +246,45 @@ void main() {
     expect(replay.every((t) => !t.text.contains('[Context]')), isTrue);
     fresh.loadHistory();
     expect(fresh.items.length, 12);
+  });
+
+  test('each day is a new chat: yesterday is stored but neither shown nor replayed', () async {
+    var now = DateTime(2026, 10, 4, 22);
+    final day = Agent(
+      model: model,
+      tools: AgentTools(nutri, user, clock: () => now),
+      memory: Memory(user, vectors, fakeEmbed, clock: () => now),
+      user: user,
+      limit: ChatLimit(profilesDb, clock: () => now),
+      unlimited: () => true,
+      clock: () => now,
+    )..loadHistory();
+    await day.send('message yesterday');
+    now = DateTime(2026, 10, 5, 7);
+    await day.send('good morning');
+    expect(day.items.whereType<UserItem>().map((i) => i.text), ['good morning'], reason: 'open past midnight');
+    expect(model.opens.last, isEmpty, reason: 'the new day\'s conversation starts clean');
+    day.loadHistory();
+    expect(day.items.whereType<UserItem>().map((i) => i.text), ['good morning']);
+    expect(user.select("SELECT COUNT(*) AS n FROM chat_messages WHERE role = 'user'").single['n'], 2);
+  });
+
+  test('later messages carry only the context lines that changed', () async {
+    await agent.send('Hi!');
+    await agent.send('Hi again');
+    expect(model.sent[1], 'Hi again', reason: 'nothing changed (the clock is fixed)');
+    user.execute("INSERT INTO user_allergens VALUES ('peanuts', 0)");
+    await agent.send('ok');
+    expect(model.sent[2], '[Context]\nAllergies and diet: peanuts.\n[/Context]\nok');
+  });
+
+  test('the conversation is recreated, with the whole context, before its tokens run out', () async {
+    await agent.send('Hi!');
+    final long = List.filled(800, 'word').join(' '); // ~1k tokens at 4 chars per token
+    await agent.send(long);
+    expect(model.opens.length, 1);
+    await agent.send(long);
+    expect(model.opens.length, 2);
+    expect(model.sent.last, startsWith('[Context]\nNow: '));
   });
 }

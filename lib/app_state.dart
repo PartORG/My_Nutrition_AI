@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart' hide Database;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/services.dart';
@@ -17,6 +18,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'agent/agent.dart';
 import 'agent/agent_tools.dart';
 import 'agent/chat_limit.dart';
+import 'agent/chat_model.dart' show llmContextTokens;
 import 'agent/gemma_chat_model.dart';
 import 'agent/memory.dart';
 import 'billing/billing.dart';
@@ -103,6 +105,121 @@ int? totalRamMb() {
 /// A "6 GB" phone reports ~5.4–5.7 GB after the kernel's share.
 const minRamMb = 5000;
 
+// ---- big downloads ------------------------------------------------------------
+
+/// A download under way. [status]: enqueued (waiting for Wi-Fi or a network),
+/// running, waitingToRetry (connection lost; it continues by itself), paused,
+/// failed or notFound (Resume continues where it stopped), complete (installing).
+typedef Download = ({DownloadTask task, TaskStatus status, int percent});
+
+/// Called before runApp: a tracked group records the updates that arrive while
+/// the app is closed, so a download started earlier shows up (or finishes) on the next start.
+Future<void> trackDownloads() async {
+  if (!Platform.isAndroid && !Platform.isIOS) return;
+  for (final g in ['llm', 'products']) {
+    await FileDownloader().trackTasksInGroup(g);
+  }
+}
+
+/// One big file the OS downloads in the background (Android WorkManager, iOS
+/// URLSession): it keeps going on another screen or with the screen off, waits
+/// out a lost connection, can be paused, and resumes where it stopped (HTTP
+/// Range; Hugging Face and GitHub send the strong ETags that resuming needs).
+abstract class FileDownload extends Notifier<Download?> {
+  String get group;
+
+  /// Installs the finished file at [path]. Throws if it's unusable.
+  Future<void> finish(String path);
+
+  var _finishing = false;
+
+  @override
+  Download? build() {
+    if (!Platform.isAndroid && !Platform.isIOS) return null; // tests
+    FileDownloader().registerCallbacks(group: group, taskStatusCallback: _onStatus, taskProgressCallback: _onProgress);
+    unawaited(_reattach());
+    return null;
+  }
+
+  /// Picks up a download from an earlier app run.
+  Future<void> _reattach() async {
+    await FileDownloader().resumeFromBackground();
+    final r = (await FileDownloader().database.allRecords(group: group)).lastOrNull;
+    if (r == null || state != null || r.task is! DownloadTask) return;
+    _set(r.task, r.status, (r.progress * 100).round().clamp(0, 100));
+    if (r.status == TaskStatus.complete) await _onStatus(TaskStatusUpdate(r.task, r.status));
+    if (r.status == TaskStatus.canceled) await _forget(r.task);
+  }
+
+  void _set(Task task, TaskStatus status, [int? percent]) =>
+      state = (task: task as DownloadTask, status: status, percent: percent ?? state?.percent ?? 0);
+
+  void _onProgress(TaskProgressUpdate u) {
+    if (u.progress >= 0) _set(u.task, TaskStatus.running, (u.progress * 100).round()); // < 0: a status, not progress
+  }
+
+  Future<void> _onStatus(TaskStatusUpdate u) async {
+    if (u.status == TaskStatus.canceled) return _forget(u.task);
+    if (u.status != TaskStatus.complete) return _set(u.task, u.status);
+    if (_finishing) return;
+    _finishing = true;
+    _set(u.task, TaskStatus.complete, 100);
+    try {
+      await finish(await u.task.filePath());
+      await _forget(u.task);
+    } on Object catch (e) {
+      debugPrint('$group download: $e');
+      _set(u.task, TaskStatus.failed); // Resume downloads it again
+    } finally {
+      _finishing = false;
+    }
+  }
+
+  Future<void> _forget(Task task) async {
+    await FileDownloader().database.deleteRecordWithId(task.taskId);
+    state = null;
+  }
+
+  /// [wifiOnly]: the OS holds the download until there is Wi-Fi, and pauses it when Wi-Fi goes.
+  Future<void> download(String url, String filename, {required bool wifiOnly, required String title}) async {
+    if (state != null) return;
+    FileDownloader().configureNotificationForGroup(group,
+        running: TaskNotification(title, '{progress}'), paused: TaskNotification(title, '{progress}'), progressBar: true);
+    final task = DownloadTask(
+      url: url,
+      filename: filename,
+      baseDirectory: BaseDirectory.applicationSupport,
+      group: group,
+      updates: Updates.statusAndProgress,
+      requiresWiFi: wifiOnly,
+      allowPause: true, // also how Android's 9-minute job limit is survived: pause, re-enqueue, go on
+      retries: 10, // each one resumes; backoff 2 s .. 17 min, ~34 min in all
+    );
+    _set(task, TaskStatus.enqueued, 0);
+    if (!await FileDownloader().enqueue(task)) _set(task, TaskStatus.failed);
+  }
+
+  Future<void> pause() async {
+    if (state?.task case final t?) await FileDownloader().pause(t);
+  }
+
+  /// Continues where it stopped when the partial file is still there; otherwise starts over.
+  Future<void> resume() async {
+    final t = state?.task;
+    if (t == null) return;
+    _set(t, TaskStatus.enqueued);
+    final resumed = await FileDownloader().taskCanResume(t) && await FileDownloader().resume(t);
+    if (!resumed && !await FileDownloader().enqueue(t)) _set(t, TaskStatus.failed);
+  }
+
+  Future<void> cancel() async {
+    final t = state?.task;
+    if (t == null) return;
+    await FileDownloader().cancel(t);
+    await _forget(t);
+  }
+}
+
 // ---- on-device AI -----------------------------------------------------------
 
 /// A chat model the user can download. Both are Gemma 4 (Apache 2.0, ungated)
@@ -118,14 +235,15 @@ const e2b = (
   minRamMb: minRamMb,
 );
 
-/// E4B: larger and smarter, ~3x slower prefill; offered on 8 GB phones only
-/// (they report ~7.2-7.6 GB). The full file, not "-gpu": photo mode needs its vision part.
+/// E4B: larger and smarter, ~3x slower prefill. An 8 GB phone (Xiaomi 11T, 2026-10-10)
+/// couldn't run it, so it's offered from 12 GB (they report ~11.2-11.6 GB). Installing
+/// E2B deletes an E4B already on the phone. The full file, not "-gpu": photo mode needs its vision part.
 // ponytail: tool accuracy not measured yet; run integration_test/agent_eval_test.dart with MODEL_PATH on the phone.
 const e4b = (
   file: 'gemma-4-E4B-it.litertlm',
   url: 'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
   downloadMb: 3490,
-  minRamMb: 7000,
+  minRamMb: 11000,
 );
 
 /// Models this phone can run, smallest first. Unknown RAM (not Android): E2B only.
@@ -171,53 +289,56 @@ final llmProvider = FutureProvider<InferenceModel>((ref) async {
   final installed = await installedLlm();
   if (dev != null) {
     await _llmInstall().fromFile(dev.path).install();
+  } else if (installed != null && File(await _llmPath(installed)).existsSync()) {
+    await _llmInstall().fromFile(await _llmPath(installed)).install();
   } else if (installed != null) {
-    await _llmInstall().fromNetwork(installed.url).install(); // already downloaded: no network, just activates it
+    // Installed by an older version through flutter_gemma's own downloader: no network, just activates it.
+    await _llmInstall().fromNetwork(installed.url).install();
   } else {
     throw LlmNotDownloaded();
   }
   // supportImage: photo mode names the foods with the same model (vision encoder on the CPU).
+  // GPU, falling back to CPU inside the plugin. MTP (speculative decoding): up to 2.2x faster
+  // answers on mobile GPUs, same output (LiteRT-LM model card).
+  // ponytail: also on after a CPU fallback, where Google calls it slightly slower for free text.
   final model = await FlutterGemma.getActiveModel(
-      maxTokens: 4096, preferredBackend: PreferredBackend.gpu, supportImage: true, maxNumImages: 1);
+      maxTokens: llmContextTokens, preferredBackend: PreferredBackend.gpu, supportImage: true, maxNumImages: 1,
+      enableSpeculativeDecoding: true);
+  debugPrint('LLM running on ${model.activeBackend?.name ?? 'unknown'}');
   ref.onDispose(model.close);
   return model;
 });
 
-/// Download progress in % while the chat model downloads; null when idle.
-final llmDownloadProvider = NotifierProvider<LlmDownload, int?>(LlmDownload.new);
+final llmDownloadProvider = NotifierProvider<LlmDownload, Download?>(LlmDownload.new);
 
-class LlmDownload extends Notifier<int?> {
-  CancelToken? _cancel;
-
+class LlmDownload extends FileDownload {
   @override
-  int? build() => null;
+  String get group => 'llm';
 
-  /// Resumable (flutter_gemma's background downloader). Throws on failure.
-  /// Switching models: the other one is deleted once [model] is in, so the
+  Future<void> start(Llm model, {required bool wifiOnly, required String title}) =>
+      download(model.url, model.file, wifiOnly: wifiOnly, title: title);
+
+  /// Switching models: the other one is deleted once this one is in, so the
   /// phone never keeps 6 GB of models.
-  Future<void> start([Llm model = e2b]) async {
-    if (state != null) return;
-    state = 0;
-    _cancel = CancelToken();
-    try {
-      await ref.read(_gemmaReadyProvider.future);
-      await _llmInstall().fromNetwork(model.url).withProgress((p) => state = p).withCancelToken(_cancel!).install();
-      // Delete first, so the reload can't pick the old one. A loaded model keeps
-      // its open file until the reload closes it.
-      for (final other in [e2b, e4b]) {
-        if (other != model && await FlutterGemma.isModelInstalled(other.file)) {
-          await FlutterGemma.uninstallModel(other.file);
-        }
-      }
-      ref.invalidate(llmProvider);
-    } finally {
-      state = null;
-      _cancel = null;
+  @override
+  Future<void> finish(String path) async {
+    await ref.read(_gemmaReadyProvider.future);
+    await _llmInstall().fromFile(path).install();
+    // Delete first, so the reload can't pick the old one. A loaded model keeps
+    // its open file until the reload closes it.
+    for (final other in [e2b, e4b]) {
+      if (path.endsWith('/${other.file}')) continue;
+      if (await FlutterGemma.isModelInstalled(other.file)) await FlutterGemma.uninstallModel(other.file);
+      final f = File(await _llmPath(other)); // uninstall leaves files it didn't download itself
+      if (f.existsSync()) f.deleteSync();
     }
+    ref.invalidate(llmProvider);
   }
-
-  void cancel() => _cancel?.cancel('cancelled by the user');
 }
+
+/// Where [LlmDownload] puts a model.
+Future<String> _llmPath(Llm m) =>
+    DownloadTask(url: m.url, filename: m.file, baseDirectory: BaseDirectory.applicationSupport).filePath();
 
 final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
   await ref.watch(_gemmaReadyProvider.future);
@@ -288,7 +409,7 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
 // ---- all packaged products (optional download) -------------------------------
 
 /// Built by tool/build_products_db.py from the current Open Food Facts dump (ODbL), gzipped.
-// TODO(ievgen): publish products.db.gz as a GitHub release asset under this tag before release.
+// Release asset of github.com/PartORG/myfoodmind (published 2026-10-10, sha256 93690976…a533).
 const productsUrl = 'https://github.com/partorg/myfoodmind/releases/download/products-2026-10/products.db.gz';
 const productsDownloadMb = 104; // products.db.gz of 2026-10-07: 2,034,064 products, 276 MB unpacked
 
@@ -315,50 +436,36 @@ Database? openProducts(Directory dir) {
   return (rows: int.tryParse(meta('rows')) ?? 0, builtAt: meta('built_at'));
 }
 
-/// Download progress in %; null when idle.
-final productsDownloadProvider = NotifierProvider<ProductsDownload, int?>(ProductsDownload.new);
+/// Unpacks the downloaded [gz], checks the file opens, then swaps it in. Throws on failure;
+/// the .gz is gone either way, so a retry downloads it again.
+Future<void> unpackProducts(Directory dir, File gz, AgentTools? tools) async {
+  final part = File('${_productsFile(dir).path}.part');
+  try {
+    await gz.openRead().transform(gzip.decoder).pipe(part.openWrite());
+    sqlite3.open(part.path, mode: OpenMode.readOnly)
+      ..select('SELECT 1 FROM products_fts LIMIT 1')
+      ..close();
+    tools?.products?.close();
+    part.renameSync(_productsFile(dir).path);
+    tools?.products = openProducts(dir);
+  } finally {
+    if (part.existsSync()) part.deleteSync();
+    if (gz.existsSync()) gz.deleteSync();
+  }
+}
 
-class ProductsDownload extends Notifier<int?> {
-  HttpClient? _client;
+final productsDownloadProvider = NotifierProvider<ProductsDownload, Download?>(ProductsDownload.new);
+
+class ProductsDownload extends FileDownload {
+  @override
+  String get group => 'products';
+
+  Future<void> start({required bool wifiOnly, required String title}) =>
+      download(productsUrl, 'products.db.gz', wifiOnly: wifiOnly, title: title);
 
   @override
-  int? build() => null;
-
-  /// Unpacks while it downloads, checks the file opens, then swaps it in. Throws on failure.
-  // ponytail: not resumable (gzip streams straight to disk); keep the .gz and use Range if downloads fail often.
-  Future<void> start({String url = productsUrl}) async {
-    if (state != null) return;
-    state = 0;
-    final dir = ref.read(appDirProvider).requireValue;
-    final part = File('${_productsFile(dir).path}.part');
-    final client = _client = HttpClient();
-    try {
-      final res = await (await client.getUrl(Uri.parse(url))).close();
-      if (res.statusCode != 200) throw HttpException('products download: HTTP ${res.statusCode}');
-      final total = res.contentLength;
-      var got = 0;
-      final sink = part.openWrite();
-      await res.map((chunk) {
-        got += chunk.length;
-        if (total > 0) state = got * 100 ~/ total;
-        return chunk;
-      }).transform(gzip.decoder).pipe(sink);
-      sqlite3.open(part.path, mode: OpenMode.readOnly)
-        ..select('SELECT 1 FROM products_fts LIMIT 1')
-        ..close();
-      final tools = ref.read(profileDataProvider)?.tools;
-      tools?.products?.close();
-      part.renameSync(_productsFile(dir).path);
-      tools?.products = openProducts(dir);
-    } finally {
-      if (part.existsSync()) part.deleteSync();
-      client.close(force: true);
-      _client = null;
-      state = null;
-    }
-  }
-
-  void cancel() => _client?.close(force: true);
+  Future<void> finish(String path) async =>
+      unpackProducts(await ref.read(appDirProvider.future), File(path), ref.read(profileDataProvider)?.tools);
 
   /// Back to the 2019 products in nutri.db; frees the space.
   void remove() {

@@ -1,0 +1,74 @@
+# Builds the release APK and publishes it as GitHub Release v<pubspec version>.
+# Runs on push to main; does nothing if that version was already released, so bump
+# `version:` in pubspec.yaml to ship a new one.
+#
+# One-time setup:
+#   * Release "build-inputs" holding the git-ignored assets (repo must stay private:
+#     Gemma terms and data licences):
+#       gh release create build-inputs --prerelease --title "Build inputs (not an app release)" \
+#         assets/nutri.db assets/models/embeddinggemma-300M_seq256.tflite \
+#         assets/models/embeddinggemma_sentencepiece.model
+#     Re-upload with `gh release upload build-inputs <file> --clobber` when they change.
+#   * Secrets: ANDROID_KEYSTORE_BASE64 (`base64 -w0 upload.jks`), ANDROID_KEYSTORE_PASSWORD,
+#     ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+name: android
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: android-release
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: version
+        run: |
+          v=$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; fi
+
+      - if: steps.version.outputs.exists != 'true'
+        run: |
+          gh release download build-inputs --pattern nutri.db --dir assets
+          gh release download build-inputs --pattern 'embeddinggemma*' --dir assets/models
+
+      - if: steps.version.outputs.exists != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - if: steps.version.outputs.exists != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.3
+          channel: stable
+          cache: true
+
+      - if: steps.version.outputs.exists != 'true'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > android/app/upload.jks
+          cat > android/key.properties <<EOF
+          storeFile=upload.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - if: steps.version.outputs.exists != 'true'
+        run: |
+          flutter build apk --release --target-platform android-arm64
+          mv build/app/outputs/flutter-apk/app-release.apk "myfoodmind-${{ steps.version.outputs.tag }}.apk"
+
+      - if: steps.version.outputs.exists != 'true'
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" "myfoodmind-${{ steps.version.outputs.tag }}.apk" \
+            --target "$GITHUB_SHA" --title "MyFoodMind ${{ steps.version.outputs.tag }}" --generate-notes

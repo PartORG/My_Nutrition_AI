@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart' show TaskStatus;
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
@@ -8,8 +10,13 @@ import 'package:home_widget/home_widget.dart';
 import '../app_state.dart';
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart';
+import 'health_screen.dart';
 import 'log_screen.dart';
 import 'me_screen.dart';
+import 'memory_screen.dart';
+import 'paywall_screen.dart';
+import 'plan_screen.dart';
+import 'settings_screen.dart';
 import 'theme.dart';
 import 'today_screen.dart';
 
@@ -71,6 +78,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _ => const MeScreen(),
     };
     return Scaffold(
+      drawer: _Drawer(name: widget.name),
       appBar: AppBar(
         title: Text(l.hello(widget.name)),
         actions: [
@@ -91,6 +99,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           NavigationDestination(icon: const Icon(Icons.add_circle_outline), selectedIcon: const Icon(Icons.add_circle), label: l.tabLog),
           NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: l.tabMe),
         ],
+      ),
+    );
+  }
+}
+
+/// Everything that isn't a tab: the plan and shopping list, health, what the AI knows,
+/// settings. Each item opens its own screen on top.
+// A Drawer of ListTiles, not NavigationDrawer: its fixed 56 dp rows can't wrap at 200 % text.
+class _Drawer extends ConsumerWidget {
+  const _Drawer({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final data = ref.watch(profileDataProvider);
+    final agent = ref.watch(agentProvider);
+    void open(Widget Function() screen) {
+      Navigator.of(context).pop(); // the drawer
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => screen()))
+          .then((_) => data?.changed()); // e.g. a new plan shows on Today
+    }
+
+    Widget section(String title) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant)),
+        );
+    Widget item(IconData icon, String label, VoidCallback? onTap) =>
+        ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
+    return Drawer(
+      child: SafeArea(
+        child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: scheme.primaryContainer,
+                child: Image.asset('assets/icons/icon_chat.png', width: 36, height: 36, excludeFromSemantics: true),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(name, style: Theme.of(context).textTheme.titleLarge)),
+            ]),
+          ),
+          if (data != null) ...[
+            section(l.drawerFood),
+            item(Icons.event_note_outlined, l.mealPlan, () => open(() => PlanScreen(data: data))),
+            item(Icons.shopping_cart_outlined, l.shoppingListNav,
+                () => open(() => PlanScreen(data: data, initialTab: 1))),
+          ],
+          section(l.healthTitle),
+          item(Icons.monitor_heart_outlined, l.healthJournalNav, () => open(() => const HealthScreen())),
+          section(l.drawerAssistant),
+          item(Icons.psychology_outlined, l.aiKnowsTitle,
+              agent.hasValue ? () => open(() => MemoryScreen(agent: agent.requireValue)) : null),
+          const Divider(indent: 16, endIndent: 16),
+          item(Icons.settings_outlined, l.settingsTitle, () => open(() => const SettingsScreen())),
+          item(Icons.workspace_premium_outlined, l.yourPlan, () => open(() => const PaywallScreen())),
+          item(Icons.lock_outline, l.switchProfile, () {
+            Navigator.of(context).pop();
+            ref.read(unlockedProvider.notifier).lock();
+          }),
+        ]),
       ),
     );
   }
@@ -131,14 +204,72 @@ Widget _modelTile(AppLocalizations l, Llm m, Widget trailing) {
   );
 }
 
-Widget _progress(AppLocalizations l, WidgetRef ref, int progress) => Column(children: [
-      LinearProgressIndicator(value: progress / 100, semanticsLabel: l.aiDownloading),
-      const SizedBox(height: 8),
-      Text('${l.aiDownloading} $progress %', textAlign: TextAlign.center),
-      TextButton(onPressed: () => ref.read(llmDownloadProvider.notifier).cancel(), child: Text(l.cancel)),
-    ]);
+/// Before a big download: on Wi-Fi it goes ahead, Wi-Fi only. Otherwise asks: wait
+/// for Wi-Fi, use mobile data, or cancel. Returns wifiOnly, or null = cancelled.
+Future<bool?> askNetwork(BuildContext context, int mb) async {
+  final net = await Connectivity().checkConnectivity();
+  if (net.contains(ConnectivityResult.wifi) || net.contains(ConnectivityResult.ethernet)) return true;
+  if (!context.mounted) return null;
+  final l = AppLocalizations.of(context)!;
+  return showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      icon: const Icon(Icons.signal_cellular_alt),
+      title: Text(l.downloadNoWifiTitle),
+      content: Text(l.downloadNoWifiBody(mb)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.downloadUseMobile)),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(l.downloadWaitWifi)),
+      ],
+    ),
+  );
+}
 
-/// Me tab, 8 GB phones only: which chat model is in use, and switching to the other.
+/// A download's progress, what it's waiting for, and Pause / Resume / Cancel.
+class DownloadBar extends ConsumerWidget {
+  const DownloadBar(this.provider, {super.key});
+  final NotifierProvider<FileDownload, Download?> provider;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final d = ref.watch(provider);
+    if (d == null) return const SizedBox.shrink();
+    final l = AppLocalizations.of(context)!;
+    final download = ref.read(provider.notifier);
+    final failed = d.status == TaskStatus.failed || d.status == TaskStatus.notFound;
+    final text = switch (d.status) {
+      TaskStatus.enqueued => d.task.requiresWiFi ? l.downloadWaitingWifi : l.downloadWaitingNetwork,
+      TaskStatus.waitingToRetry => l.downloadRetrying,
+      TaskStatus.paused => l.downloadPaused,
+      TaskStatus.complete => l.downloadInstalling,
+      _ when failed => l.aiDownloadFailed,
+      _ => l.aiDownloading,
+    };
+    final error = TextStyle(color: Theme.of(context).colorScheme.error);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      LinearProgressIndicator(value: d.percent / 100, semanticsLabel: l.aiDownloading),
+      const SizedBox(height: 8),
+      Text('$text · ${d.percent} %', textAlign: TextAlign.center, style: failed ? error : null),
+      if (!d.task.requiresWiFi) Text(l.downloadOnMobile, textAlign: TextAlign.center, style: error),
+      if (d.status != TaskStatus.complete)
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          if (d.status == TaskStatus.running) TextButton(onPressed: download.pause, child: Text(l.downloadPause)),
+          if (d.status == TaskStatus.paused || failed)
+            TextButton(onPressed: download.resume, child: Text(l.downloadResume)),
+          TextButton(onPressed: download.cancel, child: Text(l.cancel)),
+        ]),
+    ]);
+  }
+}
+
+Future<void> _startLlm(BuildContext context, WidgetRef ref, Llm m) async {
+  final title = AppLocalizations.of(context)!.aiModelTitle;
+  final wifiOnly = await askNetwork(context, m.downloadMb);
+  if (wifiOnly != null) await ref.read(llmDownloadProvider.notifier).start(m, wifiOnly: wifiOnly, title: title);
+}
+
+/// Me tab, 12 GB phones only: which chat model is in use, and switching to the other.
 class AiModelCard extends ConsumerStatefulWidget {
   const AiModelCard({super.key});
 
@@ -147,8 +278,6 @@ class AiModelCard extends ConsumerStatefulWidget {
 }
 
 class _AiModelCardState extends ConsumerState<AiModelCard> {
-  var _failed = false;
-
   Future<void> _switch(Llm m) async {
     final l = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
@@ -162,14 +291,7 @@ class _AiModelCardState extends ConsumerState<AiModelCard> {
         ],
       ),
     );
-    if (ok != true) return;
-    setState(() => _failed = false);
-    try {
-      await ref.read(llmDownloadProvider.notifier).start(m);
-    } on Object catch (e) {
-      debugPrint('model switch stopped: $e');
-      if (mounted) setState(() => _failed = true);
-    }
+    if (ok == true && mounted) await _startLlm(context, ref, m);
   }
 
   @override
@@ -192,8 +314,7 @@ class _AiModelCardState extends ConsumerState<AiModelCard> {
                     ? Text(l.aiModelInUse, style: TextStyle(color: context.colors.primary, fontWeight: FontWeight.w600))
                     : OutlinedButton(onPressed: progress == null ? () => _switch(m) : null, child: Text(l.aiModelSwitch)),
               ),
-            if (progress != null) _progress(l, ref, progress),
-            if (_failed) Text(l.aiDownloadFailed, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            DownloadBar(llmDownloadProvider),
           ]),
         ),
       ),
@@ -211,17 +332,7 @@ class _DownloadAi extends ConsumerStatefulWidget {
 }
 
 class _DownloadAiState extends ConsumerState<_DownloadAi> {
-  var _failed = false;
-
-  Future<void> _start(Llm model) async {
-    setState(() => _failed = false);
-    try {
-      await ref.read(llmDownloadProvider.notifier).start(model);
-    } on Object catch (e) {
-      debugPrint('model download stopped: $e');
-      if (mounted) setState(() => _failed = true);
-    }
-  }
+  void _start(Llm m) => _startLlm(context, ref, m);
 
   @override
   Widget build(BuildContext context) {
@@ -236,11 +347,10 @@ class _DownloadAiState extends ConsumerState<_DownloadAi> {
       Text(l.aiDownloadBody([for (final m in choices) (m.downloadMb / 1024).toStringAsFixed(1)].join('–'))),
       const SizedBox(height: 16),
       if (progress != null)
-        _progress(l, ref, progress)
+        DownloadBar(llmDownloadProvider)
       else ...[
-        if (_failed) Text(l.aiDownloadFailed, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         const SizedBox(height: 8),
-        // 8 GB phones choose; the others get the one model that fits.
+        // 12 GB phones choose; the others get the one model that fits.
         if (choices.length > 1)
           for (final m in choices)
             _modelTile(l, m, ElevatedButton(onPressed: () => _start(m), child: Text(l.aiDownloadButton)))

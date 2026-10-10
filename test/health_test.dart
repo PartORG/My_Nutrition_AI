@@ -77,11 +77,11 @@ void main() {
   test('a recipe opened by name names what to avoid, once per food', () {
     setCondition(user, named('hypertension'), true, now: now); // dummy: soy sauce, feta
     user.execute("INSERT INTO user_allergens VALUES ('soy', 0)");
-    final stirFry = tools.run('show_recipe', {'recipe': 'chicken broccoli stir-fry'});
+    final stirFry = tools.run('recipe', {'action': 'show', 'recipe': 'chicken broccoli stir-fry'});
     final cautions = (stirFry.card! as RecipeCard).cautions;
     expect(cautions, [(food: 'soy sauce', allergen: 'soy', condition: 'hypertension')]);
     expect(stirFry.forModel['caution'], contains('soy sauce'));
-    expect((tools.run('show_recipe', {'recipe': 'lentil soup'}).card! as RecipeCard).cautions, isEmpty);
+    expect((tools.run('recipe', {'action': 'show', 'recipe': 'lentil soup'}).card! as RecipeCard).cautions, isEmpty);
   });
 
   test('condition limits only tighten targets, even manual ones', () {

@@ -15,6 +15,7 @@ import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/goals_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
+import 'package:myfoodmind/ui/me_screen.dart';
 
 void main() {
   late Directory tmp;
@@ -194,5 +195,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Snack'), findsOneWidget);
     expect(find.text('158 kcal'), findsWidgets);
+  });
+
+  testWidgets('Me: About me shows the details; the daily goal is edited in Your daily goals', (tester) async {
+    saveBody(data.user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
+        activity: Activity.light, goal: Goal.lose, imperial: false), now: DateTime.now());
+    data.user.execute("INSERT INTO user_allergens (allergen, added_at) VALUES ('peanuts', 0)");
+    await pumpApp(tester, const Scaffold(body: MeScreen()));
+    for (final t in ['About me', 'Anna', 'Female', '1980', '165 cm', '62.0 kg', 'peanuts', 'Your daily goals']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    await tester.ensureVisible(find.text('Lose weight'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lose weight'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Maintain').last);
+    await tester.pumpAndSettle();
+    expect(loadBody(data.user)!.goal, Goal.maintain);
+    expect(find.text('Maintain'), findsOneWidget);
   });
 }

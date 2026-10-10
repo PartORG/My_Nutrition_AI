@@ -217,7 +217,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rien pour l’instant. Dites au chat par exemple « J’ai une friteuse à air ».';
 
   @override
-  String get allergiesSection => 'Allergies';
+  String get allergiesSection => 'Allergies et régime';
 
   @override
   String get allergiesEmpty => 'Aucune enregistrée.';
@@ -453,7 +453,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ces formules ne s’appliquent pas avant 18 ans. Fixez les objectifs ci-dessous avec votre pédiatre.';
 
   @override
-  String get targetsTitle => 'Objectifs du jour';
+  String get aboutMe => 'À propos de moi';
+
+  @override
+  String get sexShort => 'Sexe';
+
+  @override
+  String get height => 'Taille';
+
+  @override
+  String get weight => 'Poids';
 
   @override
   String get targetsNone => 'Pas encore d’objectifs.';
@@ -711,7 +720,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String cautionAllergy(String food, String allergen) {
-    return 'Contient $food, sur votre liste d’allergies ($allergen)';
+    return 'Contient $food, exclu par vos allergies ou votre régime ($allergen)';
   }
 
   @override
@@ -911,7 +920,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cameraNamingFailed =>
-      'Impossible de reconnaître les aliments. Réessayez.';
+      'La reconnaissance IA a échoué : détection rapide à la place. Vérifiez les aliments.';
 
   @override
   String cameraUseFound(int count) {
@@ -1009,6 +1018,33 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cardRemoveAllergy => 'Retirer une allergie';
+
+  @override
+  String get cardAddDiet => 'Ajouter un régime';
+
+  @override
+  String get cardRemoveDiet => 'Retirer un régime';
+
+  @override
+  String get captionConfirm => 'Vérifiez puis touchez « Enregistrer ».';
+
+  @override
+  String get captionIdeas =>
+      'Voici quelques idées. Touchez-en une pour voir la recette.';
+
+  @override
+  String captionIdeasAvoiding(String foods) {
+    return 'Attention : vous êtes allergique à $foods ou l’évitez, je l’ai donc laissé de côté. Voici des recettes sans ; touchez-en une pour la voir.';
+  }
+
+  @override
+  String get captionRecipe => 'Voici la recette.';
+
+  @override
+  String get captionNumbers => 'Voici les valeurs.';
+
+  @override
+  String get captionCamera => 'Touchez le bouton pour ouvrir l’appareil photo.';
 
   @override
   String get cardLogSymptom => 'Noter un symptôme';
@@ -1344,7 +1380,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Comprend mieux, répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 8 Go de RAM.';
+      'Comprend mieux, répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 12 Go de RAM.';
 
   @override
   String get aiModelSwitch => 'Changer';
@@ -1364,6 +1400,46 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le téléchargement s’est arrêté. Vérifiez la connexion et l’espace libre, puis réessayez ; il reprendra là où il s’est arrêté.';
 
   @override
+  String get downloadNoWifiTitle => 'Pas de Wi-Fi';
+
+  @override
+  String downloadNoWifiBody(int mb) {
+    return 'Vous n’êtes pas connecté au Wi-Fi. Ce téléchargement fait $mb Mo ; en données mobiles, il peut épuiser votre forfait ou vous coûter de l’argent.';
+  }
+
+  @override
+  String get downloadWaitWifi => 'Attendre le Wi-Fi';
+
+  @override
+  String get downloadUseMobile => 'Utiliser les données mobiles';
+
+  @override
+  String get downloadOnMobile =>
+      'Données mobiles autorisées : ce téléchargement peut consommer votre forfait.';
+
+  @override
+  String get downloadWaitingWifi => 'En attente du Wi-Fi';
+
+  @override
+  String get downloadWaitingNetwork => 'En attente d’une connexion';
+
+  @override
+  String get downloadRetrying =>
+      'Connexion perdue ; il reprendra dès son retour';
+
+  @override
+  String get downloadPaused => 'En pause';
+
+  @override
+  String get downloadInstalling => 'Installation…';
+
+  @override
+  String get downloadPause => 'Pause';
+
+  @override
+  String get downloadResume => 'Reprendre';
+
+  @override
   String get privacyPolicy => 'Politique de confidentialité';
 
   @override
@@ -1371,4 +1447,41 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get licenses => 'Licences et modèles d’IA';
+
+  @override
+  String get settingsTitle => 'Paramètres';
+
+  @override
+  String get drawerFood => 'Alimentation';
+
+  @override
+  String get drawerAssistant => 'Assistant';
+
+  @override
+  String get shoppingListNav => 'Liste de courses';
+
+  @override
+  String get healthJournalNav => 'Journal de santé et rapport';
+
+  @override
+  String get settingsAi => 'IA et données';
+
+  @override
+  String get settingsTracking => 'Suivi';
+
+  @override
+  String get settingsPrivacy => 'Confidentialité et sécurité';
+
+  @override
+  String get settingsAbout => 'À propos';
+
+  @override
+  String get settingsDanger => 'Zone de danger';
+
+  @override
+  String get deleteThisProfile => 'Supprimer ce profil';
+
+  @override
+  String get deleteThisProfileBody =>
+      'Le profil et tous ses repas, son journal et son historique de chat seront supprimés de ce téléphone. Action irréversible.';
 }

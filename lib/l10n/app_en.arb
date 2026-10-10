@@ -123,7 +123,7 @@
   "aiKnowsIntro": "This is everything the assistant is told about you. It stays on this phone.",
   "factsSection": "Things you told it",
   "factsEmpty": "Nothing yet. Tell the chat things like “I have an air fryer”.",
-  "allergiesSection": "Allergies",
+  "allergiesSection": "Allergies and diet",
   "allergiesEmpty": "None recorded.",
   "habitsSection": "Habits it noticed (last 30 days)",
   "habitsEmpty": "Not enough logged meals yet.",
@@ -248,7 +248,10 @@
   "goalGain": "Gain weight",
   "invalidNumber": "Enter a valid number",
   "under18": "For people under 18 these formulas don't apply. Set targets with your pediatrician below.",
-  "targetsTitle": "Daily targets",
+  "aboutMe": "About me",
+  "sexShort": "Sex",
+  "height": "Height",
+  "weight": "Weight",
   "targetsNone": "No targets yet.",
   "custom": "custom",
   "editTarget": "{name} target",
@@ -406,7 +409,7 @@
   "logWeight": "Log weight",
   "weightLogged": "Weight saved",
   "plansUnavailable": "Plans aren't available in this build.",
-  "cautionAllergy": "Contains {food}, on your allergy list ({allergen})",
+  "cautionAllergy": "Contains {food}, which your allergies or diet exclude ({allergen})",
   "@cautionAllergy": {
     "placeholders": {
       "food": {
@@ -546,7 +549,7 @@
   "cameraUnavailable": "The camera isn't available. Allow camera access for MyFoodMind in Android settings.",
   "cameraShoot": "Take photo",
   "cameraNaming": "Recognizing food…",
-  "cameraNamingFailed": "Couldn't recognize the food. Try again.",
+  "cameraNamingFailed": "AI recognition failed: showing quick detection instead. Check the items.",
   "cameraUseFound": "{count, plural, =0{Continue} =1{Use 1 item} other{Use {count} items}}",
   "@cameraUseFound": {
     "placeholders": {
@@ -609,6 +612,21 @@
   "cardRemember": "Remember",
   "cardAddAllergy": "Add allergy",
   "cardRemoveAllergy": "Remove allergy",
+  "cardAddDiet": "Add diet",
+  "cardRemoveDiet": "Remove diet",
+  "captionConfirm": "Check it and tap Save.",
+  "captionIdeas": "Here are some ideas. Tap one to see the recipe.",
+  "captionIdeasAvoiding": "Careful: you're allergic to or avoid {foods}, so I left it out. Here are recipes without it; tap one to see it.",
+  "@captionIdeasAvoiding": {
+    "placeholders": {
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "captionRecipe": "Here's the recipe.",
+  "captionNumbers": "Here are the numbers.",
+  "captionCamera": "Tap the button to open the camera.",
   "cardLogSymptom": "Log symptom",
   "cardLogGlucose": "Log blood glucose",
   "cardLogBloodPressure": "Log blood pressure",
@@ -879,13 +897,44 @@
       }
     }
   },
-  "aiModelLargeHint": "Understands more, answers about 2-3x slower. For phones with 8 GB RAM.",
+  "aiModelLargeHint": "Understands more, answers about 2-3x slower. For phones with 12 GB RAM.",
   "aiModelSwitch": "Switch",
   "aiModelSwitchBody": "The other model downloads first; the current one is deleted when it's done.",
   "aiModelInUse": "In use",
   "aiDownloading": "Downloading",
   "aiDownloadFailed": "The download stopped. Check your connection and free space, then try again; it continues where it stopped.",
+  "downloadNoWifiTitle": "Not on Wi-Fi",
+  "downloadNoWifiBody": "You are not connected to Wi-Fi. This download is {mb} MB; over mobile data it can use up your data plan or cost money.",
+  "@downloadNoWifiBody": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadWaitWifi": "Wait for Wi-Fi",
+  "downloadUseMobile": "Use mobile data",
+  "downloadOnMobile": "Mobile data allowed: this download can use your data plan.",
+  "downloadWaitingWifi": "Waiting for Wi-Fi",
+  "downloadWaitingNetwork": "Waiting for a connection",
+  "downloadRetrying": "Connection lost; it continues when it's back",
+  "downloadPaused": "Paused",
+  "downloadInstalling": "Installing…",
+  "downloadPause": "Pause",
+  "downloadResume": "Resume",
   "privacyPolicy": "Privacy policy",
   "termsOfUse": "Terms of use",
-  "licenses": "Licenses and AI models"
+  "licenses": "Licenses and AI models",
+  "settingsTitle": "Settings",
+  "drawerFood": "Food",
+  "drawerAssistant": "Assistant",
+  "shoppingListNav": "Shopping list",
+  "healthJournalNav": "Health journal and report",
+  "settingsAi": "AI and data",
+  "settingsTracking": "Tracking",
+  "settingsPrivacy": "Privacy and security",
+  "settingsAbout": "About",
+  "settingsDanger": "Danger zone",
+  "deleteThisProfile": "Delete this profile",
+  "deleteThisProfileBody": "This removes the profile and all its meals, journal and chat history from this phone. This can't be undone."
 }

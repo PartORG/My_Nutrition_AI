@@ -230,7 +230,7 @@ Decisions (user, 2026-10-05):
   report are Medium.
 - Doctor report: **PDF + CSV through the Android share sheet** (`pdf`, `share_plus`); the app sends
   nothing itself. PDF embeds Noto Sans (OFL, `assets/fonts/`) so any script prints.
-- Chat `log_symptom` / `log_reading` stay free; only the Health screen is Medium.
+- Chat `log_health` (symptoms and readings) stays free; only the Health screen is Medium.
 
 Built:
 - user.db v4 `user_conditions`. `currentTargets` caps every target (manual ones too) at the lowest

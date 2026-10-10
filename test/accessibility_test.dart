@@ -24,6 +24,8 @@ import 'package:myfoodmind/ui/camera_screen.dart';
 import 'package:myfoodmind/ui/chat_screen.dart';
 import 'package:myfoodmind/ui/health_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
+import 'package:myfoodmind/ui/profile_screens.dart';
+import 'package:myfoodmind/ui/settings_screen.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'agent_test.dart' show FakeModel;
@@ -87,6 +89,45 @@ void main() {
       await tester.drag(lists.first, const Offset(0, -400), warnIfMissed: false);
       await tester.pump();
     }
+  }
+
+  for (final lang in ['en', 'uk', 'de', 'fr']) {
+    testWidgets('$lang: drawer opens the shopping list; Settings at 200 % text', (tester) async {
+      smallPhone(tester);
+      await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang)));
+      await tester.pump();
+      final l = lookupAppLocalizations(Locale(lang));
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.shoppingListNav));
+      await tester.pumpAndSettle();
+      expect(find.text(l.shoppingEmpty), findsOneWidget, reason: 'opened on the Shopping tab');
+      await tester.tap(find.byType(BackButton)); // pageBack() only knows the English tooltip
+      await tester.pumpAndSettle();
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'drawer ($lang)');
+
+      await tester.pumpWidget(app(const SettingsScreen(), locale: Locale(lang)));
+      await tester.pumpAndSettle();
+      expect(find.text(l.settingsDanger), findsNothing, reason: 'starts at the top');
+      await scrollAll(tester, 'Settings ($lang)');
+      await tester.scrollUntilVisible(find.text(l.deleteThisProfile), 400);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('$lang: profile picker and PIN screen at 200 % text', (tester) async {
+      smallPhone(tester);
+      final profiles = Profiles.open(tmp);
+      await tester.runAsync(() => profiles.create('Anna-Maria Kowalenko', '1234'));
+      await tester.pumpWidget(app(const ProfilesScreen(), locale: Locale(lang))); // reads the same profiles.db
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'profiles ($lang)');
+      await tester.tap(find.text('Anna-Maria Kowalenko'));
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'PIN ($lang)');
+      expect(find.byType(FilledButton), findsOneWidget);
+    });
   }
 
   testWidgets('Today, Log and Me at 200 % text', (tester) async {
@@ -230,7 +271,7 @@ void main() {
     final t = data.tools;
     agent.items.addAll([
       CardItem(t.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken'}).card!),
-      CardItem(t.run('show_recipe', {'recipe': '1'}).card!),
+      CardItem(t.run('recipe', {'action': 'show', 'recipe': '1'}).card!),
       CardItem(t.run('nutrition_status', {'period': 'today'}).card!),
       CardItem(t.run('log_meal', {'items': '2 eggs, toast', 'meal_type': 'breakfast'}).card!),
       CrisisItem(),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -24,8 +25,11 @@ class ModelItem extends ChatItem {
 }
 
 class CardItem extends ChatItem {
-  CardItem(this.card);
+  CardItem(this.card, {this.caption = false});
   final AgentCard card;
+
+  /// Shown without a model reply: the UI puts a short translated line above it.
+  final bool caption;
 }
 
 /// Shown instead of calling the model.
@@ -68,23 +72,42 @@ class Agent extends ChangeNotifier {
   bool busy = false;
 
   ChatSession? _session;
-  int _sessionChars = 0;
 
-  /// Recreate the conversation before the 4096-token context fills up.
-  // ponytail: ~4 chars per token estimate; read the real count if the plugin exposes it.
-  static const _maxSessionChars = 3000 * 4;
+  /// Tokens the live conversation holds, counted with the model's tokenizer:
+  /// system prompt, tool declarations, replayed history and every turn since.
+  int _sessionTokens = 0;
+
+  /// Room kept free for one turn's output: up to 3 tool calls, their results and
+  /// a reply of at most 256 tokens. The conversation is recreated before it runs out.
+  static const _turnRoom = 1024;
+
+  /// Context lines as the live conversation last saw them, by label ("Eaten today"):
+  /// a message carries only the lines that changed since.
+  final _sentContext = <String, String>{};
 
   /// Tool calls allowed in one turn, so a confused model can't loop forever.
   static const _maxToolCalls = 3;
 
-  /// Shows the stored chat (cards are not stored; their effects are in the logs).
+  /// Each day is a new chat: earlier days stay stored on the phone and come back
+  /// through episodic memory ("what did I cook yesterday?"), not in the window.
+  DateTime _today() {
+    final now = _now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  /// The day the live conversation and [items] belong to.
+  DateTime? _day;
+
+  /// Shows today's stored chat (cards are not stored; their effects are in the logs).
   void loadHistory({int limit = 100}) {
+    _day = _today();
     items
       ..clear()
       ..addAll([
         for (final r in user.select(
-            "SELECT role, text FROM chat_messages WHERE role IN ('user', 'model') ORDER BY id DESC LIMIT ?",
-            [limit]).reversed)
+            "SELECT role, text FROM chat_messages WHERE role IN ('user', 'model') AND created_at >= ? "
+            'ORDER BY id DESC LIMIT ?',
+            [_day!.millisecondsSinceEpoch, limit]).reversed)
           r['role'] == 'user' ? UserItem(r['text'] as String) : ModelItem(r['text'] as String)
       ]);
     notifyListeners();
@@ -98,6 +121,13 @@ class Agent extends ChangeNotifier {
     text = text.trim();
     if (text.isEmpty || busy) return;
     busy = true;
+    if (_day != null && _day != _today()) {
+      // Past midnight with the chat open: a new day's chat.
+      items.clear();
+      await _session?.close();
+      _session = null;
+    }
+    _day = _today();
     items.add(UserItem(text));
     notifyListeners();
     try {
@@ -110,7 +140,7 @@ class Agent extends ChangeNotifier {
         final at = _now();
         final id = _store('user', text, at);
         _store('tool', 'routed -> ${routed.forModel}', at);
-        items.add(CardItem(routed.card!));
+        items.add(CardItem(routed.card!, caption: true));
         unawaited(memory.index('chat', id, at, text).then((_) {}, onError: (Object e) => debugPrint('index: $e')));
         return;
       }
@@ -120,15 +150,24 @@ class Agent extends ChangeNotifier {
       }
       final at = _now();
       final id = _store('user', text, at);
-      final vector = await memory.index('chat', id, at, text);
-      final context = memory.context(recalls: memory.recall(vector, before: at));
+      // Embedding costs ~0.8 s on the phone's CPU: wait for it only when the message
+      // points at the past; otherwise it indexes while the model runs.
+      final vector = memory.index('chat', id, at, text);
+      unawaited(vector.then((_) {}, onError: (Object e) => debugPrint('index: $e')));
+      final recalls = refersToPast(text) ? memory.recall(await vector, before: at) : const <Recall>[];
+      final context = memory.context(recalls: recalls);
 
-      if (_session == null || _sessionChars > _maxSessionChars) {
-        await _session?.close();
+      _session ??= await _open(before: id);
+      var prompt = _prompt(context, text);
+      var size = await _session!.countTokens(prompt);
+      if (_sessionTokens + size + _turnRoom > llmContextTokens) {
+        await _session!.close();
+        _session = null;
         _session = await _open(before: id);
+        prompt = _prompt(context, text); // the new conversation gets the whole block
+        size = await _session!.countTokens(prompt);
       }
-      final prompt = '[Context]\n$context\n[/Context]\n$text';
-      _sessionChars += prompt.length;
+      _sessionTokens += size;
       await _runTurn(_session!.sendUser(prompt), text);
     } catch (e, st) {
       debugPrint('agent error: $e\n$st');
@@ -155,8 +194,9 @@ class Agent extends ChangeNotifier {
             call = e;
         }
       }
+      if (call != null) _sessionTokens += await _session!.countTokens('${call.name} ${jsonEncode(call.args)}');
       if (reply != null && reply.text.trim().isNotEmpty) {
-        _sessionChars += reply.text.length;
+        _sessionTokens += await _session!.countTokens(reply.text);
         _store('model', reply.text.trim(), _now());
       }
       if (call == null) return;
@@ -171,12 +211,25 @@ class Agent extends ChangeNotifier {
       final result = tools.run(call.name, call.args, said: said);
       // Recorded so a chat can be debugged later ("did it really call save?").
       _store('tool', '${call.name} ${call.args} -> ${result.card is ConfirmCard ? 'confirm card' : result.forModel.keys.join(',')}', _now());
+      _sessionTokens += await _session!.countTokens(result.forModel.toString());
+      if (_cardSaysItAll(call.name, result)) {
+        // No second model pass (M0: a written answer costs seconds); a fixed line instead.
+        items.add(CardItem(result.card!, caption: true));
+        await _session!.stageToolResult(call.name, result.forModel);
+        return;
+      }
       if (result.card != null) items.add(CardItem(result.card!));
       notifyListeners();
-      _sessionChars += result.forModel.toString().length;
       stream = _session!.sendToolResult(call.name, result.forModel);
     }
   }
+
+  /// The card shows everything the reply would say. The model still answers after
+  /// condition_info (it summarises passages), errors, empty results and notes it must pass on.
+  static bool _cardSaysItAll(String tool, ToolResult r) =>
+      r.card != null &&
+      tool != 'condition_info' &&
+      !r.forModel.keys.any(const {'error', 'not_found', 'caution', 'repeated'}.contains);
 
   /// A tap on a recipe in a list: opens exactly that recipe, no model, not counted.
   void showRecipe(int recipeId) {
@@ -236,16 +289,33 @@ class Agent extends ChangeNotifier {
     if (accept) unawaited(memory.backfill()); // index a logged meal for episodic memory
   }
 
-  Future<ChatSession> _open({int? before}) {
-    _sessionChars = 0;
-    // Working memory after a restart: the last 6 messages, without their context blocks.
+  Future<ChatSession> _open({int? before}) async {
+    // Working memory after a restart: today's last 6 messages, without their context blocks.
     final rows = user.select(
-        "SELECT role, text FROM chat_messages WHERE role IN ('user', 'model') AND id < ? "
-        'ORDER BY id DESC LIMIT 6', [before ?? 1 << 62]).reversed;
-    return model.open(
-      system: agentSystemPrompt,
-      replay: [for (final r in rows) (isUser: r['role'] == 'user', text: r['text'] as String)],
-    );
+        "SELECT role, text FROM chat_messages WHERE role IN ('user', 'model') AND id < ? AND created_at >= ? "
+        'ORDER BY id DESC LIMIT 6', [before ?? 1 << 62, _today().millisecondsSinceEpoch]).reversed;
+    final replay = [for (final r in rows) (isUser: r['role'] == 'user', text: r['text'] as String)];
+    final session = await model.open(system: agentSystemPrompt, replay: replay);
+    _sentContext.clear();
+    // ponytail: the declarations as JSON, not as the chat template renders them; _turnRoom covers the gap.
+    _sessionTokens = await session.countTokens([
+      agentSystemPrompt,
+      jsonEncode([for (final t in agentTools) {'name': t.name, 'description': t.description, 'parameters': t.parameters}]),
+      for (final t in replay) t.text,
+    ].join('\n'));
+    return session;
+  }
+
+  /// The user's message after the context lines the conversation hasn't seen yet.
+  String _prompt(String context, String text) {
+    final fresh = [
+      for (final line in context.split('\n'))
+        if (_sentContext[line.split(':').first] != line) line
+    ];
+    for (final line in fresh) {
+      _sentContext[line.split(':').first] = line;
+    }
+    return fresh.isEmpty ? text : '[Context]\n${fresh.join('\n')}\n[/Context]\n$text';
   }
 
   int _store(String role, String text, DateTime at) {

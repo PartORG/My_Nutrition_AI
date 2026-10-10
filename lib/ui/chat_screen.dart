@@ -159,7 +159,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 '&body=${Uri.encodeComponent('Response:\n$text\n\nWhat was wrong:\n')}',
           )),
         ),
-      CardItem(:final card) => _CardView(card: card, agent: widget.agent),
+      CardItem(:final card, caption: false) => _CardView(card: card, agent: widget.agent),
+      CardItem(:final card) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (_caption(l, card) case final text?) _Bubble(text: text, mine: false),
+          _CardView(card: card, agent: widget.agent),
+        ]),
       CrisisItem() => _Notice(
           color: scheme.errorContainer,
           title: l.crisisTitle,
@@ -392,6 +396,17 @@ class _CardView extends StatelessWidget {
   }
 }
 
+/// The line above a card shown without a model reply.
+String? _caption(AppLocalizations l, AgentCard card) => switch (card) {
+      ConfirmCard() => l.captionConfirm,
+      RecipeListCard(:final avoided) when avoided.isNotEmpty => l.captionIdeasAvoiding(avoided.join(', ')),
+      RecipeListCard() => l.captionIdeas,
+      RecipeCard() => l.captionRecipe,
+      NutritionCard() => l.captionNumbers,
+      CameraCard() => l.captionCamera,
+      InfoCard() => null,
+    };
+
 /// The tools write card titles in English (the model reads them too); shown in the app's language.
 String _confirmTitle(AppLocalizations l, ConfirmCard c) {
   if (c.mealType != null) {
@@ -409,6 +424,8 @@ String _confirmTitle(AppLocalizations l, ConfirmCard c) {
         'Remember' => l.cardRemember,
         'Add allergy' => l.cardAddAllergy,
         'Remove allergy' => l.cardRemoveAllergy,
+        'Add diet' => l.cardAddDiet,
+        'Remove diet' => l.cardRemoveDiet,
         'Log symptom' => l.cardLogSymptom,
         'Log glucose' => l.cardLogGlucose,
         'Log blood pressure' => l.cardLogBloodPressure,

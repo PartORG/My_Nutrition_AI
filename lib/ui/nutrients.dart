@@ -30,8 +30,14 @@ String formatMicro(double v, String unit) => '${v < 10 ? v.toStringAsFixed(1) : 
 
 /// "56 g", "1200 mg", "540 kcal".
 String formatNutrient(String key, double value, AppLocalizations l) {
+  final (n, unit) = formatNutrientParts(key, value, l);
+  return '$n $unit';
+}
+
+/// "540" and "kcal" apart, for a table that sets the number bigger than the unit.
+(String, String) formatNutrientParts(String key, double value, AppLocalizations l) {
   final unit = nutrientLabels(l)[key]!.$2;
-  return '${value.round()} ${unit.isEmpty ? l.kcal : unit}';
+  return ('${value.round()}', unit.isEmpty ? l.kcal : unit);
 }
 
 /// Compact nutrient pills ("● 540 kcal", "● 12 g Protein"): a colour dot marks
@@ -83,12 +89,14 @@ String inSentence(BuildContext context, String word) =>
 const legalBase = 'https://partorg.github.io/myfoodmind';
 
 /// Privacy policy · Terms of use links, for the Me tab and the paywall.
+/// 'privacy.html' or 'terms.html' on the project's site, in the browser.
+void openLegal(String page) => launchUrl(Uri.parse('$legalBase/$page'), mode: LaunchMode.externalApplication);
+
 Widget legalLinks(BuildContext context) {
   final l = AppLocalizations.of(context)!;
-  void open(String page) => launchUrl(Uri.parse('$legalBase/$page'), mode: LaunchMode.externalApplication);
   return Wrap(alignment: WrapAlignment.center, children: [
-    TextButton(onPressed: () => open('privacy.html'), child: Text(l.privacyPolicy)),
-    TextButton(onPressed: () => open('terms.html'), child: Text(l.termsOfUse)),
+    TextButton(onPressed: () => openLegal('privacy.html'), child: Text(l.privacyPolicy)),
+    TextButton(onPressed: () => openLegal('terms.html'), child: Text(l.termsOfUse)),
   ]);
 }
 

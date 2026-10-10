@@ -34,16 +34,23 @@ void main() {
     }
     expect(isCrisis('How do I end my diet gracefully?'), isFalse);
     expect(isCrisis('I want to end my life'), isTrue);
+    expect(isCrisis('хочу померти'), isTrue);
+    expect(isCrisis('ХОЧУ ВМЕРТИ'), isTrue);
+    expect(isCrisis('Я думаю про самогубство'), isTrue);
+    expect(isCrisis('Ich denke an Selbstmord'), isTrue);
+    expect(isCrisis('je veux en finir'), isTrue);
+    expect(isCrisis('Je veux en finir avec le sucre'), isFalse);
+    expect(isCrisis('Хочу схуднути до літа'), isFalse);
   });
 
   test('score: tool exact, args case-insensitive substring', () {
-    const q = (q: 'x', tool: 'log_reading', args: {'kind': 'glucose', 'value': '140'});
-    expect(score(q, (tool: 'log_reading', args: {'kind': 'Glucose', 'value': '140 mg/dL'})),
+    const q = (q: 'x', tool: 'log_health', args: {'kind': 'glucose', 'value': '140'});
+    expect(score(q, (tool: 'log_health', args: {'kind': 'Glucose', 'value': '140 mg/dL'})),
         (tool: true, args: true));
-    expect(score(q, (tool: 'log_reading', args: {'kind': 'weight', 'value': '140'})),
+    expect(score(q, (tool: 'log_health', args: {'kind': 'weight', 'value': '140'})),
         (tool: true, args: false));
     expect(score(q, (tool: 'log_meal', args: {'kind': 'glucose', 'value': '140'})),
         (tool: false, args: false));
-    expect(score(q, (tool: 'log_reading', args: {})), (tool: true, args: false));
+    expect(score(q, (tool: 'log_health', args: {})), (tool: true, args: false));
   });
 }

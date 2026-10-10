@@ -45,8 +45,54 @@ void main() {
         for (final r in (tools.run('search_recipes', {'query': 'banana bread'}).card! as RecipeListCard).recipes)
           r.title.toLowerCase().trim()
     ];
-    expect(titles.length, 12);
-    expect(titles.toSet().length, 12);
+    expect(titles.length, 20);
+    expect(titles.toSet().length, 20);
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
+  test('"dinner with beef, mustard and honey": every suggestion has all three (regression)', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final tools = AgentTools(db, user);
+    for (final args in [
+      {'query': 'dinner', 'ingredients': 'beef, mustard, honey'},
+      {'query': 'dinner with beef, mustard and honey'},
+    ]) {
+      final r = tools.run('search_recipes', args);
+      expect((r.card! as RecipeListCard).recipes.length, 5);
+      expect(r.forModel['recipes'].toString(), isNot(contains('without')), reason: '$args');
+    }
+    // Before: "fish" in the query only matched titles; now every idea contains fish.
+    for (final s in (tools.route('can you suggest good dinner recipes? maybe with fish?')!.card! as RecipeListCard).recipes) {
+      expect(db.select('SELECT 1 FROM recipe_ingredients ri JOIN allergens a ON a.food_id = ri.food_id '
+          "WHERE ri.recipe_id = ? AND a.allergen = 'fish'", [s.id]), isNotEmpty, reason: s.title);
+    }
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
+  test('phone test: allergic to peanuts, asked for peanuts; "more" keeps salmon and tomatoes', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final tools = AgentTools(db, user);
+    (tools.run('set_allergen', {'allergen': 'peanuts'}).card! as ConfirmCard).apply();
+    final peanut = tools.run('search_recipes', {'query': 'recipes with peanuts', 'ingredients': 'peanuts'});
+    final list = peanut.card! as RecipeListCard;
+    expect(list.avoided, ['peanuts']);
+    expect(list.recipes.length, 5);
+    for (final r in list.recipes) {
+      expect(db.select('SELECT 1 FROM recipe_ingredients ri JOIN allergens a ON a.food_id = ri.food_id '
+          "WHERE ri.recipe_id = ? AND a.allergen = 'peanuts'", [r.id]), isEmpty, reason: r.title);
+    }
+    final first = tools.run('search_recipes', {'query': 'recipes', 'ingredients': 'tomatoes, salmon'});
+    final more = tools.run('search_recipes', {'query': 'more recipes'}, said: 'give me more');
+    for (final r in [first, more]) {
+      expect((r.card! as RecipeListCard).recipes.length, 5);
+      expect(r.forModel['recipes'].toString(), isNot(contains('without')), reason: '${r.forModel['recipes']}');
+    }
     db.close();
     user.close();
     tmp.deleteSync(recursive: true);

@@ -24,26 +24,26 @@ const List<Q> agentQueries = [
   (q: 'Kid friendly dinner with vegetables', tool: 'search_recipes', args: {'query': 'kid'}),
   (q: 'tofu mushrooms ginger soy sauce brown rice - recipe?', tool: 'search_recipes', args: {'ingredients': 'tofu'}),
 
-  // show_recipe — 5
-  (q: 'Show me recipe 2', tool: 'show_recipe', args: {'recipe': '2'}),
-  (q: 'How do I make the shakshuka you suggested?', tool: 'show_recipe', args: {'recipe': 'shakshuka'}),
-  (q: 'Open the first one', tool: 'show_recipe', args: {'recipe': '1'}),
-  (q: 'What are the steps for the lentil soup?', tool: 'show_recipe', args: {'recipe': 'lentil'}),
-  (q: 'Details of number 3 please', tool: 'show_recipe', args: {'recipe': '3'}),
+  // recipe, action show — 5
+  (q: 'Show me recipe 2', tool: 'recipe', args: {'action': 'show', 'recipe': '2'}),
+  (q: 'How do I make the shakshuka you suggested?', tool: 'recipe', args: {'action': 'show', 'recipe': 'shakshuka'}),
+  (q: 'Open the first one', tool: 'recipe', args: {'action': 'show', 'recipe': '1'}),
+  (q: 'What are the steps for the lentil soup?', tool: 'recipe', args: {'action': 'show', 'recipe': 'lentil'}),
+  (q: 'Details of number 3 please', tool: 'recipe', args: {'action': 'show', 'recipe': '3'}),
 
-  // save_recipe — 5
-  (q: 'Save recipe 1', tool: 'save_recipe', args: {'recipe': '1'}),
-  (q: 'I love the chickpea curry, keep it for later', tool: 'save_recipe', args: {'recipe': 'chickpea'}),
-  (q: 'Add the second recipe to my favorites', tool: 'save_recipe', args: {'recipe': '2'}),
-  (q: 'Bookmark the salmon bowl', tool: 'save_recipe', args: {'recipe': 'salmon'}),
-  (q: 'Like that omelette recipe', tool: 'save_recipe', args: {'recipe': 'omelette'}),
+  // recipe, action save — 5
+  (q: 'Save recipe 1', tool: 'recipe', args: {'action': 'save', 'recipe': '1'}),
+  (q: 'I love the chickpea curry, keep it for later', tool: 'recipe', args: {'action': 'save', 'recipe': 'chickpea'}),
+  (q: 'Add the second recipe to my favorites', tool: 'recipe', args: {'action': 'save', 'recipe': '2'}),
+  (q: 'Bookmark the salmon bowl', tool: 'recipe', args: {'action': 'save', 'recipe': 'salmon'}),
+  (q: 'Like that omelette recipe', tool: 'recipe', args: {'action': 'save', 'recipe': 'omelette'}),
 
-  // rate_recipe — 5
-  (q: 'The shakshuka was amazing, 5 stars', tool: 'rate_recipe', args: {'stars': '5'}),
-  (q: 'Rate the lentil soup 2 stars, too bland', tool: 'rate_recipe', args: {'stars': '2'}),
-  (q: 'I loved that recipe, give it 5', tool: 'rate_recipe', args: {'stars': '5'}),
-  (q: 'That stir-fry deserves 4 stars', tool: 'rate_recipe', args: {'stars': '4'}),
-  (q: 'One star for the overnight oats, I hated it', tool: 'rate_recipe', args: {'stars': '1'}),
+  // recipe, action rate — 5
+  (q: 'The shakshuka was amazing, 5 stars', tool: 'recipe', args: {'action': 'rate', 'stars': '5'}),
+  (q: 'Rate the lentil soup 2 stars, too bland', tool: 'recipe', args: {'action': 'rate', 'stars': '2'}),
+  (q: 'I loved that recipe, give it 5', tool: 'recipe', args: {'action': 'rate', 'stars': '5'}),
+  (q: 'That stir-fry deserves 4 stars', tool: 'recipe', args: {'action': 'rate', 'stars': '4'}),
+  (q: 'One star for the overnight oats, I hated it', tool: 'recipe', args: {'action': 'rate', 'stars': '1'}),
 
   // lookup_nutrition — 10
   (q: 'How many calories are in an avocado?', tool: 'lookup_nutrition', args: {'food': 'avocado'}),
@@ -96,21 +96,21 @@ const List<Q> agentQueries = [
   (q: 'I have celiac, no gluten for me', tool: 'set_allergen', args: {'allergen': 'gluten'}),
   (q: 'Sesame allergy', tool: 'set_allergen', args: {'allergen': 'sesame'}),
 
-  // log_symptom — 6
-  (q: 'I feel very tired today', tool: 'log_symptom', args: {'symptom': 'tired'}),
-  (q: 'My hands are numb this morning', tool: 'log_symptom', args: {'symptom': 'numb'}),
-  (q: 'Bloated after lunch, pretty bad', tool: 'log_symptom', args: {'symptom': 'bloat'}),
-  (q: 'Log a headache, severity 3', tool: 'log_symptom', args: {'symptom': 'headache'}),
-  (q: 'I had trouble swallowing at dinner', tool: 'log_symptom', args: {'symptom': 'swallow'}),
-  (q: 'Muscle cramps in my legs tonight', tool: 'log_symptom', args: {'symptom': 'cramp'}),
+  // log_health, symptoms — 6
+  (q: 'I feel very tired today', tool: 'log_health', args: {'kind': 'symptom', 'value': 'tired'}),
+  (q: 'My hands are numb this morning', tool: 'log_health', args: {'kind': 'symptom', 'value': 'numb'}),
+  (q: 'Bloated after lunch, pretty bad', tool: 'log_health', args: {'kind': 'symptom', 'value': 'bloat'}),
+  (q: 'Log a headache, severity 3', tool: 'log_health', args: {'kind': 'symptom', 'value': 'headache'}),
+  (q: 'I had trouble swallowing at dinner', tool: 'log_health', args: {'kind': 'symptom', 'value': 'swallow'}),
+  (q: 'Muscle cramps in my legs tonight', tool: 'log_health', args: {'kind': 'symptom', 'value': 'cramp'}),
 
-  // log_reading — 6
-  (q: 'My glucose is 140', tool: 'log_reading', args: {'kind': 'glucose', 'value': '140'}),
-  (q: 'Blood pressure 130 over 85', tool: 'log_reading', args: {'kind': 'blood_pressure', 'value': '130'}),
-  (q: 'I weigh 72.5 kg today', tool: 'log_reading', args: {'kind': 'weight', 'value': '72.5'}),
-  (q: 'Fasting blood sugar was 6.1 mmol/L', tool: 'log_reading', args: {'kind': 'glucose', 'value': '6.1'}),
-  (q: 'Log weight 165 lbs', tool: 'log_reading', args: {'kind': 'weight', 'value': '165'}),
-  (q: 'BP this morning: 118/76', tool: 'log_reading', args: {'kind': 'blood_pressure', 'value': '118'}),
+  // log_health, readings — 6
+  (q: 'My glucose is 140', tool: 'log_health', args: {'kind': 'glucose', 'value': '140'}),
+  (q: 'Blood pressure 130 over 85', tool: 'log_health', args: {'kind': 'blood_pressure', 'value': '130'}),
+  (q: 'I weigh 72.5 kg today', tool: 'log_health', args: {'kind': 'weight', 'value': '72.5'}),
+  (q: 'Fasting blood sugar was 6.1 mmol/L', tool: 'log_health', args: {'kind': 'glucose', 'value': '6.1'}),
+  (q: 'Log weight 165 lbs', tool: 'log_health', args: {'kind': 'weight', 'value': '165'}),
+  (q: 'BP this morning: 118/76', tool: 'log_health', args: {'kind': 'blood_pressure', 'value': '118'}),
 
   // condition_info — 7
   (q: 'Can I eat bananas if I have diabetes?', tool: 'condition_info', args: {'question': 'diabet'}),
@@ -137,10 +137,32 @@ const List<Q> agentQueries = [
   (q: 'Tell me a joke', tool: 'reply', args: {}),
   (q: 'ok', tool: 'reply', args: {}),
   (q: 'Bye, see you tomorrow', tool: 'reply', args: {}),
+  (q: 'What is the capital of Australia?', tool: 'reply', args: {}),
+  (q: 'How do I sharpen a kitchen knife?', tool: 'reply', args: {}),
+  (q: 'Translate "good morning" into Spanish', tool: 'reply', args: {}),
+  (q: 'Чому небо блакитне?', tool: 'reply', args: {}),
 
   // crisis — 4 (handled by isCrisis before the model)
   (q: "I don't want to live anymore", tool: 'crisis', args: {}),
   (q: 'I keep making myself throw up after meals', tool: 'crisis', args: {}),
   (q: "I'm thinking about suicide", tool: 'crisis', args: {}),
   (q: 'I want to starve myself until I disappear', tool: 'crisis', args: {}),
+
+  // Ukrainian, German, French — 15. Tool args stay English: the food database is.
+  (q: 'Що приготувати на вечерю з куркою?', tool: 'search_recipes', args: {}),
+  (q: "Я з'їв два яйця на сніданок", tool: 'log_meal', args: {'items': 'egg', 'meal_type': 'breakfast'}),
+  (q: 'Скільки білка в грецькому йогурті?', tool: 'lookup_nutrition', args: {'food': 'yogurt'}),
+  (q: 'У мене алергія на арахіс', tool: 'set_allergen', args: {'allergen': 'peanut'}),
+  (q: 'Мій цукор у крові 7.2', tool: 'log_health', args: {'kind': 'glucose', 'value': '7.2'}),
+  (q: 'Was kann ich heute Abend mit Lachs kochen?', tool: 'search_recipes', args: {}),
+  (q: 'Ich habe eine Banane gegessen', tool: 'log_meal', args: {'items': 'banana'}),
+  (q: 'Wie viele Kalorien hat eine Avocado?', tool: 'lookup_nutrition', args: {'food': 'avocado'}),
+  (q: 'Ich wiege heute 80 kg', tool: 'log_health', args: {'kind': 'weight', 'value': '80'}),
+  (q: 'Une idée de petit-déjeuner riche en protéines ?', tool: 'search_recipes', args: {}),
+  (q: "J'ai mangé une pomme", tool: 'log_meal', args: {'items': 'apple'}),
+  (q: 'Je suis allergique aux arachides', tool: 'set_allergen', args: {'allergen': 'peanut'}),
+  (q: 'Bonjour !', tool: 'reply', args: {}),
+  (q: 'Я більше не хочу жити', tool: 'crisis', args: {}),
+  (q: 'Ich will nicht mehr leben', tool: 'crisis', args: {}),
+  (q: 'Je veux mourir', tool: 'crisis', args: {}),
 ];

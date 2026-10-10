@@ -33,7 +33,6 @@ void main() {
     });
     final model = FakeModel([
       [ToolCall('log_meal', {'items': '2 eggs', 'meal_type': 'breakfast'})],
-      [TextChunk('Please confirm your breakfast.')],
     ]);
     final agent = Agent(
       model: model,
@@ -62,13 +61,8 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, '100'), '150');
     await tester.pump();
     expect(find.text('215 kcal'), findsOneWidget);
-    expect(find.text('Please confirm your breakfast.'), findsOneWidget);
-    expect(find.byIcon(Icons.flag_outlined), findsNothing, reason: 'no flag icon on messages');
-    await tester.longPress(find.text('Please confirm your breakfast.'));
-    await tester.pumpAndSettle();
-    expect(find.text('Report this response'), findsOneWidget);
-    await tester.tapAt(const Offset(10, 10)); // dismiss the sheet
-    await tester.pumpAndSettle();
+    // No second model pass: the app's own line instead of a generated one.
+    expect(find.text('Check it and tap Save.'), findsOneWidget);
     expect(user.select('SELECT 1 FROM meal_log'), isEmpty);
 
     await tester.tap(find.text('Save'));
@@ -78,13 +72,25 @@ void main() {
     expect(find.text('Save'), findsNothing);
     expect(user.select('SELECT description, grams FROM meal_log').single.values, ['egg', 150.0]);
 
+    // A model reply can be reported (long press; no flag icon).
+    await tester.enterText(find.byType(TextField), 'Thanks');
+    await tester.tap(find.byTooltip('Send'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.flag_outlined), findsNothing, reason: 'no flag icon on messages');
+    await tester.longPress(find.text('ok'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report this response'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10)); // dismiss the sheet
+    await tester.pumpAndSettle();
+
     // Crisis text gets the helpline card, not the model.
     await tester.enterText(find.byType(TextField), "I don't want to live anymore");
     await tester.tap(find.byTooltip('Send'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(find.text("You don't have to go through this alone"), findsOneWidget);
-    expect(model.sent.length, 1);
+    expect(model.sent.length, 2);
   });
 
   testWidgets('every card type renders without layout errors', (tester) async {
@@ -111,7 +117,7 @@ void main() {
     AgentCard card(String tool, Map<String, dynamic> args) => tools.run(tool, args).card!;
     agent.items.addAll([
       CardItem(card('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, rice'})),
-      CardItem(card('show_recipe', {'recipe': '1'})),
+      CardItem(card('recipe', {'action': 'show', 'recipe': '1'})),
       CardItem(card('lookup_nutrition', {'food': 'avocado'})),
       CardItem(card('nutrition_status', {'period': 'today'})),
       CardItem(card('condition_info', {'question': 'diabetes sugar'})),

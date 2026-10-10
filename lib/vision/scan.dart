@@ -33,10 +33,11 @@ List<ScanItem> itemsFromDetections(AgentTools tools, List<Detection> found) {
 /// What Gemma saw on a photo: a food name and its estimated portion.
 typedef SeenFood = ({String name, double? grams});
 
-const _photoPrompt = 'List every food and drink in this photo, one per line, as: grams | name\n'
+const _photoPrompt = 'Look at the whole photo and list every food and drink you can see, one per line, as: grams | name\n'
     'grams = your estimate of the portion shown; name = a short generic English food name, '
-    'e.g. "150 | boiled rice" or "120 | grilled chicken breast". Write nothing else. '
-    'If there is no food, write: none';
+    'e.g. "150 | boiled rice" or "120 | grilled chicken breast". A cooked dish is one line; separate items '
+    '(fruit, vegetables, cheese, bread, eggs, packages in a fridge or on a table) each get their own line. '
+    'Write nothing else. If there is no food, write: none';
 
 /// Photo mode: Gemma 4 looks at [png] and names the foods. Its own session,
 /// so the chat's conversation is untouched; inference waits while the chat generates.

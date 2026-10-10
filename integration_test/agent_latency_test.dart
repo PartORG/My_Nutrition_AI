@@ -38,11 +38,11 @@ const _fakeResults = <String, Map<String, Object>>{
   'search_recipes': {
     'recipes': ['1. Chicken broccoli stir-fry, 520 kcal', '2. Chicken rice bowl, 610 kcal']
   },
-  'show_recipe': {'title': 'Chicken broccoli stir-fry', 'minutes': 20, 'kcal': 520},
+  'recipe': {'title': 'Chicken broccoli stir-fry', 'minutes': 20, 'kcal': 520},
   'log_meal': {'status': 'waiting for user confirmation'},
   'nutrition_status': {'protein_left_g': 42, 'kcal_left': 780},
   'set_allergen': {'status': 'waiting for user confirmation'},
-  'log_reading': {'status': 'waiting for user confirmation'},
+  'log_health': {'status': 'waiting for user confirmation'},
 };
 
 void main() {

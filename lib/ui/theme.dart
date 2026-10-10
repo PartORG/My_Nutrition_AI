@@ -120,7 +120,6 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: p.surface,
-        elevation: dark ? 0 : 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(backgroundColor: p.primary, foregroundColor: onPrimary),

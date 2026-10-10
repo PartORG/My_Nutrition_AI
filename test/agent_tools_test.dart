@@ -48,17 +48,19 @@ void main() {
     });
 
     test('show and save resolve "2", "the first one", titles and "that"', () {
-      final list = (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, rice, broccoli'})
+      final list = (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, broccoli, lentils, egg, oats'})
           .card! as RecipeListCard).recipes;
-      expect(list.length, 3);
+      expect(list.length, 4, reason: 'all 4 recipes with any of them (up to 5 are shown)');
       final second = list[1].title;
-      expect((tools.run('show_recipe', {'recipe': '2'}).card! as RecipeCard).title, second);
-      expect((tools.run('show_recipe', {'recipe': 'the first one'}).card! as RecipeCard).title,
+      expect((tools.run('recipe', {'action': 'show', 'recipe': '2'}).card! as RecipeCard).title, second);
+      // No or unknown action shows: never a write the model didn't ask for.
+      expect((tools.run('recipe', {'recipe': '2'}).card! as RecipeCard).title, second);
+      expect((tools.run('recipe', {'action': 'show', 'recipe': 'the first one'}).card! as RecipeCard).title,
           'Chicken broccoli stir-fry');
-      final soup = tools.run('show_recipe', {'recipe': 'lentil soup'}).card! as RecipeCard;
+      final soup = tools.run('recipe', {'action': 'show', 'recipe': 'lentil soup'}).card! as RecipeCard;
       expect(soup.title, 'Lentil soup');
       expect(soup.ingredients.first, (name: 'lentils, cooked', grams: 400.0));
-      final save = tools.run('save_recipe', {'recipe': 'that one'});
+      final save = tools.run('recipe', {'action': 'save', 'recipe': 'that one'});
       expect(confirmOf(save).lines, ['Lentil soup']);
       expect(count('saved_recipes'), 0, reason: 'nothing saved before ✓');
       confirmOf(save).apply();
@@ -94,7 +96,7 @@ void main() {
     test('asking again shows recipes not suggested yet; a vague ask gets random ideas', () {
       List<String> titles(Map<String, String> args) =>
           [for (final r in (tools.run('search_recipes', args).card! as RecipeListCard).recipes) r.title];
-      const have = 'chicken, rice, broccoli, egg, lentils, salmon, oats';
+      const have = 'egg, lentils, salmon, oats, tomato, spinach, chickpeas'; // 6 recipes: 5, then 1 more
       final first = titles({'query': 'dinner', 'ingredients': have});
       final again = titles({'query': 'something different', 'ingredients': have});
       expect(again.toSet().intersection(first.toSet()), isEmpty);
@@ -109,7 +111,7 @@ void main() {
               r.title
           ];
       final before = titles();
-      final stir = (tools.run('show_recipe', {'recipe': 'chicken broccoli stir-fry'}).card! as RecipeCard).id;
+      final stir = (tools.run('recipe', {'action': 'show', 'recipe': 'chicken broccoli stir-fry'}).card! as RecipeCard).id;
       tools.rate(stir, 1);
       expect(tools.rating(stir), 1);
       expect(AgentTools(nutri, user, clock: () => now).run('search_recipes',
@@ -121,12 +123,53 @@ void main() {
       expect(user.select('SELECT recipe_id FROM meal_log').single['recipe_id'], stir);
       expect(tools.recentRecipes().single, (id: stir, title: 'Chicken broccoli stir-fry', at: now, stars: 1));
       // "rate it 5 stars" with nothing on screen: the recipe eaten last.
-      confirmOf(AgentTools(nutri, user, clock: () => now).run('rate_recipe', {'recipe': 'it', 'stars': 5})).apply();
+      confirmOf(AgentTools(nutri, user, clock: () => now).run('recipe', {'action': 'rate', 'recipe': 'it', 'stars': 5})).apply();
       expect(tools.rating(stir), 5);
     });
 
+    test('asked-for ingredients are really in the recipes; food words in the query count too', () {
+      List<String> titles(Map<String, dynamic> args) =>
+          [for (final r in (tools.run('search_recipes', args).card! as RecipeListCard).recipes) r.title];
+      // "fish" is the whole group (salmon), not foods named "fish".
+      expect(titles({'query': 'good dinner recipes with fish'}), ['Salmon zucchini bowl']);
+      expect(titles({'query': 'dinner', 'ingredients': 'fish'}), ['Salmon zucchini bowl']);
+      // Most of what was asked for first; what a recipe lacks is told to the model.
+      final r = tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, broccoli, egg'});
+      expect((r.forModel['recipes'] as List).first, contains('Chicken broccoli stir-fry (549 kcal per serving, 20 min, without egg)'));
+      expect((r.forModel['recipes'] as List).last, contains('without chicken, broccoli'));
+    });
+
+    test('asking for an allergen says so and shows recipes without it', () {
+      confirmOf(tools.run('set_allergen', {'allergen': 'almonds'})).apply();
+      final r = tools.run('search_recipes', {'query': 'dinner with almonds', 'ingredients': 'almonds'});
+      final card = r.card! as RecipeListCard;
+      expect(card.avoided, ['tree nuts']);
+      expect(card.recipes, isNotEmpty);
+      expect(card.recipes.map((e) => e.title), isNot(contains('Overnight oats with banana')));
+      expect(r.forModel['avoided'], contains('tree nuts'));
+      expect((tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken'}).card! as RecipeListCard).avoided,
+          isEmpty);
+    });
+
+    test('"more" keeps the ingredients of the last search; a new meal or food starts over', () {
+      List<String> titles(Map<String, dynamic> args, [String said = '']) =>
+          [for (final r in (tools.run('search_recipes', args, said: said).card! as RecipeListCard).recipes) r.title];
+      expect(titles({'query': 'dinner', 'ingredients': 'salmon'}), ['Salmon zucchini bowl']);
+      expect(titles({'query': 'more recipes'}, 'Give me more'), ['Salmon zucchini bowl'],
+          reason: 'phone test: "more" lost salmon and tomatoes and gave random ideas');
+      expect(titles({'query': 'ideas'}, 'Інші рецепти'), ['Salmon zucchini bowl']);
+      expect(titles({'query': 'other recipes', 'ingredients': 'chicken'}).first, 'Chicken broccoli stir-fry');
+    });
+
+    test('the router sends English recipe requests straight to the search', () {
+      final r = tools.route('Can you suggest good dinner recipes? Maybe with fish?')!;
+      expect((r.card! as RecipeListCard).recipes.single.title, 'Salmon zucchini bowl');
+      expect(tools.route('show me the recipe for shakshuka'), isNull, reason: 'one recipe: the model');
+      expect(tools.route('I had the recipe you suggested'), isNull);
+    });
+
     test('unknown recipe is an error for the model, not a crash', () {
-      expect(tools.run('show_recipe', {'recipe': 'unicorn pie'}).forModel['error'], isNotNull);
+      expect(tools.run('recipe', {'action': 'show', 'recipe': 'unicorn pie'}).forModel['error'], isNotNull);
     });
   });
 
@@ -201,7 +244,7 @@ void main() {
       expect(confirmOf(r).title, 'Log breakfast');
       expect(confirmOf(r).lines.single, startsWith('peanuts · 50 g'));
       expect(tools.run('set_allergen', {'allergen': 'peanuts'}, said: 'what is in peanuts?').forModel['error'],
-          contains('no allergy'));
+          contains('nothing was added'));
       expect(confirmOf(tools.run('set_allergen', {'allergen': 'peanuts'}, said: "I'm allergic to peanuts")).title,
           'Add allergy');
       expect(tools.run('search_recipes', {'query': 'banana'}, said: 'I had a banana').card, isA<ConfirmCard>());
@@ -379,28 +422,99 @@ void main() {
 
     test('readings parse units; unreadable values go back to the model', () {
       String line(String kind, String value) =>
-          confirmOf(tools.run('log_reading', {'kind': kind, 'value': value})).lines.single;
+          confirmOf(tools.run('log_health', {'kind': kind, 'value': value})).lines.single;
       expect(line('glucose', '140'), '140 mg/dL');
       expect(line('glucose', '6.1 mmol/L'), '6.1 mmol/L');
       expect(line('blood_pressure', '130 over 85'), '130/85 mmHg');
       expect(line('weight', '165 lbs'), '165 lb');
       expect(line('weight', '72,5 kg'), '72.5 kg');
-      expect(tools.run('log_reading', {'kind': 'blood_pressure', 'value': '130'}).forModel['error'],
+      expect(tools.run('log_health', {'kind': 'blood_pressure', 'value': '130'}).forModel['error'],
           isNotNull);
-      final r = tools.run('log_reading', {'kind': 'blood_pressure', 'value': '118/76'});
+      final r = tools.run('log_health', {'kind': 'blood_pressure', 'value': '118/76'});
       confirmOf(r).apply();
       final row = user.select('SELECT value, value2, unit FROM readings').single;
       expect([row['value'], row['value2'], row['unit']], [118.0, 76.0, 'mmHg']);
     });
 
     test('symptom and fact writes wait for ✓', () {
-      final s = tools.run('log_symptom', {'symptom': 'Fatigue', 'severity': '4'});
+      final s = tools.run('log_health', {'kind': 'symptom', 'value': 'Fatigue', 'severity': '4'});
       expect(confirmOf(s).lines.single, 'Fatigue · severity 4/5');
       final f = tools.run('remember_fact', {'fact': 'Has an air fryer'});
       expect(count('symptoms') + count('memory_facts'), 0);
       confirmOf(s).apply();
       confirmOf(f).apply();
       expect(count('symptoms') + count('memory_facts'), 2);
+    });
+
+    test('diets block recipes by food name and allergens; cautions name the diet', () {
+      confirmOf(tools.run('set_allergen', {'allergen': 'vegetarian'}, said: "I'm vegetarian")).apply();
+      expect(tools.excludedRecipes(), containsAll([1, 5])); // chicken; salmon (fish)
+      expect(tools.excludedRecipes(), isNot(contains(2))); // shakshuka: eggs are fine
+      final stir = tools.showRecipeById(1).card! as RecipeCard;
+      expect(stir.cautions.map((c) => (c.food, c.allergen)), [('chicken breast, cooked', 'vegetarian')]);
+
+      final vegan = tools.run('set_allergen', {'allergen': 'vegan'}, said: 'I am vegan now');
+      expect(confirmOf(vegan).title, 'Add diet');
+      confirmOf(vegan).apply();
+      expect(tools.excludedRecipes(), contains(2));
+
+      user.execute('DELETE FROM user_allergens');
+      confirmOf(tools.run('set_allergen', {'allergen': 'pescatarian'})).apply();
+      expect(tools.excludedRecipes(), contains(1));
+      expect(tools.excludedRecipes(), isNot(contains(5)));
+    });
+
+    test('"vegan tonight" is a wish, not a diet or a fact; "I\'m vegetarian" is a diet', () {
+      expect(tools.run('set_allergen', {'allergen': 'vegan'}, said: 'something vegan tonight').forModel['error'],
+          contains('nothing was added'));
+      expect(tools.run('set_allergen', {'allergen': 'vegetarian'}, said: 'vegetarian dinner ideas').forModel['error'],
+          isNotNull);
+      expect(tools.run('remember_fact', {'fact': 'wants vegan food tonight'}, said: 'I want vegan food tonight')
+          .forModel['error'], isNotNull);
+      expect(confirmOf(tools.run('remember_fact', {'fact': 'is vegetarian'}, said: "I'm vegetarian")).title, 'Add diet');
+      expect(confirmOf(tools.run('remember_fact', {'fact': 'likes vegan food'}, said: 'I like vegan food')).title,
+          'Remember');
+    });
+
+    test('the router: diets and allergies in four languages, wishes go to the model', () {
+      List<String>? said(String s) => (tools.route(s)?.card as ConfirmCard?)?.lines;
+      expect(said("I'm vegetarian"), ['vegetarian']);
+      expect(said('Ich bin Veganerin'), ['vegan']);
+      expect(said('je suis végétarienne'), ['vegetarian']);
+      expect(said('я вегетаріанка'), ['vegetarian']);
+      expect(said('У мене алергія на арахіс'), ['peanuts']);
+      expect(said("J'ai une allergie aux arachides"), ['peanuts']);
+      expect(said('Ich habe eine Laktoseintoleranz'), ['milk']);
+      expect(tools.route('vegetarian dinner tonight'), isNull);
+      expect(tools.route('я хочу веганську вечерю'), isNull);
+      expect(normalizeAllergen('алергія на гриби'), isNot('fish')); // mushrooms, not fish
+      expect(normalizeAllergen('алергія на рибу'), 'fish');
+    });
+
+    test('the router: "calories left" and "show recipe 2" skip the model, in four languages', () {
+      String? status(String s) => (tools.route(s)?.card as NutritionCard?)?.title;
+      expect(status('How many calories do I have left?'), 'Today');
+      expect(status('Wie viele Kalorien habe ich noch übrig?'), 'Today');
+      expect(status('Combien de calories me reste-t-il ?'), 'Today');
+      expect(status('Скільки калорій у мене залишилось?'), 'Today');
+      expect(status('What did I eat this week?'), 'Last 7 days');
+      expect(tools.route('How many calories are in a banana?'), isNull);
+
+      expect(tools.route('show me recipe 2'), isNull, reason: 'no list yet: the model asks which one');
+      final list = (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, broccoli, lentils, egg, oats'})
+          .card! as RecipeListCard).recipes;
+      expect((tools.route('show me recipe 2')!.card! as RecipeCard).title, list[1].title);
+      expect((tools.route('zeig mir Rezept 3')!.card! as RecipeCard).title, list[2].title);
+      expect((tools.route('montre-moi la recette 1')!.card! as RecipeCard).title, list[0].title);
+      expect(confirmOf(tools.route('збережи рецепт 1')!).lines, [list[0].title]);
+    });
+
+    test('the last recipe list survives a restart; "recipe 2" with no list is not a title search', () {
+      expect(tools.run('recipe', {'action': 'show', 'recipe': '2'}).forModel['error'], isNotNull);
+      final list = (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, broccoli, lentils, egg, oats'})
+          .card! as RecipeListCard).recipes;
+      final restarted = AgentTools(nutri, user, clock: () => now);
+      expect((restarted.run('recipe', {'action': 'show', 'recipe': '2'}).card! as RecipeCard).title, list[1].title);
     });
 
     test('condition questions answer only from docs', () {

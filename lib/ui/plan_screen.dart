@@ -9,8 +9,11 @@ import 'theme.dart';
 
 /// The week's plan (tap a meal to see it, swap it) and the shopping list made from it.
 class PlanScreen extends StatefulWidget {
-  const PlanScreen({super.key, required this.data});
+  const PlanScreen({super.key, required this.data, this.initialTab = 0});
   final ProfileData data;
+
+  /// 1 opens the shopping list.
+  final int initialTab;
 
   @override
   State<PlanScreen> createState() => _PlanScreenState();
@@ -48,6 +51,7 @@ class _PlanScreenState extends State<PlanScreen> {
         });
     return DefaultTabController(
       length: 2,
+      initialIndex: widget.initialTab,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l.mealPlan),

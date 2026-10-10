@@ -4,8 +4,8 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 /// instructions buried in long prompts.
 const agentSystemPrompt = '''
 You are MyFoodMind, a friendly nutrition assistant on the user's phone.
-Each user message starts with a [Context] block the app writes from its database;
-trust it over your own memory of the chat.
+User messages start with a [Context] block the app writes from its database, with
+only what changed since the last one; trust its latest values over your memory of the chat.
 Always call a tool to look something up or to change anything (log food, bookmark a
 recipe, remember a fact, set an allergy, log a symptom or a reading). Never claim you
 did something without calling the tool.
@@ -14,13 +14,15 @@ never say it is already saved.
 When the user says they ate or drank something, or asks to add a meal, call log_meal
 with exactly the foods and amounts they said. Do not suggest recipes then.
 Suggest recipes only when asked for ideas; if they want something new or different,
-search again: the app never repeats a recipe it already suggested.
-Add an allergy only when the user says they are allergic or intolerant. Eating a food
-is never an allergy.
+search again with the same ingredients: the app never repeats a recipe it already suggested.
+Add an allergy or diet only when the user says it lasts ("I'm allergic to nuts", "I'm
+vegetarian"). Eating a food is never an allergy; "vegan tonight" is a recipe search.
 Bookmarking a recipe does not count as eating it.
 Never mention tool names. Never invent numbers, recipes or medical advice; details are
 shown in cards, so don't repeat long lists.
 You are not a doctor: for health conditions use condition_info and suggest asking a doctor.
+General questions that are not about food or the user's data (facts, words, how things
+work, cooking techniques) you answer yourself, briefly and helpfully, with no tool.
 Answer in the user's language, in 1-3 short sentences. Tool arguments (foods, recipe
 searches, facts) are always in English: the food and recipe database is English.''';
 
@@ -39,23 +41,20 @@ Map<String, Object> _enum(String description, List<String> values) =>
     {'type': 'string', 'description': description, 'enum': values};
 
 final agentTools = <Tool>[
-  _tool('reply', 'Answer greetings, thanks and small talk with a short message.', {
+  _tool('reply', 'Answer greetings, small talk and general questions not about food data.', {
     'text': _str('Your short reply'),
   }, ['text']),
   _tool('search_recipes', 'Find recipes, meal ideas or what to cook.', {
     'query': _str('What the user wants, e.g. "high protein vegetarian dinner"'),
     'ingredients': _str('Comma-separated ingredients the user has, if any'),
   }, ['query']),
-  _tool('show_recipe', 'Show the full details of a recipe already mentioned.', {
+  _tool('recipe',
+      'A recipe already mentioned: show its details, save (bookmark only, NOT eaten) or rate '
+          'it 1 to 5 stars after cooking or trying it (e.g. "loved it" = 5).', {
+    'action': _enum('What to do', ['show', 'save', 'rate']),
     'recipe': _str('Recipe name or its number in the last list'),
-  }, ['recipe']),
-  _tool('save_recipe', 'Bookmark a recipe to find it later. Does NOT record that the user ate it.', {
-    'recipe': _str('Recipe name or its number in the last list'),
-  }, ['recipe']),
-  _tool('rate_recipe', 'Rate a recipe the user cooked or tried, 1 to 5 stars (e.g. "loved it" = 5).', {
-    'recipe': _str('Recipe name or its number in the last list'),
-    'stars': {'type': 'integer', 'description': '1 (bad) to 5 (great)'},
-  }, ['recipe', 'stars']),
+    'stars': {'type': 'integer', 'description': 'Only to rate: 1 (bad) to 5 (great)'},
+  }, ['action', 'recipe']),
   _tool('lookup_nutrition',
       'Nutrition facts of a food or ingredient: calories, protein, vitamins.', {
     'food': _str('Food name'),
@@ -70,20 +69,20 @@ final agentTools = <Tool>[
   }, ['items']),
   _tool('remember_fact',
       'Remember a preference or fact about the user (likes, dislikes, '
-          'kitchen equipment, family, routine). Not for allergies.', {
+          'kitchen equipment, family, routine). Not for allergies or diets, and not for '
+          'one-off wishes ("vegan tonight").', {
     'fact': _str('The fact in one short sentence'),
   }, ['fact']),
-  _tool('set_allergen', 'Add or remove an allergy or intolerance the user says they have. Not for food they ate.', {
-    'allergen': _str('Allergen, e.g. "peanuts"'),
+  _tool('set_allergen',
+      'Add or remove an allergy, intolerance or lasting diet the user says they have ("I\'m vegetarian"). '
+          'Not for food they ate, nor for one meal ("vegan tonight" is a recipe search).', {
+    'allergen': _str('Allergen or diet, e.g. "peanuts", "vegetarian", "vegan", "pescatarian"'),
     'remove': {'type': 'boolean', 'description': 'True to remove it'},
   }, ['allergen']),
-  _tool('log_symptom', 'Record a symptom the user feels.', {
-    'symptom': _str('Symptom, e.g. "fatigue"'),
-    'severity': {'type': 'integer', 'description': '1 (mild) to 5 (severe)'},
-  }, ['symptom']),
-  _tool('log_reading', 'Record a measurement: blood glucose, blood pressure or weight.', {
-    'kind': _enum('Measurement', ['glucose', 'blood_pressure', 'weight']),
-    'value': _str('Value with unit, e.g. "140 mg/dL"'),
+  _tool('log_health', 'Record a symptom the user feels, or a blood glucose, blood pressure or weight reading.', {
+    'kind': _enum('What it is', ['symptom', 'glucose', 'blood_pressure', 'weight']),
+    'value': _str('The symptom (e.g. "fatigue") or the value with unit (e.g. "140 mg/dL")'),
+    'severity': {'type': 'integer', 'description': 'Only for symptoms: 1 (mild) to 5 (severe)'},
   }, ['kind', 'value']),
   _tool('condition_info',
       'Diet questions about a medical condition (diabetes, ALS, MS, gout...).', {

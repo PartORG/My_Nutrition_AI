@@ -28,28 +28,41 @@ class _ProfilesScreenState extends ConsumerState<ProfilesScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final profiles = ref.watch(profilesProvider).list();
-    return Scaffold(
-      appBar: AppBar(title: Text(l.whoIsEating)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          for (final p in profiles)
-            Card(
-              child: ListTile(
-                leading: CircleAvatar(child: Text(p.name.characters.first.toUpperCase())),
-                title: Text(p.name),
-                onTap: () => _open(PinScreen(profile: p)),
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return _Welcome(children: [
+      const _Eva(),
+      const SizedBox(height: 16),
+      Text(l.appTitle, style: text.headlineMedium?.copyWith(color: scheme.onSurface), textAlign: TextAlign.center),
+      const SizedBox(height: 4),
+      Text(l.whoIsEating, style: text.titleMedium?.copyWith(color: scheme.onSurfaceVariant), textAlign: TextAlign.center),
+      const SizedBox(height: 32),
+      Wrap(alignment: WrapAlignment.center, spacing: 16, runSpacing: 16, children: [
+        for (final p in profiles)
+          InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _open(PinScreen(profile: p)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 96, minHeight: 96, maxWidth: 140),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  _Avatar(profile: p),
+                  const SizedBox(height: 8),
+                  Text(p.name, style: text.labelLarge, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center),
+                ]),
               ),
             ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.person_add),
-            label: Text(l.addProfile),
-            onPressed: () => _open(const CreateProfileScreen()),
           ),
-        ],
+      ]),
+      const SizedBox(height: 32),
+      FilledButton.tonalIcon(
+        icon: const Icon(Icons.person_add),
+        label: Text(l.addProfile),
+        onPressed: () => _open(const CreateProfileScreen()),
       ),
-    );
+    ]);
   }
 }
 
@@ -204,36 +217,42 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.profile.name)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+    return _Welcome(backButton: true, children: [
+      _Avatar(profile: widget.profile, radius: 48),
+      const SizedBox(height: 16),
+      Text(widget.profile.name, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+      const SizedBox(height: 24),
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 280),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           _PinField(
             controller: _pin,
             label: l.enterPinFor(widget.profile.name),
             autofocus: true,
             errorText: _error,
+            centered: true,
             onSubmitted: (_) => _busy ? null : _unlock(),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
+          const SizedBox(height: 16),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
             onPressed: _busy ? null : _unlock,
             child: _busy ? const _Spinner() : Text(l.unlock),
           ),
-          if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.fingerprint, size: 28),
-              label: Text(l.useFingerprint),
-              onPressed: _busy ? null : _fingerprint,
-            ),
-          ],
-          const SizedBox(height: 8),
-          TextButton(onPressed: _busy ? null : _forgot, child: Text(l.forgotPin)),
-        ],
+        ]),
       ),
-    );
+      if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) ...[
+        const SizedBox(height: 16),
+        IconButton.filledTonal(
+          iconSize: 32,
+          tooltip: l.useFingerprint,
+          icon: const Icon(Icons.fingerprint),
+          onPressed: _busy ? null : _fingerprint,
+        ),
+      ],
+      const SizedBox(height: 8),
+      TextButton(onPressed: _busy ? null : _forgot, child: Text(l.forgotPin)),
+    ]);
   }
 }
 
@@ -244,8 +263,11 @@ class _PinField extends StatelessWidget {
     this.validator,
     this.errorText,
     this.autofocus = false,
+    this.centered = false,
     this.onSubmitted,
   });
+
+  final bool centered;
 
   final TextEditingController controller;
   final String label;
@@ -260,6 +282,8 @@ class _PinField extends StatelessWidget {
         decoration: InputDecoration(labelText: label, errorText: errorText, counterText: ''),
         obscureText: true,
         autofocus: autofocus,
+        textAlign: centered ? TextAlign.center : TextAlign.start,
+        style: centered ? const TextStyle(letterSpacing: 8, fontSize: 20) : null,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         maxLength: 6,
@@ -272,6 +296,79 @@ class _Spinner extends StatelessWidget {
   const _Spinner();
 
   @override
-  Widget build(BuildContext context) => const SizedBox.square(
-      dimension: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white));
+  // No fixed colour: inside a disabled button white was invisible on the light theme.
+  Widget build(BuildContext context) =>
+      const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2));
+}
+
+/// The locked screens: a soft gradient from the theme's colours, content centred and
+/// scrollable (200 % text), at most 420 dp wide.
+class _Welcome extends StatelessWidget {
+  const _Welcome({required this.children, this.backButton = false});
+  final List<Widget> children;
+  final bool backButton;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: backButton
+          ? AppBar(backgroundColor: Colors.transparent, foregroundColor: scheme.onSurface, elevation: 0)
+          : null,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [scheme.primaryContainer, scheme.surface],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(mainAxisSize: MainAxisSize.min, children: children),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The assistant's face, as in the chat.
+class _Eva extends StatelessWidget {
+  const _Eva();
+
+  @override
+  Widget build(BuildContext context) => CircleAvatar(
+        radius: 56,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Image.asset('assets/icons/icon_chat.png', width: 80, height: 80, excludeFromSemantics: true),
+      );
+}
+
+/// A profile's initial; the same Hero on the picker and the PIN screen.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.profile, this.radius = 32});
+  final ProfileInfo profile;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Hero(
+      tag: 'profile-${profile.id}',
+      child: CircleAvatar(
+        radius: radius,
+        backgroundColor: scheme.secondaryContainer,
+        child: Text(profile.name.characters.first.toUpperCase(),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSecondaryContainer, fontSize: radius * .75)),
+      ),
+    );
+  }
 }

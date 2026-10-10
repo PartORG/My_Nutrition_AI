@@ -221,7 +221,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Поки нічого. Напишіть у чат, наприклад, «У мене є аерогриль».';
 
   @override
-  String get allergiesSection => 'Алергії';
+  String get allergiesSection => 'Алергії та дієта';
 
   @override
   String get allergiesEmpty => 'Не записано.';
@@ -459,7 +459,16 @@ class AppLocalizationsUk extends AppLocalizations {
       'Для людей до 18 років ці формули не підходять. Встановіть цілі разом із педіатром нижче.';
 
   @override
-  String get targetsTitle => 'Денні цілі';
+  String get aboutMe => 'Про мене';
+
+  @override
+  String get sexShort => 'Стать';
+
+  @override
+  String get height => 'Зріст';
+
+  @override
+  String get weight => 'Вага';
 
   @override
   String get targetsNone => 'Цілей поки немає.';
@@ -716,7 +725,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String cautionAllergy(String food, String allergen) {
-    return 'Містить $food — є у вашому списку алергій ($allergen)';
+    return 'Містить $food — це виключають ваші алергії чи дієта ($allergen)';
   }
 
   @override
@@ -915,7 +924,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get cameraNamingFailed =>
-      'Не вдалося розпізнати їжу. Спробуйте ще раз.';
+      'Розпізнавання ШІ не вдалося: показано швидке виявлення. Перевірте продукти.';
 
   @override
   String cameraUseFound(int count) {
@@ -1016,6 +1025,32 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get cardRemoveAllergy => 'Прибрати алергію';
+
+  @override
+  String get cardAddDiet => 'Додати дієту';
+
+  @override
+  String get cardRemoveDiet => 'Прибрати дієту';
+
+  @override
+  String get captionConfirm => 'Перевірте й натисніть «Зберегти».';
+
+  @override
+  String get captionIdeas => 'Ось кілька ідей. Натисніть, щоб побачити рецепт.';
+
+  @override
+  String captionIdeasAvoiding(String foods) {
+    return 'Обережно: у вас алергія на $foods або ви цього уникаєте. Ось рецепти без цього; натисніть, щоб переглянути.';
+  }
+
+  @override
+  String get captionRecipe => 'Ось рецепт.';
+
+  @override
+  String get captionNumbers => 'Ось цифри.';
+
+  @override
+  String get captionCamera => 'Натисніть кнопку, щоб відкрити камеру.';
 
   @override
   String get cardLogSymptom => 'Записати симптом';
@@ -1351,7 +1386,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Розуміє більше, відповідає приблизно у 2–3 рази повільніше. Для телефонів із 8 ГБ RAM.';
+      'Розуміє більше, відповідає приблизно у 2–3 рази повільніше. Для телефонів із 12 ГБ RAM.';
 
   @override
   String get aiModelSwitch => 'Змінити';
@@ -1371,6 +1406,46 @@ class AppLocalizationsUk extends AppLocalizations {
       'Завантаження зупинилося. Перевірте з’єднання й вільне місце та спробуйте знову; воно продовжиться з того ж місця.';
 
   @override
+  String get downloadNoWifiTitle => 'Немає Wi-Fi';
+
+  @override
+  String downloadNoWifiBody(int mb) {
+    return 'Ви не підключені до Wi-Fi. Це завантаження — $mb МБ; через мобільний інтернет воно може вичерпати ваш пакет даних або коштувати грошей.';
+  }
+
+  @override
+  String get downloadWaitWifi => 'Чекати на Wi-Fi';
+
+  @override
+  String get downloadUseMobile => 'Мобільний інтернет';
+
+  @override
+  String get downloadOnMobile =>
+      'Мобільний інтернет дозволено: це завантаження може витрачати ваш пакет даних.';
+
+  @override
+  String get downloadWaitingWifi => 'Очікування Wi-Fi';
+
+  @override
+  String get downloadWaitingNetwork => 'Очікування з’єднання';
+
+  @override
+  String get downloadRetrying =>
+      'З’єднання втрачено; продовжиться, щойно воно повернеться';
+
+  @override
+  String get downloadPaused => 'Призупинено';
+
+  @override
+  String get downloadInstalling => 'Встановлення…';
+
+  @override
+  String get downloadPause => 'Пауза';
+
+  @override
+  String get downloadResume => 'Продовжити';
+
+  @override
   String get privacyPolicy => 'Політика конфіденційності';
 
   @override
@@ -1378,4 +1453,41 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get licenses => 'Ліцензії та моделі ШІ';
+
+  @override
+  String get settingsTitle => 'Налаштування';
+
+  @override
+  String get drawerFood => 'Їжа';
+
+  @override
+  String get drawerAssistant => 'Асистент';
+
+  @override
+  String get shoppingListNav => 'Список покупок';
+
+  @override
+  String get healthJournalNav => 'Щоденник здоров’я і звіт';
+
+  @override
+  String get settingsAi => 'ШІ та дані';
+
+  @override
+  String get settingsTracking => 'Відстеження';
+
+  @override
+  String get settingsPrivacy => 'Приватність і безпека';
+
+  @override
+  String get settingsAbout => 'Про застосунок';
+
+  @override
+  String get settingsDanger => 'Небезпечна зона';
+
+  @override
+  String get deleteThisProfile => 'Видалити цей профіль';
+
+  @override
+  String get deleteThisProfileBody =>
+      'Профіль і всі його страви, щоденник та історію чату буде видалено з цього телефона. Це не можна скасувати.';
 }

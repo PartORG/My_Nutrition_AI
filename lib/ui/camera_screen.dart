@@ -58,9 +58,9 @@ final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
   return d;
 });
 
-/// Preview with food boxes. Live: EfficientDet twice a second; photo: Gemma 4
-/// names the foods on the shutter (EfficientDet until the chat model is
-/// downloaded). Frames stay in memory only — no picture is ever written.
+/// Preview with food boxes. Live: EfficientDet's boxes twice a second; on the
+/// button, in both modes, Gemma 4 names the foods (EfficientDet until the chat
+/// model is downloaded). Frames stay in memory only — no picture is ever written.
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key, required this.live});
   final bool live;
@@ -88,7 +88,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     try {
       final cams = await availableCameras();
       final back = cams.firstWhere((c) => c.lensDirection == CameraLensDirection.back, orElse: () => cams.first);
-      final cam = CameraController(back, ResolutionPreset.medium,
+      final cam = CameraController(back, ResolutionPreset.high, // ~1280×720: Gemma sees small ingredients
           enableAudio: false, imageFormatGroup: ImageFormatGroup.yuv420);
       await cam.initialize();
       await cam.startImageStream((img) => _frame = img);
@@ -240,23 +240,24 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                           onPressed: _naming
                               ? null
                               : () async {
-                                  if (!_live) {
-                                    try {
-                                      final seen = await _nameFoods();
-                                      if (seen != null) {
-                                        if (context.mounted) Navigator.pop(context, seen);
-                                        return;
-                                      }
-                                    } on Object catch (e) {
-                                      debugPrint('photo naming failed: $e');
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
-                                      }
+                                  // Both modes: Gemma names the foods. EfficientDet knows only 10 COCO
+                                  // foods (phone test: "only apples and pizzas"), so its boxes are a live
+                                  // preview and the fallback when Gemma isn't downloaded or sees nothing.
+                                  try {
+                                    final seen = await _nameFoods();
+                                    if (seen != null && (seen.isNotEmpty || _found.isEmpty)) {
+                                      if (context.mounted) Navigator.pop(context, seen);
                                       return;
                                     }
-                                    await _detect();
+                                  } on Object catch (e, st) {
+                                    // Gemma failed: fall through to EfficientDet's items rather than doing nothing.
+                                    debugPrint('photo naming failed: $e\n$st');
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+                                    }
                                   }
+                                  if (!_live) await _detect();
                                   if (context.mounted) Navigator.pop(context, (_found, _live));
                                 },
                         ),

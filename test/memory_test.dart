@@ -81,11 +81,21 @@ void main() {
     ]);
     expect(ctx, contains('Now: Sun 4 Oct, 19:05.'));
     expect(ctx, contains('Eaten today: 105 kcal, 10 g protein, 20 g carbs'));
-    expect(ctx, contains('Allergies: peanuts.'));
+    expect(ctx, contains('Allergies and diet: peanuts.'));
     expect(ctx, contains('About the user: has an air fryer.'));
     expect(ctx, contains('often eats egg (3x), banana (2x)'));
     expect(ctx, contains('usual times: breakfast ~8:00'));
     expect(ctx, contains('28 Sep chat: "soup too spicy"'));
+  });
+
+  test('only messages about the past wait for a recall', () {
+    for (final s in ['What did I have last time?', 'cook that recipe again', 'Що я їв учора? вчора',
+        'Was habe ich gestern gegessen?', "Qu'est-ce que j'ai mangé hier ?"]) {
+      expect(refersToPast(s), isTrue, reason: s);
+    }
+    for (final s in ['I ate 2 eggs', 'dinner ideas with chicken', 'Скільки білка в йогурті?', 'Bonjour !']) {
+      expect(refersToPast(s), isFalse, reason: s);
+    }
   });
 
   test('context shows goals and what is left, for any subset of targets', () {

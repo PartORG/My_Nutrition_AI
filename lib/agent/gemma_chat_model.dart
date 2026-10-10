@@ -42,6 +42,15 @@ class _GemmaSession implements ChatSession {
     yield* _generate();
   }
 
+  // flutter_gemma stages chunks until the next generate, which sends the result as text
+  // ahead of the user's message; a model-role reply can't be added between turns.
+  @override
+  Future<void> stageToolResult(String tool, Map<String, Object?> result) =>
+      chat.addQueryChunk(Message.toolResponse(toolName: tool, response: result));
+
+  @override
+  Future<int> countTokens(String text) => chat.session.sizeInTokens(text);
+
   Stream<ModelEvent> _generate() async* {
     await for (final r in chat.generateChatResponseAsync()) {
       switch (r) {

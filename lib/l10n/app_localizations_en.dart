@@ -217,7 +217,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing yet. Tell the chat things like “I have an air fryer”.';
 
   @override
-  String get allergiesSection => 'Allergies';
+  String get allergiesSection => 'Allergies and diet';
 
   @override
   String get allergiesEmpty => 'None recorded.';
@@ -453,7 +453,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'For people under 18 these formulas don\'t apply. Set targets with your pediatrician below.';
 
   @override
-  String get targetsTitle => 'Daily targets';
+  String get aboutMe => 'About me';
+
+  @override
+  String get sexShort => 'Sex';
+
+  @override
+  String get height => 'Height';
+
+  @override
+  String get weight => 'Weight';
 
   @override
   String get targetsNone => 'No targets yet.';
@@ -707,7 +716,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cautionAllergy(String food, String allergen) {
-    return 'Contains $food, on your allergy list ($allergen)';
+    return 'Contains $food, which your allergies or diet exclude ($allergen)';
   }
 
   @override
@@ -906,7 +915,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraNaming => 'Recognizing food…';
 
   @override
-  String get cameraNamingFailed => 'Couldn\'t recognize the food. Try again.';
+  String get cameraNamingFailed =>
+      'AI recognition failed: showing quick detection instead. Check the items.';
 
   @override
   String cameraUseFound(int count) {
@@ -1003,6 +1013,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardRemoveAllergy => 'Remove allergy';
+
+  @override
+  String get cardAddDiet => 'Add diet';
+
+  @override
+  String get cardRemoveDiet => 'Remove diet';
+
+  @override
+  String get captionConfirm => 'Check it and tap Save.';
+
+  @override
+  String get captionIdeas => 'Here are some ideas. Tap one to see the recipe.';
+
+  @override
+  String captionIdeasAvoiding(String foods) {
+    return 'Careful: you\'re allergic to or avoid $foods, so I left it out. Here are recipes without it; tap one to see it.';
+  }
+
+  @override
+  String get captionRecipe => 'Here\'s the recipe.';
+
+  @override
+  String get captionNumbers => 'Here are the numbers.';
+
+  @override
+  String get captionCamera => 'Tap the button to open the camera.';
 
   @override
   String get cardLogSymptom => 'Log symptom';
@@ -1336,7 +1372,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Understands more, answers about 2-3x slower. For phones with 8 GB RAM.';
+      'Understands more, answers about 2-3x slower. For phones with 12 GB RAM.';
 
   @override
   String get aiModelSwitch => 'Switch';
@@ -1356,6 +1392,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'The download stopped. Check your connection and free space, then try again; it continues where it stopped.';
 
   @override
+  String get downloadNoWifiTitle => 'Not on Wi-Fi';
+
+  @override
+  String downloadNoWifiBody(int mb) {
+    return 'You are not connected to Wi-Fi. This download is $mb MB; over mobile data it can use up your data plan or cost money.';
+  }
+
+  @override
+  String get downloadWaitWifi => 'Wait for Wi-Fi';
+
+  @override
+  String get downloadUseMobile => 'Use mobile data';
+
+  @override
+  String get downloadOnMobile =>
+      'Mobile data allowed: this download can use your data plan.';
+
+  @override
+  String get downloadWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String get downloadWaitingNetwork => 'Waiting for a connection';
+
+  @override
+  String get downloadRetrying =>
+      'Connection lost; it continues when it\'s back';
+
+  @override
+  String get downloadPaused => 'Paused';
+
+  @override
+  String get downloadInstalling => 'Installing…';
+
+  @override
+  String get downloadPause => 'Pause';
+
+  @override
+  String get downloadResume => 'Resume';
+
+  @override
   String get privacyPolicy => 'Privacy policy';
 
   @override
@@ -1363,4 +1439,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenses => 'Licenses and AI models';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get drawerFood => 'Food';
+
+  @override
+  String get drawerAssistant => 'Assistant';
+
+  @override
+  String get shoppingListNav => 'Shopping list';
+
+  @override
+  String get healthJournalNav => 'Health journal and report';
+
+  @override
+  String get settingsAi => 'AI and data';
+
+  @override
+  String get settingsTracking => 'Tracking';
+
+  @override
+  String get settingsPrivacy => 'Privacy and security';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsDanger => 'Danger zone';
+
+  @override
+  String get deleteThisProfile => 'Delete this profile';
+
+  @override
+  String get deleteThisProfileBody =>
+      'This removes the profile and all its meals, journal and chat history from this phone. This can\'t be undone.';
 }
