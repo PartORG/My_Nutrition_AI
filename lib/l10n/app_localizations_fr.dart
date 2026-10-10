@@ -1298,6 +1298,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get logIt => 'Noter';
 
   @override
+  String get language => 'Langue';
+
+  @override
   String get themeSystem => 'Système';
 
   @override

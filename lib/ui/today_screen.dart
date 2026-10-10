@@ -12,6 +12,7 @@ import '../l10n/app_localizations.dart';
 import 'chat_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
 import 'home_screen.dart' show HomeTab, homeTabProvider;
+import 'me_screen.dart' show WeightCard;
 import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'plan_screen.dart';
@@ -394,6 +395,7 @@ class _DayView extends StatelessWidget {
             ),
           if (meals.isNotEmpty) _MicrosCard(data: data),
           _WaterCard(data: data),
+          WeightCard(data: data),
           if (healthSyncOn(data.user))
             FutureBuilder(
               future: stepsToday(data.user),

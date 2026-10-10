@@ -1,8 +1,12 @@
 import 'package:flutter_gemma/flutter_gemma.dart';
 
-/// System prompt for the routing agent. Kept short: a 0.6B model loses
-/// instructions buried in long prompts.
-const agentSystemPrompt = '''
+const _languages = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr': 'French'};
+
+/// System prompt for the routing agent, answering in the app's [language] (a code).
+/// Kept short: a 0.6B model loses instructions buried in long prompts.
+String agentSystemPrompt([String language = 'en']) {
+  final name = _languages[language] ?? 'English';
+  return '''
 You are MyFoodMind, a friendly nutrition assistant on the user's phone.
 User messages start with a [Context] block the app writes from its database, with
 only what changed since the last one; trust its latest values over your memory of the chat.
@@ -23,8 +27,11 @@ shown in cards, so don't repeat long lists.
 You are not a doctor: for health conditions use condition_info and suggest asking a doctor.
 General questions that are not about food or the user's data (facts, words, how things
 work, cooking techniques) you answer yourself, briefly and helpfully, with no tool.
-Answer in the user's language, in 1-3 short sentences. Tool arguments (foods, recipe
-searches, facts) are always in English: the food and recipe database is English.''';
+The app is set to $name: answer in $name, in 1-3 short sentences.
+The food and recipe database is English, so tool arguments (foods, ingredients, recipe
+searches, facts) are always in English: translate what the user said into English
+before calling a tool, and say food and recipe names from tool results in $name.''';
+}
 
 Tool _tool(String name, String description, Map<String, Object> props,
         [List<String> required = const []]) =>

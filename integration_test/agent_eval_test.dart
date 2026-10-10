@@ -58,7 +58,7 @@ void main() {
         supportsFunctionCalls: true,
         toolChoice: ToolChoice.values.byName(_choice),
         modelType: type,
-        systemInstruction: agentSystemPrompt,
+        systemInstruction: agentSystemPrompt(),
         maxOutputTokens: 128,
       );
       await chat.addQueryChunk(Message.text(text: text, isUser: true));

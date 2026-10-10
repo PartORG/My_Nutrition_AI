@@ -16,7 +16,7 @@ import 'me_screen.dart';
 import 'memory_screen.dart';
 import 'paywall_screen.dart';
 import 'plan_screen.dart';
-import 'settings_screen.dart';
+import 'settings_screen.dart' show LanguageMenu, SettingsScreen;
 import 'theme.dart';
 import 'today_screen.dart';
 
@@ -82,6 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Text(l.hello(widget.name)),
         actions: [
+          const LanguageMenu(),
           IconButton(
             tooltip: l.lock,
             icon: const Icon(Icons.lock),

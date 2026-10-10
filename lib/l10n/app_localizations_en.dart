@@ -1290,6 +1290,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIt => 'Log it';
 
   @override
+  String get language => 'Language';
+
+  @override
   String get themeSystem => 'System';
 
   @override

@@ -37,6 +37,21 @@ class SettingsScreen extends ConsumerWidget {
           return ListView(padding: const EdgeInsets.only(bottom: 24), children: [
             _Section(l.appearance),
             const _Appearance(),
+            ListTile(
+              leading: const Icon(Icons.translate),
+              title: Text(l.language),
+              // Under the title, not trailing: at 200 % text it wouldn't fit beside it.
+              subtitle: DropdownButton<String>(
+                isExpanded: true,
+                value: ref.watch(languageProvider),
+                underline: const SizedBox.shrink(),
+                items: [
+                  for (final MapEntry(:key, :value) in languageOptions(l).entries)
+                    DropdownMenuItem(value: key, child: Text(value)),
+                ],
+                onChanged: (code) => ref.read(languageProvider.notifier).set(code ?? ''),
+              ),
+            ),
 
             _Section(l.settingsAi),
             if (llmChoices().length > 1)
@@ -180,6 +195,29 @@ class SettingsScreen extends ConsumerWidget {
     ref.read(unlockedProvider.notifier).lock();
     ref.read(profilesProvider).delete(id);
     unawaited(ref.read(remindersProvider).cancelProfile(id));
+  }
+}
+
+/// '' = follow the phone; each language named in itself, so it can be found from any other.
+Map<String, String> languageOptions(AppLocalizations l) =>
+    {'': l.themeSystem, 'en': 'English', 'uk': 'Українська', 'de': 'Deutsch', 'fr': 'Français'};
+
+/// App bar: the same choice as in Settings.
+class LanguageMenu extends ConsumerWidget {
+  const LanguageMenu({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    return PopupMenuButton<String>(
+      tooltip: l.language,
+      icon: const Icon(Icons.translate),
+      initialValue: ref.watch(languageProvider),
+      onSelected: ref.read(languageProvider.notifier).set,
+      itemBuilder: (_) => [
+        for (final MapEntry(:key, :value) in languageOptions(l).entries) PopupMenuItem(value: key, child: Text(value)),
+      ],
+    );
   }
 }
 

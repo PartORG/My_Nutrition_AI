@@ -171,6 +171,19 @@ List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
         )
     ];
 
+/// The latest weight in kg and how much it changed since [from] (null with under two readings there);
+/// null with no readings.
+({double kg, double? change})? weightNow(Database user, DateTime from) {
+  final latest = user.select("SELECT value, unit FROM readings WHERE kind = 'weight' ORDER BY logged_at DESC LIMIT 1")
+      .firstOrNull;
+  if (latest == null) return null;
+  final w = weightsSince(user, from);
+  return (
+    kg: (latest['value'] as num).toDouble() * (latest['unit'] == 'lb' ? 0.45359237 : 1),
+    change: w.length < 2 ? null : w.last.kg - w.first.kg,
+  );
+}
+
 /// Free: anyone can log their weight (goals use it); the trend is Basic.
 void logWeight(Database user, double value, {required bool imperial, required DateTime at}) =>
     logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);

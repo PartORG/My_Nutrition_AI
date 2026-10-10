@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart' hide Database;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/material.dart' show ThemeMode, WidgetsBinding, basicLocaleListResolution;
 import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_embeddings/flutter_gemma_embeddings.dart';
@@ -29,6 +29,7 @@ import 'data/health_sync.dart' show syncHealthWeights;
 import 'data/nutri_db.dart';
 import 'data/profiles.dart';
 import 'data/user_db.dart';
+import 'l10n/app_localizations.dart';
 import 'reminders_service.dart';
 
 /// App-private data directory, with nutri.db installed from the bundled asset
@@ -75,6 +76,19 @@ class AppearanceSettings extends Notifier<Appearance> {
     if (mode != null) p.setSetting('theme', mode.name);
     if (wallpaper != null) p.setSetting('wallpaper_colors', wallpaper ? '1' : '0');
     state = (mode: mode ?? state.mode, wallpaper: wallpaper ?? state.wallpaper);
+  }
+}
+
+/// The app's language code; '' = follow the phone. Per phone.
+final languageProvider = NotifierProvider<LanguageSetting, String>(LanguageSetting.new);
+
+class LanguageSetting extends Notifier<String> {
+  @override
+  String build() => (ref.watch(appDirProvider).hasValue ? ref.watch(profilesProvider).setting('language') : null) ?? '';
+
+  void set(String code) {
+    ref.read(profilesProvider).setSetting('language', code);
+    state = code;
   }
 }
 
@@ -486,6 +500,13 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
   final llm = await ref.watch(llmProvider.future);
   final embedder = await ref.watch(embedderProvider.future);
 
+  // The language the app shows, so the agent answers in it.
+  final code = ref.watch(languageProvider);
+  final language = code.isNotEmpty
+      ? code
+      : basicLocaleListResolution(WidgetsBinding.instance.platformDispatcher.locales, AppLocalizations.supportedLocales)
+          .languageCode;
+
   final vectorsPath = profiles.vectorsDbPath(data.profile.id);
   File(vectorsPath).parent.createSync(recursive: true);
   final vectors = openVectorsDb(vectorsPath);
@@ -498,6 +519,7 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
     limit: ChatLimit(profiles.db),
     unlimited: () => billing.tier.value.includes(Tier.basic),
     onWrite: data.changed,
+    language: language,
   )..loadHistory();
   ref.onDispose(() {
     agent.dispose();

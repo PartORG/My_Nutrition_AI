@@ -31,48 +31,51 @@ class MeScreen extends ConsumerWidget {
         final textTheme = Theme.of(context).textTheme;
         final allergies = [for (final r in data.user.select('SELECT allergen FROM user_allergens ORDER BY 1')) r['allergen'] as String];
         final conditions = [for (final c in myConditions(data.user)) conditionLabel(c.name, l)];
-        Widget info(String label, String value) => ListTile(
-              title: Text(label, style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
-              subtitle: Text(value, style: textTheme.bodyLarge),
-            );
+        // Compact: label over value, as many per row as fit.
+        Widget info(String label, String value) =>
+            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text(label, style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+              Text(value, style: textTheme.bodyMedium),
+            ]);
         return ListView(padding: const EdgeInsets.all(16), children: [
           Card.outlined(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: _CardTitle(icon: Icons.person_outline, title: l.aboutMe),
-              ),
-              if (body == null) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(l.setGoalsBody)),
-              ...ListTile.divideTiles(context: context, color: scheme.outlineVariant, tiles: [
-                info(l.profileName, data.profile.name),
-                if (body != null) ...[
-                  info(l.sexShort, {Sex.female: l.female, Sex.male: l.male, Sex.other: l.other}[body.sex]!),
-                  info(l.birthYear, '${body.birthYear}'),
-                  info(l.height, _height(body)),
-                  info(l.weight, _weight(body)),
-                  info(l.activity, _activity(body.activity, l)),
-                  info(l.units, body.imperial ? l.imperial : l.metric),
-                ],
-                info(l.allergiesSection, allergies.isEmpty ? l.allergiesEmpty : allergies.join(', ')),
-                info(l.conditionsTitle, conditions.isEmpty ? l.allergiesEmpty : conditions.join(', ')),
-              ]),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Wrap(spacing: 8, runSpacing: 8, children: [
-                  OutlinedButton(
-                    onPressed: () => open(const GoalsScreen()),
-                    child: Text(body == null ? l.setGoalsButton : l.editDetails),
-                  ),
-                  // Free: goals use the current weight. The trend chart is Basic.
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.monitor_weight_outlined),
-                    label: Text(l.logWeight),
-                    onPressed: () => _logWeight(context, data, body?.imperial ?? false),
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: _CardTitle(icon: Icons.person_outline, title: l.aboutMe)),
+                  if (body != null)
+                    IconButton(
+                      tooltip: l.editDetails,
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => open(const GoalsScreen()),
+                    ),
                 ]),
-              ),
-            ]),
+                if (body == null) ...[
+                  Text(l.setGoalsBody),
+                  const SizedBox(height: 8),
+                  OutlinedButton(onPressed: () => open(const GoalsScreen()), child: Text(l.setGoalsButton)),
+                ],
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Wrap(spacing: 24, runSpacing: 12, children: [
+                    info(l.profileName, data.profile.name),
+                    if (body != null) ...[
+                      info(l.sexShort, {Sex.female: l.female, Sex.male: l.male, Sex.other: l.other}[body.sex]!),
+                      info(l.birthYear, '${body.birthYear}'),
+                      info(l.height, _height(body)),
+                      info(l.activity, _activity(body.activity, l)),
+                      info(l.units, body.imperial ? l.imperial : l.metric),
+                    ],
+                    info(l.allergiesSection, allergies.isEmpty ? l.allergiesEmpty : allergies.join(', ')),
+                    info(l.conditionsTitle, conditions.isEmpty ? l.allergiesEmpty : conditions.join(', ')),
+                  ]),
+                ),
+              ]),
+            ),
           ),
+          WeightCard(data: data),
           Card.outlined(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Padding(
@@ -148,25 +151,10 @@ class MeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _logWeight(BuildContext context, ProfileData data, bool imperial) async {
-    final l = AppLocalizations.of(context)!;
-    final v = await showDialog<double>(
-      context: context,
-      builder: (_) => TargetDialog(title: imperial ? l.weightLb : l.weightKg, initial: null, allowReset: false),
-    );
-    if (v == null || v <= 0) return;
-    logWeight(data.user, v, imperial: imperial, at: DateTime.now());
-    data.changed();
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.weightLogged)));
-  }
-
   static String _height(Body b) {
     final fi = cmToFeetInches(b.heightCm);
     return b.imperial ? "${fi.feet}′ ${fi.inches.round()}″" : '${b.heightCm.round()} cm';
   }
-
-  static String _weight(Body b) =>
-      b.imperial ? '${kgToLb(b.weightKg).round()} lb' : '${b.weightKg.toStringAsFixed(1)} kg';
 
   static String _goal(Goal g, AppLocalizations l) =>
       {Goal.lose: l.goalLose, Goal.maintain: l.goalMaintain, Goal.gain: l.goalGain}[g]!;
@@ -255,6 +243,60 @@ class _TargetDialogState extends State<TargetDialog> {
         ),
       ],
     );
+  }
+}
+
+/// The latest weight, its change over 30 days, and logging a new one. On Me and Today.
+/// Free: goals use the current weight. The trend chart is Basic.
+class WeightCard extends StatelessWidget {
+  const WeightCard({super.key, required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final body = loadBody(data.user);
+    final imperial = body?.imperial ?? false;
+    final w = weightNow(data.user, DateTime.now().subtract(const Duration(days: 30)));
+    final now = body?.weightKg ?? w?.kg; // the weight the goals use
+    String kg(double v) => (imperial ? kgToLb(v) : v).toStringAsFixed(1);
+    final unit = imperial ? 'lb' : 'kg';
+    final change = w?.change;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(children: [
+          Icon(Icons.monitor_weight_outlined, color: context.colors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(now == null ? l.weight : '${l.weight}: ${kg(now)} $unit',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              if (change != null)
+                Text('${change > 0 ? '+' : change < 0 ? '−' : '±'}${kg(change.abs())} $unit · ${l.days(30)}',
+                    style: TextStyle(color: context.colors.textSecondary)),
+            ]),
+          ),
+          IconButton.filledTonal(
+            tooltip: l.logWeight,
+            icon: const Icon(Icons.add),
+            onPressed: () => _log(context, imperial),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _log(BuildContext context, bool imperial) async {
+    final l = AppLocalizations.of(context)!;
+    final v = await showDialog<double>(
+      context: context,
+      builder: (_) => TargetDialog(title: imperial ? l.weightLb : l.weightKg, initial: null, allowReset: false),
+    );
+    if (v == null || v <= 0) return;
+    logWeight(data.user, v, imperial: imperial, at: DateTime.now());
+    data.changed();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.weightLogged)));
   }
 }
 

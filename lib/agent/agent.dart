@@ -52,11 +52,15 @@ class Agent extends ChangeNotifier {
     required this.limit,
     required this.unlimited,
     this.onWrite,
+    this.language = 'en',
     DateTime Function()? clock,
   }) : _now = clock ?? DateTime.now;
 
   /// Called after the user confirms a write, so other screens can refresh.
   final VoidCallback? onWrite;
+
+  /// The app's language code: the model answers in it.
+  final String language;
 
   final ChatModel model;
   final AgentTools tools;
@@ -295,11 +299,11 @@ class Agent extends ChangeNotifier {
         "SELECT role, text FROM chat_messages WHERE role IN ('user', 'model') AND id < ? AND created_at >= ? "
         'ORDER BY id DESC LIMIT 6', [before ?? 1 << 62, _today().millisecondsSinceEpoch]).reversed;
     final replay = [for (final r in rows) (isUser: r['role'] == 'user', text: r['text'] as String)];
-    final session = await model.open(system: agentSystemPrompt, replay: replay);
+    final session = await model.open(system: agentSystemPrompt(language), replay: replay);
     _sentContext.clear();
     // ponytail: the declarations as JSON, not as the chat template renders them; _turnRoom covers the gap.
     _sessionTokens = await session.countTokens([
-      agentSystemPrompt,
+      agentSystemPrompt(language),
       jsonEncode([for (final t in agentTools) {'name': t.name, 'description': t.description, 'parameters': t.parameters}]),
       for (final t in replay) t.text,
     ].join('\n'));

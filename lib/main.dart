@@ -42,6 +42,7 @@ class MyFoodMindApp extends ConsumerWidget {
         theme: AppTheme.build(Brightness.light, system: look.wallpaper ? light : null),
         darkTheme: AppTheme.build(Brightness.dark, system: look.wallpaper ? dark : null),
         themeMode: look.mode,
+        locale: switch (ref.watch(languageProvider)) { '' => null, final code => Locale(code) },
         // Dates and numbers (DateFormat, NumberFormat) in the app's language, not always English.
         builder: (context, child) {
           Intl.defaultLocale = Localizations.localeOf(context).toLanguageTag();

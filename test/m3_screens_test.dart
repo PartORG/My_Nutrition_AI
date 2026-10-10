@@ -141,6 +141,9 @@ void main() {
 
   testWidgets('Meal plan: from Today, plan the week, shopping list from it', (tester) async {
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    await tester.scrollUntilVisible(find.text('Meal plan'), 200, scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(find.text('Meal plan')); // to the top, out from under the navigation bar
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Meal plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Plan my week'));
@@ -193,6 +196,7 @@ void main() {
 
     await tester.tap(find.text('Today'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Snack'), 200, scrollable: find.byType(Scrollable).last);
     expect(find.text('Snack'), findsOneWidget);
     expect(find.text('158 kcal'), findsWidgets);
   });
@@ -202,7 +206,7 @@ void main() {
         activity: Activity.light, goal: Goal.lose, imperial: false), now: DateTime.now());
     data.user.execute("INSERT INTO user_allergens (allergen, added_at) VALUES ('peanuts', 0)");
     await pumpApp(tester, const Scaffold(body: MeScreen()));
-    for (final t in ['About me', 'Anna', 'Female', '1980', '165 cm', '62.0 kg', 'peanuts', 'Your daily goals']) {
+    for (final t in ['About me', 'Anna', 'Female', '1980', '165 cm', 'Weight: 62.0 kg', 'peanuts', 'Your daily goals']) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
     await tester.ensureVisible(find.text('Lose weight'));

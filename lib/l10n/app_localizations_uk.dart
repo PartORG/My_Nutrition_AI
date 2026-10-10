@@ -1302,6 +1302,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get logIt => 'Записати';
 
   @override
+  String get language => 'Мова';
+
+  @override
   String get themeSystem => 'Системна';
 
   @override

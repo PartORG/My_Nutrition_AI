@@ -65,7 +65,7 @@ jobs:
 
       - if: steps.version.outputs.exists != 'true'
         run: |
-          flutter build apk --release --target-platform android-arm64
+          flutter build apk --release --target-platform android-arm64 --dart-define=DEV_BILLING=true  # shortcut: dev tier switch until RevenueCat is set up
           mv build/app/outputs/flutter-apk/app-release.apk "myfoodmind-${{ steps.version.outputs.tag }}.apk"
 
       - if: steps.version.outputs.exists != 'true'

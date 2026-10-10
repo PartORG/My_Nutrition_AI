@@ -88,7 +88,7 @@ void main() {
       tools: agentTools,
       supportsFunctionCalls: true,
       modelType: ModelType.gemma4,
-      systemInstruction: agentSystemPrompt,
+      systemInstruction: agentSystemPrompt(),
       maxOutputTokens: 256,
     );
     out.writeln('chat created (13 tools): ${lap()}ms');

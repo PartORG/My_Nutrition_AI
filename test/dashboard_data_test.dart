@@ -54,4 +54,13 @@ void main() {
     expect(weightsSince(user, DateTime(2026, 9, 1)).single.kg, closeTo(68.04, .01));
     expect(loadBody(user)!.weightKg, closeTo(68.04, .01));
   });
+
+  test('weightNow: latest weight and its change over the window', () {
+    expect(weightNow(user, DateTime(2026, 9, 1)), isNull);
+    logWeight(user, 80, imperial: false, at: DateTime(2026, 8, 1)); // before the window
+    expect(weightNow(user, DateTime(2026, 9, 1)), (kg: 80.0, change: null));
+    logWeight(user, 79, imperial: false, at: DateTime(2026, 9, 10));
+    logWeight(user, 77.5, imperial: false, at: DateTime(2026, 10, 1));
+    expect(weightNow(user, DateTime(2026, 9, 1)), (kg: 77.5, change: -1.5));
+  });
 }

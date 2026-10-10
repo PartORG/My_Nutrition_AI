@@ -103,6 +103,8 @@ flutter run --release --dart-define=DEV_BILLING=true   # developer tier switch, 
 
 ### Release builds
 
+The CI release APK is built with `DEV_BILLING=true` for now (no RevenueCat yet).
+
 ```bash
 flutter build apk --release --target-platform android-arm64        # sideloadable APK
 flutter build appbundle --release --target-platform android-arm64  # Play Store

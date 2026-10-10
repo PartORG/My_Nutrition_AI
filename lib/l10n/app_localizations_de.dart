@@ -1299,6 +1299,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get logIt => 'Eintragen';
 
   @override
+  String get language => 'Sprache';
+
+  @override
   String get themeSystem => 'System';
 
   @override
