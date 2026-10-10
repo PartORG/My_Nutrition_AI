@@ -132,7 +132,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get notMedicalAdvice =>
-      'Information générale, pas un avis médical. Parlez-en à votre médecin avant de changer votre alimentation.';
+      'Information générale tirée de recommandations publiées, pas un avis médical. Elle ne remplace pas votre médecin ou diététicien : parlez-leur avant de changer votre alimentation ou vos médicaments.';
+
+  @override
+  String get chatDisclaimer =>
+      'Les réponses de l’IA peuvent être fausses et ne remplacent pas un médecin. En cas d’urgence, appelez le numéro d’urgence local.';
+
+  @override
+  String get medicalDisclaimerTitle => 'Avertissement médical';
+
+  @override
+  String get medicalDisclaimerBody =>
+      'MyFoodMind et son assistant IA donnent des informations générales sur l’alimentation et la nutrition. L’appli n’est pas un dispositif médical et ne diagnostique, ne traite, ne guérit ni ne prévient aucune maladie.\n\nRien dans l’appli, y compris les réponses de l’assistant, les limites liées aux maladies et les informations de santé, ne remplace l’avis d’un médecin, d’un diététicien ou d’un autre professionnel de santé qualifié. L’IA fonctionne sur votre téléphone et peut se tromper.\n\nParlez toujours à votre médecin avant de changer votre alimentation, vos médicaments ou votre traitement, surtout si vous avez une maladie, êtes enceinte ou allaitez, ou avez ou avez eu un trouble du comportement alimentaire. N’ignorez jamais un avis professionnel et ne tardez jamais à le demander à cause de cette appli.\n\nSi vous pensez qu’il s’agit d’une urgence médicale, appelez immédiatement le numéro d’urgence local.';
 
   @override
   String get crisisTitle => 'Vous n’avez pas à traverser cela seul·e';

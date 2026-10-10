@@ -15,8 +15,8 @@ Rules (decided 2026-10-06):
     nutrition and allergen filtering are complete) and it states its servings;
   * where a source publishes per-serving calories, the computed value must agree;
   * nutri.db stays under 300 MB: best recipes first.
-Conditions, condition rules and medical docs are not in these folders: the development ones
-from db/nutri_dummy.sql are carried over unchanged (foods to avoid re-linked by name).
+Conditions, condition rules, foods to avoid and medical docs come from db/medical.sql (curated
+from raw_medical/), applied by tool/build_medical.py.
 """
 
 import ast
@@ -34,6 +34,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import ingredients as ing  # noqa: E402
+from build_medical import apply as apply_medical  # noqa: E402
 from build_nutri_db import finish  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
@@ -1219,28 +1220,7 @@ def r3(v):
     return None if v is None else round(v, 3)
 
 
-def carry_over_dev_tables(db: sqlite3.Connection, m: Matcher) -> list[str]:
-    """conditions / condition_rules / docs from db/nutri_dummy.sql (no source data for them in the raw
-    folders); condition_avoid re-linked by food name. Returns notes for the report."""
-    dev = sqlite3.connect(":memory:")
-    dev.executescript((ROOT / "db/nutri_schema.sql").read_text())
-    dev.executescript((ROOT / "db/nutri_dummy.sql").read_text())
-    for t in ("conditions", "condition_rules", "docs"):
-        cols = [r[1] for r in dev.execute(f"PRAGMA table_info({t})")]
-        db.executemany(f"INSERT INTO {t} ({','.join(cols)}) VALUES ({','.join('?' * len(cols))})",
-                       dev.execute(f"SELECT {','.join(cols)} FROM {t}").fetchall())
-    notes = []
-    for cid, fname, note in dev.execute("SELECT a.condition_id, f.name, a.note FROM condition_avoid a JOIN foods f ON f.id = a.food_id"):
-        hit = m.lookup(ing.normalize_name(fname.split(",")[0]))
-        if hit and hit[0]:
-            db.execute("INSERT OR IGNORE INTO condition_avoid VALUES (?, ?, ?)", (cid, hit[0]["id"], note))
-            notes.append(f"condition_avoid: '{fname}' -> '{hit[0]['name']}'")
-        else:
-            notes.append(f"condition_avoid: '{fname}' has no match, left out")
-    return notes
-
-
-def write_db(out: Path, foods, dishes, products, recipes, m: Matcher) -> list[str]:
+def write_db(out: Path, foods, dishes, products, recipes) -> dict[str, int]:
     tmp = out.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
     db = sqlite3.connect(tmp)
@@ -1268,9 +1248,9 @@ def write_db(out: Path, foods, dishes, products, recipes, m: Matcher) -> list[st
     db.executemany("INSERT INTO dishes VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows_d)
     db.executemany("INSERT INTO products VALUES (?,?,?,?,?,?,?,?,?)", [
         (p["barcode"], p["name"], *(r3(p.get(k)) for k in NUTRIENTS)) for p in products])
-    notes = carry_over_dev_tables(db, m)
+    medical = apply_medical(db)
     finish(db, tmp, out)
-    return notes
+    return medical
 
 
 def pick_recipes(recipes: list[dict], budget_bytes: int) -> list[dict]:
@@ -1348,7 +1328,7 @@ def report_copies(raw: Path) -> None:
         rep["dropped"][f"duplicate file (same MD5 as {Path(twin).name})"] = rep["rows"]
 
 
-def write_report(path: Path, counts: dict, notes: list[str]) -> None:
+def write_report(path: Path, counts: dict, medical: dict[str, int]) -> None:
     lines = ["# nutri.db data sources", "",
              f"Built by `tool/build_real_nutri_db.py` on {date.today().isoformat()} from "
              "`nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; "
@@ -1370,10 +1350,11 @@ def write_report(path: Path, counts: dict, notes: list[str]) -> None:
         r = REPORT[f]
         dropped = "; ".join(f"{k}: {v:,}" for k, v in r["dropped"].most_common() if v)
         lines.append(f"| `{f}` | {r['rows']:,} | {max(r['kept'], 0):,} | {r['target']} | {dropped or '-'} | {r['note']} |")
-    lines += ["", "## Carried over from the development data", "",
-              "No raw file covers conditions, condition rules or medical docs (`raw_medical/` was not part of this "
-              "build), so those rows are copied unchanged from `db/nutri_dummy.sql` and are still **development "
-              "values**:", "", *[f"- {n}" for n in notes], "",
+    lines += ["", "## Medical data", "",
+              "Conditions, daily limits, foods to avoid and the `condition_info` passages come from "
+              "`db/medical.sql`, curated by hand from the guidelines in `nutrition-ai-assistant/data/raw_medical` "
+              "(each row names its guideline; passages are paraphrased, not copied):", "",
+              *[f"- {k}: {v:,}" for k, v in medical.items()], "",
               "## Licensing (data owner to confirm before release)", "",
               "- USDA SR28 / FoodData Central: public domain (US government).",
               "- NZ FOODfiles: © Plant & Food Research / Ministry of Health; check the FOODfiles licence terms.",
@@ -1402,7 +1383,7 @@ def main(raw: Path, out: Path) -> None:
     recipes = pick_recipes(list(R.kept.values()), budget)
     renamed = retitle_duplicates(recipes)
     used_foods = {fid for r in recipes for fid in r["items"]}
-    notes = write_db(out, foods, dishes, products, recipes, m)
+    medical = write_db(out, foods, dishes, products, recipes)
     size = out.stat().st_size
     db = sqlite3.connect(out)
     counts = {t: db.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
@@ -1413,7 +1394,7 @@ def main(raw: Path, out: Path) -> None:
     counts["foods used by recipes"] = len(used_foods)
     counts["recipes renamed (same title, other ingredients)"] = renamed
     report_copies(raw)
-    write_report(ROOT / "docs/DATA_SOURCES.md", counts, notes)
+    write_report(ROOT / "docs/DATA_SOURCES.md", counts, medical)
     print(json.dumps(counts, indent=1))
     # What to add to ingredient_map.txt next: each line here blocked that many recipes.
     print("top unmatched ingredient lines:", *(f"  {n:6} {why}" for why, n in R.unmatched.most_common(30)), sep="\n")

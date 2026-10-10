@@ -33,18 +33,24 @@ import 'l10n/app_localizations.dart';
 import 'reminders_service.dart';
 
 /// App-private data directory, with nutri.db installed from the bundled asset
-/// when missing or unreadable by this build. Overridden in tests.
+/// when missing, unreadable by this build or older than [nutriDataVersion]. Overridden in tests.
 final appDirProvider = FutureProvider<Directory>((ref) async {
   final dir = await getApplicationSupportDirectory();
   final nutri = File('${dir.path}/nutri.db');
+  // The data version installed last; a file, not nutri.db's meta, so an old bundle can't reinstall on every start.
+  final installed = File('${dir.path}/nutri.db.data_version');
   try {
     openNutriDb(nutri.path).close();
+    if ((int.tryParse(installed.existsSync() ? installed.readAsStringSync() : '') ?? 0) < nutriDataVersion) {
+      throw NutriDbException('installed data older than $nutriDataVersion');
+    }
   } on Object {
     // ponytail: bundled dummy db; the real one (≤ 300 MB) needs its own delivery, see docs/PLAN.md M7.
     final tmp = File('${dir.path}/nutri.db.download');
     final data = await rootBundle.load('assets/nutri.db');
     await tmp.writeAsBytes(data.buffer.asUint8List(), flush: true);
     installNutriDb(tmp, nutri);
+    installed.writeAsStringSync('$nutriDataVersion');
   }
   return dir;
 });

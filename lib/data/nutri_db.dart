@@ -7,6 +7,11 @@ import 'package:sqlite3/sqlite3.dart';
 const nutriSchemaMin = 2;
 const nutriSchemaMax = 2;
 
+/// nutri.db content release (meta.data_version). Bump it with db/medical.sql's data_version when
+/// the data changes but the schema doesn't, so phones replace their installed copy once.
+// 1: medical data from the guidelines (db/medical.sql).
+const nutriDataVersion = 1;
+
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';
 

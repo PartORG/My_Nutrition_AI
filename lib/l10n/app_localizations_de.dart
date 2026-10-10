@@ -132,7 +132,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notMedicalAdvice =>
-      'Allgemeine Informationen, keine medizinische Beratung. Sprich mit deiner Ärztin oder deinem Arzt, bevor du deine Ernährung änderst.';
+      'Allgemeine Informationen aus veröffentlichten Leitlinien, keine medizinische Beratung. Sie ersetzen nicht deine Ärztin, deinen Arzt oder deine Ernährungsberatung: Sprich mit ihnen, bevor du deine Ernährung oder Medikamente änderst.';
+
+  @override
+  String get chatDisclaimer =>
+      'KI-Antworten können falsch sein und ersetzen keinen Arzt. Ruf im Notfall die örtliche Notrufnummer an.';
+
+  @override
+  String get medicalDisclaimerTitle => 'Medizinischer Hinweis';
+
+  @override
+  String get medicalDisclaimerBody =>
+      'MyFoodMind und sein KI-Assistent geben allgemeine Informationen zu Essen und Ernährung. Die App ist kein Medizinprodukt und dient nicht dazu, Krankheiten zu erkennen, zu behandeln, zu heilen oder ihnen vorzubeugen.\n\nNichts in der App, auch nicht die Antworten des Assistenten, die Grenzwerte für Erkrankungen und die Gesundheitsinformationen, ersetzt den Rat einer Ärztin, eines Arztes, einer Ernährungsfachkraft oder anderer medizinischer Fachleute. Die KI läuft auf deinem Handy und kann Fehler machen.\n\nSprich immer mit deiner Ärztin oder deinem Arzt, bevor du Ernährung, Medikamente oder Behandlung änderst, besonders wenn du eine Erkrankung hast, schwanger bist oder stillst oder eine Essstörung hast oder hattest. Ignoriere nie fachlichen Rat und schiebe ihn nie wegen etwas in dieser App auf.\n\nWenn du glaubst, dass es ein medizinischer Notfall ist, ruf sofort die örtliche Notrufnummer an.';
 
   @override
   String get crisisTitle => 'Du musst das nicht allein durchstehen';

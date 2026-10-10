@@ -142,6 +142,22 @@ class SettingsScreen extends ConsumerWidget {
 
             _Section(l.settingsAbout),
             ListTile(
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: Text(l.medicalDisclaimerTitle),
+              onTap: () => showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(l.medicalDisclaimerTitle),
+                  content: SingleChildScrollView(child: Text(l.medicalDisclaimerBody)),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(MaterialLocalizations.of(context).closeButtonLabel)),
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text(l.licenses),
               onTap: () => showLicensePage(context: context, applicationName: l.appTitle),

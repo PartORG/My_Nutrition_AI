@@ -33,6 +33,12 @@ void main() {
         "WHERE f.name = 'Butter, with salt'");
     expect(butter.map((r) => r['allergen']), contains('milk'));
     expect(db.select("SELECT rowid FROM recipes_fts WHERE recipes_fts MATCH 'chicken' LIMIT 1"), isNotEmpty);
+    // Medical data from db/medical.sql (tool/build_medical.py), not the development rows.
+    expect(count("SELECT count(*) FROM docs WHERE source LIKE '%DUMMY%'"), 0);
+    expect(int.parse(db.select("SELECT value FROM meta WHERE key = 'data_version'").single['value'] as String),
+        greaterThanOrEqualTo(nutriDataVersion));
+    expect(count("SELECT count(*) FROM docs"), greaterThan(40));
+    expect(count('SELECT count(*) FROM condition_avoid WHERE condition_id = 3'), greaterThan(50));
     db.close();
   }, skip: skip);
 

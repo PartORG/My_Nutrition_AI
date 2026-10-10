@@ -105,7 +105,8 @@ class _ChatScreenState extends State<ChatScreen> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-              child: Row(children: [
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Row(children: [
                 Expanded(
                   child: TextField(
                     controller: _input,
@@ -136,6 +137,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   onPressed: widget.agent.busy ? null : _send,
                   icon: const Icon(Icons.send),
                 ),
+              ]),
+              Padding(
+                padding: const EdgeInsets.only(top: 4, right: 4),
+                child: Text(l.chatDisclaimer,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colors.textSecondary)),
+              ),
               ]),
             ),
           ),

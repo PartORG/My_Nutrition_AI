@@ -37,6 +37,10 @@ jobs:
         run: |
           gh release download build-inputs --pattern nutri.db --dir assets
           gh release download build-inputs --pattern 'embeddinggemma*' --dir assets/models
+          # Phones only reinstall nutri.db for a newer data_version: never ship one older than the app expects.
+          want=$(grep -oP 'const nutriDataVersion = \K\d+' lib/data/nutri_db.dart)
+          have=$(python3 -c "import sqlite3; r = sqlite3.connect('assets/nutri.db').execute(\"SELECT value FROM meta WHERE key = 'data_version'\").fetchone(); print(r[0] if r else 0)")
+          [ "$have" -ge "$want" ] || { echo "build-inputs nutri.db has data_version $have, the app needs $want: re-upload it"; exit 1; }
 
       - if: steps.version.outputs.exists != 'true'
         uses: actions/setup-java@v4

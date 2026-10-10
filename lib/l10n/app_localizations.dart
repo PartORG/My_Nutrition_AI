@@ -303,8 +303,26 @@ abstract class AppLocalizations {
   /// No description provided for @notMedicalAdvice.
   ///
   /// In en, this message translates to:
-  /// **'General information, not medical advice. Talk to your doctor before changing your diet.'**
+  /// **'General information from published guidelines, not medical advice. It doesn\'t replace your doctor or dietitian: talk to them before changing your diet or medicines.'**
   String get notMedicalAdvice;
+
+  /// No description provided for @chatDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI answers can be wrong and don\'t replace a doctor. In an emergency, call your local emergency number.'**
+  String get chatDisclaimer;
+
+  /// No description provided for @medicalDisclaimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical disclaimer'**
+  String get medicalDisclaimerTitle;
+
+  /// No description provided for @medicalDisclaimerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'MyFoodMind and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant\'s answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.'**
+  String get medicalDisclaimerBody;
 
   /// No description provided for @crisisTitle.
   ///

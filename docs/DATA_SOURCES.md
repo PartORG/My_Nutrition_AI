@@ -11,9 +11,9 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 | dishes | 620 |
 | products | 263,164 |
 | conditions | 5 |
-| condition_rules | 3 |
-| condition_avoid | 4 |
-| docs | 4 |
+| condition_rules | 4 |
+| condition_avoid | 641 |
+| docs | 51 |
 | nutri.db bytes | 290,131,968 |
 | foods used by recipes | 2,094 |
 | recipes renamed (same title, other ingredients) | 24,604 |
@@ -95,14 +95,18 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 | `raw_recipes/recipes_ingredients.csv` | 500,471 | 163,235 | recipes (food.com) | ingredient not matched to a food: 231,862; calories differ from the source's published value: 35,776; ingredient amount not convertible to grams: 32,432; calories per serving implausible: 18,697; same food.com recipe as recipes_ingredients.csv: 7,841; over the 300 MB size budget (lower-ranked): 4,777; no servings: 2,378; duplicate of a recipe already kept: 1,523; implausible amount: 772; ingredient words imply an allergen the matched food lacks: 683; empty ingredient line: 439; no ingredient lines: 35; no ingredient with nutrition: 21 | food.com recipes with full ingredient lines, servings and serving weight. |
 | `raw_recipes/recipes_w_search_terms.csv` | 494,963 | 2,492 | recipes (food.com) | same food.com recipe as recipes_ingredients.csv: 487,125; ingredient not matched to a food: 3,396; ingredient amount not convertible to grams: 718; calories differ from the source's published value: 654; calories per serving implausible: 421; duplicate of a recipe already kept: 51; over the 300 MB size budget (lower-ranked): 40; no ingredient lines: 18; implausible amount: 13; no servings: 12; ingredient words imply an allergen the matched food lacks: 11; no ingredient with nutrition: 6; empty ingredient line: 5; no instructions: 1 | food.com recipes with full ingredient lines, servings and serving weight. |
 
-## Carried over from the development data
+## Medical data
 
-No raw file covers conditions, condition rules or medical docs (`raw_medical/` was not part of this build), so those rows are copied unchanged from `db/nutri_dummy.sql` and are still **development values**:
+Conditions, daily limits, foods to avoid and the `condition_info` passages come from `db/medical.sql`, curated by hand from the guidelines in `nutrition-ai-assistant/data/raw_medical` (each row names its guideline; passages are paraphrased, not copied). Applied on 2026-10-10 with `tool/build_medical.py`:
 
-- condition_avoid: 'banana' -> 'Bananas, raw'
-- condition_avoid: 'soy sauce' -> 'Soy sauce made from soy and wheat (shoyu)'
-- condition_avoid: 'feta cheese' -> 'Cheese, feta'
-- condition_avoid: 'salmon' -> 'Fish, salmon, Atlantic, farmed, raw'
+- conditions rows: 5
+- condition_rules rows: 4
+- docs rows: 51
+- foods to avoid: diabetes_t2: 263
+- foods to avoid: hypertension: 0
+- foods to avoid: gout: 378
+- foods to avoid: als: 0
+- foods to avoid: ms: 0
 
 ## Licensing (data owner to confirm before release)
 
