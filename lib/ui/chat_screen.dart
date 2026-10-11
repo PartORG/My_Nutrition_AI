@@ -35,10 +35,15 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _input = TextEditingController();
   final _speech = SpeechToText();
-  bool _listening = false;
+  bool _listening = false; // from the mic tap until the user taps again or stays quiet for _pause
+  DateTime _heard = DateTime.now();
+  // Android's recognizer ends a session after ~1-2 s of silence and often ignores pauseFor,
+  // so we restart it and keep appending until the user has been quiet this long.
+  static const _pause = Duration(seconds: 5);
 
   @override
   void dispose() {
+    _listening = false;
     _speech.cancel();
     _input.dispose();
     super.dispose();
@@ -48,8 +53,8 @@ class _ChatScreenState extends State<ChatScreen> {
   /// falling back to online recognition would send their voice to a server.
   Future<void> _toggleVoice() async {
     if (_listening) {
-      await _speech.stop();
       setState(() => _listening = false);
+      await _speech.stop();
       return;
     }
     final l = AppLocalizations.of(context)!;
@@ -60,19 +65,41 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final ok = await _speech.initialize(
-      onError: (_) => unavailable(),
+      onError: (e) {
+        // A pause or nothing said is not "voice unavailable"; the done status handles it.
+        if (e.errorMsg != 'error_no_match' && e.errorMsg != 'error_speech_timeout') unavailable();
+      },
       onStatus: (s) {
-        if (s == SpeechToText.doneStatus || s == SpeechToText.notListeningStatus) {
-          if (mounted) setState(() => _listening = false);
-        }
+        if (s == SpeechToText.doneStatus) _sessionEnded();
       },
     );
     if (!ok) return unavailable();
     setState(() => _listening = true);
+    _heard = DateTime.now();
+    await _listen();
+  }
+
+  void _sessionEnded() {
+    if (!mounted || !_listening) return;
+    if (DateTime.now().difference(_heard) < _pause) {
+      _listen();
+    } else {
+      setState(() => _listening = false);
+    }
+  }
+
+  Future<void> _listen() async {
+    // Keep what is already in the field (typed or said before the pause) and append to it.
+    final before = _input.text.trim();
     await _speech.listen(
       // The text lands in the field for the user to check, then they tap Send.
-      onResult: (r) => setState(() => _input.text = r.recognizedWords),
-      listenOptions: SpeechListenOptions(onDevice: true, listenMode: ListenMode.dictation, partialResults: true),
+      onResult: (r) {
+        if (!_listening || r.recognizedWords.isEmpty) return;
+        _heard = DateTime.now();
+        setState(() => _input.text = '$before ${r.recognizedWords}'.trim());
+      },
+      listenOptions: SpeechListenOptions(
+          onDevice: true, listenMode: ListenMode.dictation, partialResults: true, pauseFor: _pause),
     );
   }
 
