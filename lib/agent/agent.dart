@@ -9,6 +9,7 @@ import 'chat_limit.dart';
 import 'chat_model.dart';
 import 'crisis.dart';
 import 'memory.dart';
+import 'recipe_translation.dart';
 import 'tools.dart';
 
 /// One row of the chat as the UI shows it.
@@ -115,6 +116,45 @@ class Agent extends ChangeNotifier {
           r['role'] == 'user' ? UserItem(r['text'] as String) : ModelItem(r['text'] as String)
       ]);
     notifyListeners();
+  }
+
+  /// Recipe steps in the app's [language], streamed as they're written, then saved so each
+  /// recipe is translated once. One model runs one conversation at a time on a phone (two
+  /// sessions risk running out of memory), so this waits for no chat turn: it returns at once
+  /// when [busy], and otherwise closes the chat, which reopens with its history next message.
+  Stream<String> translateRecipe(int recipeId, String instructions) async* {
+    if (savedTranslation(user, recipeId, language) case final saved?) {
+      yield saved;
+      return;
+    }
+    if (busy) return;
+    busy = true;
+    notifyListeners();
+    try {
+      await _session?.close();
+      _session = null;
+      var done = '';
+      for (final chunk in translationChunks(instructions)) {
+        final session = await model.open(system: translationPrompt(language), replay: const [], tools: false);
+        try {
+          var part = '';
+          await for (final e in session.sendUser(chunk)) {
+            if (e is TextChunk) {
+              part += e.text;
+              yield done.isEmpty ? part.trim() : '$done\n${part.trim()}';
+            }
+          }
+          done = done.isEmpty ? part.trim() : '$done\n${part.trim()}';
+        } finally {
+          await session.close();
+        }
+      }
+      saveTranslation(user, recipeId, language, done); // only a complete one: leaving the screen cancels
+      yield done;
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
   }
 
   /// Opens the conversation ahead of the first message (the first prefill of

@@ -68,6 +68,17 @@ void main() {
     expect(hits.single.score, greaterThanOrEqualTo(memory.minScore));
   });
 
+  test('recall stays inside the tier history window', () async {
+    var days = 30;
+    final limited = Memory(user, vectors, fakeEmbed, clock: () => now, minScore: 0.3, historyDays: () => days);
+    chat('user', 'the lentil soup was too spicy for the kids', now.subtract(const Duration(days: 45)));
+    await limited.backfill();
+    final q = await limited.index('chat', 999, now, 'can I make that lentil soup less spicy?');
+    expect(limited.recall(q, before: now), isEmpty, reason: '45 days ago is outside Free');
+    days = 90;
+    expect(limited.recall(q, before: now).single.text, 'the lentil soup was too spicy for the kids');
+  });
+
   test('context carries today, allergies, facts, habits and recalls', () async {
     user.execute("INSERT INTO user_allergens VALUES ('peanuts', 0)");
     user.execute("INSERT INTO memory_facts (text, created_at) VALUES ('has an air fryer', 0)");

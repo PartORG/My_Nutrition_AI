@@ -7,6 +7,7 @@ import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
 import 'package:myfoodmind/agent/chat_model.dart';
 import 'package:myfoodmind/agent/memory.dart';
+import 'package:myfoodmind/agent/recipe_translation.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
@@ -20,13 +21,15 @@ class FakeModel implements ChatModel {
   FakeModel(this.script);
   final List<List<ModelEvent>> script;
   final opens = <List<Turn>>[];
+  final systems = <String>[];
   final sent = <String>[];
   final toolResults = <(String, Map<String, Object?>)>[];
   bool fail = false;
 
   @override
-  Future<ChatSession> open({required String system, required List<Turn> replay}) async {
+  Future<ChatSession> open({required String system, required List<Turn> replay, bool tools = true}) async {
     opens.add(replay);
+    systems.add(system);
     return _FakeSession(this);
   }
 }
@@ -69,7 +72,7 @@ void main() {
   late Agent agent;
   var paid = false;
 
-  Agent makeAgent() => Agent(
+  Agent makeAgent({String language = 'en'}) => Agent(
         model: model,
         tools: AgentTools(nutri, user, clock: () => DateTime(2026, 10, 4, 8)),
         memory: Memory(user, vectors, fakeEmbed, clock: () => DateTime(2026, 10, 4, 8)),
@@ -77,6 +80,7 @@ void main() {
         limit: ChatLimit(profilesDb, clock: () => DateTime(2026, 10, 4, 8)),
         unlimited: () => paid,
         clock: () => DateTime(2026, 10, 4, 8),
+        language: language,
       );
 
   setUp(() {
@@ -199,16 +203,44 @@ void main() {
     expect(user.select('SELECT 1 FROM chat_messages'), isEmpty);
   });
 
-  test('free tier stops at 15 messages a day; paid tier does not', () async {
-    for (var i = 0; i < 15; i++) {
+  test('recipe steps: whole lines per chunk, streamed, saved once, the chat reopens after', () async {
+    final steps = [for (var i = 1; i <= 6; i++) '$i. ${'Stir the pot gently. ' * 4}'.trim()].join('\n');
+    final chunks = translationChunks(steps);
+    expect(chunks.length, greaterThan(1));
+    expect(chunks.every((c) => c.length <= translationChunkChars), isTrue);
+    expect(chunks.join('\n'), steps, reason: 'nothing lost or split mid-line');
+
+    final uk = makeAgent(language: 'uk');
+    await uk.warmUp(); // a live chat session
+    model.script.addAll([for (var i = 0; i < chunks.length; i++) [TextChunk('Крок '), TextChunk('$i')]]);
+    final seen = await uk.translateRecipe(4, steps).toList();
+    final full = [for (var i = 0; i < chunks.length; i++) 'Крок $i'].join('\n');
+    expect(seen.last, full);
+    expect(seen.length, greaterThan(chunks.length), reason: 'streamed token by token');
+    expect(model.systems.skip(1).every((s) => s.contains('into Ukrainian')), isTrue);
+    expect(savedTranslation(user, 4, 'uk'), full);
+    expect(uk.busy, isFalse);
+
+    final opens = model.opens.length;
+    expect(await uk.translateRecipe(4, steps).toList(), [full], reason: 'saved: no model call');
+    expect(model.opens.length, opens);
+    await uk.send('hello');
+    expect(model.opens.length, opens + 1, reason: 'the chat session was closed for the translation');
+
+    uk.busy = true;
+    expect(await uk.translateRecipe(5, steps).toList(), isEmpty, reason: 'never while the chat runs');
+  });
+
+  test('free tier stops at 30 messages a day; paid tier does not', () async {
+    for (var i = 0; i < 30; i++) {
       await agent.send('message $i');
     }
     await agent.send('one more');
     expect(agent.items.last, isA<LimitItem>());
-    expect(model.sent.length, 15);
+    expect(model.sent.length, 30);
     paid = true;
     await agent.send('now unlimited');
-    expect(model.sent.length, 16);
+    expect(model.sent.length, 31);
   });
 
   test('the reply tool shows its text; a looping model is cut off', () async {

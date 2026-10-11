@@ -638,10 +638,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get featBasic1 => 'Chat IA illimité';
 
   @override
-  String get featBasic2 => 'Tableau de bord hebdomadaire et mensuel';
-
-  @override
-  String get featBasic3 => 'Micronutriments, séries, évolution du poids';
+  String get featBasic3 => 'Rappels pour boire, séries, micronutriments';
 
   @override
   String get featMedium1 => 'Tout Basic';
@@ -680,12 +677,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get periodMonth => 'Mois';
 
   @override
-  String get lockedTitle =>
-      'Les tendances hebdomadaires et mensuelles sont dans Basic';
+  String get lockedTitle => 'Plus avec Basic';
 
   @override
   String get lockedBody =>
-      'Voyez les calories par jour par rapport à votre objectif, les moyennes quotidiennes, les micronutriments, votre série de jours notés et l’évolution de votre poids.';
+      'Votre série de jours notés, un plan de repas de la semaine avec liste de courses, des rappels pour boire et 3 mois d’historique.';
 
   @override
   String get caloriesPerDay => 'Calories par jour';
@@ -1498,4 +1494,138 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get deleteThisProfileBody =>
       'Le profil et tous ses repas, son journal et son historique de chat seront supprimés de ce téléphone. Action irréversible.';
+
+  @override
+  String get featBasic2 => 'Plan de repas et liste de courses';
+
+  @override
+  String get featBasic4 => '3 mois d’historique';
+
+  @override
+  String get featMedium4 => '8 mois d’historique';
+
+  @override
+  String get featPro4 => 'Tableau de bord annuel et 12 mois d’historique';
+
+  @override
+  String get periodYear => 'Année';
+
+  @override
+  String get yearLockedTitle => 'La vue Année est dans Pro';
+
+  @override
+  String get yearLockedBody =>
+      'Douze mois en un coup d’œil : calories par mois, calendrier des saisies, moyennes nutritionnelles avec vos meilleurs et pires mois, votre poids et ce que vous avez mangé le plus.';
+
+  @override
+  String get yearCalories => 'Calories par jour, moyenne mensuelle';
+
+  @override
+  String get yearCalendar => 'Calendrier des saisies';
+
+  @override
+  String yearLoggedDays(int days, int best) {
+    return '$days jours notés · meilleure série $best jours';
+  }
+
+  @override
+  String get yearNutrients => 'Moyennes quotidiennes de l’année';
+
+  @override
+  String yearBestWorst(String nutrient, String best, String worst) {
+    return '$nutrient : meilleur mois $best, pire $worst';
+  }
+
+  @override
+  String get yearTopFoods => 'Mangé le plus souvent';
+
+  @override
+  String get calendarOnGoal => 'À 10 % de l’objectif';
+
+  @override
+  String get calendarNear => 'À 25 %';
+
+  @override
+  String get calendarFar => 'Plus loin';
+
+  @override
+  String get calendarNotLogged => 'Non noté';
+
+  @override
+  String get historyTitle => 'Historique';
+
+  @override
+  String lastDays(int count) {
+    return '$count derniers jours';
+  }
+
+  @override
+  String get pickDates => 'Choisir des dates';
+
+  @override
+  String get recipesOnly => 'Recettes seulement';
+
+  @override
+  String get historyEmpty => 'Rien de noté ces jours-là.';
+
+  @override
+  String historyLockedTitle(int days) {
+    return 'L’historique montre les $days derniers jours';
+  }
+
+  @override
+  String get historyLockedBody =>
+      'Les repas plus anciens restent sur votre téléphone. Basic montre 3 mois, Medium 8 et Pro 12.';
+
+  @override
+  String get planLockedTitle => 'Le plan de repas est dans Basic';
+
+  @override
+  String get planLockedBody =>
+      'Planifiez votre semaine avec des recettes adaptées à vos objectifs et allergènes, et transformez-la en liste de courses.';
+
+  @override
+  String get reminderWater => 'Boire de l’eau';
+
+  @override
+  String reminderWaterHint(int count, String from, String to) {
+    return '$count par jour, $from–$to : un verre à chaque fois pour atteindre votre objectif d’eau';
+  }
+
+  @override
+  String get reminderWaterLocked => 'Les rappels pour boire sont dans Basic';
+
+  @override
+  String notifWater(String name) {
+    return '$name, c’est l’heure d’un verre d’eau.';
+  }
+
+  @override
+  String get machineTranslated =>
+      'Noms des ingrédients traduits automatiquement';
+
+  @override
+  String get translateSteps => 'Traduire les étapes';
+
+  @override
+  String get machineTranslatedSteps =>
+      'Étapes traduites automatiquement sur votre téléphone';
+
+  @override
+  String get showOriginal => 'Voir l’original';
+
+  @override
+  String get showTranslation => 'Voir la traduction';
+
+  @override
+  String get translateBusy =>
+      'L’assistant est occupé. Réessayez dans un instant.';
+
+  @override
+  String get translateFailed =>
+      'Impossible de traduire les étapes. Veuillez réessayer.';
+
+  @override
+  String get translateNeedsAi =>
+      'La traduction nécessite le modèle d’IA (voir l’onglet Chat).';
 }

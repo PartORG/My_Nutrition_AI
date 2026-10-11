@@ -13,7 +13,9 @@ import 'package:myfoodmind/data/diary.dart';
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/profiles.dart';
+import 'package:myfoodmind/data/reminders.dart';
 import 'package:myfoodmind/data/user_db.dart';
+import 'package:myfoodmind/reminders_service.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
 
@@ -57,8 +59,10 @@ void main() {
     late ProfileData data;
     late Profiles profiles;
 
+    late _FakeReminders reminders;
     setUp(() {
       tmp = Directory.systemTemp.createTempSync('myfoodmind_bill_ui_');
+      reminders = _FakeReminders();
       final nutri = openNutriDb('test/nutri_test.db');
       final user = openUserDb('${tmp.path}/user.db');
       data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
@@ -87,6 +91,7 @@ void main() {
             profilesProvider.overrideWithValue(profiles),
             agentProvider.overrideWith((ref) => Completer<Agent>().future),
             billingProvider.overrideWith((ref) async => DevBilling(profiles.db)..init()),
+            remindersProvider.overrideWithValue(reminders),
           ],
           child: MaterialApp(
             localizationsDelegates: appLocalizationsDelegates,
@@ -108,13 +113,19 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('free: Week is locked → plans → buy Basic → charts unlock', (tester) async {
+    testWidgets('free: Week shows calories, streak locked → plans → buy Basic → streak unlocks', (tester) async {
       phone(tester);
       await tester.pumpWidget(app());
       await settle(tester);
       await tester.tap(find.text('Week'));
       await settle(tester);
-      expect(find.text('Weekly and monthly trends are in Basic'), findsOneWidget);
+      expect(find.text('Calories per day'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('See plans'), 300);
+      expect(find.text('More with Basic'), findsOneWidget);
+      expect(find.text('Weight'), findsOneWidget, reason: 'the weight trend is free');
+      expect(find.textContaining('-day logging streak'), findsNothing);
+      await tester.ensureVisible(find.text('See plans'));
+      await settle(tester);
       await tester.tap(find.text('See plans'));
       await settle(tester);
 
@@ -131,7 +142,6 @@ void main() {
       await tester.tap(find.text('Subscribe').first); // Basic monthly
       await settle(tester);
 
-      expect(find.text('Calories per day'), findsOneWidget);
       await tester.scrollUntilVisible(find.textContaining('logging streak'), 300);
       expect(find.textContaining('logging streak'), findsOneWidget);
       expect(tester.widget<Text>(find.textContaining('logging streak')).data, '4-day logging streak');
@@ -157,5 +167,99 @@ void main() {
         await settle(tester);
       }
     });
+
+    testWidgets('Year is locked below Pro', (tester) async {
+      phone(tester);
+      DevBilling(profiles.db).setTier(Tier.medium);
+      await tester.pumpWidget(app());
+      await settle(tester);
+      await tester.tap(find.text('Year'));
+      await settle(tester);
+      expect(find.text('The Year view is in Pro'), findsOneWidget);
+    });
+
+    testWidgets('Year (Pro) at 200 % text: every section, no overflow', (tester) async {
+      phone(tester);
+      DevBilling(profiles.db).setTier(Tier.pro);
+      await tester.pumpWidget(app(textScale: 2));
+      await settle(tester);
+      await tester.tap(find.text('Year'));
+      await settle(tester);
+      expect(find.text('Calories per day, monthly average'), findsOneWidget);
+      final seen = <String>{};
+      for (var i = 0; i < 12; i++) {
+        expect(tester.takeException(), isNull, reason: 'Year, scroll step $i');
+        for (final t in ['Logging calendar', '8 days logged · best streak 4 days', 'Eaten most']) {
+          if (find.text(t).evaluate().isNotEmpty) seen.add(t);
+        }
+        await tester.drag(find.byType(Scrollable).last, const Offset(0, -400), warnIfMissed: false);
+        await tester.pump();
+      }
+      expect(seen, {'Logging calendar', '8 days logged · best streak 4 days', 'Eaten most'});
+    });
+
+    testWidgets('History: meals per day within the Free window; recipes-only filter; plan is locked', (tester) async {
+      phone(tester);
+      await tester.pumpWidget(app());
+      await settle(tester);
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await settle(tester);
+      await tester.tap(find.text('History'));
+      await settle(tester);
+      expect(find.text('Last 7 days'), findsOneWidget);
+      expect(find.text('Last 30 days'), findsOneWidget);
+      expect(find.text('Last 90 days'), findsNothing, reason: 'Free reaches back 30 days');
+      expect(find.textContaining('asagna'), findsWidgets);
+      await tester.tap(find.text('Recipes only'));
+      await settle(tester);
+      expect(find.text('Nothing logged on these days.'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('History shows the last 30 days'), 300);
+      expect(find.text('History shows the last 30 days'), findsOneWidget);
+
+      await tester.pageBack();
+      await settle(tester);
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await settle(tester);
+      await tester.tap(find.text('Meal plan'));
+      await settle(tester);
+      expect(find.text('The meal plan is in Basic'), findsOneWidget);
+    });
+
+    testWidgets('water reminders follow the water goal, rescheduled only on a change', (tester) async {
+      phone(tester);
+      DevBilling(profiles.db).setTier(Tier.basic);
+      setPref(data.user, waterReminderPref, '1');
+      await tester.pumpWidget(app());
+      await settle(tester);
+      expect(reminders.water.single, (1, 10), reason: '82 kg × 30 ml = 2.5 l = 10 glasses');
+
+      setPref(data.user, 'water_goal_ml', '2000');
+      data.changed();
+      await settle(tester);
+      data.changed(); // an unrelated write: nothing to reschedule
+      await settle(tester);
+      expect(reminders.water, [(1, 10), (1, 8)]);
+      expect(profiles.setting(waterScheduledSetting), '1');
+    });
+
+    testWidgets('a downgrade cancels water reminders on every profile', (tester) async {
+      phone(tester);
+      final ids = await tester.runAsync(() async => [await profiles.create('Anna', '1234'), await profiles.create('Bo', '5678')]);
+      profiles.setSetting(waterScheduledSetting, '1');
+      setPref(data.user, waterReminderPref, '1');
+      await tester.pumpWidget(app()); // Free
+      await settle(tester);
+      expect(reminders.water, [for (final id in ids!) (id, 0)]);
+      expect(pref(data.user, waterReminderPref), '0');
+      expect(profiles.setting(waterScheduledSetting), '0');
+    });
   });
+}
+
+/// Records water schedules as (profile id, how many reminders).
+class _FakeReminders extends RemindersService {
+  final water = <(int, int)>[];
+
+  @override
+  Future<void> applyWater(int profileId, List<(int, int)> times, String body) async => water.add((profileId, times.length));
 }

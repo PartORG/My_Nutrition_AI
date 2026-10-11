@@ -9,12 +9,12 @@ class GemmaChatModel implements ChatModel {
   final InferenceModel model;
 
   @override
-  Future<ChatSession> open({required String system, required List<Turn> replay}) async {
+  Future<ChatSession> open({required String system, required List<Turn> replay, bool tools = true}) async {
     final chat = await model.createChat(
       temperature: 0, // M0 accuracy was measured greedy
       topK: 1,
-      tools: agentTools,
-      supportsFunctionCalls: true,
+      tools: tools ? agentTools : const [],
+      supportsFunctionCalls: tools,
       modelType: ModelType.gemma4,
       systemInstruction: system,
       maxOutputTokens: 256,

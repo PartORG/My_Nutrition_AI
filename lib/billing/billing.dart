@@ -9,6 +9,10 @@ enum Tier {
   pro;
 
   bool includes(Tier other) => index >= other.index;
+
+  /// How far back History reaches, today included. Older logs stay on the phone, only
+  /// hidden, so a downgrade loses nothing and an upgrade shows them again.
+  int get historyDays => const [30, 90, 240, 365][index];
 }
 
 /// One purchasable plan. [id] is the store package id (see docs/BILLING_SETUP.md).

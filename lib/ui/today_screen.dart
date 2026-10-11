@@ -19,6 +19,7 @@ import 'plan_screen.dart';
 import '../data/plan.dart';
 import '../data/health_sync.dart' show healthSyncOn, stepsToday;
 import 'period_view.dart';
+import 'year_view.dart';
 import 'theme.dart';
 
 /// Today's planned meals, and the way into the plan and shopping list.
@@ -44,7 +45,7 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-/// Today's micronutrients against EU reference intakes, folded by default. Only meals made of
+/// Basic: today's micronutrients against EU reference intakes, folded by default. Only meals made of
 /// foods with known values count, and the card says how many those were.
 class _MicrosCard extends StatelessWidget {
   const _MicrosCard({required this.data});
@@ -249,7 +250,7 @@ class _FastCardState extends State<_FastCard> {
   }
 }
 
-String _mealName(AppLocalizations l, String type) => switch (type) {
+String mealName(AppLocalizations l, String type) => switch (type) {
       'breakfast' => l.mealBreakfast,
       'lunch' => l.mealLunch,
       'dinner' => l.mealDinner,
@@ -280,7 +281,7 @@ class _NextStep extends ConsumerWidget {
               onPressed: () {
                 tab.go(HomeTab.chat);
                 // Sent once the assistant is loaded; before that the tab shows its progress.
-                ref.read(agentProvider).value?.send(l.suggestIdea(inSentence(context, _mealName(l, meal))));
+                ref.read(agentProvider).value?.send(l.suggestIdea(inSentence(context, mealName(l, meal))));
               },
             ),
             TextButton.icon(
@@ -309,7 +310,7 @@ class TodayScreen extends ConsumerStatefulWidget {
 }
 
 class _TodayScreenState extends ConsumerState<TodayScreen> {
-  var _days = 1; // 1 = today, 7 = week, 30 = month
+  var _days = 1; // 1 = today, 7 = week, 30 = month, 365 = year (Pro)
 
   @override
   Widget build(BuildContext context) {
@@ -323,24 +324,26 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ButtonSegment(value: 1, label: Text(l.periodDay)),
           ButtonSegment(value: 7, label: Text(l.periodWeek)),
           ButtonSegment(value: 30, label: Text(l.periodMonth)),
+          ButtonSegment(value: 365, label: Text(l.periodYear)),
         ],
         selected: {_days},
         onSelectionChanged: (s) => setState(() => _days = s.single),
       ),
     );
-    final billing = ref.watch(billingProvider).value;
     return Column(children: [
       period,
       Expanded(
         child: _days == 1
             ? _DayView(data: data)
-            : billing == null
-                ? const Center(child: CircularProgressIndicator())
-                : ValueListenableBuilder(
-                    valueListenable: billing.tier,
-                    builder: (context, tier, _) =>
-                        tier.includes(Tier.basic) ? PeriodView(data: data, days: _days) : const _LockedPeriod(),
-                  ),
+            : TierBuilder(
+                builder: (context, tier) => _days < 365
+                    ? PeriodView(data: data, days: _days, basic: tier.includes(Tier.basic))
+                    : tier.includes(Tier.pro)
+                        ? YearView(data: data)
+                        : ListView(padding: const EdgeInsets.all(16), children: [
+                            LockedCard(icon: Icons.calendar_month, title: l.yearLockedTitle, body: l.yearLockedBody),
+                          ]),
+              ),
       ),
     ]);
   }
@@ -373,7 +376,7 @@ class _DayView extends StatelessWidget {
           if (data.user.select('SELECT 1 FROM meal_log LIMIT 1').isEmpty)
             _NextStep(title: l.welcomeTitle, body: l.welcomeBody, meal: nowType)
           else if (nowType != 'snack' && !meals.any((m) => m.type == nowType))
-            _NextStep(title: l.nextMealTitle(inSentence(context, _mealName(l, nowType))), body: l.nextMealBody, meal: nowType),
+            _NextStep(title: l.nextMealTitle(inSentence(context, mealName(l, nowType))), body: l.nextMealBody, meal: nowType),
           if (targets['kcal'] == null)
             _SetGoalsCard(eaten: eaten)
           else
@@ -393,7 +396,8 @@ class _DayView extends StatelessWidget {
                 ]),
               ),
             ),
-          if (meals.isNotEmpty) _MicrosCard(data: data),
+          if (meals.isNotEmpty)
+            TierBuilder(builder: (_, tier) => tier.includes(Tier.basic) ? _MicrosCard(data: data) : const SizedBox.shrink()),
           _WaterCard(data: data),
           WeightCard(data: data),
           if (healthSyncOn(data.user))
@@ -409,7 +413,7 @@ class _DayView extends StatelessWidget {
                       ),
                     ),
             ),
-          _PlanCard(data: data),
+          TierBuilder(builder: (_, tier) => tier.includes(Tier.basic) ? _PlanCard(data: data) : const SizedBox.shrink()),
           if (pref(data.user, 'fasting') == '1') _FastCard(data: data),
           const SizedBox(height: 8),
           Text(l.todaysMeals, style: Theme.of(context).textTheme.titleMedium),
@@ -793,35 +797,5 @@ class _RecipesYouAte extends StatelessWidget {
           ),
       ]),
     );
-  }
-}
-
-/// Free tier: what Week/Month would show, and a way to the plans.
-class _LockedPeriod extends StatelessWidget {
-  const _LockedPeriod();
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Card(
-        color: context.colors.cardGreen,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.insights, color: context.colors.primary, size: 32),
-            const SizedBox(height: 8),
-            Text(l.lockedTitle, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(l.lockedBody),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
-              child: Text(l.seePlans),
-            ),
-          ]),
-        ),
-      ),
-    ]);
   }
 }

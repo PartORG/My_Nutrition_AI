@@ -159,6 +159,15 @@ const userDbMigrations = <String>[
   ALTER TABLE meal_log ADD COLUMN vitamin_d_ug REAL;
   ALTER TABLE meal_log ADD COLUMN vitamin_b12_ug REAL;
   ''',
+  // v10: recipe steps translated on the phone (machine translation, once per recipe and language).
+  '''
+  CREATE TABLE recipe_translations (
+    recipe_id INTEGER NOT NULL,   -- nutri.db recipes.id
+    lang      TEXT NOT NULL,
+    text      TEXT NOT NULL,
+    PRIMARY KEY (recipe_id, lang)
+  ) WITHOUT ROWID;
+  ''',
 ];
 
 Database openUserDb(String path) {

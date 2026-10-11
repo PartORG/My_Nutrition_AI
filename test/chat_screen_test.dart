@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/data/migrate.dart';
@@ -9,6 +10,8 @@ import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/agent/chat_limit.dart';
 import 'package:myfoodmind/agent/chat_model.dart';
 import 'package:myfoodmind/agent/memory.dart';
+import 'package:myfoodmind/agent/recipe_translation.dart';
+import 'package:myfoodmind/app_state.dart' show agentProvider;
 import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
@@ -44,10 +47,12 @@ void main() {
       unlimited: () => false,
     );
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: appLocalizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: ChatScreen(agent: agent)),
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ChatScreen(agent: agent)),
+      ),
     ));
     await tester.enterText(find.byType(TextField), 'Breakfast was 2 eggs');
     await tester.tap(find.byTooltip('Send'));
@@ -125,16 +130,18 @@ void main() {
       CardItem(card('open_camera', {'mode': 'photo'})),
       CardItem(card('log_meal', {'items': 'lasagna', 'meal_type': 'lunch'})),
       CrisisItem(),
-      LimitItem(15),
+      LimitItem(30),
       ErrorItem(),
     ]);
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.5;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: appLocalizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: ChatScreen(agent: agent)),
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ChatScreen(agent: agent)),
+      ),
     ));
     // The list builds lazily: scroll through so every card is laid out, and
     // check each step (off-screen cards are disposed again).
@@ -158,5 +165,50 @@ void main() {
     expect(agent.items.last, isA<CardItem>());
     expect(((agent.items.last as CardItem).card as ConfirmCard).lines.single,
         startsWith('Chicken broccoli stir-fry · '));
+  });
+
+  testWidgets('Ukrainian: translate a recipe\'s steps on tap, labelled, original one tap away', (tester) async {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_translate_');
+    final nutri = openNutriDb('test/nutri_test.db');
+    final user = openUserDb('${tmp.path}/user.db');
+    final vectors = openVectorsDb('${tmp.path}/vectors.db');
+    final profiles = migrated(sqlite3.openInMemory(), profilesDbMigrations);
+    addTearDown(() {
+      for (final db in [nutri, user, vectors, profiles]) {
+        db.close();
+      }
+      tmp.deleteSync(recursive: true);
+    });
+    final tools = AgentTools(nutri, user)..language = 'uk';
+    final model = FakeModel([
+      [TextChunk('Збийте яйця.')],
+    ]);
+    final agent = Agent(model: model, tools: tools, memory: Memory(user, vectors, fakeEmbed), user: user,
+        limit: ChatLimit(profiles), unlimited: () => true, language: 'uk');
+    final card = tools.showRecipeById(4).card! as RecipeCard; // a one-chunk recipe
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [agentProvider.overrideWith((ref) async => agent)],
+      child: MaterialApp(
+        locale: const Locale('uk'),
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SingleChildScrollView(child: RecipeView(card: card, tools: tools, onAte: () {}))),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text(card.instructions), findsOneWidget);
+    await tester.ensureVisible(find.text('Перекласти кроки'));
+    await tester.tap(find.text('Перекласти кроки'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(find.text('Збийте яйця.'), findsOneWidget);
+    expect(find.text('Кроки перекладено автоматично на телефоні'), findsOneWidget);
+    await tester.tap(find.text('Показати оригінал'));
+    await tester.pumpAndSettle();
+    expect(find.text(card.instructions), findsOneWidget);
+    expect(savedTranslation(user, 4, 'uk'), 'Збийте яйця.');
   });
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
+import '../billing/billing.dart' show Tier;
 import '../data/diary.dart';
 import '../data/goals.dart';
 import '../data/health_sync.dart';
@@ -15,6 +16,7 @@ import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
 import 'me_screen.dart' show TargetDialog;
 import 'memory_screen.dart';
 import 'nutrients.dart';
+import 'paywall_screen.dart';
 
 /// Everything that is set once and rarely touched, out of the Me tab.
 class SettingsScreen extends ConsumerWidget {
@@ -334,6 +336,35 @@ class _Reminders extends ConsumerWidget {
           value: r.enabled,
           onChanged: (on) => update((slot: r.slot, enabled: on, hour: r.hour, minute: r.minute)),
         ),
+      TierBuilder(builder: (context, tier) {
+        final times = waterTimes(waterGoal(data.user));
+        String at((int, int) t) => TimeOfDay(hour: t.$1, minute: t.$2).format(context);
+        if (!tier.includes(Tier.basic)) {
+          return ListTile(
+            title: Text(l.reminderWater),
+            subtitle: Text(l.reminderWaterLocked),
+            trailing: const Icon(Icons.lock_outline),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
+          );
+        }
+        return SwitchListTile(
+          title: Text(l.reminderWater),
+          subtitle: Text(l.reminderWaterHint(times.length, at(times.first), at(times.last))),
+          value: pref(data.user, waterReminderPref) == '1',
+          onChanged: (on) async {
+            final service = ref.read(remindersProvider);
+            if (on && !await service.requestPermission()) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.notificationsDenied)));
+              }
+              return;
+            }
+            setPref(data.user, waterReminderPref, on ? '1' : '0');
+            data.changed(); // HomeScreen schedules or cancels them
+
+          },
+        );
+      }),
     ]);
   }
 }

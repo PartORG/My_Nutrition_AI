@@ -1,11 +1,11 @@
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 
-const _languages = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr': 'French'};
+const languageNames = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr': 'French'};
 
 /// System prompt for the routing agent, answering in the app's [language] (a code).
 /// Kept short: a 0.6B model loses instructions buried in long prompts.
 String agentSystemPrompt([String language = 'en']) {
-  final name = _languages[language] ?? 'English';
+  final name = languageNames[language] ?? 'English';
   return '''
 You are MyFoodMind, a friendly nutrition assistant on the user's phone.
 User messages start with a [Context] block the app writes from its database, with

@@ -7,6 +7,49 @@ import '../l10n/app_localizations.dart';
 import 'nutrients.dart';
 import 'theme.dart';
 
+/// Rebuilds with the current tier; shows nothing while billing loads.
+class TierBuilder extends ConsumerWidget {
+  const TierBuilder({super.key, required this.builder});
+  final Widget Function(BuildContext context, Tier tier) builder;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final billing = ref.watch(billingProvider).value;
+    if (billing == null) return const SizedBox.shrink();
+    return ValueListenableBuilder(valueListenable: billing.tier, builder: (context, tier, _) => builder(context, tier));
+  }
+}
+
+/// A paid feature the user doesn't have yet: what it is, and a way to the plans.
+class LockedCard extends StatelessWidget {
+  const LockedCard({super.key, required this.icon, required this.title, required this.body});
+  final IconData icon;
+  final String title, body;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Card(
+      color: context.colors.cardGreen,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: context.colors.primary, size: 32),
+          const SizedBox(height: 8),
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(body),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
+            child: Text(l.seePlans),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
 String tierName(Tier t, AppLocalizations l) =>
     {Tier.free: l.tierFree, Tier.basic: l.tierBasic, Tier.medium: l.tierMedium, Tier.pro: l.tierPro}[t]!;
 
@@ -43,9 +86,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     if (billing == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     _offers ??= billing.offers();
     final features = {
-      Tier.basic: [l.featBasic1, l.featBasic2, l.featBasic3],
-      Tier.medium: [l.featMedium1, l.featMedium2, l.featMedium3],
-      Tier.pro: [l.featPro1, l.featPro2, l.featPro3],
+      Tier.basic: [l.featBasic1, l.featBasic2, l.featBasic3, l.featBasic4],
+      Tier.medium: [l.featMedium1, l.featMedium2, l.featMedium3, l.featMedium4],
+      Tier.pro: [l.featPro1, l.featPro2, l.featPro3, l.featPro4],
     };
     return Scaffold(
       appBar: AppBar(title: Text(l.plansTitle)),

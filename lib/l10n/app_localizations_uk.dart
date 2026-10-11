@@ -644,10 +644,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get featBasic1 => 'Необмежений чат зі ШІ';
 
   @override
-  String get featBasic2 => 'Тижнева й місячна статистика';
-
-  @override
-  String get featBasic3 => 'Мікроелементи, серії днів, динаміка ваги';
+  String get featBasic3 => 'Нагадування пити воду, серії днів, мікроелементи';
 
   @override
   String get featMedium1 => 'Усе з Basic';
@@ -685,11 +682,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get periodMonth => 'Місяць';
 
   @override
-  String get lockedTitle => 'Тижневі й місячні тенденції доступні в Basic';
+  String get lockedTitle => 'Більше з Basic';
 
   @override
   String get lockedBody =>
-      'Калорії за кожен день порівняно з ціллю, середні значення, мікроелементи, серія днів із записами та динаміка ваги.';
+      'Серія днів із записами, план харчування на тиждень зі списком покупок, нагадування пити воду та історія за 3 місяці.';
 
   @override
   String get caloriesPerDay => 'Калорії за день';
@@ -1504,4 +1501,150 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get deleteThisProfileBody =>
       'Профіль і всі його страви, щоденник та історію чату буде видалено з цього телефона. Це не можна скасувати.';
+
+  @override
+  String get featBasic2 => 'План харчування і список покупок';
+
+  @override
+  String get featBasic4 => 'Історія за 3 місяці';
+
+  @override
+  String get featMedium4 => 'Історія за 8 місяців';
+
+  @override
+  String get featPro4 => 'Річна статистика та історія за 12 місяців';
+
+  @override
+  String get periodYear => 'Рік';
+
+  @override
+  String get yearLockedTitle => 'Річний огляд доступний у Pro';
+
+  @override
+  String get yearLockedBody =>
+      'Дванадцять місяців одним поглядом: калорії за місяць, календар записів, середні значення поживних речовин із найкращим і найгіршим місяцем, вага та що ви їли найчастіше.';
+
+  @override
+  String get yearCalories => 'Калорії на день, середнє за місяць';
+
+  @override
+  String get yearCalendar => 'Календар записів';
+
+  @override
+  String yearLoggedDays(int days, int best) {
+    return 'Днів із записами: $days · найдовша серія: $best дн.';
+  }
+
+  @override
+  String get yearNutrients => 'Середнє на день за рік';
+
+  @override
+  String yearBestWorst(String nutrient, String best, String worst) {
+    return '$nutrient: найкращий місяць — $best, найгірший — $worst';
+  }
+
+  @override
+  String get yearTopFoods => 'Найчастіше';
+
+  @override
+  String get calendarOnGoal => 'У межах 10% від цілі';
+
+  @override
+  String get calendarNear => 'У межах 25%';
+
+  @override
+  String get calendarFar => 'Далі від цілі';
+
+  @override
+  String get calendarNotLogged => 'Без записів';
+
+  @override
+  String get historyTitle => 'Історія';
+
+  @override
+  String lastDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Останні $count днів',
+      few: 'Останні $count дні',
+      one: 'Останній $count день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickDates => 'Вибрати дати';
+
+  @override
+  String get recipesOnly => 'Лише рецепти';
+
+  @override
+  String get historyEmpty => 'За ці дні нічого не записано.';
+
+  @override
+  String historyLockedTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Історія показує останні $days днів',
+      few: 'Історія показує останні $days дні',
+      one: 'Історія показує останній $days день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get historyLockedBody =>
+      'Старіші записи залишаються на телефоні. Basic показує 3 місяці, Medium — 8, Pro — 12.';
+
+  @override
+  String get planLockedTitle => 'План харчування доступний у Basic';
+
+  @override
+  String get planLockedBody =>
+      'Плануйте тиждень із рецептів, що підходять вашим цілям і алергенам, і перетворюйте план на список покупок.';
+
+  @override
+  String get reminderWater => 'Пити воду';
+
+  @override
+  String reminderWaterHint(int count, String from, String to) {
+    return '$count на день, $from–$to: по склянці, щоб досягти цілі з води';
+  }
+
+  @override
+  String get reminderWaterLocked => 'Нагадування пити воду доступні в Basic';
+
+  @override
+  String notifWater(String name) {
+    return '$name, час випити склянку води.';
+  }
+
+  @override
+  String get machineTranslated => 'Назви інгредієнтів перекладено автоматично';
+
+  @override
+  String get translateSteps => 'Перекласти кроки';
+
+  @override
+  String get machineTranslatedSteps =>
+      'Кроки перекладено автоматично на телефоні';
+
+  @override
+  String get showOriginal => 'Показати оригінал';
+
+  @override
+  String get showTranslation => 'Показати переклад';
+
+  @override
+  String get translateBusy => 'Асистент зайнятий. Спробуйте за мить.';
+
+  @override
+  String get translateFailed =>
+      'Не вдалося перекласти кроки. Спробуйте ще раз.';
+
+  @override
+  String get translateNeedsAi =>
+      'Для перекладу потрібна модель ШІ (див. вкладку «Чат»).';
 }

@@ -22,9 +22,10 @@ accounts, no cloud inference and no analytics SDK.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
   (lose, maintain or gain), with a manual override for every value. Micronutrients: calcium, iron,
   magnesium, potassium and vitamins C, D and B12.
-- **Dashboards:** Today, Week (with a weekly review) and Month views, a weight card on Today and
+- **Dashboards:** Today, Week (with a weekly review), Month and Year views, a weight card on Today and
   Me (latest weight, 30-day change, quick log), water tracking, fasting, streaks and an Android
   home-screen widget.
+- **History:** every logged meal and recipe, day by day, for a date range you pick.
 - **Meal plan and shopping list:** plan the week and turn the plan into a shopping list.
 - **Allergies and conditions:** recipes containing your allergens are always filtered out.
   Conditions (type 2 diabetes, high blood pressure, gout, ALS, multiple sclerosis) come from
@@ -50,10 +51,12 @@ accounts, no cloud inference and no analytics SDK.
 
 | Tier | Adds |
 |---|---|
-| **Free** | 15 chat messages a day, recipe search, logging, allergen filtering, Today dashboard, profiles, reminders |
-| **Basic** | Unlimited chat, Week/Month dashboards, micronutrients, streaks, weight trend |
-| **Medium** | Conditions, health journal, timeline, doctor export |
-| **Pro** | Camera recognition (7-day free trial) |
+| **Free** | 30 chat messages a day, recipe search, logging, allergen filtering, Today/Week/Month dashboards with weight trend, profiles, meal reminders, 30 days of history |
+| **Basic** | Unlimited chat, meal plan and shopping list, water reminders, micronutrients, streaks, 3 months of history |
+| **Medium** | Conditions, health journal, timeline, doctor export, 8 months of history |
+| **Pro** | Camera recognition, Year dashboard, 12 months of history (7-day free trial) |
+
+History limits only what you can browse: older logs stay on the phone and come back when you upgrade.
 
 One subscription per phone unlocks all of its profiles. Billing runs through RevenueCat (see
 [`docs/BILLING_SETUP.md`](docs/BILLING_SETUP.md)).
@@ -90,6 +93,28 @@ python3 tool/build_medical.py assets/nutri.db
 When the data changes, bump `data_version` in `db/medical.sql` **and** `nutriDataVersion` in
 `lib/data/nutri_db.dart`: phones replace their installed `nutri.db` once when the app expects a newer
 version, then re-upload the file to the `build-inputs` release.
+
+## Translated ingredient names
+
+Recipe ingredients (the ~2,100 foods used in recipes) show in Ukrainian, German and French from
+[`db/food_names.tsv`](db/food_names.tsv): one row per food with its English name and the three
+translations, machine-translated by [TranslateGemma](https://ollama.com/library/translategemma) 4B
+and open to review. A reviewed cell is never overwritten; fix a name by editing the file. The recipe
+card says "Ingredient names machine-translated" whenever it shows one.
+
+Recipe steps are translated on the phone, free, when the user taps **Translate steps**: the on-device
+Gemma model writes them a few lines at a time (numbers, units and temperatures kept as written), the
+card labels them as machine-translated with **Show original** one tap away, and each recipe's
+translation is saved in the profile's `user.db`, so it's done once. It runs between chat turns, since
+one model serves one conversation at a time on a phone.
+
+```bash
+ollama pull translategemma:4b
+python3 tool/food_names.py translate assets/nutri.db  # fills missing names; resumable
+python3 tool/food_names.py apply assets/nutri.db      # writes the food_names table (the full build does too)
+```
+
+A food renamed in a rebuild makes its row stale: `apply` skips it and `translate` redoes it.
 
 ## Privacy
 

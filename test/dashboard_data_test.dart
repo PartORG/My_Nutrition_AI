@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/billing/billing.dart';
 import 'package:myfoodmind/data/diary.dart';
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/user_db.dart';
@@ -62,5 +63,25 @@ void main() {
     logWeight(user, 79, imperial: false, at: DateTime(2026, 9, 10));
     logWeight(user, 77.5, imperial: false, at: DateTime(2026, 10, 1));
     expect(weightNow(user, DateTime(2026, 9, 1)), (kg: 77.5, change: -1.5));
+  });
+
+  test('year: monthly averages over logged days, best streak, most eaten', () {
+    final today = DateTime(2026, 10, 4, 12);
+    meal(DateTime(2026, 9, 29, 8), 1000);
+    meal(DateTime(2026, 9, 30, 8), 2000); // September: two logged days, avg 1500
+    meal(DateTime(2026, 10, 2, 8), 1200);
+    meal(DateTime(2026, 10, 3, 8), 1800);
+    meal(DateTime(2026, 10, 4, 8), 600);
+    meal(DateTime(2026, 10, 4, 13), 600);
+    final series = dailyTotals(user, today, 10); // 25 Sep – 4 Oct
+    final months = monthlyAverages(series);
+    expect([for (final m in months) (m.month, m.logged, m.avg['kcal'])],
+        [(DateTime(2026, 9), 2, 1500), (DateTime(2026, 10), 3, 1400)]);
+    expect(bestStreak(series), 3);
+    expect(topFoods(user, DateTime(2026, 9, 1)).single, (label: 'x', times: 6));
+  });
+
+  test('history window per tier', () {
+    expect([for (final t in Tier.values) t.historyDays], [30, 90, 240, 365]);
   });
 }

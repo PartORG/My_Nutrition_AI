@@ -639,10 +639,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get featBasic1 => 'Unlimited AI chat';
 
   @override
-  String get featBasic2 => 'Weekly and monthly dashboard';
-
-  @override
-  String get featBasic3 => 'Micronutrients, streaks, weight trend';
+  String get featBasic3 => 'Water reminders, logging streak, micronutrients';
 
   @override
   String get featMedium1 => 'Everything in Basic';
@@ -678,11 +675,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodMonth => 'Month';
 
   @override
-  String get lockedTitle => 'Weekly and monthly trends are in Basic';
+  String get lockedTitle => 'More with Basic';
 
   @override
   String get lockedBody =>
-      'See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.';
+      'Your logging streak, a weekly meal plan with a shopping list, water reminders and 3 months of history.';
 
   @override
   String get caloriesPerDay => 'Calories per day';
@@ -1490,4 +1487,135 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteThisProfileBody =>
       'This removes the profile and all its meals, journal and chat history from this phone. This can\'t be undone.';
+
+  @override
+  String get featBasic2 => 'Meal plan and shopping list';
+
+  @override
+  String get featBasic4 => '3 months of history';
+
+  @override
+  String get featMedium4 => '8 months of history';
+
+  @override
+  String get featPro4 => 'Year dashboard and 12 months of history';
+
+  @override
+  String get periodYear => 'Year';
+
+  @override
+  String get yearLockedTitle => 'The Year view is in Pro';
+
+  @override
+  String get yearLockedBody =>
+      'Twelve months at a glance: calories per month, a logging calendar, nutrient averages with your best and worst months, your weight and what you ate most.';
+
+  @override
+  String get yearCalories => 'Calories per day, monthly average';
+
+  @override
+  String get yearCalendar => 'Logging calendar';
+
+  @override
+  String yearLoggedDays(int days, int best) {
+    return '$days days logged · best streak $best days';
+  }
+
+  @override
+  String get yearNutrients => 'Daily averages this year';
+
+  @override
+  String yearBestWorst(String nutrient, String best, String worst) {
+    return '$nutrient: best month $best, worst $worst';
+  }
+
+  @override
+  String get yearTopFoods => 'Eaten most';
+
+  @override
+  String get calendarOnGoal => 'Within 10% of goal';
+
+  @override
+  String get calendarNear => 'Within 25%';
+
+  @override
+  String get calendarFar => 'Further off';
+
+  @override
+  String get calendarNotLogged => 'Not logged';
+
+  @override
+  String get historyTitle => 'History';
+
+  @override
+  String lastDays(int count) {
+    return 'Last $count days';
+  }
+
+  @override
+  String get pickDates => 'Pick dates';
+
+  @override
+  String get recipesOnly => 'Recipes only';
+
+  @override
+  String get historyEmpty => 'Nothing logged on these days.';
+
+  @override
+  String historyLockedTitle(int days) {
+    return 'History shows the last $days days';
+  }
+
+  @override
+  String get historyLockedBody =>
+      'Older meals stay on your phone. Basic shows 3 months, Medium 8 and Pro 12.';
+
+  @override
+  String get planLockedTitle => 'The meal plan is in Basic';
+
+  @override
+  String get planLockedBody =>
+      'Plan your week from recipes that fit your goals and allergens, and turn it into a shopping list.';
+
+  @override
+  String get reminderWater => 'Drink water';
+
+  @override
+  String reminderWaterHint(int count, String from, String to) {
+    return '$count a day, $from–$to: one glass each to reach your water goal';
+  }
+
+  @override
+  String get reminderWaterLocked => 'Water reminders are in Basic';
+
+  @override
+  String notifWater(String name) {
+    return '$name, time for a glass of water.';
+  }
+
+  @override
+  String get machineTranslated => 'Ingredient names machine-translated';
+
+  @override
+  String get translateSteps => 'Translate steps';
+
+  @override
+  String get machineTranslatedSteps => 'Steps machine-translated on your phone';
+
+  @override
+  String get showOriginal => 'Show original';
+
+  @override
+  String get showTranslation => 'Show translation';
+
+  @override
+  String get translateBusy => 'The assistant is busy. Try again in a moment.';
+
+  @override
+  String get translateFailed =>
+      'Couldn\'t translate the steps. Please try again.';
+
+  @override
+  String get translateNeedsAi =>
+      'Translating needs the AI model (see the Chat tab).';
 }

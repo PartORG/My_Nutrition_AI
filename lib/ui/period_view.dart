@@ -8,6 +8,7 @@ import '../data/diary.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
 import 'nutrients.dart';
+import 'paywall_screen.dart' show LockedCard;
 import 'theme.dart';
 import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'today_screen.dart';
@@ -62,12 +63,13 @@ class _WeekReviewCard extends ConsumerWidget {
   }
 }
 
-/// Basic: the last [days] days — calories per day, daily averages vs goals,
-/// streak, weight trend.
+/// The last [days] days — calories per day, daily averages vs goals, weight trend;
+/// the logging streak only with [basic].
 class PeriodView extends StatelessWidget {
-  const PeriodView({super.key, required this.data, required this.days});
+  const PeriodView({super.key, required this.data, required this.days, required this.basic});
   final ProfileData data;
   final int days;
+  final bool basic;
 
   @override
   Widget build(BuildContext context) {
@@ -99,12 +101,13 @@ class PeriodView extends StatelessWidget {
                     NutrientBar(nutrient: k, eaten: avg(k), goal: targets[k]!, limited: t.limited.containsKey(k)),
               ]),
             ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.local_fire_department, color: Color(0xFFEB6834), size: 32),
-              title: Text(l.streakDays(streak), style: const TextStyle(fontWeight: FontWeight.w600)),
+          if (basic)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.local_fire_department, color: Color(0xFFEB6834), size: 32),
+                title: Text(l.streakDays(streak), style: const TextStyle(fontWeight: FontWeight.w600)),
+              ),
             ),
-          ),
           ChartSection(
             title: l.weightTrend,
             child: weightChart(
@@ -113,6 +116,7 @@ class PeriodView extends StatelessWidget {
               l: l,
             ),
           ),
+          if (!basic) LockedCard(icon: Icons.insights, title: l.lockedTitle, body: l.lockedBody),
         ]);
       },
     );
@@ -140,17 +144,20 @@ class ChartSection extends StatelessWidget {
 /// One nutrient per day, so no legend box; the section title names it. Thin
 /// bars with rounded tops, a dashed goal line with its label, a tooltip per bar.
 class DailyBarChart extends StatelessWidget {
-  const DailyBarChart({super.key, required this.series, required this.nutrient, required this.goal});
+  const DailyBarChart({super.key, required this.series, required this.nutrient, required this.goal, this.monthly = false});
   final List<DayTotals> series;
   final String nutrient;
   final double? goal;
+
+  /// One bar per month (each [DayTotals.day] is the 1st), e.g. the year's daily averages.
+  final bool monthly;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final color = nutrientColors[nutrient]!;
-    final month = series.length > 7;
-    final quarter = series.length > 31;
+    final month = !monthly && series.length > 7;
+    final quarter = month && series.length > 31;
     final maxY = [goal ?? 0, ...series.map((d) => d.totals[nutrient]!)].reduce((a, b) => a > b ? a : b) * 1.15;
     final muted = TextStyle(color: context.colors.textSecondary, fontSize: 11);
     return BarChart(BarChartData(
@@ -162,7 +169,7 @@ class DailyBarChart extends StatelessWidget {
             BarChartRodData(
               toY: d.totals[nutrient]!,
               color: color,
-              width: quarter ? 2 : month ? 6 : 18,
+              width: quarter ? 2 : month ? 6 : monthly ? 14 : 18,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             ),
           ]),
@@ -205,6 +212,7 @@ class DailyBarChart extends StatelessWidget {
               final i = v.toInt();
               if (i < 0 || i >= series.length) return const SizedBox.shrink();
               final day = series[i].day;
+              if (monthly) return Text(DateFormat.MMM().format(day).substring(0, 1), style: muted);
               // Week: weekday letters; month: every 5th day number; 90 days: every 15th.
               if (month && (series.length - 1 - i) % (quarter ? 15 : 5) != 0) return const SizedBox.shrink();
               return Text(month ? '${day.day}' : DateFormat.E().format(day).substring(0, 2), style: muted);
@@ -216,7 +224,7 @@ class DailyBarChart extends StatelessWidget {
         touchTooltipData: BarTouchTooltipData(
           getTooltipColor: (_) => context.colors.textPrimary,
           getTooltipItem: (group, _, rod, _) => BarTooltipItem(
-            '${DateFormat('EEE d MMM').format(series[group.x].day)}\n${formatNutrient(nutrient, rod.toY, l)}',
+            '${(monthly ? DateFormat.yMMM() : DateFormat('EEE d MMM')).format(series[group.x].day)}\n${formatNutrient(nutrient, rod.toY, l)}',
             TextStyle(color: context.colors.surface, fontWeight: FontWeight.w600),
           ),
         ),

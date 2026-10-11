@@ -8,6 +8,7 @@ import 'package:myfoodmind/main.dart';
 import 'package:myfoodmind/agent/agent.dart';
 import 'package:myfoodmind/agent/agent_tools.dart';
 import 'package:myfoodmind/app_state.dart';
+import 'package:myfoodmind/billing/billing.dart';
 import 'package:myfoodmind/data/diary.dart';
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/nutri_db.dart';
@@ -34,15 +35,17 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  Future<void> pumpApp(WidgetTester tester, Widget home) async {
+  Future<void> pumpApp(WidgetTester tester, Widget home, {bool basic = false}) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.5;
     addTearDown(tester.view.reset);
+    final profiles = Profiles.open(tmp);
     await tester.pumpWidget(ProviderScope(
       overrides: [
         profileDataProvider.overrideWithValue(data),
-        profilesProvider.overrideWithValue(Profiles.open(tmp)), // Me reads the profile list
+        profilesProvider.overrideWithValue(profiles), // Me reads the profile list
         agentProvider.overrideWith((ref) => Completer<Agent>().future), // model "still loading"
+        billingProvider.overrideWith((ref) async => DevBilling(profiles.db)..setTier(basic ? Tier.basic : Tier.free)),
       ],
       child: MaterialApp(
         localizationsDelegates: appLocalizationsDelegates,
@@ -140,8 +143,8 @@ void main() {
     expect(find.text('Fasting 0 h 0 min of 16 h'), findsOneWidget);
   });
 
-  testWidgets('Meal plan: from Today, plan the week, shopping list from it', (tester) async {
-    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+  testWidgets('Meal plan: from Today, plan the week, shopping list from it (Basic)', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'), basic: true);
     await tester.scrollUntilVisible(find.text('Meal plan'), 200, scrollable: find.byType(Scrollable).last);
     await tester.ensureVisible(find.text('Meal plan')); // to the top, out from under the navigation bar
     await tester.pumpAndSettle();

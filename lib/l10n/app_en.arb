@@ -367,8 +367,7 @@
   "devBackToFree": "Back to Free (developer)",
   "purchaseFailed": "The purchase didn't go through. Please try again.",
   "featBasic1": "Unlimited AI chat",
-  "featBasic2": "Weekly and monthly dashboard",
-  "featBasic3": "Micronutrients, streaks, weight trend",
+  "featBasic3": "Water reminders, logging streak, micronutrients",
   "featMedium1": "Everything in Basic",
   "featMedium2": "Health conditions: diet limits and suggestions",
   "featMedium3": "Symptom and reading journal, doctor export",
@@ -380,8 +379,8 @@
   "periodDay": "Day",
   "periodWeek": "Week",
   "periodMonth": "Month",
-  "lockedTitle": "Weekly and monthly trends are in Basic",
-  "lockedBody": "See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.",
+  "lockedTitle": "More with Basic",
+  "lockedBody": "Your logging streak, a weekly meal plan with a shopping list, water reminders and 3 months of history.",
   "caloriesPerDay": "Calories per day",
   "goalLine": "Goal {kcal}",
   "@goalLine": {
@@ -940,5 +939,100 @@
   "settingsAbout": "About",
   "settingsDanger": "Danger zone",
   "deleteThisProfile": "Delete this profile",
-  "deleteThisProfileBody": "This removes the profile and all its meals, journal and chat history from this phone. This can't be undone."
+  "deleteThisProfileBody": "This removes the profile and all its meals, journal and chat history from this phone. This can't be undone.",
+  "featBasic2": "Meal plan and shopping list",
+  "featBasic4": "3 months of history",
+  "featMedium4": "8 months of history",
+  "featPro4": "Year dashboard and 12 months of history",
+  "periodYear": "Year",
+  "yearLockedTitle": "The Year view is in Pro",
+  "yearLockedBody": "Twelve months at a glance: calories per month, a logging calendar, nutrient averages with your best and worst months, your weight and what you ate most.",
+  "yearCalories": "Calories per day, monthly average",
+  "yearCalendar": "Logging calendar",
+  "yearLoggedDays": "{days} days logged · best streak {best} days",
+  "@yearLoggedDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "best": {
+        "type": "int"
+      }
+    }
+  },
+  "yearNutrients": "Daily averages this year",
+  "yearBestWorst": "{nutrient}: best month {best}, worst {worst}",
+  "@yearBestWorst": {
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      },
+      "worst": {
+        "type": "String"
+      }
+    }
+  },
+  "yearTopFoods": "Eaten most",
+  "calendarOnGoal": "Within 10% of goal",
+  "calendarNear": "Within 25%",
+  "calendarFar": "Further off",
+  "calendarNotLogged": "Not logged",
+  "historyTitle": "History",
+  "lastDays": "Last {count} days",
+  "@lastDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pickDates": "Pick dates",
+  "recipesOnly": "Recipes only",
+  "historyEmpty": "Nothing logged on these days.",
+  "historyLockedTitle": "History shows the last {days} days",
+  "@historyLockedTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "historyLockedBody": "Older meals stay on your phone. Basic shows 3 months, Medium 8 and Pro 12.",
+  "planLockedTitle": "The meal plan is in Basic",
+  "planLockedBody": "Plan your week from recipes that fit your goals and allergens, and turn it into a shopping list.",
+  "reminderWater": "Drink water",
+  "reminderWaterHint": "{count} a day, {from}–{to}: one glass each to reach your water goal",
+  "@reminderWaterHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderWaterLocked": "Water reminders are in Basic",
+  "notifWater": "{name}, time for a glass of water.",
+  "@notifWater": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "machineTranslated": "Ingredient names machine-translated",
+  "translateSteps": "Translate steps",
+  "machineTranslatedSteps": "Steps machine-translated on your phone",
+  "showOriginal": "Show original",
+  "showTranslation": "Show translation",
+  "translateBusy": "The assistant is busy. Try again in a moment.",
+  "translateFailed": "Couldn't translate the steps. Please try again.",
+  "translateNeedsAi": "Translating needs the AI model (see the Chat tab)."
 }

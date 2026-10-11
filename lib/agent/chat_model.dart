@@ -32,6 +32,7 @@ abstract interface class ChatSession {
 }
 
 abstract interface class ChatModel {
-  /// [replay] seeds the history after the session is recreated.
-  Future<ChatSession> open({required String system, required List<Turn> replay});
+  /// [replay] seeds the history after the session is recreated. [tools] false: a plain
+  /// text session (recipe translation), without the agent's tool declarations.
+  Future<ChatSession> open({required String system, required List<Turn> replay, bool tools = true});
 }

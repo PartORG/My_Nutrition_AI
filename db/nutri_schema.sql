@@ -85,6 +85,15 @@ CREATE TABLE products (
   sodium_mg REAL
 );
 
+-- Recipe ingredient names in the app's other languages (db/food_names.tsv, tool/food_names.py).
+-- Machine-translated with TranslateGemma unless reviewed; no row = show foods.name.
+CREATE TABLE food_names (
+  food_id INTEGER NOT NULL REFERENCES foods (id),
+  lang    TEXT NOT NULL,    -- 'uk', 'de', 'fr'
+  name    TEXT NOT NULL,
+  PRIMARY KEY (food_id, lang)
+) WITHOUT ROWID;
+
 CREATE TABLE allergens (
   food_id  INTEGER NOT NULL REFERENCES foods (id),
   allergen TEXT NOT NULL,   -- lowercase: 'peanuts', 'milk', 'gluten', ...

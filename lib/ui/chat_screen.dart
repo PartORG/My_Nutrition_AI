@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
+import '../agent/recipe_translation.dart' show savedTranslation;
+import '../app_state.dart' show agentProvider;
+import '../billing/billing.dart' show Tier;
 import '../data/diary.dart';
 import '../data/plan.dart' show addRecipeToShopping;
 import '../l10n/app_localizations.dart';
@@ -479,6 +485,82 @@ String _nutritionTitle(AppLocalizations l, String title) => switch (title) {
 
 /// A recipe with its 1-5 stars (a tap saves them; search uses them) and "I ate this".
 /// In chat and on the recipe screen opened from Today.
+/// The steps as stored (English); in another app language, a tap translates them with the
+/// on-phone model, saved for next time and labelled, with the original one tap away.
+class _Steps extends ConsumerStatefulWidget {
+  const _Steps({required this.recipeId, required this.instructions, required this.tools});
+  final int recipeId;
+  final String instructions;
+  final AgentTools tools;
+
+  @override
+  ConsumerState<_Steps> createState() => _StepsState();
+}
+
+class _StepsState extends ConsumerState<_Steps> {
+  late String? _translated = widget.tools.language == 'en'
+      ? null
+      : savedTranslation(widget.tools.user, widget.recipeId, widget.tools.language);
+  var _original = false;
+  StreamSubscription<String>? _run;
+
+  @override
+  void dispose() {
+    _run?.cancel(); // a half translation is not saved
+    super.dispose();
+  }
+
+  void _translate(Agent agent, AppLocalizations l) {
+    void say(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    if (agent.busy) return say(l.translateBusy);
+    setState(() => _translated = '');
+    _run = agent.translateRecipe(widget.recipeId, widget.instructions).listen(
+      (t) => setState(() => _translated = t),
+      onError: (Object e) {
+        debugPrint('translate error: $e');
+        setState(() {
+          _translated = null;
+          _run = null;
+        });
+        say(l.translateFailed);
+      },
+      onDone: () => setState(() {
+        _run = null;
+        if (_translated?.isEmpty ?? false) _translated = null; // the chat took the model first
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final muted = TextStyle(fontSize: 12, color: context.colors.textSecondary);
+    final agent = ref.watch(agentProvider).value;
+    final translated = _translated;
+    final running = _run != null;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(translated == null || _original ? widget.instructions : (translated.isEmpty ? '…' : translated)),
+      if (running) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
+      if (widget.tools.language != 'en' && !running)
+        if (translated == null) ...[
+          TextButton.icon(
+            icon: const Icon(Icons.translate),
+            label: Text(l.translateSteps),
+            onPressed: agent == null ? null : () => _translate(agent, l),
+          ),
+          if (agent == null) Text(l.translateNeedsAi, style: muted),
+        ] else
+          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+            Text(l.machineTranslatedSteps, style: muted),
+            TextButton(
+              onPressed: () => setState(() => _original = !_original),
+              child: Text(_original ? l.showTranslation : l.showOriginal),
+            ),
+          ]),
+    ]);
+  }
+}
+
 class RecipeView extends StatefulWidget {
   const RecipeView({super.key, required this.card, required this.tools, required this.onAte});
   final RecipeCard card;
@@ -543,11 +625,15 @@ class _RecipeViewState extends State<RecipeView> {
             NutrientTiles(values: c.perServing),
             if (microLabels(l).entries.where((e) => c.perServing[e.key] != null).toList() case final micros
                 when micros.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                    micros.map((e) => '${e.value.$1} ${formatMicro(c.perServing[e.key]!, e.value.$2)}').join(' · '),
-                    style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
+              TierBuilder( // micronutrients are Basic
+                builder: (context, tier) => !tier.includes(Tier.basic)
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                            micros.map((e) => '${e.value.$1} ${formatMicro(c.perServing[e.key]!, e.value.$2)}').join(' · '),
+                            style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
+                      ),
               ),
             const SizedBox(height: 14),
             _Section(l.ingredients),
@@ -561,18 +647,25 @@ class _RecipeViewState extends State<RecipeView> {
                   Text('${i.grams.round()} g', style: TextStyle(color: context.colors.textSecondary)),
                 ]),
               ),
+            if (c.translatedNames)
+              Text(l.machineTranslated, style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
             const SizedBox(height: 14),
             _Section(l.steps),
-            Text(c.instructions),
+            _Steps(recipeId: c.id, instructions: c.instructions, tools: widget.tools),
             const SizedBox(height: 12),
             Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
-              OutlinedButton.icon(
-                icon: const Icon(Icons.shopping_cart_outlined),
-                label: Text(l.addToShopping),
-                onPressed: () {
-                  addRecipeToShopping(widget.tools, c.id);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.addedToShopping)));
-                },
+              // The shopping list belongs to the meal plan (Basic).
+              TierBuilder(
+                builder: (context, tier) => !tier.includes(Tier.basic)
+                    ? const SizedBox.shrink()
+                    : OutlinedButton.icon(
+                        icon: const Icon(Icons.shopping_cart_outlined),
+                        label: Text(l.addToShopping),
+                        onPressed: () {
+                          addRecipeToShopping(widget.tools, c.id);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.addedToShopping)));
+                        },
+                      ),
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.restaurant),

@@ -35,6 +35,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import ingredients as ing  # noqa: E402
 from build_medical import apply as apply_medical  # noqa: E402
+from food_names import apply as apply_food_names  # noqa: E402
 from build_nutri_db import finish  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
@@ -1248,7 +1249,7 @@ def write_db(out: Path, foods, dishes, products, recipes) -> dict[str, int]:
     db.executemany("INSERT INTO dishes VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows_d)
     db.executemany("INSERT INTO products VALUES (?,?,?,?,?,?,?,?,?)", [
         (p["barcode"], p["name"], *(r3(p.get(k)) for k in NUTRIENTS)) for p in products])
-    medical = apply_medical(db)
+    medical = apply_medical(db) | apply_food_names(db)
     finish(db, tmp, out)
     return medical
 

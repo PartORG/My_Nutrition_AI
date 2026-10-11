@@ -1176,16 +1176,10 @@ abstract class AppLocalizations {
   /// **'Unlimited AI chat'**
   String get featBasic1;
 
-  /// No description provided for @featBasic2.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly and monthly dashboard'**
-  String get featBasic2;
-
   /// No description provided for @featBasic3.
   ///
   /// In en, this message translates to:
-  /// **'Micronutrients, streaks, weight trend'**
+  /// **'Water reminders, logging streak, micronutrients'**
   String get featBasic3;
 
   /// No description provided for @featMedium1.
@@ -1257,13 +1251,13 @@ abstract class AppLocalizations {
   /// No description provided for @lockedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Weekly and monthly trends are in Basic'**
+  /// **'More with Basic'**
   String get lockedTitle;
 
   /// No description provided for @lockedBody.
   ///
   /// In en, this message translates to:
-  /// **'See calories per day against your goal, daily averages, micronutrients, your logging streak and your weight trend.'**
+  /// **'Your logging streak, a weekly meal plan with a shopping list, water reminders and 3 months of history.'**
   String get lockedBody;
 
   /// No description provided for @caloriesPerDay.
@@ -2603,6 +2597,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the profile and all its meals, journal and chat history from this phone. This can\'t be undone.'**
   String get deleteThisProfileBody;
+
+  /// No description provided for @featBasic2.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan and shopping list'**
+  String get featBasic2;
+
+  /// No description provided for @featBasic4.
+  ///
+  /// In en, this message translates to:
+  /// **'3 months of history'**
+  String get featBasic4;
+
+  /// No description provided for @featMedium4.
+  ///
+  /// In en, this message translates to:
+  /// **'8 months of history'**
+  String get featMedium4;
+
+  /// No description provided for @featPro4.
+  ///
+  /// In en, this message translates to:
+  /// **'Year dashboard and 12 months of history'**
+  String get featPro4;
+
+  /// No description provided for @periodYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get periodYear;
+
+  /// No description provided for @yearLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Year view is in Pro'**
+  String get yearLockedTitle;
+
+  /// No description provided for @yearLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Twelve months at a glance: calories per month, a logging calendar, nutrient averages with your best and worst months, your weight and what you ate most.'**
+  String get yearLockedBody;
+
+  /// No description provided for @yearCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories per day, monthly average'**
+  String get yearCalories;
+
+  /// No description provided for @yearCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging calendar'**
+  String get yearCalendar;
+
+  /// No description provided for @yearLoggedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days logged · best streak {best} days'**
+  String yearLoggedDays(int days, int best);
+
+  /// No description provided for @yearNutrients.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily averages this year'**
+  String get yearNutrients;
+
+  /// No description provided for @yearBestWorst.
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient}: best month {best}, worst {worst}'**
+  String yearBestWorst(String nutrient, String best, String worst);
+
+  /// No description provided for @yearTopFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Eaten most'**
+  String get yearTopFoods;
+
+  /// No description provided for @calendarOnGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Within 10% of goal'**
+  String get calendarOnGoal;
+
+  /// No description provided for @calendarNear.
+  ///
+  /// In en, this message translates to:
+  /// **'Within 25%'**
+  String get calendarNear;
+
+  /// No description provided for @calendarFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Further off'**
+  String get calendarFar;
+
+  /// No description provided for @calendarNotLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Not logged'**
+  String get calendarNotLogged;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get historyTitle;
+
+  /// No description provided for @lastDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {count} days'**
+  String lastDays(int count);
+
+  /// No description provided for @pickDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick dates'**
+  String get pickDates;
+
+  /// No description provided for @recipesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes only'**
+  String get recipesOnly;
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing logged on these days.'**
+  String get historyEmpty;
+
+  /// No description provided for @historyLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History shows the last {days} days'**
+  String historyLockedTitle(int days);
+
+  /// No description provided for @historyLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Older meals stay on your phone. Basic shows 3 months, Medium 8 and Pro 12.'**
+  String get historyLockedBody;
+
+  /// No description provided for @planLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The meal plan is in Basic'**
+  String get planLockedTitle;
+
+  /// No description provided for @planLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan your week from recipes that fit your goals and allergens, and turn it into a shopping list.'**
+  String get planLockedBody;
+
+  /// No description provided for @reminderWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink water'**
+  String get reminderWater;
+
+  /// No description provided for @reminderWaterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} a day, {from}–{to}: one glass each to reach your water goal'**
+  String reminderWaterHint(int count, String from, String to);
+
+  /// No description provided for @reminderWaterLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Water reminders are in Basic'**
+  String get reminderWaterLocked;
+
+  /// No description provided for @notifWater.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, time for a glass of water.'**
+  String notifWater(String name);
+
+  /// No description provided for @machineTranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredient names machine-translated'**
+  String get machineTranslated;
+
+  /// No description provided for @translateSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate steps'**
+  String get translateSteps;
+
+  /// No description provided for @machineTranslatedSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps machine-translated on your phone'**
+  String get machineTranslatedSteps;
+
+  /// No description provided for @showOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original'**
+  String get showOriginal;
+
+  /// No description provided for @showTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get showTranslation;
+
+  /// No description provided for @translateBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant is busy. Try again in a moment.'**
+  String get translateBusy;
+
+  /// No description provided for @translateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t translate the steps. Please try again.'**
+  String get translateFailed;
+
+  /// No description provided for @translateNeedsAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating needs the AI model (see the Chat tab).'**
+  String get translateNeedsAi;
 }
 
 class _AppLocalizationsDelegate

@@ -69,6 +69,9 @@ INSERT INTO recipe_ingredients (recipe_id, food_id, grams) VALUES
   (6, 20, 400), (6, 6, 100), (6, 21, 100), (6, 10, 10),
   (7, 25, 300), (7, 24, 200), (7, 8, 300), (7, 9, 100), (7, 10, 15);
 
+INSERT INTO food_names (food_id, lang, name) VALUES
+  (5, 'uk', 'яйце'), (8, 'uk', 'помідор'), (9, 'uk', 'цибуля'), (9, 'de', 'Zwiebel');
+
 INSERT INTO dishes (id, name, serving_g, recipe_id, kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, sodium_mg) VALUES
   (1, 'lasagna',            350, NULL, 135, 7.5, 5.5, 13.5, 1.2, 2.8, 400),
   (2, 'caesar salad',       250, NULL, 127, 7,   9,   5,    1.5, 1.5, 330),

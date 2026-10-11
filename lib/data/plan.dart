@@ -152,7 +152,8 @@ void addRecipeToShopping(AgentTools tools, int recipeId) => _addFoods(tools, {
 
 void _addFoods(AgentTools tools, Map<int, double> grams, String source) {
   for (final MapEntry(key: id, value: g) in grams.entries) {
-    final name = tools.nutri.select('SELECT name FROM foods WHERE id = ?', [id]).single['name'] as String;
+    final name = tools.nutri.select(
+        'SELECT ${tools.foodNameColumn} AS name FROM foods f ${tools.foodNameJoin} WHERE f.id = ?', [id]).single['name'] as String;
     tools.user.execute(
         'INSERT INTO shopping_list (food_id, name, grams, source) VALUES (?, ?, ?, ?) '
         // Ticked = "I have it": left as it is (and not added to again on every plan rebuild).

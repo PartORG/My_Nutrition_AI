@@ -51,8 +51,12 @@ Database openVectorsDb(String path) {
 /// The four memories: working (the live conversation, kept by the agent),
 /// semantic (memory_facts), episodic (vectors.db) and habits (SQL over logs).
 class Memory {
-  Memory(this.user, this.vectors, this.embed, {this.nutri, DateTime Function()? clock, this.minScore = 0.55})
+  Memory(this.user, this.vectors, this.embed,
+      {this.nutri, DateTime Function()? clock, this.minScore = 0.55, this.historyDays})
       : _now = clock ?? DateTime.now;
+
+  /// How far back recall reaches, like the History screen (Tier.historyDays); null = no limit.
+  final int Function()? historyDays;
 
   final Database user, vectors;
 
@@ -106,13 +110,16 @@ class Memory {
       [kind, refId, at, text, Float32List.fromList(_unit(v)).buffer.asUint8List()]);
 
   /// Past events most similar to [query], skipping anything at or after
-  /// [before] (the live conversation already holds those).
+  /// [before] (the live conversation already holds those) or older than [historyDays].
   List<Recall> recall(List<double> query, {required DateTime before, int k = 3}) {
     final q = _unit(query);
     final scored = <Recall>[];
     // ponytail: brute force over all events; fine for years of one person's chat.
-    for (final r in vectors.select('SELECT kind, at, text, embedding FROM events WHERE at < ?',
-        [before.millisecondsSinceEpoch])) {
+    final days = historyDays?.call();
+    final now = _now();
+    final from = days == null ? 0 : DateTime(now.year, now.month, now.day - days + 1).millisecondsSinceEpoch;
+    for (final r in vectors.select('SELECT kind, at, text, embedding FROM events WHERE at < ? AND at >= ?',
+        [before.millisecondsSinceEpoch, from])) {
       final v = (r['embedding'] as Uint8List).buffer.asFloat32List();
       var s = 0.0;
       for (var i = 0; i < q.length; i++) {

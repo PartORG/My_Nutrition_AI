@@ -33,13 +33,17 @@ class RecipeListCard extends AgentCard {
 
 class RecipeCard extends AgentCard {
   RecipeCard({required this.id, required this.title, required this.instructions, required this.minutes,
-      required this.servings, required this.ingredients, required this.perServing, this.cautions = const []});
+      required this.servings, required this.ingredients, required this.perServing, this.cautions = const [],
+      this.translatedNames = false});
   final int id;
   final String title, instructions;
   final int? minutes;
   final int servings;
   final List<({String name, double grams})> ingredients;
   final Nutrients perServing;
+
+  /// Some ingredient names are machine translations (food_names), not the database's own.
+  final bool translatedNames;
 
   /// Ingredients that hit the profile's allergies or conditions. Search never
   /// suggests such a recipe; this shows when the user opens it by name.
@@ -130,6 +134,18 @@ class AgentTools {
   /// 2019 products inside nutri.db. Set when the download finishes.
   Database? products;
   final DateTime Function() _now;
+
+  /// The app's language: recipe ingredients show in it where nutri.db has a translation.
+  String language = 'en';
+
+  /// `name` of food `f` in [language]: food_names (machine-translated or reviewed), else foods.name.
+  // An older nutri.db without the table (before data_version 2) shows the English names.
+  late final bool _hasFoodNames =
+      nutri.select("SELECT 1 FROM sqlite_master WHERE name = 'food_names'").isNotEmpty;
+  String get foodNameJoin => _hasFoodNames
+      ? "LEFT JOIN food_names fn ON fn.food_id = f.id AND fn.lang = '${language.replaceAll("'", '')}'"
+      : '';
+  String get foodNameColumn => _hasFoodNames ? 'COALESCE(fn.name, f.name)' : 'f.name';
 
   /// Recipe ids of the last list shown, so "recipe 2" / "the first one" resolve.
   /// Kept in user.db: after a restart the replayed chat still shows that list.
@@ -467,12 +483,10 @@ class AgentTools {
   ToolResult showRecipeById(int id) {
     _lastShown = id;
     final r = nutri.select('SELECT * FROM recipes WHERE id = ?', [id]).single;
-    final ingredients = [
-      for (final i in nutri.select(
-          'SELECT f.name, ri.grams FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id '
-          'WHERE ri.recipe_id = ? ORDER BY ri.grams DESC', [id]))
-        (name: i['name'] as String, grams: (i['grams'] as num).toDouble())
-    ];
+    final rows = nutri.select(
+        'SELECT $foodNameColumn AS name, $foodNameColumn != f.name AS translated, ri.grams FROM recipe_ingredients ri '
+        'JOIN foods f ON f.id = ri.food_id $foodNameJoin WHERE ri.recipe_id = ? ORDER BY ri.grams DESC', [id]);
+    final ingredients = [for (final i in rows) (name: i['name'] as String, grams: (i['grams'] as num).toDouble())];
     final perServing = _nutrientsOf(nutri.select(
         'SELECT * FROM recipe_nutrition WHERE recipe_id = ?', [id]).single);
     final card = RecipeCard(
@@ -484,6 +498,7 @@ class AgentTools {
       ingredients: ingredients,
       perServing: perServing,
       cautions: _cautions(id),
+      translatedNames: rows.any((i) => i['translated'] == 1),
     );
     return ToolResult({
       'title': card.title,

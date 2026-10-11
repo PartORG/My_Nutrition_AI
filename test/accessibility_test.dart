@@ -95,10 +95,17 @@ void main() {
   for (final lang in ['en', 'uk', 'de', 'fr']) {
     testWidgets('$lang: drawer opens the shopping list; Settings at 200 % text', (tester) async {
       smallPhone(tester);
-      await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang)));
+      final settings = migrated(sqlite3.openInMemory(), profilesDbMigrations);
+      addTearDown(settings.close);
+      final billing = DevBilling(settings)..setTier(Tier.basic); // the shopping list is Basic
+      await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang), overrides: [
+        billingProvider.overrideWith((ref) async => billing),
+      ]));
       await tester.pump();
       final l = lookupAppLocalizations(Locale(lang));
       tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(l.shoppingListNav)); // below the fold at 200 % in some languages
       await tester.pumpAndSettle();
       await tester.tap(find.text(l.shoppingListNav));
       await tester.pumpAndSettle();
@@ -109,7 +116,9 @@ void main() {
       await tester.pumpAndSettle();
       await scrollAll(tester, 'drawer ($lang)');
 
-      await tester.pumpWidget(app(const SettingsScreen(), locale: Locale(lang)));
+      await tester.pumpWidget(app(const SettingsScreen(), locale: Locale(lang), overrides: [
+        billingProvider.overrideWith((ref) async => billing),
+      ]));
       await tester.pumpAndSettle();
       expect(find.text(l.settingsDanger), findsNothing, reason: 'starts at the top');
       await scrollAll(tester, 'Settings ($lang)');

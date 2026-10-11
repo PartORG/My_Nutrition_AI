@@ -18,17 +18,33 @@ by editing this file deliberately, never by silently diverging in code.
 
 | Tier | Includes |
 |---|---|
-| **Free** | AI chat **15 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, multiple profiles, reminders |
-| **Basic** | Unlimited chat, weekly/monthly dashboard, micronutrients, streaks, weight trend (logging weight is free) |
-| **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets** |
-| **Pro** | + Camera: photo / live video / barcode → review & edit screen → "What can I cook?" or "Log this meal" (user confirms portion, values shown as ≈). **7-day free trial** (Play offer) |
+| **Free** | AI chat **30 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, **weekly/monthly dashboard** (calories per day, averages, week review, weight trend), multiple profiles, meal reminders, **History: last 30 days** |
+| **Basic** | Unlimited chat, **meal plan + shopping list**, **water reminders**, micronutrients, streaks, **History: 90 days** |
+| **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets**. **History: 240 days** |
+| **Pro** | + Camera: photo / live video / barcode → review & edit screen → "What can I cook?" or "Log this meal" (user confirms portion, values shown as ≈). **Year dashboard**. **History: 365 days**. **7-day free trial** (Play offer) |
 
 - RevenueCat, anonymous device user, entitlements `basic ⊂ medium ⊂ pro`, one `has(tier)` check.
 - Tier changes use RevenueCat product change (replacement + proration) — never double charge.
 - **M4 decisions (2026-10-04):** monthly + yearly per paid tier (Pro trial unchanged); weight logging is free
   (goals use the current weight), the weight trend chart is Basic; no store/RevenueCat accounts yet, so a
   developer tier switch stands in until they exist.
-- Chat limit table in code: `free: 15, basic+: unlimited`. Bypass by clearing app data is accepted (wipes data too).
+- **Tier changes (2026-10-11):** Week/Month and the weight trend are free; free chat 15 → 30 (the model
+  runs on the phone, so chat costs nothing to serve); meal plan + shopping list move to Basic (not Medium:
+  Medium stays the medical tier); water reminders (Basic) are one glass each, spread 9:00–21:00 to reach the
+  water goal; History reaches back 30/90/240/365 days by tier. **Older logs are hidden, never deleted**:
+  a downgrade, a lapsed card or a billing outage (store-less build = Free) must not destroy health data.
+  The Year view (Pro) shows calories per month, a logging calendar, nutrient averages with the best and
+  worst month, weight over the year and the most-eaten foods.
+- **Gaps closed (2026-10-11):** micronutrients are Basic (Today's card, the recipe card line); the
+  assistant's recall of past events stays inside the tier's history window; water reminders reschedule
+  themselves when the water goal changes, and a downgrade cancels them on every profile by notification id.
+- **Ingredient names (2026-10-11):** `db/food_names.tsv`, TranslateGemma 4B at build time, reviewable;
+  `food_names` in nutri.db (data_version 2), shown with a "machine-translated" note, English fallback.
+  Recipe steps: free, translated on tap by the on-device Gemma (a tool-less session, ~300-character
+  chunks under the 256-token reply cap), between chat turns (the chat session closes and replays; a second
+  concurrent session risks OOM on phones per flutter_edge_ai), saved in user.db `recipe_translations` (v10),
+  labelled with the original one tap away. Speed on the phone not measured yet.
+- Chat limit table in code: `free: 30, basic+: unlimited`. Bypass by clearing app data is accepted (wipes data too).
 
 ## Architecture
 
@@ -216,7 +232,8 @@ Decisions from these numbers:
 - Plan changes replace the old subscription: up / same tier → immediately with time credited
   (`withTimeProration`); down → at renewal (`deferred`). Monthly↔yearly is a replacement too.
 - Gates: chat unlimited from Basic; Week/Month (calories per day + goal line, daily averages over logged
-  days, streak, weight trend) from Basic; logging weight is free.
+  days, week review, weight trend) free since 2026-10-11, their streak from Basic; logging weight is free;
+  meal plan, shopping list and water reminders from Basic; Year from Pro; History window `Tier.historyDays`.
 - Paywall: price and renewal terms next to every button, Pro "7 days free, then …", restore.
 - Not verified: real purchases (no accounts yet). Setup checklist: `docs/BILLING_SETUP.md`.
 

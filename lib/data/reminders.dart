@@ -1,5 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import 'diary.dart' show glassMl;
+
 const reminderSlots = ['breakfast', 'lunch', 'dinner', 'evening'];
 
 typedef Reminder = ({String slot, bool enabled, int hour, int minute});
@@ -41,3 +43,24 @@ void saveReminder(Database user, Reminder r) => user.execute(
 /// Notification id: unique per profile and slot, so one profile's reminders
 /// can be replaced without touching another's.
 int reminderId(int profileId, String slot) => profileId * 10 + reminderSlots.indexOf(slot);
+
+/// Water (Basic): one glass per reminder, spread evenly 9:00–21:00 so the day's goal is
+/// reached by evening. EFSA puts adequate water at about 2–2.5 l a day; drinking little and
+/// often through the waking day is the usual advice, rather than a lot at once.
+List<(int, int)> waterTimes(double goalMl) {
+  final n = (goalMl / glassMl).round().clamp(2, maxWaterReminders);
+  const from = 9 * 60, to = 21 * 60;
+  final minutes = [for (var i = 0; i < n; i++) from + (to - from) * i ~/ (n - 1)];
+  return [for (final m in minutes) (m ~/ 60, m % 60)];
+}
+
+const maxWaterReminders = 12;
+
+/// prefs keys: '1' = water reminders on; the times last scheduled, e.g. '(9, 0),(10, 42)'.
+const waterReminderPref = 'water_reminder', waterTimesPref = 'water_times';
+
+/// profiles.db setting: '1' = some profile on this phone has water reminders scheduled.
+const waterScheduledSetting = 'water_scheduled';
+
+/// Out of the meal reminders' range (profileId * 10 + slot).
+int waterReminderId(int profileId, int i) => 1000000 + profileId * maxWaterReminders + i;

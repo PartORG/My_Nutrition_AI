@@ -2,12 +2,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
+import '../billing/billing.dart';
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart' show RecipeScreen;
+import 'paywall_screen.dart' show LockedCard, TierBuilder;
 import 'theme.dart';
 
-/// The week's plan (tap a meal to see it, swap it) and the shopping list made from it.
+/// Basic: the week's plan (tap a meal to see it, swap it) and the shopping list made from it.
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key, required this.data, this.initialTab = 0});
   final ProfileData data;
@@ -40,7 +42,22 @@ class _PlanScreenState extends State<PlanScreen> {
       };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TierBuilder(
+        builder: (context, tier) => tier.includes(Tier.basic)
+            ? _plan(context)
+            : Scaffold(
+                appBar: AppBar(title: Text(AppLocalizations.of(context)!.mealPlan)),
+                body: ListView(padding: const EdgeInsets.all(16), children: [
+                  LockedCard(
+                    icon: Icons.event_note_outlined,
+                    title: AppLocalizations.of(context)!.planLockedTitle,
+                    body: AppLocalizations.of(context)!.planLockedBody,
+                  ),
+                ]),
+              ),
+      );
+
+  Widget _plan(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final tools = widget.data.tools;
     final plan = plannedMealsFor(tools, _today);

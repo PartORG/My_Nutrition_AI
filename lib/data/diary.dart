@@ -160,6 +160,45 @@ int loggingStreak(Database user, DateTime today) {
   return streak;
 }
 
+/// Longest run of consecutive logged days in [series].
+int bestStreak(List<DayTotals> series) {
+  var best = 0, run = 0;
+  for (final d in series) {
+    run = d.entries > 0 ? run + 1 : 0;
+    if (run > best) best = run;
+  }
+  return best;
+}
+
+typedef MonthStats = ({DateTime month, Nutrients avg, int logged});
+
+/// One row per calendar month in [series] (oldest first): daily averages over the logged days.
+List<MonthStats> monthlyAverages(List<DayTotals> series) {
+  final byMonth = <DateTime, List<DayTotals>>{};
+  for (final d in series) {
+    (byMonth[DateTime(d.day.year, d.day.month)] ??= []).add(d);
+  }
+  return [
+    for (final MapEntry(key: month, value: days) in byMonth.entries)
+      () {
+        final logged = days.where((d) => d.entries > 0).toList();
+        return (
+          month: month,
+          logged: logged.length,
+          avg: {for (final n in nutrients) n: logged.isEmpty ? 0.0 : logged.fold(0.0, (s, d) => s + d.totals[n]!) / logged.length},
+        );
+      }()
+  ];
+}
+
+/// What was logged most often since [from]: foods and recipes alike.
+List<({String label, int times})> topFoods(Database user, DateTime from, {int limit = 5}) => [
+      for (final r in user.select(
+          'SELECT description, COUNT(*) AS n FROM meal_log WHERE eaten_at >= ? GROUP BY description '
+          'ORDER BY n DESC, MAX(eaten_at) DESC LIMIT ?', [from.millisecondsSinceEpoch, limit]))
+        (label: r['description'] as String, times: r['n'] as int)
+    ];
+
 /// Weight readings since [from], in kg, oldest first.
 List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
       for (final r in user.select(
@@ -184,7 +223,7 @@ List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
   );
 }
 
-/// Free: anyone can log their weight (goals use it); the trend is Basic.
+/// Anyone can log their weight (goals use it) and see the trend.
 void logWeight(Database user, double value, {required bool imperial, required DateTime at}) =>
     logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);
 

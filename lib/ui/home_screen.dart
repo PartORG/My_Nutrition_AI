@@ -8,9 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../app_state.dart';
+import '../billing/billing.dart';
+import '../data/diary.dart' show pref, setPref, waterGoal;
+import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart';
 import 'health_screen.dart';
+import 'history_screen.dart';
 import 'log_screen.dart';
 import 'me_screen.dart';
 import 'memory_screen.dart';
@@ -43,10 +47,18 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   StreamSubscription<Uri?>? _widgetTaps;
+  Billing? _billing;
+  ProfileData? _data;
 
   @override
   void initState() {
     super.initState();
+    ref.read(billingProvider.future).then((b) {
+      if (!mounted) return;
+      _billing = b..tier.addListener(_tierChanged);
+      _data = ref.read(profileDataProvider)?..changes.addListener(_syncWater);
+      _tierChanged();
+    }, onError: (_) {});
     // The widget's Log button opens the app on the Log tab (after the PIN).
     if (Platform.isAndroid) {
       HomeWidget.initiallyLaunchedFromHomeWidget().then(_fromWidget, onError: (_) {});
@@ -58,8 +70,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (uri?.host == 'log' && mounted) ref.read(homeTabProvider.notifier).go(HomeTab.log);
   }
 
+  /// Water reminders are Basic: without it they go off on every profile of the phone,
+  /// cancelled by id so the other profiles' databases stay closed.
+  void _tierChanged() {
+    final data = _data;
+    if (data == null || !mounted) return;
+    final profiles = ref.read(profilesProvider);
+    if (!_billing!.tier.value.includes(Tier.basic)) {
+      if (profiles.setting(waterScheduledSetting) == '1') {
+        final service = ref.read(remindersProvider);
+        for (final p in profiles.list()) {
+          service.applyWater(p.id, const [], '');
+        }
+        profiles.setSetting(waterScheduledSetting, '0');
+      }
+      setPref(data.user, waterReminderPref, '0');
+      setPref(data.user, waterTimesPref, '');
+    }
+    _syncWater();
+  }
+
+  /// Reschedules when the times change: switched on or off in Settings, or a new water goal
+  /// (own goal, or a new weight). Every write lands here, so it only acts on a real change.
+  void _syncWater() {
+    final data = _data;
+    if (data == null || !mounted || !_billing!.tier.value.includes(Tier.basic)) return;
+    final times = pref(data.user, waterReminderPref) == '1' ? waterTimes(waterGoal(data.user)) : const <(int, int)>[];
+    final key = times.join(',');
+    if ((pref(data.user, waterTimesPref) ?? '') == key) return; // never scheduled = ''
+    setPref(data.user, waterTimesPref, key);
+    if (times.isNotEmpty) ref.read(profilesProvider).setSetting(waterScheduledSetting, '1');
+    ref.read(remindersProvider).applyWater(data.profile.id, times, AppLocalizations.of(context)!.notifWater(data.profile.name));
+  }
+
   @override
   void dispose() {
+    _billing?.tier.removeListener(_tierChanged);
+    _data?.changes.removeListener(_syncWater);
     _widgetTaps?.cancel();
     super.dispose();
   }
@@ -105,8 +152,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Everything that isn't a tab: the plan and shopping list, health, what the AI knows,
-/// settings. Each item opens its own screen on top.
+/// The main tabs again, then everything that isn't a tab: history, the plan and shopping
+/// list, health, what the AI knows, settings. Each of those opens its own screen on top.
 // A Drawer of ListTiles, not NavigationDrawer: its fixed 56 dp rows can't wrap at 200 % text.
 class _Drawer extends ConsumerWidget {
   const _Drawer({required this.name});
@@ -131,6 +178,10 @@ class _Drawer extends ConsumerWidget {
         );
     Widget item(IconData icon, String label, VoidCallback? onTap) =>
         ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
+    Widget tab(IconData icon, String label, int tab) => item(icon, label, () {
+          Navigator.of(context).pop(); // the drawer
+          ref.read(homeTabProvider.notifier).go(tab);
+        });
     return Drawer(
       child: SafeArea(
         child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
@@ -146,8 +197,12 @@ class _Drawer extends ConsumerWidget {
               Expanded(child: Text(name, style: Theme.of(context).textTheme.titleLarge)),
             ]),
           ),
+          tab(Icons.today_outlined, l.tabToday, HomeTab.today),
+          tab(Icons.chat_bubble_outline, l.tabChat, HomeTab.chat),
+          tab(Icons.add_circle_outline, l.tabLog, HomeTab.log),
           if (data != null) ...[
             section(l.drawerFood),
+            item(Icons.history, l.historyTitle, () => open(() => HistoryScreen(data: data))),
             item(Icons.event_note_outlined, l.mealPlan, () => open(() => PlanScreen(data: data))),
             item(Icons.shopping_cart_outlined, l.shoppingListNav,
                 () => open(() => PlanScreen(data: data, initialTab: 1))),

@@ -78,4 +78,17 @@ void main() {
     expect(user.select("SELECT value FROM readings WHERE kind = 'weight' ORDER BY logged_at").map((r) => r['value']),
         [80.0, 79.6]);
   });
+
+  test('ingredients and shopping list in the app language, English where nutri.db has no translation', () {
+    tools.language = 'uk';
+    final card = tools.showRecipeById(2).card! as RecipeCard; // Shakshuka
+    expect(card.ingredients.map((i) => i.name), containsAll(['помідор', 'яйце', 'цибуля', 'feta cheese']));
+    expect(card.translatedNames, isTrue);
+    addRecipeToShopping(tools, 2);
+    expect(shoppingList(tools).map((i) => i.name), containsAll(['яйце', 'olive oil']));
+    tools.language = 'en';
+    final en = tools.showRecipeById(2).card! as RecipeCard;
+    expect(en.ingredients.map((i) => i.name), contains('egg'));
+    expect(en.translatedNames, isFalse);
+  });
 }

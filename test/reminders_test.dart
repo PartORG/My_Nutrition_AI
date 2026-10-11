@@ -42,4 +42,12 @@ void main() {
     final ids = {for (final p in [1, 2, 3]) for (final s in reminderSlots) reminderId(p, s)};
     expect(ids.length, 12);
   });
+
+  test('water: one glass per reminder, 9:00 to 21:00, ids clear of the meal reminders', () {
+    expect(waterTimes(2000), [(9, 0), (10, 42), (12, 25), (14, 8), (15, 51), (17, 34), (19, 17), (21, 0)]);
+    expect(waterTimes(250).length, 2, reason: 'at least morning and evening');
+    expect(waterTimes(9000).length, maxWaterReminders);
+    expect(waterReminderId(1, 0), isNot(inInclusiveRange(10, 13)));
+    expect(waterReminderId(2, 0), greaterThan(waterReminderId(1, maxWaterReminders - 1)));
+  });
 }

@@ -641,10 +641,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get featBasic1 => 'Unbegrenzter KI-Chat';
 
   @override
-  String get featBasic2 => 'Wochen- und Monatsübersicht';
-
-  @override
-  String get featBasic3 => 'Mikronährstoffe, Serien, Gewichtsverlauf';
+  String get featBasic3 => 'Trink-Erinnerungen, Serien, Mikronährstoffe';
 
   @override
   String get featMedium1 => 'Alles aus Basic';
@@ -682,11 +679,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get periodMonth => 'Monat';
 
   @override
-  String get lockedTitle => 'Wochen- und Monatstrends gibt es in Basic';
+  String get lockedTitle => 'Mehr mit Basic';
 
   @override
   String get lockedBody =>
-      'Sieh Kalorien pro Tag im Vergleich zu deinem Ziel, Tagesdurchschnitte, Mikronährstoffe, deine Eintragsserie und deinen Gewichtsverlauf.';
+      'Deine Eintragsserie, ein Wochen-Essensplan mit Einkaufsliste, Trink-Erinnerungen und 3 Monate Verlauf.';
 
   @override
   String get caloriesPerDay => 'Kalorien pro Tag';
@@ -1500,4 +1497,137 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get deleteThisProfileBody =>
       'Das Profil und alle seine Mahlzeiten, das Tagebuch und der Chatverlauf werden von diesem Telefon gelöscht. Das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get featBasic2 => 'Essensplan und Einkaufsliste';
+
+  @override
+  String get featBasic4 => '3 Monate Verlauf';
+
+  @override
+  String get featMedium4 => '8 Monate Verlauf';
+
+  @override
+  String get featPro4 => 'Jahresübersicht und 12 Monate Verlauf';
+
+  @override
+  String get periodYear => 'Jahr';
+
+  @override
+  String get yearLockedTitle => 'Die Jahresansicht gibt es in Pro';
+
+  @override
+  String get yearLockedBody =>
+      'Zwölf Monate auf einen Blick: Kalorien pro Monat, ein Eintragskalender, Nährstoff-Durchschnitte mit deinem besten und schlechtesten Monat, dein Gewicht und was du am häufigsten gegessen hast.';
+
+  @override
+  String get yearCalories => 'Kalorien pro Tag, Monatsdurchschnitt';
+
+  @override
+  String get yearCalendar => 'Eintragskalender';
+
+  @override
+  String yearLoggedDays(int days, int best) {
+    return '$days Tage eingetragen · längste Serie $best Tage';
+  }
+
+  @override
+  String get yearNutrients => 'Tagesdurchschnitte im Jahr';
+
+  @override
+  String yearBestWorst(String nutrient, String best, String worst) {
+    return '$nutrient: bester Monat $best, schlechtester $worst';
+  }
+
+  @override
+  String get yearTopFoods => 'Am häufigsten gegessen';
+
+  @override
+  String get calendarOnGoal => 'Bis 10 % vom Ziel';
+
+  @override
+  String get calendarNear => 'Bis 25 %';
+
+  @override
+  String get calendarFar => 'Weiter weg';
+
+  @override
+  String get calendarNotLogged => 'Nicht eingetragen';
+
+  @override
+  String get historyTitle => 'Verlauf';
+
+  @override
+  String lastDays(int count) {
+    return 'Letzte $count Tage';
+  }
+
+  @override
+  String get pickDates => 'Daten wählen';
+
+  @override
+  String get recipesOnly => 'Nur Rezepte';
+
+  @override
+  String get historyEmpty => 'An diesen Tagen ist nichts eingetragen.';
+
+  @override
+  String historyLockedTitle(int days) {
+    return 'Der Verlauf zeigt die letzten $days Tage';
+  }
+
+  @override
+  String get historyLockedBody =>
+      'Ältere Mahlzeiten bleiben auf deinem Handy. Basic zeigt 3 Monate, Medium 8 und Pro 12.';
+
+  @override
+  String get planLockedTitle => 'Den Essensplan gibt es in Basic';
+
+  @override
+  String get planLockedBody =>
+      'Plane deine Woche mit Rezepten, die zu deinen Zielen und Allergenen passen, und mach daraus eine Einkaufsliste.';
+
+  @override
+  String get reminderWater => 'Wasser trinken';
+
+  @override
+  String reminderWaterHint(int count, String from, String to) {
+    return '$count pro Tag, $from–$to: je ein Glas, um dein Wasserziel zu erreichen';
+  }
+
+  @override
+  String get reminderWaterLocked => 'Trink-Erinnerungen gibt es in Basic';
+
+  @override
+  String notifWater(String name) {
+    return '$name, Zeit für ein Glas Wasser.';
+  }
+
+  @override
+  String get machineTranslated => 'Zutatennamen maschinell übersetzt';
+
+  @override
+  String get translateSteps => 'Schritte übersetzen';
+
+  @override
+  String get machineTranslatedSteps =>
+      'Schritte auf deinem Handy maschinell übersetzt';
+
+  @override
+  String get showOriginal => 'Original zeigen';
+
+  @override
+  String get showTranslation => 'Übersetzung zeigen';
+
+  @override
+  String get translateBusy =>
+      'Der Assistent ist beschäftigt. Versuch es gleich noch einmal.';
+
+  @override
+  String get translateFailed =>
+      'Die Schritte konnten nicht übersetzt werden. Bitte versuch es erneut.';
+
+  @override
+  String get translateNeedsAi =>
+      'Zum Übersetzen braucht es das KI-Modell (siehe Tab „Chat“).';
 }

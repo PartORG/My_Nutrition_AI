@@ -85,6 +85,12 @@ class AppearanceSettings extends Notifier<Appearance> {
   }
 }
 
+/// The language the app shows for [code] ('' = the phone's, if the app has it).
+String appLanguage(String code) => code.isNotEmpty
+    ? code
+    : basicLocaleListResolution(WidgetsBinding.instance.platformDispatcher.locales, AppLocalizations.supportedLocales)
+        .languageCode;
+
 /// The app's language code; '' = follow the phone. Per phone.
 final languageProvider = NotifierProvider<LanguageSetting, String>(LanguageSetting.new);
 
@@ -390,6 +396,8 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
   final data = ProfileData(profile: profile, nutri: nutri, user: user,
       tools: AgentTools(nutri, user, products: openProducts(dir)));
+  // listen, not watch: a language switch must not reopen the databases.
+  ref.listen(languageProvider, (_, code) => data.tools.language = appLanguage(code), fireImmediately: true);
   final profiles = ref.watch(profilesProvider);
   void sync() => unawaited(syncHomeWidget(data, show: widgetShowsKcal(profiles)));
   data.changes.addListener(sync);
@@ -507,16 +515,13 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
   final embedder = await ref.watch(embedderProvider.future);
 
   // The language the app shows, so the agent answers in it.
-  final code = ref.watch(languageProvider);
-  final language = code.isNotEmpty
-      ? code
-      : basicLocaleListResolution(WidgetsBinding.instance.platformDispatcher.locales, AppLocalizations.supportedLocales)
-          .languageCode;
+  final language = appLanguage(ref.watch(languageProvider));
 
   final vectorsPath = profiles.vectorsDbPath(data.profile.id);
   File(vectorsPath).parent.createSync(recursive: true);
   final vectors = openVectorsDb(vectorsPath);
-  final memory = Memory(data.user, vectors, embedder.generateEmbeddings, nutri: data.nutri);
+  final memory = Memory(data.user, vectors, embedder.generateEmbeddings,
+      nutri: data.nutri, historyDays: () => billing.tier.value.historyDays);
   final agent = Agent(
     model: GemmaChatModel(llm),
     tools: data.tools,

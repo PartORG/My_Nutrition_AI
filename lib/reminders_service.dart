@@ -37,27 +37,41 @@ class RemindersService {
     for (final r in reminders) {
       final id = reminderId(profileId, r.slot);
       await _plugin.cancel(id: id);
-      if (!r.enabled) continue;
-      final now = tz.TZDateTime.now(tz.local);
-      var at = tz.TZDateTime(tz.local, now.year, now.month, now.day, r.hour, r.minute);
-      if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
-      await _plugin.zonedSchedule(
-        id: id,
-        title: 'MyFoodMind',
-        body: text(r.slot),
-        scheduledDate: at,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reminders',
-            'Reminders',
-            channelDescription: 'Meal logging and evening check-in reminders',
-            visibility: NotificationVisibility.private, // lock screen: "contents hidden"
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time, // every day at this time
-      );
+      if (r.enabled) await _daily(id, r.hour, r.minute, text(r.slot));
     }
+  }
+
+  /// Replaces this profile's water reminders with one a day at each of [times] (empty = off).
+  Future<void> applyWater(int profileId, List<(int, int)> times, String body) async {
+    await _init();
+    for (var i = 0; i < maxWaterReminders; i++) {
+      await _plugin.cancel(id: waterReminderId(profileId, i));
+    }
+    for (final (i, (h, m)) in times.indexed) {
+      await _daily(waterReminderId(profileId, i), h, m, body);
+    }
+  }
+
+  Future<void> _daily(int id, int hour, int minute, String body) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var at = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
+    await _plugin.zonedSchedule(
+      id: id,
+      title: 'MyFoodMind',
+      body: body,
+      scheduledDate: at,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'reminders',
+          'Reminders',
+          channelDescription: 'Meal logging, water and evening check-in reminders',
+          visibility: NotificationVisibility.private, // lock screen: "contents hidden"
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time, // every day at this time
+    );
   }
 
   /// "Forgot PIN → delete profile" also removes its reminders.
@@ -66,5 +80,6 @@ class RemindersService {
     for (final slot in reminderSlots) {
       await _plugin.cancel(id: reminderId(profileId, slot));
     }
+    await applyWater(profileId, const [], '');
   }
 }

@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 /// shared profiles.db) so a new profile doesn't reset it.
 // ponytail: clearing app data resets the count (and wipes all data); accepted in the plan.
 class ChatLimit {
-  ChatLimit(this.db, {this.dailyFree = 15, DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  ChatLimit(this.db, {this.dailyFree = 30, DateTime Function()? clock}) : _now = clock ?? DateTime.now;
 
   final Database db;
   final int dailyFree;
