@@ -126,14 +126,14 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('$lang: profile picker and PIN screen at 200 % text', (tester) async {
+    testWidgets('$lang: sign-up and PIN screen at 200 % text', (tester) async {
       smallPhone(tester);
+      await tester.pumpWidget(app(const ProfilesScreen(), locale: Locale(lang)));
+      await tester.pumpAndSettle();
+      await scrollAll(tester, 'sign-up ($lang)');
       final profiles = Profiles.open(tmp);
       await tester.runAsync(() => profiles.create('Anna-Maria Kowalenko', '1234'));
-      await tester.pumpWidget(app(const ProfilesScreen(), locale: Locale(lang))); // reads the same profiles.db
-      await tester.pumpAndSettle();
-      await scrollAll(tester, 'profiles ($lang)');
-      await tester.tap(find.text('Anna-Maria Kowalenko'));
+      await tester.pumpWidget(app(ProfilesScreen(key: UniqueKey()), locale: Locale(lang))); // reads the same profiles.db
       await tester.pumpAndSettle();
       await scrollAll(tester, 'PIN ($lang)');
       expect(find.byType(FilledButton), findsOneWidget);

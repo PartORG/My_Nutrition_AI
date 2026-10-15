@@ -1,15 +1,17 @@
 {
   "@@locale": "en",
   "appTitle": "MyFoodMind",
-  "whoIsEating": "Who's eating?",
-  "addProfile": "Add profile",
+  "addProfile": "Create profile",
+  "googleWrongAccount": "That isn’t the Google account this profile was created with.",
+  "signInWithGoogle": "Sign in with Google",
+  "continueWithGoogle": "Continue with Google",
   "profileName": "Name",
   "nameRequired": "Enter a name",
   "pinLabel": "PIN (4–6 digits)",
   "pinConfirmLabel": "Repeat PIN",
   "pinInvalid": "Use 4–6 digits",
   "pinMismatch": "PINs don't match",
-  "pinHint": "Your PIN keeps this profile private on a shared phone. If you forget it, the profile can only be deleted.",
+  "pinHint": "Your PIN unlocks the app when the fingerprint can’t. If you forget it, the profile can only be deleted.",
   "create": "Create",
   "unlock": "Unlock",
   "enterPinFor": "PIN for {name}",
@@ -317,7 +319,7 @@
   },
   "useFingerprint": "Use fingerprint",
   "fingerprintTitle": "Unlock with fingerprint",
-  "fingerprintHint": "Only while this is the only profile on the phone: Android can't tell whose fingerprint it is.",
+  "fingerprintHint": "Unlock with your fingerprint instead of the PIN.",
   "fingerprintReason": "Unlock {name}'s profile",
   "@fingerprintReason": {
     "placeholders": {
@@ -600,6 +602,7 @@
   "quickAdd": "Quick add",
   "quickAddName": "Name (optional)",
   "editMeal": "Edit meal",
+  "changeFood": "Change food",
   "appearance": "Appearance",
   "cardLogMeal": "Log {meal}",
   "@cardLogMeal": {

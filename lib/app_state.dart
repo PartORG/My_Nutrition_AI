@@ -9,6 +9,7 @@ import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_embeddings/flutter_edge_ai_embeddings.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:local_auth/local_auth.dart';
@@ -58,6 +59,9 @@ final appDirProvider = FutureProvider<Directory>((ref) async {
 final profilesProvider = Provider<Profiles>((ref) {
   final profiles = Profiles.open(ref.watch(appDirProvider).requireValue);
   ref.onDispose(profiles.close);
+  for (final id in profiles.keepOnlyFirst()) {
+    unawaited(ref.read(remindersProvider).cancelProfile(id));
+  }
   return profiles;
 });
 
@@ -417,7 +421,7 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
 
 /// The home-screen widget shows today's calories only on a single-profile phone whose owner
 /// turned it on (Me tab): it is visible without the PIN.
-bool widgetShowsKcal(Profiles p) => p.biometricAllowed && p.setting('widget_kcal') == '1';
+bool widgetShowsKcal(Profiles p) => p.setting('widget_kcal') == '1';
 
 /// Pushes today's numbers to the Android widget (TodayWidget.kt); empty = hidden.
 Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
@@ -566,6 +570,23 @@ Future<bool> authenticateFingerprint(WidgetRef ref, String reason) async {
     return await ref.read(localAuthProvider).authenticate(localizedReason: reason, biometricOnly: true);
   } on Object {
     return false;
+  }
+}
+
+/// Web OAuth client id from Google Cloud Console; empty = no Google sign-in in this build.
+const googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+
+// shortcut: Android only; iOS also needs its own clientId and URL scheme in Info.plist.
+final _googleReady = GoogleSignIn.instance.initialize(serverClientId: googleClientId);
+
+/// Shows Google's account picker; null on cancel or error.
+Future<GoogleSignInAccount?> signInWithGoogle() async {
+  try {
+    await _googleReady;
+    return await GoogleSignIn.instance.authenticate();
+  } on Object catch (e) {
+    debugPrint('Google sign-in: $e');
+    return null;
   }
 }
 

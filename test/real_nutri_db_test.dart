@@ -38,6 +38,9 @@ void main() {
     expect(int.parse(db.select("SELECT value FROM meta WHERE key = 'data_version'").single['value'] as String),
         greaterThanOrEqualTo(nutriDataVersion));
     expect(count("SELECT count(*) FROM docs"), greaterThan(40));
+    for (final (label, _) in staples.values) {
+      expect(db.select('SELECT 1 FROM foods WHERE name = ?', [label]), isNotEmpty, reason: 'staple row $label');
+    }
     expect(count('SELECT count(*) FROM condition_avoid WHERE condition_id = 3'), greaterThan(50));
     db.close();
   }, skip: skip);
@@ -124,6 +127,30 @@ void main() {
     final lines = (r.card! as ConfirmCard).lines;
     expect(lines[0], startsWith('Banana ·'));
     expect(lines[2], matches(RegExp(r'^Grapes? · 100 g')));
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
+  test('phone test: "rice with chicken liver in cream" is cooked rice, liver and cream, not ice cream', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final tools = AgentTools(db, user);
+    List<String> log(String items) => (tools.run('log_meal', {'items': items}).card! as ConfirmCard).lines;
+
+    final meal = log('rice with chicken liver in cream');
+    expect(meal, hasLength(3), reason: '"in cream" was silently dropped');
+    expect(meal[0], contains('cooked'));
+    expect(meal[1], startsWith('Chicken liver'));
+    expect(meal[2], startsWith('Cream, fluid'));
+    expect(log('cream').single, isNot(contains('ice cream')));
+    expect(log('ice cream').single, startsWith('Ice cream'));
+    expect(log('sour cream').single, startsWith('Sour cream'));
+    // Approximate amounts keep the amount, not a default serving.
+    expect(log('roughly 200g rice').single, contains('200 g'));
+    expect(log('about 100 g bread').single, contains('100 g'));
+    expect(log('2 eggs').single, contains('100 g'));
+    expect(log('buckwheat').single, contains('cooked'));
     db.close();
     user.close();
     tmp.deleteSync(recursive: true);

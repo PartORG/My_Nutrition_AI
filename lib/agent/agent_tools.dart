@@ -606,8 +606,9 @@ class AgentTools {
         : _mealTypes.firstWhere(items.toLowerCase().contains, orElse: () => '');
     items = mealFoods(items);
     if (items.isEmpty) return ToolResult.error('the user did not say what they ate; ask them');
-    // "overnight oats with banana" is one recipe; "chicken with rice" is two foods.
-    final parts = _isDishName(items) ? [items] : _split(items);
+    // "overnight oats with banana" is one recipe; "chicken with rice" is two foods,
+    // and so is "liver in cream" (else cream is silently dropped).
+    final parts = _isDishName(items) ? [items] : _split(items.replaceAll(RegExp(r'\bin\b', caseSensitive: false), ','));
     final parsed = [for (final item in parts) _portion(item)];
     final found = [for (final p in parsed) ?p];
     final missing = [for (final (i, p) in parsed.indexed) if (p == null) parts[i]];
@@ -658,6 +659,9 @@ class AgentTools {
 
   /// "2 eggs", "200 g greek yogurt", "3 slices of pizza", "lasagna".
   ({String label, double grams, Nutrients values, bool estimated, int? recipeId})? _portion(String item) {
+    // "about 200 g rice" is 200 g, not a default serving of "about 200 g rice". Items arrive
+    // in English: the model translates, and route() only handles English.
+    item = item.replaceAll(RegExp(r'(?:\b(?:about|around|roughly|approx(?:imately)?|maybe|some|almost|nearly)\b|~)\.?\s*', caseSensitive: false), '');
     // "grapes 100 gramms" → "100 g grapes"
     item = item.trim().replaceFirstMapped(
         RegExp(r'^([^\d]+?)\s*[-:]?\s*(\d+(?:[.,]\d+)?)\s*([a-z]*)\.?$', caseSensitive: false),
@@ -683,6 +687,13 @@ class AgentTools {
         };
     Nutrients scale(Nutrients per100, double g) => per100.map((k, v) => MapEntry(k, v * g / 100));
 
+    if (staples[name.trim().toLowerCase()] case (final label, final serving)) {
+      if (nutri.select('SELECT * FROM foods WHERE name = ?', [label]).firstOrNull case final f?) {
+        final g = grams(serving ?? (f['serving_g'] as num?)?.toDouble());
+        return (label: label, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
+      }
+    }
+
     // The candidate whose name the user said most completely wins: "banana" is
     // the food, not "Overnight oats with banana"; "lentil soup" is the recipe,
     // "chicken caesar salad" the dish. Ties: dish, then recipe, then food.
@@ -692,7 +703,7 @@ class AgentTools {
       if (unit.isEmpty) // "200 g of shakshuka" is weighed food, not servings of a recipe
         for (final id in _ftsIds(nutri, 'recipes_fts', name, limit: 3))
           ('recipe', id, _summary(id).title),
-      for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 3))
+      for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 10)) // search ranks "Cream Puff" above "Cream, fluid"
         ('food', id, nutri.select('SELECT name FROM foods WHERE id = ?', [id]).single['name'] as String),
     ];
     // The plain food first: "banana" is "Banana", not "Banana chips, banana",
@@ -707,11 +718,22 @@ class AgentTools {
     if (plain != null) candidates.insert(0, ('food', plain['id'] as int, name));
     if (candidates.isEmpty) return null;
     final said = _words(name);
-    double coverage(String label) {
+    double share(Iterable<String> words, Set<String> among) =>
+        words.isEmpty ? 0 : words.where(among.contains).length / words.length;
+    // Best first: has every word the user said ("chicken liver" is not "Chicken breast"); its main
+    // part, before a comma, is what they said ("cream" is "Cream, fluid", not "ice cream");
+    // then the fewest unsaid words. Ties keep the earlier one: dish, then recipe, then food.
+    List<double> score(String label) {
       final words = _words(label);
-      return words.isEmpty ? 0 : words.where(said.contains).length / words.length;
+      return [share(said, words), share(_words(label.split(RegExp(r'[,(]')).first), said), share(words, said)];
     }
-    final (kind, id, _) = candidates.reduce((best, c) => coverage(c.$3) > coverage(best.$3) ? c : best);
+    bool better(List<double> a, List<double> b) {
+      for (var i = 0; i < a.length; i++) {
+        if (a[i] != b[i]) return a[i] > b[i];
+      }
+      return false;
+    }
+    final (kind, id, _) = candidates.reduce((best, c) => better(score(c.$3), score(best.$3)) ? c : best);
 
     switch (kind) {
       case 'dish':
@@ -931,6 +953,37 @@ class AgentTools {
 typedef FoodChoice = ({String kind, Object? id, String label, double? servingG, Nutrients per100, bool estimated});
 
 /// Splits "2 eggs, toast and a coffee" into items.
+/// Everyday words with no plain row in nutri.db, where search picks something odd ("bread" →
+/// pan dulce, "cream" → whipped topping, "buckwheat" → raw groats): the row people mean, and a
+/// realistic serving (null = the row's own). test/real_nutri_db_test.dart checks every row exists.
+const staples = <String, (String, double?)>{
+  'bread': ('White Bread', 30),
+  'cream': ('Cream, fluid, light (coffee cream or table cream)', null),
+  'oil': ('Oil, vegetable, blend', 14),
+  'fish': ('Fish, cod, Atlantic, cooked, dry heat', null),
+  'salad': ('Tossed salad', 150),
+  'sausage': ('Sausage, pork, grilled, with no added fat, composite', 75),
+  'sausages': ('Sausage, pork, grilled, with no added fat, composite', 75),
+  'jam': ('Jams and preserves', null),
+  'nuts': ('Mixed nuts', 30),
+  'burger': ('Hamburger', 150),
+  'hamburger': ('Hamburger', 150),
+  'fries': ('French fries', 120),
+  'french fries': ('French fries', 120),
+  'cookie': ('Cookies, chocolate chip, commercially prepared, soft-type', 15),
+  'cookies': ('Cookies, chocolate chip, commercially prepared, soft-type', 15),
+  'cake': ('Cake, sponge, prepared from recipe', 80),
+  'honey': ('Honey', 21), // the row's own serving is a 339 g jar
+  'egg': ('Egg', 50), // no serving of its own: 100 g would be two eggs
+  'eggs': ('Egg', 50),
+  // Eaten cooked: the plain rows are dry groats.
+  'buckwheat': ('Buckwheat groats, roasted, cooked', null),
+  'rice': ('Rice, white, medium-grain, enriched, cooked', null),
+  'white rice': ('Rice, white, medium-grain, enriched, cooked', null),
+  'cooked rice': ('Rice, white, medium-grain, enriched, cooked', null),
+  'boiled rice': ('Rice, white, medium-grain, enriched, cooked', null),
+};
+
 List<String> _split(String s) => [
       for (final p in s.split(RegExp(r',|\band\b|\+|;|\bwith\b', caseSensitive: false)))
         if (p.trim().isNotEmpty) p.trim()

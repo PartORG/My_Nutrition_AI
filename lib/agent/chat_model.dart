@@ -17,6 +17,10 @@ typedef Turn = ({bool isUser, String text});
 /// The chat model's context window (getActiveModel's maxTokens).
 const llmContextTokens = 4096;
 
+/// Gemma 4 thinks before answering (build with --dart-define=AGENT_THINKING=true).
+/// Off by default: it costs seconds per turn on a phone; measure it with the eval first.
+const agentThinking = bool.fromEnvironment('AGENT_THINKING');
+
 /// One live conversation. Keeping it open is what makes turns fast: the tool
 /// declarations are processed once, not on every message (M0: 2.4–4 s vs 8 s).
 abstract interface class ChatSession {

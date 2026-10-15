@@ -119,6 +119,26 @@ void main() {
     expect(find.text('over by 747 mg'), findsNothing);
   });
 
+  testWidgets('Today: a wrongly logged food is changed in place, amount kept', (tester) async {
+    await pumpApp(tester, const HomeScreen(name: 'Anna'));
+    final brown = data.tools.searchFood('brown rice').firstWhere((f) => f.kind == 'food');
+    data.tools.logFood(brown, 150, 'lunch');
+    data.changed();
+    await tester.pump();
+
+    await toEnd(tester);
+    await tester.tap(find.text('brown rice, cooked'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Change food'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('white rice, cooked')); // near matches of the old name, at once
+    await tester.pumpAndSettle();
+
+    final m = mealsOn(data.user, DateTime.now()).single;
+    expect((m.label, m.grams, m.type), ('white rice, cooked', 150.0, 'lunch'));
+    expect(find.text('brown rice, cooked'), findsNothing);
+  });
+
   testWidgets('Today: day-one welcome; "Log it" opens the Log tab', (tester) async {
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
     expect(find.text('Log your first meal'), findsOneWidget);

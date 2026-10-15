@@ -10,6 +10,7 @@ import 'chat_model.dart';
 import 'crisis.dart';
 import 'memory.dart';
 import 'recipe_translation.dart';
+import 'tool_call_parser.dart';
 import 'tools.dart';
 
 /// One row of the chat as the UI shows it.
@@ -82,16 +83,19 @@ class Agent extends ChangeNotifier {
   /// system prompt, tool declarations, replayed history and every turn since.
   int _sessionTokens = 0;
 
-  /// Room kept free for one turn's output: up to 3 tool calls, their results and
-  /// a reply of at most 256 tokens. The conversation is recreated before it runs out.
-  static const _turnRoom = 1024;
+  /// Room kept free for one turn's output: up to 3 rounds of tool calls, their results and
+  /// a reply of at most 256 tokens (1024 with thinking). The conversation is recreated before it runs out.
+  // shortcut: thinking's room is a guess, not measured on the phone; check agent_latency_test before shipping it.
+  static const _turnRoom = agentThinking ? 2048 : 1024;
 
   /// Context lines as the live conversation last saw them, by label ("Eaten today"):
   /// a message carries only the lines that changed since.
   final _sentContext = <String, String>{};
 
-  /// Tool calls allowed in one turn, so a confused model can't loop forever.
+  /// Rounds of tool calls allowed in one turn, so a confused model can't loop forever.
   static const _maxToolCalls = 3;
+
+  static final _toolNames = {for (final t in agentTools) t.name};
 
   /// Each day is a new chat: earlier days stay stored on the phone and come back
   /// through episodic memory ("what did I cook yesterday?"), not in the window.
@@ -225,9 +229,9 @@ class Agent extends ChangeNotifier {
   }
 
   Future<void> _runTurn(Stream<ModelEvent> stream, String said) async {
-    for (var calls = 0;; calls++) {
+    for (var round = 0;; round++) {
       ModelItem? reply;
-      ToolCall? call;
+      final calls = <ToolCall>[];
       await for (final e in stream) {
         switch (e) {
           case TextChunk(:final text):
@@ -235,36 +239,48 @@ class Agent extends ChangeNotifier {
             reply.text += text;
             notifyListeners();
           case ToolCall():
-            call = e;
+            calls.add(e); // several when one message asks for several things
         }
       }
-      if (call != null) _sessionTokens += await _session!.countTokens('${call.name} ${jsonEncode(call.args)}');
+      // A call the model wrote as text the plugin couldn't parse: run it, don't show it.
+      if (calls.isEmpty && reply != null) {
+        if (parseToolCall(reply.text, _toolNames) case (:final name, :final args)) {
+          items.remove(reply);
+          reply = null;
+          calls.add(ToolCall(name, args));
+        }
+      }
+      for (final call in calls) {
+        _sessionTokens += await _session!.countTokens('${call.name} ${jsonEncode(call.args)}');
+      }
       if (reply != null && reply.text.trim().isNotEmpty) {
         _sessionTokens += await _session!.countTokens(reply.text);
         _store('model', reply.text.trim(), _now());
       }
-      if (call == null) return;
-      if (call.name == 'reply' || calls >= _maxToolCalls) {
-        final text = '${call.args['text'] ?? ''}'.trim();
-        if (text.isNotEmpty) {
-          items.add(ModelItem(text));
-          _store('model', text, _now());
-        }
+      if (calls.isEmpty) return;
+      if (round >= _maxToolCalls) {
+        items.add(ErrorItem()); // still calling tools: a confused model, not an answer
         return;
       }
-      final result = tools.run(call.name, call.args, said: said);
-      // Recorded so a chat can be debugged later ("did it really call save?").
-      _store('tool', '${call.name} ${call.args} -> ${result.card is ConfirmCard ? 'confirm card' : result.forModel.keys.join(',')}', _now());
-      _sessionTokens += await _session!.countTokens(result.forModel.toString());
-      if (_cardSaysItAll(call.name, result)) {
-        // No second model pass (M0: a written answer costs seconds); a fixed line instead.
-        items.add(CardItem(result.card!, caption: true));
-        await _session!.stageToolResult(call.name, result.forModel);
-        return;
+      final results = [for (final call in calls) (call: call, result: tools.run(call.name, call.args, said: said))];
+      final saidAll = results.every((r) => _cardSaysItAll(r.call.name, r.result));
+      for (final (:call, :result) in results) {
+        // Recorded so a chat can be debugged later ("did it really call save?").
+        _store('tool', '${call.name} ${call.args} -> ${result.card is ConfirmCard ? 'confirm card' : result.forModel.keys.join(',')}', _now());
+        _sessionTokens += await _session!.countTokens(result.forModel.toString());
+        // No second model pass when the cards say it all (M0: a written answer costs seconds); a fixed line instead.
+        if (result.card != null) items.add(CardItem(result.card!, caption: saidAll));
       }
-      if (result.card != null) items.add(CardItem(result.card!));
       notifyListeners();
-      stream = _session!.sendToolResult(call.name, result.forModel);
+      final last = results.removeLast();
+      for (final (:call, :result) in results) {
+        await _session!.stageToolResult(call.name, result.forModel);
+      }
+      if (saidAll) {
+        await _session!.stageToolResult(last.call.name, last.result.forModel);
+        return;
+      }
+      stream = _session!.sendToolResult(last.call.name, last.result.forModel);
     }
   }
 

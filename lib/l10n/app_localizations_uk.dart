@@ -12,10 +12,17 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appTitle => 'MyFoodMind';
 
   @override
-  String get whoIsEating => 'Хто їсть?';
+  String get addProfile => 'Створити профіль';
 
   @override
-  String get addProfile => 'Додати профіль';
+  String get googleWrongAccount =>
+      'Це не той обліковий запис Google, з яким створено профіль.';
+
+  @override
+  String get signInWithGoogle => 'Увійти через Google';
+
+  @override
+  String get continueWithGoogle => 'Продовжити з Google';
 
   @override
   String get profileName => 'Ім\'я';
@@ -37,7 +44,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get pinHint =>
-      'PIN захищає цей профіль на спільному телефоні. Якщо ви його забудете, профіль можна буде лише видалити.';
+      'PIN відкриває застосунок, коли відбиток не спрацьовує. Якщо ви його забудете, профіль можна буде лише видалити.';
 
   @override
   String get create => 'Створити';
@@ -567,8 +574,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get fingerprintTitle => 'Розблокування відбитком пальця';
 
   @override
-  String get fingerprintHint =>
-      'Лише поки це єдиний профіль на телефоні: Android не може визначити, чий це відбиток.';
+  String get fingerprintHint => 'Відкривайте відбитком пальця замість PIN.';
 
   @override
   String fingerprintReason(String name) {
@@ -1010,6 +1016,9 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get editMeal => 'Змінити запис';
+
+  @override
+  String get changeFood => 'Змінити продукт';
 
   @override
   String get appearance => 'Вигляд';

@@ -31,6 +31,8 @@ const profilesDbMigrations = <String>[
   'ALTER TABLE profiles ADD COLUMN biometric INTEGER NOT NULL DEFAULT 0;',
   // v3 (M4): per-phone settings (the developer tier switch lives here).
   'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);',
+  // v4: one profile per phone; optionally linked to a Google account.
+  'ALTER TABLE profiles ADD COLUMN google_email TEXT;',
 ];
 
 /// Wrong PINs allowed before lockout starts.
@@ -75,21 +77,27 @@ class Profiles {
 
   String userDbPath(int id) => '${_root.path}/$id/user.db';
 
+  /// The phone's one profile; null before sign-up.
+  ProfileInfo? get owner => list().firstOrNull;
+
+  /// Phones from before v0.7 may hold several profiles: keeps the oldest and
+  /// deletes the rest with all their files. Returns the deleted ids.
+  List<int> keepOnlyFirst() => [for (final p in list().skip(1)) p.id]..forEach(delete);
+
   /// Creates the profile row, its folder and its migrated user.db.
-  Future<int> create(String name, String pin) async {
+  /// [googleEmail] links a Google account that can unlock it instead of the PIN.
+  Future<int> create(String name, String pin, {String? googleEmail}) async {
     name = name.trim();
     if (name.isEmpty) throw ArgumentError('name is empty');
     if (!isValidPin(pin)) throw ArgumentError('PIN must be 4-6 digits');
+    if (owner != null) throw StateError('this phone already has a profile');
     final salt = newSalt();
     final hash = await _hash(pin, salt);
     _db.execute(
-      'INSERT INTO profiles (name, pin_hash, pin_salt, created_at) VALUES (?, ?, ?, ?)',
-      [name, hash, salt, DateTime.now().millisecondsSinceEpoch],
+      'INSERT INTO profiles (name, pin_hash, pin_salt, created_at, google_email) VALUES (?, ?, ?, ?, ?)',
+      [name, hash, salt, DateTime.now().millisecondsSinceEpoch, googleEmail?.toLowerCase()],
     );
     final id = _db.lastInsertRowId;
-    // A second person on the phone: Android can't tell whose fingerprint it
-    // is, so fingerprint unlock goes off for everyone.
-    if (list().length > 1) _db.execute('UPDATE profiles SET biometric = 0');
     Directory('${_root.path}/$id').createSync(recursive: true);
     openUserDb(userDbPath(id)).close();
     return id;
@@ -128,20 +136,18 @@ class Profiles {
   void setSetting(String key, String value) =>
       _db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
 
-  /// Fingerprint unlock is offered only while the phone has one profile.
-  bool get biometricAllowed => list().length == 1;
-
   bool biometricEnabled(int id) =>
-      biometricAllowed &&
       _db.select('SELECT biometric FROM profiles WHERE id = ?', [id]).single['biometric'] == 1;
 
-  void setBiometric(int id, bool on) {
-    if (on && !biometricAllowed) throw StateError('fingerprint unlock needs a single-profile phone');
-    _db.execute('UPDATE profiles SET biometric = ? WHERE id = ?', [on ? 1 : 0, id]);
-  }
+  void setBiometric(int id, bool on) =>
+      _db.execute('UPDATE profiles SET biometric = ? WHERE id = ?', [on ? 1 : 0, id]);
 
-  /// A successful fingerprint also clears PIN failures, like a correct PIN.
-  void unlockedByBiometric(int id) =>
+  /// The linked Google account (lower case); null = PIN and fingerprint only.
+  String? googleEmail(int id) =>
+      _db.select('SELECT google_email FROM profiles WHERE id = ?', [id]).single['google_email'] as String?;
+
+  /// A fingerprint or the linked Google account also clears PIN failures, like a correct PIN.
+  void unlockedOtherwise(int id) =>
       _db.execute('UPDATE profiles SET failed_attempts = 0, locked_until = 0 WHERE id = ?', [id]);
 
   /// Episodic memory index; lives outside profiles/ so backup skips it.

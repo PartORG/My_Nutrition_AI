@@ -243,16 +243,37 @@ void main() {
     expect(model.sent.length, 31);
   });
 
-  test('the reply tool shows its text; a looping model is cut off', () async {
-    model.script.add([ToolCall('reply', {'text': 'Hello there!'})]);
-    await agent.send('Hello');
-    expect((agent.items.last as ModelItem).text, 'Hello there!');
+  test('a general question is answered in plain text; a looping model is cut off with an error', () async {
+    model.script.add([TextChunk('Canberra '), TextChunk('is the capital.')]);
+    await agent.send('What is the capital of Australia?');
+    expect((agent.items.last as ModelItem).text, 'Canberra is the capital.');
 
     // Errors go back to the model (cards don't), so a confused model could loop.
     model.script.addAll(List.generate(10, (_) => [ToolCall('lookup_nutrition', {'food': 'unicorn'})]));
     await agent.send('unicorn?');
     expect(model.toolResults.length, 3);
+    expect(agent.items.last, isA<ErrorItem>(), reason: 'never silence');
     expect(agent.busy, isFalse);
+  });
+
+  test('two requests in one message: both tools run, results go back together', () async {
+    model.script.addAll([
+      [ToolCall('log_meal', {'items': '2 eggs'}), ToolCall('lookup_nutrition', {'food': 'unicorn'})],
+      [TextChunk('Tap Save for the eggs; I found nothing on unicorns.')],
+    ]);
+    await agent.send('Breakfast was 2 eggs, and how much protein is in a unicorn?');
+    expect(agent.items.whereType<CardItem>().single.caption, isFalse, reason: 'the model still speaks');
+    expect([for (final r in model.toolResults) r.$1], ['log_meal', 'lookup_nutrition']);
+    expect((agent.items.last as ModelItem).text, contains('Tap Save'));
+  });
+
+  test('a tool call written as text runs instead of being shown', () async {
+    model.script.addAll([
+      [TextChunk('```json\n{"name": "remember_fact", "parameters": {"fact": "hates olives"}}\n```')],
+    ]);
+    await agent.send('Olives are disgusting');
+    expect(agent.items.whereType<ModelItem>(), isEmpty);
+    expect(agent.items.last, isA<CardItem>());
   });
 
   test('a model error shows an error item and the next message reopens', () async {

@@ -158,33 +158,41 @@ void main() {
       p.close();
     });
 
-    test('delete removes the row and every file of that profile only', () async {
+    test('delete removes the row and every file of the profile', () async {
       final p = Profiles.open(tmp);
       final anna = await p.create('Anna', '1234');
-      final bob = await p.create('Bob', '5678');
       File(p.vectorsDbPath(anna))
         ..parent.createSync(recursive: true)
         ..writeAsStringSync('quotes of Anna');
       p.delete(anna);
       expect(File(p.vectorsDbPath(anna)).existsSync(), isFalse, reason: 'vectors quote her messages');
-      expect(p.list().map((e) => e.name), ['Bob']);
+      expect(p.owner, isNull);
       expect(Directory('${tmp.path}/profiles/$anna').existsSync(), isFalse);
-      expect(File(p.userDbPath(bob)).existsSync(), isTrue);
       p.close();
     });
 
-    test('fingerprint unlock only while the phone has one profile', () async {
+    test('one profile per phone, optionally linked to Google', () async {
       final p = Profiles.open(tmp);
-      final anna = await p.create('Anna', '1234');
-      expect(p.biometricAllowed, isTrue);
+      final anna = await p.create('Anna', '1234', googleEmail: 'Anna@Gmail.com');
+      expect(p.googleEmail(anna), 'anna@gmail.com');
+      await expectLater(p.create('Bob', '5678'), throwsStateError);
       p.setBiometric(anna, true);
       expect(p.biometricEnabled(anna), isTrue);
-      final bob = await p.create('Bob', '5678');
-      expect(p.biometricAllowed, isFalse);
-      expect(p.biometricEnabled(anna), isFalse, reason: 'switched off when Bob joined');
-      expect(() => p.setBiometric(bob, true), throwsStateError);
-      p.delete(bob);
-      expect(p.biometricEnabled(anna), isFalse, reason: 'stays off until Anna turns it on again');
+      p.close();
+    });
+
+    test('an old multi-profile phone keeps only the oldest profile', () async {
+      final p = Profiles.open(tmp);
+      final anna = await p.create('Anna', '1234');
+      // Rows as an older version left them.
+      p.db.execute("INSERT INTO profiles (name, pin_hash, pin_salt, created_at) VALUES ('Bob', x'00', x'00', 0)");
+      final bob = p.db.lastInsertRowId;
+      Directory('${tmp.path}/profiles/$bob').createSync(recursive: true);
+      expect(p.keepOnlyFirst(), [bob]);
+      expect(p.owner, (id: anna, name: 'Anna'));
+      expect(Directory('${tmp.path}/profiles/$bob').existsSync(), isFalse);
+      expect(File(p.userDbPath(anna)).existsSync(), isTrue);
+      expect(p.keepOnlyFirst(), isEmpty);
       p.close();
     });
 

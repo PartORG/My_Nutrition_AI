@@ -1,5 +1,6 @@
 /// Labelled routing set for the M0 model comparison and the M2 regression gate.
-/// `tool`: expected tool ('reply' also covers a plain-text answer) or 'crisis' (pre-model filter).
+/// `tool`: expected tool, 'a+b' when one message needs both, 'reply' for a plain-text
+/// answer (no tool), or 'crisis' (pre-model filter).
 /// `args`: each expected value must appear (case-insensitive) in the actual arg.
 typedef Q = ({String q, String tool, Map<String, String> args});
 
@@ -128,7 +129,7 @@ const List<Q> agentQueries = [
   (q: 'Open the live camera', tool: 'open_camera', args: {'mode': 'live'}),
   (q: 'What can I cook from what is in my shopping cart? I will show you', tool: 'open_camera', args: {}),
 
-  // reply — 8
+  // reply: a plain answer, no tool — 17
   (q: 'Hello!', tool: 'reply', args: {}),
   (q: 'Thanks, that was helpful', tool: 'reply', args: {}),
   (q: 'How are you?', tool: 'reply', args: {}),
@@ -141,6 +142,27 @@ const List<Q> agentQueries = [
   (q: 'How do I sharpen a kitchen knife?', tool: 'reply', args: {}),
   (q: 'Translate "good morning" into Spanish', tool: 'reply', args: {}),
   (q: 'Чому небо блакитне?', tool: 'reply', args: {}),
+
+  (q: 'What is protein?', tool: 'reply', args: {}),
+  (q: 'How long should I boil an egg for a runny yolk?', tool: 'reply', args: {}),
+  (q: 'What does al dente mean?', tool: 'reply', args: {}),
+  (q: 'Was ist der Unterschied zwischen Backpulver und Natron?', tool: 'reply', args: {}),
+  (q: 'Comment faire une vinaigrette ?', tool: 'reply', args: {}),
+
+  // two requests in one message — 4
+  (q: 'I ate two eggs, how much protein is in an egg?', tool: 'log_meal+lookup_nutrition', args: {'items': 'egg'}),
+  (q: 'Log a banana for breakfast and show my totals for today', tool: 'log_meal+nutrition_status', args: {'items': 'banana'}),
+  (q: "I'm allergic to peanuts. Suggest a breakfast.", tool: 'set_allergen+search_recipes', args: {'allergen': 'peanut'}),
+  (q: 'I just had a coffee with milk, and my glucose is 6.1', tool: 'log_meal+log_health', args: {'items': 'coffee', 'value': '6.1'}),
+
+  // negation and uncertainty — 7
+  (q: 'I ate peanuts today', tool: 'log_meal', args: {'items': 'peanut'}),
+  (q: 'I might be allergic to shellfish', tool: 'reply', args: {}),
+  (q: "I don't like mushrooms", tool: 'remember_fact', args: {'fact': 'mushroom'}),
+  (q: 'A dinner recipe without any nuts please', tool: 'search_recipes', args: {'query': 'nut'}),
+  (q: 'I think I ate about 200 g of rice', tool: 'log_meal', args: {'items': 'rice'}),
+  (q: "I'm not vegetarian anymore", tool: 'set_allergen', args: {'allergen': 'vegetarian', 'remove': 'true'}),
+  (q: 'Я більше не їм глютен', tool: 'set_allergen', args: {'allergen': 'gluten'}),
 
   // crisis — 4 (handled by isCrisis before the model)
   (q: "I don't want to live anymore", tool: 'crisis', args: {}),

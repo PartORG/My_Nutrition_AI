@@ -11,14 +11,14 @@ by editing this file deliberately, never by silently diverging in code.
 | Goal | Commercial, **Android-first** (iOS later), English v1 with `flutter_localizations` + `.arb` from day one |
 | Promise | All AI and data on the phone. No analytics/crash SDK — Play vitals + RevenueCat dashboard only |
 | Min device | Android 10 (API 29)+, arm64, **≥6 GB RAM** (decided 2026-10-04 for Gemma 4 E2B) — Play device-catalog exclusion + in-app RAM check |
-| Audience | Declared 18+. Child profiles are created by a parent and use manual targets only |
+| Audience | Declared 18+. One profile per phone (v0.7.0), so no child profiles; under 18 → manual targets only |
 | Privacy policy / ToS | GitHub Pages: `https://partorg.github.io/myfoodmind/` (includes Gemma use-policy terms for EmbeddingGemma; Gemma 4 is Apache 2.0) |
 
-## Tiers — one subscription per phone, unlocks all profiles
+## Tiers — one subscription per phone
 
 | Tier | Includes |
 |---|---|
-| **Free** | AI chat **30 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, **weekly/monthly dashboard** (calories per day, averages, week review, weight trend), multiple profiles, meal reminders, **History: last 30 days** |
+| **Free** | AI chat **30 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, **weekly/monthly dashboard** (calories per day, averages, week review, weight trend), fingerprint/PIN lock, meal reminders, **History: last 30 days** |
 | **Basic** | Unlimited chat, **meal plan + shopping list**, **water reminders**, micronutrients, streaks, **History: 90 days** |
 | **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets**. **History: 240 days** |
 | **Pro** | + Camera: photo / live video / barcode → review & edit screen → "What can I cook?" or "Log this meal" (user confirms portion, values shown as ≈). **Year dashboard**. **History: 365 days**. **7-day free trial** (Play offer) |
@@ -98,7 +98,7 @@ medical notes are rendered as cards from the database, never as model-generated 
 ```
 nutri.db                   shared, read-only, replaced whole (meta.schema_version range)
 models/                    LLM + embedding, not backed up (the 4.6 MB detector ships as an app asset)
-profiles.db                profile list, PIN hashes, chat counter
+profiles.db                the phone's one profile (PIN hash, fingerprint flag, linked Google email), chat counter, settings
 profiles/<id>/user.db      private data, PRAGMA user_version migrations (add-only, one transaction)
 vectors/<id>.db            episodic embeddings, not backed up, rebuilt after restore
 ```
@@ -107,8 +107,9 @@ Backup is **include-only** (`android/app/src/main/res/xml/`): `profiles.db` + `p
 in the app folder — nutri.db, models, flutter_gemma's ~800 MB GPU caches, vectors — stays out, because
 going over Auto Backup's 25 MB quota silently stops all backup.
 
-- Profiles: PIN (4–6 digits, salted hash) + biometric; unlocked until 5 min in background;
-  growing lockout after 5 wrong tries; forgot PIN = delete profile; monthly doctor-export reminder.
+- Profile: **one per phone** (v0.7.0). Fingerprint, PIN (4–6 digits, salted hash) as the fallback, or the
+  linked Google account; unlocked until 5 min in background; growing lockout after 5 wrong tries; forgot PIN =
+  delete profile; monthly doctor-export reminder.
 - Delivery (decided M7): `nutri.db` bundled as an asset until real data exists; EmbeddingGemma bundled in the
   app; Gemma 4 downloaded once from Hugging Face on the user's tap (2.2 GB compressed is over Play's 1.5 GB
   per-asset-pack limit). Dev: models via `adb push` still win.
@@ -219,7 +220,8 @@ Decisions from these numbers:
 - Voice: **on-device recognition only**; if the phone has no offline speech pack the app explains how to add
   it instead of falling back to online recognition (keeps "nothing leaves the phone").
 - Fingerprint: **only while the phone has one profile** (user decision: Android can't tell whose finger it
-  is); adding a second profile turns it off for everyone. profiles.db v2.
+  is); adding a second profile turns it off for everyone. profiles.db v2. *Superseded in v0.7.0: one profile
+  per phone, fingerprint always available.*
 - Accessibility: 200 % text on a 360 dp phone has no overflow (`test/accessibility_test.dart`, found and fixed
   4); chat bubbles and nutrient tiles read as whole sentences; progress bars carry spoken labels.
 - Not verified on the phone yet: reminders firing, voice recognition, fingerprint prompt.
@@ -356,3 +358,33 @@ Decision (user, 2026-10-06): **good recognition in both photo and live mode**, i
    classes (CC BY boxes; check image licences), own meal photos; UEC FOOD-256 for experiments only until its
    licence is checked; auto-labelling with OWLv2 / Grounding DINO (Apache 2.0) on the PC, distilled into the
    small model. Open question: training GPU (local NVIDIA vs Colab/Kaggle).
+
+## v0.7.0 (2026-10-15)
+
+Decisions (user, 2026-10-15):
+- **One profile per phone.** Fingerprint can't tell people apart, so multiple profiles are gone and fingerprint
+  unlock is always offered, with the PIN as the fallback. On upgrade the oldest profile is kept and the others
+  are **deleted** with their files and reminders (`Profiles.keepOnlyFirst`). profiles.db v4.
+- **Google sign-in is optional**, identity only, no backend (`google_sign_in`, build flag `GOOGLE_CLIENT_ID`).
+  "Continue with Google" fills the name and links the email; the lock screen then offers "Sign in with Google"
+  for that account only. Known risk: on the owner's phone Google usually signs in without a password, so a
+  linked account lets anyone holding the unlocked phone open the app and skips the PIN lockout.
+- **Agent prompt** rewritten in sections (language, context, intents, several requests, distinctions, saving,
+  safety). The `reply` tool is gone: general questions are answered in plain, streamed text. Several tool
+  calls in one response all run (results go back together); a tool call written as text runs instead of being
+  shown; a model still calling tools after 3 rounds shows an error instead of nothing. The v0.6 prompt stays in
+  `integration_test/legacy_prompt.dart` as the eval baseline (`PROMPT=legacy`) until the new one has won on
+  the phone. Thinking mode behind `AGENT_THINKING` (output cap 1024, turn room 2048, not measured yet).
+- **Eval:** 146 queries; new groups for general questions, two requests in one message ('a+b', both must be
+  called) and negation/uncertainty. TOOL_CHOICE defaults to `auto`, as in the app.
+- **Food matching** (phone report: "rice with chicken liver in cream" logged ice cream): a candidate must
+  contain every word said and its main name (before a comma) must be what was said; "in" splits items;
+  "about/roughly/~" keep the amount; foods search looks at 10 candidates, not 3. `staples` in
+  `agent_tools.dart` pins ~20 everyday words with no plain row to the row people mean (cooked rice and
+  buckwheat, white bread, light cream, an egg = 50 g, honey = 21 g); `test/real_nutri_db_test.dart` checks the
+  rows exist.
+- **Change food** on Today's meal editor: swap a logged entry for another food (`replaceMeal`), keeping amount,
+  time and meal.
+
+Not verified on the phone: Google sign-in, the new prompt's accuracy and latency vs the legacy one, thinking.
+The chat's confirmation card still can't swap a food before Save (grams only).

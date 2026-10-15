@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../agent/agent_tools.dart' show FoodChoice;
 import '../app_state.dart';
 import '../data/diary.dart';
 import '../billing/billing.dart';
@@ -694,7 +695,7 @@ class _MealGroup extends StatelessWidget {
   }
 }
 
-/// Fix a logged meal: amount (nutrition scales with it) and which meal it was.
+/// Fix a logged meal: which food it was, the amount (nutrition scales with it) and which meal.
 class _EditMealSheet extends StatefulWidget {
   const _EditMealSheet({required this.meal, required this.data});
   final MealEntry meal;
@@ -725,9 +726,23 @@ class _EditMealSheetState extends State<_EditMealSheet> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(l.editMeal, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 4),
-        Text(m.label),
+        Row(children: [
+          Expanded(child: Text(m.label)),
+          TextButton.icon(
+            icon: const Icon(Icons.swap_horiz),
+            label: Text(l.changeFood),
+            onPressed: () async {
+              final food = await showModalBottomSheet<FoodChoice>(
+                  context: context, isScrollControlled: true, builder: (_) => _ChangeFoodSheet(meal: m, data: widget.data));
+              if (food == null || !context.mounted) return;
+              replaceMeal(widget.data.user, m.id, food);
+              updateMeal(widget.data.user, m.id, type: _type);
+              Navigator.pop(context, true);
+            },
+          ),
+        ]),
         const SizedBox(height: 12),
-        // Quick adds have no grams: only the meal can change.
+        // Quick adds have no grams: only the food and the meal can change.
         if (m.grams != null)
           TextField(
             controller: _grams,
@@ -763,6 +778,59 @@ class _EditMealSheetState extends State<_EditMealSheet> {
                   },
           ),
         ),
+      ]),
+    );
+  }
+}
+
+/// Search for the right food; it starts from the entry's name, so near matches show at once.
+class _ChangeFoodSheet extends StatefulWidget {
+  const _ChangeFoodSheet({required this.meal, required this.data});
+  final MealEntry meal;
+  final ProfileData data;
+
+  @override
+  State<_ChangeFoodSheet> createState() => _ChangeFoodSheetState();
+}
+
+class _ChangeFoodSheetState extends State<_ChangeFoodSheet> {
+  late final _search = TextEditingController(text: widget.meal.label);
+  late var _results = widget.data.tools.searchFood(widget.meal.label);
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(l.changeFood, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _search,
+          decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: l.searchFood),
+          textInputAction: TextInputAction.search,
+          onChanged: (t) => setState(() => _results = t.trim().length < 2 ? [] : widget.data.tools.searchFood(t)),
+        ),
+        const SizedBox(height: 8),
+        if (_results.isEmpty)
+          Padding(padding: const EdgeInsets.all(16), child: Text(l.noResults))
+        else
+          Flexible(
+            child: ListView(shrinkWrap: true, children: [
+              for (final f in _results)
+                ListTile(
+                  title: Text(f.label),
+                  subtitle: Text('${f.estimated ? '≈' : ''}${l.per100g(f.per100['kcal']!.round())}'),
+                  onTap: () => Navigator.pop(context, f),
+                ),
+            ]),
+          ),
       ]),
     );
   }

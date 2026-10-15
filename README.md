@@ -38,9 +38,12 @@ accounts, no cloud inference and no analytics SDK.
   EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything detected goes through a
   review screen before it is logged. No photo is ever stored.
 - **Health Connect / Apple Health:** reads weight and steps.
+- **Fix what was logged:** tap a meal on Today to change the food, the amount or the meal. Change
+  food searches from the logged name, so near matches show at once.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
   edit or delete everything it knows about you.
-- **Multiple profiles:** each profile is protected by a PIN or biometrics and has its own database.
+- **One profile per phone:** unlocked by fingerprint, with a PIN as the fallback. Signing up with
+  Google is optional (see Build flags). Nothing leaves the phone.
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
   follow the phone). The assistant answers in the chosen language.
 - **Safety:** a medical disclaimer under the chat input, on every health-information card and in
@@ -51,14 +54,14 @@ accounts, no cloud inference and no analytics SDK.
 
 | Tier | Adds |
 |---|---|
-| **Free** | 30 chat messages a day, recipe search, logging, allergen filtering, Today/Week/Month dashboards with weight trend, profiles, meal reminders, 30 days of history |
+| **Free** | 30 chat messages a day, recipe search, logging, allergen filtering, Today/Week/Month dashboards with weight trend, fingerprint/PIN lock, meal reminders, 30 days of history |
 | **Basic** | Unlimited chat, meal plan and shopping list, water reminders, micronutrients, streaks, 3 months of history |
 | **Medium** | Conditions, health journal, timeline, doctor export, 8 months of history |
 | **Pro** | Camera recognition, Year dashboard, 12 months of history (7-day free trial) |
 
 History limits only what you can browse: older logs stay on the phone and come back when you upgrade.
 
-One subscription per phone unlocks all of its profiles. Billing runs through RevenueCat (see
+One subscription per phone. Billing runs through RevenueCat (see
 [`docs/BILLING_SETUP.md`](docs/BILLING_SETUP.md)).
 
 ## Medical data
@@ -166,6 +169,8 @@ flutter run --release --dart-define=DEV_BILLING=true   # developer tier switch, 
 | *(none)* | Free-only build |
 | `--dart-define=DEV_BILLING=true` | Developer tier switch for testing the paid features |
 | `--dart-define=REVENUECAT_KEY=goog_…` | Real Google Play subscriptions |
+| `--dart-define=GOOGLE_CLIENT_ID=….apps.googleusercontent.com` | "Continue with Google" at sign-up and "Sign in with Google" on the lock screen. Needs an Android OAuth client (package name + SHA-1 of the signing key) and a Web client in Google Cloud Console; pass the **Web** client id. Android only for now |
+| `--dart-define=AGENT_THINKING=true` | Gemma 4 thinks before answering. Slower; compare with the eval first |
 
 ### Release builds
 
@@ -185,6 +190,8 @@ release builds fall back to the debug key. For the Play Store steps, see
 ```bash
 flutter test                                    # host tests (fake model, test/nutri_test.db)
 flutter test integration_test/agent_eval_test.dart   # on a phone: tool-calling accuracy of the real model
+#   --dart-define=PROMPT=legacy   the v0.6 prompt + reply tool, as the baseline
+#   --dart-define=THINKING=true   with Gemma 4 thinking
 cd tool && uv run --with pytest --with duckdb --with openpyxl pytest   # nutri.db builders and medical data
 ```
 

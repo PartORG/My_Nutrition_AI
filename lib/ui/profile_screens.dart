@@ -10,7 +10,7 @@ import '../data/profiles.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
 
-/// "Who's eating?" — pick a profile or add one.
+/// The lock: sign-up while the phone has no profile, else its unlock screen.
 class ProfilesScreen extends ConsumerStatefulWidget {
   const ProfilesScreen({super.key});
 
@@ -19,55 +19,51 @@ class ProfilesScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfilesScreenState extends ConsumerState<ProfilesScreen> {
-  Future<void> _open(Widget screen) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
-    if (mounted) setState(() {}); // list may have changed
+  Future<void> _create({String? name, String? googleEmail}) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => CreateProfileScreen(name: name, googleEmail: googleEmail)));
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _google() async {
+    final account = await signInWithGoogle();
+    if (account != null && mounted) await _create(name: account.displayName, googleEmail: account.email);
   }
 
   @override
   Widget build(BuildContext context) {
+    final owner = ref.watch(profilesProvider).owner;
+    if (owner != null) return PinScreen(profile: owner, onDeleted: () => setState(() {}));
     final l = AppLocalizations.of(context)!;
-    final profiles = ref.watch(profilesProvider).list();
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     return _Welcome(children: [
       const _Eva(),
       const SizedBox(height: 16),
       Text(l.appTitle, style: text.headlineMedium?.copyWith(color: scheme.onSurface), textAlign: TextAlign.center),
-      const SizedBox(height: 4),
-      Text(l.whoIsEating, style: text.titleMedium?.copyWith(color: scheme.onSurfaceVariant), textAlign: TextAlign.center),
-      const SizedBox(height: 32),
-      Wrap(alignment: WrapAlignment.center, spacing: 16, runSpacing: 16, children: [
-        for (final p in profiles)
-          InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => _open(PinScreen(profile: p)),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 96, minHeight: 96, maxWidth: 140),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  _Avatar(profile: p),
-                  const SizedBox(height: 8),
-                  Text(p.name, style: text.labelLarge, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center),
-                ]),
-              ),
-            ),
-          ),
-      ]),
       const SizedBox(height: 32),
       FilledButton.tonalIcon(
         icon: const Icon(Icons.person_add),
         label: Text(l.addProfile),
-        onPressed: () => _open(const CreateProfileScreen()),
+        onPressed: _create,
       ),
+      if (googleClientId.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.account_circle),
+          label: Text(l.continueWithGoogle),
+          onPressed: _google,
+        ),
+      ],
     ]);
   }
 }
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
-  const CreateProfileScreen({super.key});
+  const CreateProfileScreen({super.key, this.name, this.googleEmail});
+
+  /// From the Google account, when signing up with it.
+  final String? name, googleEmail;
 
   @override
   ConsumerState<CreateProfileScreen> createState() => _CreateProfileScreenState();
@@ -75,7 +71,7 @@ class CreateProfileScreen extends ConsumerStatefulWidget {
 
 class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   final _form = GlobalKey<FormState>();
-  final _name = TextEditingController();
+  late final _name = TextEditingController(text: widget.name);
   final _pin = TextEditingController();
   final _pin2 = TextEditingController();
   bool _busy = false;
@@ -92,7 +88,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
     final name = _name.text.trim();
-    final id = await ref.read(profilesProvider).create(name, _pin.text);
+    final id = await ref.read(profilesProvider).create(name, _pin.text, googleEmail: widget.googleEmail);
     if (!mounted) return;
     ref.read(unlockedProvider.notifier).unlock((id: id, name: name));
     // Skippable onboarding: straight to the goals form, with a "Later" button.
@@ -137,8 +133,11 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 }
 
 class PinScreen extends ConsumerStatefulWidget {
-  const PinScreen({super.key, required this.profile});
+  const PinScreen({super.key, required this.profile, required this.onDeleted});
   final ProfileInfo profile;
+
+  /// After "Forgot PIN" deleted the profile.
+  final VoidCallback onDeleted;
 
   @override
   ConsumerState<PinScreen> createState() => _PinScreenState();
@@ -167,9 +166,20 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   Future<void> _fingerprint() async {
     final l = AppLocalizations.of(context)!;
     if (!await authenticateFingerprint(ref, l.fingerprintReason(widget.profile.name)) || !mounted) return;
-    ref.read(profilesProvider).unlockedByBiometric(widget.profile.id);
+    ref.read(profilesProvider).unlockedOtherwise(widget.profile.id);
     ref.read(unlockedProvider.notifier).unlock(widget.profile);
-    Navigator.of(context).pop();
+  }
+
+  Future<void> _google(String email) async {
+    final l = AppLocalizations.of(context)!;
+    final account = await signInWithGoogle();
+    if (account == null || !mounted) return;
+    if (account.email.toLowerCase() != email) {
+      setState(() => _error = l.googleWrongAccount);
+      return;
+    }
+    ref.read(profilesProvider).unlockedOtherwise(widget.profile.id);
+    ref.read(unlockedProvider.notifier).unlock(widget.profile);
   }
 
   Future<void> _unlock() async {
@@ -181,7 +191,6 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     switch (r) {
       case PinOk():
         ref.read(unlockedProvider.notifier).unlock(widget.profile);
-        Navigator.of(context).pop();
         return;
       case PinWrong(:final attemptsLeft):
         _error = l.pinWrong(attemptsLeft);
@@ -211,14 +220,15 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     if (ok != true || !mounted) return;
     ref.read(profilesProvider).delete(widget.profile.id);
     unawaited(ref.read(remindersProvider).cancelProfile(widget.profile.id));
-    Navigator.of(context).pop();
+    widget.onDeleted();
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return _Welcome(backButton: true, children: [
-      _Avatar(profile: widget.profile, radius: 48),
+    final google = googleClientId.isEmpty ? null : ref.read(profilesProvider).googleEmail(widget.profile.id);
+    return _Welcome(children: [
+      _Avatar(profile: widget.profile),
       const SizedBox(height: 16),
       Text(widget.profile.name, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
       const SizedBox(height: 24),
@@ -248,6 +258,14 @@ class _PinScreenState extends ConsumerState<PinScreen> {
           tooltip: l.useFingerprint,
           icon: const Icon(Icons.fingerprint),
           onPressed: _busy ? null : _fingerprint,
+        ),
+      ],
+      if (google != null) ...[
+        const SizedBox(height: 8),
+        TextButton.icon(
+          icon: const Icon(Icons.account_circle),
+          label: Text(l.signInWithGoogle),
+          onPressed: _busy ? null : () => _google(google),
         ),
       ],
       const SizedBox(height: 8),
@@ -304,18 +322,13 @@ class _Spinner extends StatelessWidget {
 /// The locked screens: a soft gradient from the theme's colours, content centred and
 /// scrollable (200 % text), at most 420 dp wide.
 class _Welcome extends StatelessWidget {
-  const _Welcome({required this.children, this.backButton = false});
+  const _Welcome({required this.children});
   final List<Widget> children;
-  final bool backButton;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: backButton
-          ? AppBar(backgroundColor: Colors.transparent, foregroundColor: scheme.onSurface, elevation: 0)
-          : null,
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -352,23 +365,19 @@ class _Eva extends StatelessWidget {
       );
 }
 
-/// A profile's initial; the same Hero on the picker and the PIN screen.
+/// A profile's initial.
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.profile, this.radius = 32});
+  const _Avatar({required this.profile});
   final ProfileInfo profile;
-  final double radius;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Hero(
-      tag: 'profile-${profile.id}',
-      child: CircleAvatar(
-        radius: radius,
-        backgroundColor: scheme.secondaryContainer,
-        child: Text(profile.name.characters.first.toUpperCase(),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSecondaryContainer, fontSize: radius * .75)),
-      ),
+    return CircleAvatar(
+      radius: 48,
+      backgroundColor: scheme.secondaryContainer,
+      child: Text(profile.name.characters.first.toUpperCase(),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSecondaryContainer, fontSize: 36)),
     );
   }
 }

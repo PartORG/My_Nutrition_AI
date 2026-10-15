@@ -101,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
 
             _Section(l.settingsPrivacy),
-            if (profiles.biometricAllowed && ref.watch(biometricsAvailableProvider).value == true)
+            if (ref.watch(biometricsAvailableProvider).value == true)
               SwitchListTile(
                 secondary: const Icon(Icons.fingerprint),
                 title: Text(l.fingerprintTitle),
@@ -114,8 +114,8 @@ class SettingsScreen extends ConsumerWidget {
                   data.changed();
                 },
               ),
-            // Visible without the PIN, so only on a single-profile phone, and off until the owner says so.
-            if (Platform.isAndroid && profiles.biometricAllowed)
+            // Visible without the PIN, so off until the owner says so.
+            if (Platform.isAndroid)
               SwitchListTile(
                 secondary: const Icon(Icons.widgets_outlined),
                 title: Text(l.widgetKcalTitle),

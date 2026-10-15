@@ -12,10 +12,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'MyFoodMind';
 
   @override
-  String get whoIsEating => 'Who\'s eating?';
+  String get addProfile => 'Create profile';
 
   @override
-  String get addProfile => 'Add profile';
+  String get googleWrongAccount =>
+      'That isn’t the Google account this profile was created with.';
+
+  @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get continueWithGoogle => 'Continue with Google';
 
   @override
   String get profileName => 'Name';
@@ -37,7 +44,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinHint =>
-      'Your PIN keeps this profile private on a shared phone. If you forget it, the profile can only be deleted.';
+      'Your PIN unlocks the app when the fingerprint can’t. If you forget it, the profile can only be deleted.';
 
   @override
   String get create => 'Create';
@@ -562,7 +569,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fingerprintHint =>
-      'Only while this is the only profile on the phone: Android can\'t tell whose fingerprint it is.';
+      'Unlock with your fingerprint instead of the PIN.';
 
   @override
   String fingerprintReason(String name) {
@@ -998,6 +1005,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editMeal => 'Edit meal';
+
+  @override
+  String get changeFood => 'Change food';
 
   @override
   String get appearance => 'Appearance';

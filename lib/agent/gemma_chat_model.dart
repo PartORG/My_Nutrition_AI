@@ -17,7 +17,8 @@ class GemmaChatModel implements ChatModel {
       supportsFunctionCalls: tools,
       modelType: ModelType.gemma4,
       systemInstruction: system,
-      maxOutputTokens: 256,
+      enableThinking: tools && agentThinking,
+      maxOutputTokens: tools && agentThinking ? 1024 : 256, // the reasoning counts as output
     );
     for (final t in replay) {
       await chat.addQueryChunk(Message.text(text: t.text, isUser: t.isUser));
@@ -58,8 +59,10 @@ class _GemmaSession implements ChatSession {
           yield TextChunk(token);
         case FunctionCallResponse(:final name, :final args):
           yield ToolCall(name, args);
-        case ParallelFunctionCallResponse(:final calls) when calls.isNotEmpty:
-          yield ToolCall(calls.first.name, calls.first.args);
+        case ParallelFunctionCallResponse(:final calls):
+          for (final c in calls) {
+            yield ToolCall(c.name, c.args);
+          }
         default: // thinking, etc.
       }
     }

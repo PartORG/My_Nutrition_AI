@@ -242,9 +242,9 @@ void main() {
       expect(profiles.setting(waterScheduledSetting), '1');
     });
 
-    testWidgets('a downgrade cancels water reminders on every profile', (tester) async {
+    testWidgets('a downgrade cancels water reminders', (tester) async {
       phone(tester);
-      final ids = await tester.runAsync(() async => [await profiles.create('Anna', '1234'), await profiles.create('Bo', '5678')]);
+      final ids = await tester.runAsync(() async => [await profiles.create('Anna', '1234')]);
       profiles.setSetting(waterScheduledSetting, '1');
       setPref(data.user, waterReminderPref, '1');
       await tester.pumpWidget(app()); // Free

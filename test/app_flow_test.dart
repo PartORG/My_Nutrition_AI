@@ -33,10 +33,8 @@ void main() {
       child: const MyFoodMindApp(),
     ));
     await settle(tester);
-    expect(find.text("Who's eating?"), findsOneWidget);
-
-    // Create → straight into the new profile.
-    await tester.tap(find.text('Add profile'));
+    // No profile yet: sign-up.
+    await tester.tap(find.text('Create profile'));
     await tester.pumpAndSettle();
     await enter(tester, 'Name', 'Anna');
     await enter(tester, 'PIN (4–6 digits)', '1234');
@@ -54,10 +52,8 @@ void main() {
     expect(find.text('Hello, Anna'), findsOneWidget);
     expect(find.text('Set your daily goals'), findsOneWidget, reason: 'Today nudges until goals are set');
 
-    // Lock → picker → wrong PIN → right PIN.
+    // Lock → straight to the PIN: one profile per phone → wrong PIN → right PIN.
     await tester.tap(find.byTooltip('Lock'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Anna'));
     await tester.pumpAndSettle();
     await enter(tester, 'PIN for Anna', '0000');
     await tester.tap(find.text('Unlock'));
@@ -68,17 +64,15 @@ void main() {
     await settle(tester);
     expect(find.text('Hello, Anna'), findsOneWidget);
 
-    // Forgot PIN → confirm → profile and its files are gone.
+    // Forgot PIN → confirm → profile and its files are gone, back to sign-up.
     await tester.tap(find.byTooltip('Lock'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Anna'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Forgot PIN?'));
     await tester.pumpAndSettle();
     expect(find.text('Delete Anna?'), findsOneWidget);
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
-    expect(find.text('Anna'), findsNothing);
+    expect(find.text('Create profile'), findsOneWidget);
     expect(Directory('${tmp.path}/profiles/1').existsSync(), isFalse);
 
   });

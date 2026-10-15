@@ -108,17 +108,29 @@ abstract class AppLocalizations {
   /// **'MyFoodMind'**
   String get appTitle;
 
-  /// No description provided for @whoIsEating.
-  ///
-  /// In en, this message translates to:
-  /// **'Who\'s eating?'**
-  String get whoIsEating;
-
   /// No description provided for @addProfile.
   ///
   /// In en, this message translates to:
-  /// **'Add profile'**
+  /// **'Create profile'**
   String get addProfile;
+
+  /// No description provided for @googleWrongAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn’t the Google account this profile was created with.'**
+  String get googleWrongAccount;
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
 
   /// No description provided for @profileName.
   ///
@@ -159,7 +171,7 @@ abstract class AppLocalizations {
   /// No description provided for @pinHint.
   ///
   /// In en, this message translates to:
-  /// **'Your PIN keeps this profile private on a shared phone. If you forget it, the profile can only be deleted.'**
+  /// **'Your PIN unlocks the app when the fingerprint can’t. If you forget it, the profile can only be deleted.'**
   String get pinHint;
 
   /// No description provided for @create.
@@ -1047,7 +1059,7 @@ abstract class AppLocalizations {
   /// No description provided for @fingerprintHint.
   ///
   /// In en, this message translates to:
-  /// **'Only while this is the only profile on the phone: Android can\'t tell whose fingerprint it is.'**
+  /// **'Unlock with your fingerprint instead of the PIN.'**
   String get fingerprintHint;
 
   /// No description provided for @fingerprintReason.
@@ -1769,6 +1781,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit meal'**
   String get editMeal;
+
+  /// No description provided for @changeFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Change food'**
+  String get changeFood;
 
   /// No description provided for @appearance.
   ///

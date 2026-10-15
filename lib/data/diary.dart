@@ -73,6 +73,22 @@ void updateMeal(Database user, int id, {double? grams, String? type}) {
   if (type != null) user.execute('UPDATE meal_log SET meal_type = ? WHERE id = ?', [type, id]);
 }
 
+/// The right food for an entry the agent (or search) got wrong: same amount, time and meal.
+void replaceMeal(Database user, int id, FoodChoice food) {
+  final old = user.select('SELECT grams FROM meal_log WHERE id = ?', [id]).single['grams'] as num?;
+  final g = old?.toDouble() ?? food.servingG ?? 100; // a quick add had no grams
+  final cols = [...nutrients, ...micronutrients];
+  user.execute(
+      'UPDATE meal_log SET description = ?, grams = ?, estimated = ?, recipe_id = ?, '
+      '${[for (final c in cols) '$c = ?'].join(', ')} WHERE id = ?',
+      [
+        food.label, g, food.estimated ? 1 : 0, food.kind == 'recipe' ? food.id : null,
+        for (final n in nutrients) (food.per100[n] ?? 0) * g / 100,
+        for (final m in micronutrients) switch (food.per100[m]) { final v? => v * g / 100, null => null },
+        id,
+      ]);
+}
+
 /// What the user logs most in the last 30 days, then most recently: one tap to log again.
 /// Values are from the latest log of each, per 100 g; the last amount is the serving.
 List<FoodChoice> recentFoods(Database user, DateTime now, {int limit = 12}) => [

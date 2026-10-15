@@ -282,9 +282,16 @@ void main() {
       final m = mealsOn(user, now).first;
       expect((m.grams, m.kcal.round(), m.type), (50.0, 72, 'snack'));
 
+      // The agent picked the wrong food: swap it, keeping amount, time and meal.
+      final rice = tools.searchFood('white rice').firstWhere((f) => f.kind == 'food');
+      replaceMeal(user, id, rice);
+      final swapped = mealsOn(user, now).first;
+      expect((swapped.label, swapped.grams, swapped.type, swapped.at), (rice.label, 50.0, 'snack', m.at));
+      expect(swapped.kcal, closeTo(rice.per100['kcal']! / 2, .01));
+
       tools.quickAdd('Restaurant pasta', {'kcal': 650, 'protein_g': 20}, 'dinner');
       expect(mealsOn(user, now).last.label, 'Restaurant pasta');
-      expect(totalsOn(user, now)['kcal']!.round(), 865);
+      expect(totalsOn(user, now)['kcal']!.round(), 858); // egg 143 + rice 65 (swapped above) + 650
     });
 
     test('water: "2 glasses of water" is a water card, not food; goal from weight', () {
