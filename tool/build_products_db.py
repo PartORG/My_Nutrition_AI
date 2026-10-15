@@ -22,7 +22,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from build_real_nutri_db import NUTRIENTS, off_product, r3  # noqa: E402
+from build_real_nutri_db import MICROS, NUTRIENTS, off_product, r3  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 SCHEMA = """
@@ -30,7 +30,10 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE products (
   barcode TEXT PRIMARY KEY, name TEXT NOT NULL,
   kcal REAL NOT NULL, protein_g REAL NOT NULL, fat_g REAL NOT NULL, carbs_g REAL NOT NULL,
-  fiber_g REAL, sugar_g REAL, sodium_mg REAL
+  fiber_g REAL, sugar_g REAL, sodium_mg REAL,
+  -- From the label, per 100 g; NULL = not on it.
+  calcium_mg REAL, iron_mg REAL, magnesium_mg REAL, potassium_mg REAL, vitamin_c_mg REAL, vitamin_d_ug REAL,
+  vitamin_b12_ug REAL
 );
 CREATE VIRTUAL TABLE products_fts USING fts5 (name, barcode UNINDEXED, content = 'products');
 """
@@ -50,14 +53,14 @@ def main(src: Path, out: Path) -> None:
             if isinstance(got, str):
                 dropped[got] += 1
                 continue
-            batch.append((got["barcode"], got["name"], *(r3(got[k]) for k in NUTRIENTS)))
+            batch.append((got["barcode"], got["name"], *(r3(got[k]) for k in NUTRIENTS), *(r3(got[m]) for m in MICROS)))
             if len(batch) >= 50_000:
-                db.executemany("INSERT OR IGNORE INTO products VALUES (?,?,?,?,?,?,?,?,?)", batch)
+                db.executemany(f"INSERT OR IGNORE INTO products VALUES ({",".join("?" * 16)})", batch)
                 batch.clear()
-    db.executemany("INSERT OR IGNORE INTO products VALUES (?,?,?,?,?,?,?,?,?)", batch)
+    db.executemany(f"INSERT OR IGNORE INTO products VALUES ({",".join("?" * 16)})", batch)
     kept = db.execute("SELECT COUNT(*) FROM products").fetchone()[0]
     db.executemany("INSERT INTO meta VALUES (?, ?)", [
-        ("schema_version", "1"), ("built_at", date.today().isoformat()), ("rows", str(kept)),
+        ("schema_version", "2"), ("built_at", date.today().isoformat()), ("rows", str(kept)),
         ("source", "Open Food Facts (ODbL), en.openfoodfacts.org.products.csv; tool/build_products_db.py")])
     db.execute("INSERT INTO products_fts(products_fts) VALUES ('rebuild')")
     db.commit()

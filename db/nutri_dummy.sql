@@ -2,7 +2,7 @@
 -- The real nutri.db replaces this file's output entirely.
 
 INSERT INTO meta VALUES
-  ('schema_version', '2'),
+  ('schema_version', '3'),
   ('embedding_model', 'embeddinggemma-300m'),
   ('built_at', 'dummy');
 

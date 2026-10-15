@@ -3,14 +3,16 @@ import 'dart:io';
 import 'package:sqlite3/sqlite3.dart';
 
 /// nutri.db schema versions this app build can read (see db/nutri_schema.sql).
-// 2: micronutrients. An older file on the phone fails the check and the bundled one is reinstalled.
-const nutriSchemaMin = 2;
-const nutriSchemaMax = 2;
+// 2: micronutrients. 3: foods.source, micronutrients on dishes and products, dishes linked to foods and
+// recipes. An older file on the phone fails the check and the bundled one is reinstalled.
+const nutriSchemaMin = 3;
+const nutriSchemaMax = 3;
 
 /// nutri.db content release (meta.data_version). Bump it with db/medical.sql's data_version when
 /// the data changes but the schema doesn't, so phones replace their installed copy once.
 // 1: medical data from the guidelines (db/medical.sql). 2: translated ingredient names (food_names).
-const nutriDataVersion = 2;
+// 3: vitamins and minerals for the generic foods (foodstruct, NZ FOODfiles, FDC Foundation/Branded).
+const nutriDataVersion = 3;
 
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';

@@ -119,8 +119,9 @@ going over Auto Backup's 25 MB quota silently stops all backup.
 `meta(key, value)` — `schema_version`, `embedding_model`, `built_at` ·
 `foods` (per 100 g: kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, sodium_mg) ·
 `recipes(id, title, instructions, servings, minutes, tags, texture)` ·
-`recipe_ingredients(recipe_id, food_id, grams)` · `dishes(id, name, serving_g, recipe_id NULL, + per-100 g nutrition)` ·
-`products(barcode, name, + per-100 g nutrition)` · `allergens(food_id, allergen)` ·
+`recipe_ingredients(recipe_id, food_id, grams)` · `dishes(id, name, serving_g, recipe_id NULL, food_id NULL, + per-100 g
+nutrition and micronutrients)` · `products(barcode, name, + per-100 g nutrition and label micronutrients)` ·
+`foods.source` (the dataset; government tables rank first) · `allergens(food_id, allergen)` ·
 `conditions(id, name)` · `condition_rules(condition_id, nutrient, max_per_day, note)` ·
 `condition_avoid(condition_id, food_id, note)` (M5: foods to avoid, filtered like allergens) ·
 `docs(id, source, text, embedding BLOB float32[768])` + FTS5 tables.
@@ -388,3 +389,36 @@ Decisions (user, 2026-10-15):
 
 Not verified on the phone: Google sign-in, the new prompt's accuracy and latency vs the legacy one, thinking.
 The chat's confirmation card still can't swap a food before Save (grams only).
+
+## Data v3 (2026-10-15)
+
+Phone report: the vitamins card stayed empty. The generic foods the meal parser picks ("Rice", "Egg"…) came
+from foodstruct, whose minerals and vitamins (in grams) were never loaded; dishes and products had no
+columns for them at all.
+
+- **schema_version 3, data_version 3:**
+  - `foods.source` with an index on `name`.
+  - `dishes` gets micronutrients and `food_id`; `products` gets micronutrients.
+  - The app requires schema 3, so phones reinstall the bundled file.
+- **Micronutrients:**
+  - foodstruct (converted from grams), NZ FOODfiles, and FDC Foundation (bulk CSV fills what the extract lacks).
+  - FNDDS 2021-2023: 5,316 survey foods are added as foods, with their "Quantity not specified" portion as the serving.
+  - McDonald's label %DV (pre-2016 daily values) for dishes.
+  - The OFF label columns for products.
+  - Cross-checked against FoodData Central's API: banana, chicken liver and rice match USDA exactly; egg and
+    milk are within about 10-25 %.
+- **Range check:** values outside `MICRO_MAX` become unknown, except in government tables, whose extremes are
+  real (baking powder calcium, dried thyme iron).
+- **Dishes:**
+  - **USDA match:** each dish links to the USDA FNDDS food covering every word of its name, with calories
+    within 0.7-1.4x. The same chain wins, then the fewest extra words, then the closest calories.
+  - **Recipe link:** generic dishes link to a recipe with exactly their title (filler words aside). That link
+    is for opening and rating; the dish keeps its own nutrition.
+- **App:**
+  - Government sources win ties in the meal parser and in Log search.
+  - Past meals are filled from the food or dish of the same name, once per data version.
+  - Recipe ideas follow taste: the ingredients of 4-5 star and saved recipes, weighted by how rare they are,
+    add up to 3 points (a requested ingredient is worth 10), in searches and in random ideas.
+- **Products download (`products.db`):** `tool/build_products_db.py` writes the label micronutrients too
+  (schema 2). The published file is still the old one until it is rebuilt from the current Open Food Facts dump.
+- **Size:** `nutri.db` is 299.75 MB, just under the 300 MB contract; the next addition needs a smaller recipe budget.

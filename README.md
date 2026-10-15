@@ -97,6 +97,32 @@ When the data changes, bump `data_version` in `db/medical.sql` **and** `nutriDat
 `lib/data/nutri_db.dart`: phones replace their installed `nutri.db` once when the app expects a newer
 version, then re-upload the file to the `build-inputs` release.
 
+## Food data and vitamins
+
+`nutri.db` holds about 55,600 foods, 166,000 recipes, 620 dishes and 263,000 packaged products. The
+generic foods come from government tables first: USDA SR28, FoodData Central (FNDDS survey foods and
+Foundation foods, from the public-domain [bulk downloads](https://fdc.nal.usda.gov/download-datasets)),
+and NZ FOODfiles. Every food row records its `source`, and the app prefers these tables when two
+names match equally well.
+
+Vitamins and minerals (calcium, iron, magnesium, potassium, vitamins C, D and B12) cover:
+
+- **Foods:** about two thirds have calcium and iron. All 30 everyday foods the meal parser picks
+  ("rice", "egg", "milk", "chicken liver"…) have the full set.
+- **Recipes:** values are summed from the ingredients. About 99 % of recipes have values for every
+  ingredient.
+- **Dishes:** McDonald's items take calcium, iron and vitamin C from their own labels. Each dish is
+  then matched to a USDA FNDDS food of the same name for the rest (155 of 620). Generic dishes also
+  link to a recipe of the same title, which you can open and rate (88).
+- **Products:** whatever the Open Food Facts label states (about half give calcium, iron and
+  vitamin C).
+
+A value outside a believable range in a non-government source is stored as unknown, never shown.
+Meals logged before an update get their vitamins filled in once from the food or dish of the same name.
+
+Raw data lives next to the repository (`nutrition-ai-assistant/data/`). The three FoodData Central
+releases go in `raw_fdc/{survey,foundation,sr_legacy}/`; the build script's docstring has the links.
+
 ## Translated ingredient names
 
 Recipe ingredients (the ~2,100 foods used in recipes) show in Ukrainian, German and French from

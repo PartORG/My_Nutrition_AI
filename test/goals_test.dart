@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myfoodmind/data/diary.dart' show trendPerWeek, weightTrend;
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/user_db.dart';
 
@@ -92,5 +93,21 @@ void main() {
     expect(fi.feet, 5);
     expect(fi.inches, closeTo(10.87, .01));
     expect(feetInchesToCm(5, 10.87), closeTo(180, .02));
+  });
+
+  test('weight trend: smooths daily swings, follows a real change', () {
+    final d0 = DateTime(2026, 9, 1);
+    final readings = [
+      for (var i = 0; i < 28; i++) (at: d0.add(Duration(days: i)), kg: 80.0 - i * 0.05 + (i.isEven ? .8 : -.8)),
+    ];
+    final t = weightTrend(readings);
+    expect(t.first.trend, readings.first.kg, reason: 'starts at the first reading');
+    // Swings of ±0.8 kg move the trend far less than the scale.
+    final scaleSwing = (readings[11].kg - readings[10].kg).abs();
+    final trendSwing = (t[11].trend - t[10].trend).abs();
+    expect(trendSwing, lessThan(scaleSwing / 5));
+    // It still follows the 0.35 kg/week loss underneath.
+    expect(trendPerWeek(t.sublist(10)), closeTo(-.35, .15));
+    expect(trendPerWeek(t.sublist(0, 3)), isNull, reason: 'under a week');
   });
 }

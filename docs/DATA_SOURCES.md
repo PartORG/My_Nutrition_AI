@@ -1,20 +1,20 @@
 # nutri.db data sources
 
-Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; byte-identical copies are read once.
+Built by `tool/build_real_nutri_db.py` on 2026-10-15 from `nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; byte-identical copies are read once.
 
 | table | rows |
 |---|---|
-| foods | 50,518 |
-| allergens | 50,161 |
+| foods | 55,581 |
+| allergens | 53,574 |
 | recipes | 166,094 |
 | recipe_ingredients | 1,370,274 |
 | dishes | 620 |
 | products | 263,164 |
 | conditions | 5 |
 | condition_rules | 4 |
-| condition_avoid | 641 |
+| condition_avoid | 715 |
 | docs | 51 |
-| nutri.db bytes | 290,131,968 |
+| nutri.db bytes | 299,753,472 |
 | foods used by recipes | 2,094 |
 | recipes renamed (same title, other ingredients) | 24,604 |
 
@@ -30,6 +30,9 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 
 | file | rows | kept | used for | dropped (reason: rows) | notes |
 |---|---|---|---|---|---|
+| `raw_fdc/foundation` | 469 | 319 | micronutrients of the Foundation foods | no Foundation row of comprehensive_foods_usda.csv to fill: 150 | USDA FoodData Central Foundation foods, bulk CSV 2026-04-30: fills magnesium, potassium, vitamin D and B12 (and any other gap) of comprehensive_foods_usda.csv's Foundation rows, same fdc_id. |
+| `raw_fdc/sr_legacy` | 7,793 | 0 | - | same foods as ABBREV.csv: 7,793 | USDA SR Legacy, bulk CSV 2018-04: the same foods and values as ABBREV.csv (USDA SR28), kept to cross-check it; not loaded twice. |
+| `raw_fdc/survey` | 5,432 | 5,316 | foods (generic foods and dishes as eaten, authoritative) | same name as a more authoritative food: 115; missing kcal/protein/fat/carbs: 1 | USDA FNDDS 2021-2023 (FoodData Central survey foods, bulk CSV 2024-10-31): all seven micronutrients; also the source of the dishes' micronutrients (link_dishes). |
 | `raw_nutritions/ABBREV.csv` | 8,790 | 8,781 | foods (generic, authoritative) | same name as a more authoritative food: 9 | USDA SR28 abbreviated file. |
 | `raw_nutritions/BakedFoodNutritions.csv` | 656 | 422 | foods (branded baked goods) | same name as a more authoritative food: 221; kcal does not match protein/fat/carbs: 13 | Per 100 g; total fat = sum of the fatty-acid columns (no total fat column); 'Sodium-g' is in mg. |
 | `raw_nutritions/FOOD-DATA-GROUP1 (1).csv` | 551 | 0 | - | duplicate file (same MD5 as FOOD-DATA-GROUP1.csv): 551 | Byte-identical copy of `raw_nutritions/FOOD-DATA-GROUP1.csv` (same MD5), read once. |
@@ -42,16 +45,16 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 | `raw_nutritions/FastFoodNutritionMenuV2.csv` | 1,148 | 0 | - | no serving weight (per-100 g impossible): 1,148 | Fast-food items per serving. |
 | `raw_nutritions/FastFoodNutritionMenuV3.csv` | 1,147 | 0 | - | no serving weight (per-100 g impossible): 1,147 | Same as V2 with one row fewer. |
 | `raw_nutritions/Food Composition.csv` | 1,561 | 0 | - | no nutrient values: 1,561 | Australian Food Composition (AFCD) food details: descriptions and sampling notes, no nutrient values. |
-| `raw_nutritions/Food_Nutrition_Dataset.csv` | 205 | 118 | foods | same name as a more authoritative food: 43; kcal does not match protein/fat/carbs: 33; value out of range: 11 | USDA-style names, per 100 g; no fiber/sugar/sodium. |
-| `raw_nutritions/Indian_Food_Nutrition_Processed.csv` | 1,014 | 952 | foods (Indian dishes, per 100 g) | kcal does not match protein/fat/carbs: 34; same name as a more authoritative food: 28 | Indian Nutrient Databank style, per 100 g; no serving weight so they are foods, not camera dishes. |
+| `raw_nutritions/Food_Nutrition_Dataset.csv` | 205 | 2 | foods | same name as a more authoritative food: 159; kcal does not match protein/fat/carbs: 33; value out of range: 11 | USDA-style names, per 100 g; no fiber/sugar/sodium. |
+| `raw_nutritions/Indian_Food_Nutrition_Processed.csv` | 1,014 | 949 | foods (Indian dishes, per 100 g) | kcal does not match protein/fat/carbs: 34; same name as a more authoritative food: 31 | Indian Nutrient Databank style, per 100 g; no serving weight so they are foods, not camera dishes. |
 | `raw_nutritions/Nutrition_Value_Dataset.csv` | 530 | 143 | dishes | no gram weight for the serving: 386; kcal does not match protein/fat/carbs: 1 | Indian fast-food chains, 'Per Serve Size' in g. |
-| `raw_nutritions/Nutritional Datasets for New Zealand Foods.xlsx` | 2,767 | 2,740 | foods (generic, authoritative) | sheet 'FOODFiles-AminoAcids' not nutrition per food (see note): 2,767; sheet 'Matching Table' not nutrition per food (see note): 418; sheet 'Recipes - Drew et al 2020' not nutrition per food (see note): 365; same name as a more authoritative food: 27; sheet 'Introduction' not nutrition per food (see note): 1 | NZ FOODfiles 2018. Sheet FOODFiles-Nutrients loaded. FOODFiles-AminoAcids: amino acids only (not in the schema). Matching Table: formulas pointing back at FOODFiles-Nutrients (duplicates). 'Recipes - Drew et al 2020': ingredient percentages for survey food groups, no instructions or amounts (cannot be recipes). Introduction: text. |
+| `raw_nutritions/Nutritional Datasets for New Zealand Foods.xlsx` | 2,767 | 2,726 | foods (generic, authoritative) | sheet 'FOODFiles-AminoAcids' not nutrition per food (see note): 2,767; sheet 'Matching Table' not nutrition per food (see note): 418; sheet 'Recipes - Drew et al 2020' not nutrition per food (see note): 365; same name as a more authoritative food: 41; sheet 'Introduction' not nutrition per food (see note): 1 | NZ FOODfiles 2018. Sheet FOODFiles-Nutrients loaded. FOODFiles-AminoAcids: amino acids only (not in the schema). Matching Table: formulas pointing back at FOODFiles-Nutrients (duplicates). 'Recipes - Drew et al 2020': ingredient percentages for survey food groups, no instructions or amounts (cannot be recipes). Introduction: text. |
 | `raw_nutritions/NutritionalFacts_Fruit_Vegetables_Seafood (1).csv` | 62 | 0 | - | duplicate file (same MD5 as NutritionalFacts_Fruit_Vegetables_Seafood.csv): 62 | Byte-identical copy of `raw_nutritions/NutritionalFacts_Fruit_Vegetables_Seafood.csv` (same MD5), read once. |
 | `raw_nutritions/NutritionalFacts_Fruit_Vegetables_Seafood.csv` | 62 | 0 | same as the lower-case file | duplicate of nutritionalfacts_fruit_vegetables_seafood.csv: 62 | Older export of nutritionalfacts_fruit_vegetables_seafood.csv (no header row, 54 of its 61 rows). |
 | `raw_nutritions/Top 100 Healthiest Food in the World.csv` | 98 | 0 | - | no fat/carbs values: 98 | Calories, protein, fiber only. |
 | `raw_nutritions/calorie_dataset.csv` | 5,000 | 0 | - | no food names: 5,000 | Macro numbers with a calorie class, for ML. |
 | `raw_nutritions/cleaned_nutrition_dataset_per100g.csv` | 3,454 | 0 | - | per serving with no serving weight: 3,454 | Claims per 100 g but holds the FOOD-DATA-GROUP per-serving values (margarine with yoghurt: 88 kcal). |
-| `raw_nutritions/comprehensive_foods_usda.csv` | 40,000 | 25,427 | foods (Foundation generic, Branded) | SR Legacy = same foods as ABBREV.csv: 7,793; same name as a more authoritative food: 4,720; missing kcal/protein/fat/carbs: 991; kcal does not match protein/fat/carbs: 700; value out of range: 213; sugar above carbs: 81; protein+fat+carbs over 100 g per 100 g: 75 | USDA FoodData Central extract, per 100 g. |
+| `raw_nutritions/comprehensive_foods_usda.csv` | 40,000 | 25,425 | foods (Foundation generic, Branded) | SR Legacy = same foods as ABBREV.csv: 7,793; same name as a more authoritative food: 4,722; missing kcal/protein/fat/carbs: 991; kcal does not match protein/fat/carbs: 700; value out of range: 213; sugar above carbs: 81; protein+fat+carbs over 100 g per 100 g: 75 | USDA FoodData Central extract, per 100 g. |
 | `raw_nutritions/daily_food_nutrition_dataset.csv` | 651 | 82 | dishes | no gram weight for the serving: 565; kcal does not match protein/fat/carbs: 4 | Per serving; only rows whose name states grams/ounces can be used. |
 | `raw_nutritions/en.openfoodfacts.org.products.tsv` | 356,027 | 263,164 | products (barcodes) | missing kcal/protein/fat/carbs: 64,768; no product name: 17,454; kcal does not match protein/fat/carbs: 8,633; protein+fat+carbs over 100 g per 100 g: 684; sugar above carbs: 507; value out of range: 438; no valid barcode: 327; malformed line: 52 | Open Food Facts dump (Sep 2019). energy_100g is kJ; sodium_100g in g (or from salt_100g / 2.5). |
 | `raw_nutritions/fastfood.csv` | 515 | 0 | - | no serving weight (per-100 g impossible): 515 | Fast-food items per serving. |
@@ -60,12 +63,12 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 | `raw_nutritions/food_menu_nutrition_dataset.csv` | 7,500 | 0 | - | synthetic data: 7,500 | Generated: random chain/city/price combinations (e.g. a Five Guys 'Veggie Sub' in London). |
 | `raw_nutritions/foods_allergens.csv` | 3,332 | 3,332 | allergen flags for foods_health_scores_allergens.csv | - | Open Food Facts extract: names and allergen flags, no nutrition values. 3332 rows add allergen flags to a product of foods_health_scores_allergens.csv. |
 | `raw_nutritions/foods_dietary_restrictions.csv` | 4,997 | 4,997 | allergen flags for foods_health_scores_allergens.csv | - | Open Food Facts extract: names and allergen flags, no nutrition values. 4997 rows add allergen flags to a product of foods_health_scores_allergens.csv. |
-| `raw_nutritions/foods_health_scores_allergens.csv` | 4,997 | 4,288 | foods (branded, with allergens) | missing kcal/protein/fat/carbs: 279; same name as a more authoritative food: 221; no name: 96; kcal does not match protein/fat/carbs: 92; sugar above carbs: 9; value out of range: 8; protein+fat+carbs over 100 g per 100 g: 4 | Open Food Facts extract without barcodes, per 100 g; allergen flags become allergens rows. |
-| `raw_nutritions/foodstruct_nutritional_facts.csv` | 1,174 | 1,115 | foods (generic) | same name as a more authoritative food: 35; kcal does not match protein/fat/carbs: 24 | foodstruct.com, per 100 g; minerals in grams. |
+| `raw_nutritions/foods_health_scores_allergens.csv` | 4,997 | 4,287 | foods (branded, with allergens) | missing kcal/protein/fat/carbs: 279; same name as a more authoritative food: 222; no name: 96; kcal does not match protein/fat/carbs: 92; sugar above carbs: 9; value out of range: 8; protein+fat+carbs over 100 g per 100 g: 4 | Open Food Facts extract without barcodes, per 100 g; allergen flags become allergens rows. |
+| `raw_nutritions/foodstruct_nutritional_facts.csv` | 1,174 | 1,007 | foods (generic) | same name as a more authoritative food: 143; kcal does not match protein/fat/carbs: 24 | foodstruct.com, per 100 g; minerals in grams. |
 | `raw_nutritions/healthy_eating_dataset.csv` | 2,000 | 0 | - | synthetic data: 2,000 | Generated: random meal names x cuisine x diet ('Kid Pasta, Indian, Keto'). |
-| `raw_nutritions/healthy_foods_database.csv` | 9,028 | 4,470 | foods | same name as a more authoritative food: 3,302; kcal does not match protein/fat/carbs: 842; value out of range: 342; missing kcal/protein/fat/carbs: 43; protein+fat+carbs over 100 g per 100 g: 20; sugar above carbs: 9 | USDA-style names, per 100 g. |
-| `raw_nutritions/menu.csv` | 260 | 121 | dishes | no gram weight for the serving: 139 | McDonald's menu; serving weight in 'Serving Size'. |
-| `raw_nutritions/nutrients_csvfile.csv` | 335 | 112 | foods | missing kcal/protein/fat/carbs: 144; same name as a more authoritative food: 57; kcal does not match protein/fat/carbs: 16; value out of range: 5; protein+fat+carbs over 100 g per 100 g: 1 | Per household measure with grams; converted to per 100 g. |
+| `raw_nutritions/healthy_foods_database.csv` | 9,028 | 4,466 | foods | same name as a more authoritative food: 3,306; kcal does not match protein/fat/carbs: 842; value out of range: 342; missing kcal/protein/fat/carbs: 43; protein+fat+carbs over 100 g per 100 g: 20; sugar above carbs: 9 | USDA-style names, per 100 g. |
+| `raw_nutritions/menu.csv` | 260 | 121 | dishes | no gram weight for the serving: 139 | McDonald's menu; serving weight in 'Serving Size'; calcium, iron and vitamin C from the label's % Daily Value (US values before 2016: 1,000 mg, 18 mg, 60 mg). |
+| `raw_nutritions/nutrients_csvfile.csv` | 335 | 107 | foods | missing kcal/protein/fat/carbs: 144; same name as a more authoritative food: 62; kcal does not match protein/fat/carbs: 16; value out of range: 5; protein+fat+carbs over 100 g per 100 g: 1 | Per household measure with grams; converted to per 100 g. |
 | `raw_nutritions/nutrition (1).csv` | 505 | 101 | dishes (Food-101 labels) | other portion sizes of the same dish (same per-100 g): 404 | 101 Food-101 dish labels at 5 portion weights; one dish per label at the middle portion. |
 | `raw_nutritions/nutrition (2).csv` | 8,789 | 8,689 | foods (names for USDA SR28) | no unambiguous ABBREV.csv match (name not used): 100 | USDA SR28 with long names; used to name ABBREV.csv rows. Same data as nutrition.xlsx. Named 8689 of 8790 SR28 foods; the rest keep the expanded short name. |
 | `raw_nutritions/nutrition.csv` | 1,346 | 1,261 | foods (Indonesian foods, per 100 g) | kcal does not match protein/fat/carbs: 63; same name as a more authoritative food: 11; protein+fat+carbs over 100 g per 100 g: 7; value out of range: 4 | Indonesian food table, per 100 g. |
@@ -97,16 +100,20 @@ Built by `tool/build_real_nutri_db.py` on 2026-10-07 from `nutrition-ai-assistan
 
 ## Medical data
 
-Conditions, daily limits, foods to avoid and the `condition_info` passages come from `db/medical.sql`, curated by hand from the guidelines in `nutrition-ai-assistant/data/raw_medical` (each row names its guideline; passages are paraphrased, not copied). Applied on 2026-10-10 with `tool/build_medical.py`:
+Conditions, daily limits, foods to avoid and the `condition_info` passages come from `db/medical.sql`, curated by hand from the guidelines in `nutrition-ai-assistant/data/raw_medical` (each row names its guideline; passages are paraphrased, not copied):
 
 - conditions rows: 5
 - condition_rules rows: 4
 - docs rows: 51
-- foods to avoid: diabetes_t2: 263
+- foods to avoid: diabetes_t2: 298
 - foods to avoid: hypertension: 0
-- foods to avoid: gout: 378
+- foods to avoid: gout: 417
 - foods to avoid: als: 0
 - foods to avoid: ms: 0
+- food_names rows: 6,282
+- food_names stale (skipped): 0
+- dishes linked to a USDA FNDDS food: 155
+- dishes linked to a recipe: 88
 
 ## Licensing (data owner to confirm before release)
 

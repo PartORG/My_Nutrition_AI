@@ -103,6 +103,19 @@ void main() {
       expect(titles({'query': 'something new for breakfast'}), isNotEmpty);
     });
 
+    test('taste steers ideas: recipes sharing a saved or 5-star recipe\'s ingredients come first', () {
+      List<String> dinner(AgentTools t) =>
+          [for (final r in (t.run('search_recipes', {'query': 'dinner'}).card! as RecipeListCard).recipes) r.title];
+      expect(dinner(tools).first, isNot('Chickpea tofu curry'));
+      // Shakshuka (tomato, onion, eggs, feta) saved: the curry shares its tomato and onion.
+      user.execute("INSERT INTO saved_recipes VALUES (2, 'Shakshuka', 0)");
+      expect(dinner(AgentTools(nutri, user, clock: () => now)).first, 'Chickpea tofu curry');
+      // Liked by stars works the same; the liked recipe itself is not boosted by taste.
+      user.execute('DELETE FROM saved_recipes');
+      tools.rate(2, 5);
+      expect(dinner(AgentTools(nutri, user, clock: () => now)).first, 'Chickpea tofu curry');
+    });
+
     test('stars steer ideas: 1-2 never again, 4-5 first; eaten recipes are listed with stars', () {
       List<String> titles() => [
             for (final r in (tools.run('search_recipes', {'query': 'dinner', 'ingredients': 'chicken, rice, broccoli'})
@@ -292,6 +305,19 @@ void main() {
       tools.quickAdd('Restaurant pasta', {'kcal': 650, 'protein_g': 20}, 'dinner');
       expect(mealsOn(user, now).last.label, 'Restaurant pasta');
       expect(totalsOn(user, now)['kcal']!.round(), 858); // egg 143 + rice 65 (swapped above) + 650
+    });
+
+    test('past meals get vitamins and minerals once nutri.db has them for that food', () {
+      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
+      tools.logFood(egg, 50, 'breakfast');
+      final id = mealsOn(user, now).single.id;
+      user.execute('UPDATE meal_log SET iron_mg = NULL, calcium_mg = NULL WHERE id = ?', [id]); // as logged before
+      expect(microTotalsOn(user, now).known, 0);
+
+      expect(fillMissingMicros(user, nutri, 3), 1);
+      final iron = egg.per100['iron_mg'];
+      expect(microTotalsOn(user, now).totals['iron_mg'], closeTo(iron! / 2, 1e-9));
+      expect(fillMissingMicros(user, nutri, 3), 0, reason: 'once per data version');
     });
 
     test('water: "2 glasses of water" is a water card, not food; goal from weight', () {

@@ -1,4 +1,5 @@
--- nutri.db data contract, schema_version 2 (2: micronutrients on foods and in recipe_nutrition). Shared by all profiles, read-only
+-- nutri.db data contract, schema_version 3 (2: micronutrients on foods and in recipe_nutrition; 3: foods.source,
+-- micronutrients on dishes and products, dishes linked to foods and recipes). Shared by all profiles, read-only
 -- on the phone, replaced as a whole file. Build with tool/build_nutri_db.py.
 --
 -- Rules:
@@ -27,15 +28,20 @@ CREATE TABLE foods (
   sugar_g   REAL,
   sodium_mg REAL,
   serving_g REAL,  -- one typical piece/portion ("2 eggs" = 2 x serving_g); NULL = unknown
-  -- Micronutrients per 100 g, USDA SR28 foods only for now; NULL = unknown (not zero).
+  -- Micronutrients per 100 g; NULL = unknown (not zero).
   calcium_mg     REAL,
   iron_mg        REAL,
   magnesium_mg   REAL,
   potassium_mg   REAL,
   vitamin_c_mg   REAL,
   vitamin_d_ug   REAL,
-  vitamin_b12_ug REAL
+  vitamin_b12_ug REAL,
+  -- Where the row comes from. Authoritative (government tables): usda_sr28, usda_sr, usda_fdc_foundation,
+  -- usda_fndds, nz_foodfiles; foodstruct is USDA-derived generic; the rest are smaller or branded datasets.
+  source         TEXT NOT NULL DEFAULT ''
 );
+-- Plain-name lookups ("Banana", staples, filling past meals) without scanning every food.
+CREATE INDEX foods_name ON foods (name COLLATE NOCASE);
 
 CREATE TABLE recipes (
   id           INTEGER PRIMARY KEY,
@@ -62,6 +68,7 @@ CREATE TABLE dishes (
   id        INTEGER PRIMARY KEY,
   name      TEXT NOT NULL,
   serving_g REAL NOT NULL CHECK (serving_g > 0),
+  -- A recipe of the same name, to open and rate. Its nutrition is used only when the dish has none (kcal NULL).
   recipe_id INTEGER REFERENCES recipes (id),
   kcal      REAL,
   protein_g REAL,
@@ -70,6 +77,15 @@ CREATE TABLE dishes (
   fiber_g   REAL,
   sugar_g   REAL,
   sodium_mg REAL,
+  -- Micronutrients per 100 g: the chain's label where it gives them, else the USDA FNDDS food in food_id.
+  calcium_mg     REAL,
+  iron_mg        REAL,
+  magnesium_mg   REAL,
+  potassium_mg   REAL,
+  vitamin_c_mg   REAL,
+  vitamin_d_ug   REAL,
+  vitamin_b12_ug REAL,
+  food_id   INTEGER REFERENCES foods (id),  -- the matching generic food (USDA FNDDS); NULL = none close enough
   CHECK (recipe_id IS NOT NULL OR kcal IS NOT NULL)
 );
 
@@ -82,7 +98,15 @@ CREATE TABLE products (
   carbs_g   REAL NOT NULL,
   fiber_g   REAL,
   sugar_g   REAL,
-  sodium_mg REAL
+  sodium_mg REAL,
+  -- Micronutrients per 100 g from the package label (Open Food Facts); NULL = not on the label.
+  calcium_mg     REAL,
+  iron_mg        REAL,
+  magnesium_mg   REAL,
+  potassium_mg   REAL,
+  vitamin_c_mg   REAL,
+  vitamin_d_ug   REAL,
+  vitamin_b12_ug REAL
 );
 
 -- Recipe ingredient names in the app's other languages (db/food_names.tsv, tool/food_names.py).

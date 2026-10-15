@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:sqlite3/sqlite3.dart';
 
 import '../agent/agent_tools.dart' show FoodChoice, Nutrients, micronutrients, nutrients;
@@ -87,6 +89,36 @@ void replaceMeal(Database user, int id, FoodChoice food) {
         for (final m in micronutrients) switch (food.per100[m]) { final v? => v * g / 100, null => null },
         id,
       ]);
+}
+
+/// Meals logged before nutri.db had vitamins and minerals for their food get them from the food of the
+/// same name (a food or a dish), once per [dataVersion]. Recipes already had them; products and quick adds stay unknown.
+int fillMissingMicros(Database user, Database nutri, int dataVersion) {
+  if (pref(user, 'micros_filled') == '$dataVersion') return 0;
+  final rows = user.select('SELECT id, description, grams FROM meal_log WHERE iron_mg IS NULL AND grams > 0 AND recipe_id IS NULL');
+  final names = {for (final r in rows) r['description'] as String}.toList();
+  final marks = List.filled(names.length, '?').join(',');
+  final foods = names.isEmpty
+      ? const <String, Row>{}
+      : {
+          // Dishes too: logged before they had vitamins (a dish and a food may share a name; the food wins).
+          for (final table in ['dishes', 'foods'])
+            for (final f in nutri.select(
+                'SELECT name, ${micronutrients.join(', ')} FROM $table WHERE iron_mg IS NOT NULL AND name IN ($marks)',
+                names))
+              f['name'] as String: f
+        };
+  var n = 0;
+  for (final r in rows) {
+    final f = foods[r['description']];
+    if (f == null) continue;
+    final share = (r['grams'] as num) / 100;
+    user.execute('UPDATE meal_log SET ${[for (final m in micronutrients) '$m = ?'].join(', ')} WHERE id = ?',
+        [for (final m in micronutrients) switch (f[m]) { final num v => v * share, _ => null }, r['id']]);
+    n++;
+  }
+  setPref(user, 'micros_filled', '$dataVersion');
+  return n;
 }
 
 /// What the user logs most in the last 30 days, then most recently: one tap to log again.
@@ -237,6 +269,26 @@ List<({DateTime at, double kg})> weightsSince(Database user, DateTime from) => [
     kg: (latest['value'] as num).toDouble() * (latest['unit'] == 'lb' ? 0.45359237 : 1),
     change: w.length < 2 ? null : w.last.kg - w.first.kg,
   );
+}
+
+/// The trend weight under each reading: an exponential moving average that moves 10 % of the way
+/// to the scale per day (gaps count as days), so a heavy morning of water barely shifts it.
+List<({DateTime at, double kg, double trend})> weightTrend(List<({DateTime at, double kg})> readings) {
+  final out = <({DateTime at, double kg, double trend})>[];
+  for (final r in readings) {
+    final prev = out.lastOrNull;
+    final days = prev == null ? 0 : r.at.difference(prev.at).inHours / 24;
+    final alpha = 1 - math.pow(.9, days.clamp(0, 30));
+    out.add((at: r.at, kg: r.kg, trend: prev == null ? r.kg : prev.trend + alpha * (r.kg - prev.trend)));
+  }
+  return out;
+}
+
+/// The trend's change per week over [points] (first to last), or null under a week of data.
+double? trendPerWeek(List<({DateTime at, double kg, double trend})> points) {
+  if (points.length < 2) return null;
+  final days = points.last.at.difference(points.first.at).inHours / 24;
+  return days < 7 ? null : (points.last.trend - points.first.trend) / days * 7;
 }
 
 /// Anyone can log their weight (goals use it) and see the trend.

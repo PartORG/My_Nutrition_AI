@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:sqlite3/sqlite3.dart';
 
 import '../data/conditions.dart';
@@ -16,7 +18,7 @@ const micronutrients = [
 ];
 typedef Nutrients = Map<String, double>;
 
-typedef RecipeSummary = ({int id, String title, int? minutes, double kcal});
+typedef RecipeSummary = ({int id, String title, int? minutes, double kcal, double protein});
 typedef Passage = ({String source, String text});
 
 /// What the chat shows under a model message. Numbers come from here, never
@@ -267,10 +269,16 @@ class AgentTools {
     for (final id in _ftsIds(nutri, 'recipes_fts', '$query $ingredients', limit: 200)) {
       if (wanted.isEmpty || scores.containsKey(id)) scores.update(id, (s) => s + 1, ifAbsent: () => 1);
     }
-    // Stars steer ideas: 4-5 rank higher, 1-2 are never suggested again.
+    // Stars steer ideas: 4-5 rank higher, 1-2 are never suggested again; and recipes sharing the
+    // ingredients of liked and saved ones rank higher (taste, not just that one recipe).
     final stars = _ratings();
     for (final MapEntry(key: id, value: s) in stars.entries) {
       if (scores.containsKey(id)) scores[id] = scores[id]! + (s - 3) * 0.75;
+    }
+    // Only the best 300 can make the five shown; "chicken" alone matches tens of thousands.
+    final top = (scores.keys.toList()..sort((a, b) => scores[b]!.compareTo(scores[a]!))).take(300);
+    for (final MapEntry(key: id, value: b) in _tasteBoost(top).entries) {
+      scores[id] = scores[id]! + b;
     }
     final unsafe = _blockedRecipes();
     final blocked = {...unsafe, for (final e in stars.entries) if (e.value <= 2) e.key};
@@ -380,11 +388,43 @@ class AgentTools {
   /// Up to 20 random recipes tagged with the meal named in [query], else the meal for now.
   List<int> _randomRecipes(String query, Set<int> blocked) {
     final meal = _mealTypes.firstWhere(query.toLowerCase().contains, orElse: () => _mealTypeFor(_now()));
-    return [
+    final picks = [
       for (final r in nutri.select(
           "SELECT id FROM recipes WHERE ',' || tags || ',' LIKE ? ORDER BY RANDOM() LIMIT 40", ['%,$meal,%']))
         if (!blocked.contains(r['id'])) r['id'] as int
-    ].take(20).toList();
+    ];
+    // Still random, but closest to the user's taste first.
+    final boost = _tasteBoost(picks);
+    return (picks..sort((a, b) => (boost[b] ?? 0).compareTo(boost[a] ?? 0))).take(20).toList();
+  }
+
+  /// Taste from recipes rated 4-5 stars or saved: their ingredients, each weighted by how rare it is
+  /// among all recipes (chickpeas say more than salt; foods in over 5% of recipes, and at least 3, say nothing).
+  /// Each of [candidates] gets up to 3 points for sharing them: enough to reorder ideas, never enough
+  /// to beat an ingredient the user asked for (10).
+  Map<int, double> _tasteBoost(Iterable<int> candidates) {
+    final liked = {
+      for (final r in user.select('SELECT recipe_id FROM recipe_ratings WHERE stars >= 4 UNION SELECT recipe_id FROM saved_recipes'))
+        r['recipe_id'] as int
+    };
+    final ids = candidates.toSet()..removeAll(liked);
+    if (liked.isEmpty || ids.isEmpty) return {};
+    final total = nutri.select('SELECT COUNT(*) AS n FROM recipes').single['n'] as int;
+    final weight = <int, double>{
+      for (final r in nutri.select(
+          'SELECT food_id, (SELECT COUNT(*) FROM recipe_ingredients x WHERE x.food_id = ri.food_id) AS df '
+          'FROM recipe_ingredients ri WHERE recipe_id IN (${liked.join(',')}) GROUP BY food_id'))
+        if ((r['df'] as int) <= max(3, total * .05)) r['food_id'] as int: log(total / (r['df'] as int))
+    };
+    if (weight.isEmpty) return {};
+    final boost = <int, double>{};
+    for (final r in nutri.select(
+        'SELECT recipe_id, food_id FROM recipe_ingredients WHERE food_id IN (${weight.keys.join(',')}) '
+        'AND recipe_id IN (${ids.join(',')})')) {
+      final id = r['recipe_id'] as int;
+      boost[id] = min(3, (boost[id] ?? 0) + .3 * weight[r['food_id']]!);
+    }
+    return boost;
   }
 
   /// Recipes containing any allergen the profile has, or any food its
@@ -447,12 +487,15 @@ class AgentTools {
     return byFood.values.toList();
   }
 
+  /// Title, minutes, kcal and protein per serving.
+  RecipeSummary recipeSummary(int id) => _summary(id);
+
   RecipeSummary _summary(int id) {
     final r = nutri.select(
-        'SELECT r.title, r.minutes, n.kcal FROM recipes r JOIN recipe_nutrition n ON n.recipe_id = r.id '
+        'SELECT r.title, r.minutes, n.kcal, n.protein_g FROM recipes r JOIN recipe_nutrition n ON n.recipe_id = r.id '
         'WHERE r.id = ?', [id]).single;
     return (id: id, title: r['title'] as String, minutes: r['minutes'] as int?,
-        kcal: (r['kcal'] as num).toDouble());
+        kcal: (r['kcal'] as num).toDouble(), protein: (r['protein_g'] as num).toDouble());
   }
 
   /// "2", "recipe 2", "the second one", "last", or a title.
@@ -688,9 +731,9 @@ class AgentTools {
     Nutrients scale(Nutrients per100, double g) => per100.map((k, v) => MapEntry(k, v * g / 100));
 
     if (staples[name.trim().toLowerCase()] case (final label, final serving)) {
-      if (nutri.select('SELECT * FROM foods WHERE name = ?', [label]).firstOrNull case final f?) {
+      if (nutri.select('SELECT * FROM foods WHERE name = ? COLLATE NOCASE', [label]).firstOrNull case final f?) {
         final g = grams(serving ?? (f['serving_g'] as num?)?.toDouble());
-        return (label: label, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
+        return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
       }
     }
 
@@ -699,12 +742,13 @@ class AgentTools {
     // "chicken caesar salad" the dish. Ties: dish, then recipe, then food.
     final candidates = [
       for (final id in _ftsIds(nutri, 'dishes_fts', name, limit: 3))
-        ('dish', id, nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String),
+        ('dish', id, nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String, 2),
       if (unit.isEmpty) // "200 g of shakshuka" is weighed food, not servings of a recipe
         for (final id in _ftsIds(nutri, 'recipes_fts', name, limit: 3))
-          ('recipe', id, _summary(id).title),
+          ('recipe', id, _summary(id).title, 2),
       for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 10)) // search ranks "Cream Puff" above "Cream, fluid"
-        ('food', id, nutri.select('SELECT name FROM foods WHERE id = ?', [id]).single['name'] as String),
+        for (final f in nutri.select('SELECT name, source FROM foods WHERE id = ?', [id]))
+          ('food', id, f['name'] as String, authority(f['source'] as String)),
     ];
     // The plain food first: "banana" is "Banana", not "Banana chips, banana",
     // which search ranks higher for repeating the word.
@@ -713,19 +757,20 @@ class AgentTools {
         if (n.length > 4 && n.endsWith('es')) n.substring(0, n.length - 2)};
     final names = [for (final f in forms) ...[f, '$f, raw']];
     final plain = nutri.select(
-        'SELECT id FROM foods WHERE name COLLATE NOCASE IN (${List.filled(names.length, '?').join(',')}) '
+        'SELECT id, source FROM foods WHERE name COLLATE NOCASE IN (${List.filled(names.length, '?').join(',')}) '
         'ORDER BY length(name) LIMIT 1', names).firstOrNull;
-    if (plain != null) candidates.insert(0, ('food', plain['id'] as int, name));
+    if (plain != null) candidates.insert(0, ('food', plain['id'] as int, name, authority(plain['source'] as String)));
     if (candidates.isEmpty) return null;
     final said = _words(name);
     double share(Iterable<String> words, Set<String> among) =>
         words.isEmpty ? 0 : words.where(among.contains).length / words.length;
     // Best first: has every word the user said ("chicken liver" is not "Chicken breast"); its main
     // part, before a comma, is what they said ("cream" is "Cream, fluid", not "ice cream");
-    // then the fewest unsaid words. Ties keep the earlier one: dish, then recipe, then food.
-    List<double> score(String label) {
-      final words = _words(label);
-      return [share(said, words), share(_words(label.split(RegExp(r'[,(]')).first), said), share(words, said)];
+    // then the fewest unsaid words; then a government table over a branded or small dataset.
+    // Ties keep the earlier one: dish, then recipe, then food.
+    List<double> score((String, int, String, int) c) {
+      final words = _words(c.$3);
+      return [share(said, words), share(_words(c.$3.split(RegExp(r'[,(]')).first), said), share(words, said), c.$4.toDouble()];
     }
     bool better(List<double> a, List<double> b) {
       for (var i = 0; i < a.length; i++) {
@@ -733,14 +778,15 @@ class AgentTools {
       }
       return false;
     }
-    final (kind, id, _) = candidates.reduce((best, c) => better(score(c.$3), score(best.$3)) ? c : best);
+    final (kind, id, _, _) = candidates.reduce((best, c) => better(score(c), score(best)) ? c : best);
 
     switch (kind) {
       case 'dish':
         final d = nutri.select('SELECT * FROM dishes WHERE id = ?', [id]).single;
         final g = grams((d['serving_g'] as num).toDouble());
+        // The linked recipe is for opening and rating; the dish's own values win (it may have none).
         final recipeId = d['recipe_id'] as int?;
-        final per100 = recipeId == null ? _nutrientsOf(d) : _recipePer100(recipeId);
+        final per100 = d['kcal'] != null || recipeId == null ? _nutrientsOf(d) : _recipePer100(recipeId);
         return (label: d['name'] as String, grams: g, values: scale(per100, g), estimated: true, recipeId: recipeId);
       case 'recipe':
         final g = qty * _recipeServingGrams(id);
@@ -917,13 +963,21 @@ class AgentTools {
       for (final id in _ftsIds(nutri, 'dishes_fts', text, limit: 5))
         for (final r in nutri.select('SELECT *, id FROM dishes WHERE id = ?', [id]))
           of('dish', r, (r['serving_g'] as num).toDouble(),
-              r['recipe_id'] == null ? _nutrientsOf(r) : _recipePer100(r['recipe_id'] as int), estimated: true),
+              r['kcal'] != null || r['recipe_id'] == null ? _nutrientsOf(r) : _recipePer100(r['recipe_id'] as int),
+              estimated: true),
       for (final id in _ftsIds(nutri, 'recipes_fts', text, limit: 5))
         for (final r in nutri.select('SELECT id, title AS name FROM recipes WHERE id = ?', [id]))
           of('recipe', r, _recipeServingGrams(id), _recipePer100(id)),
-      for (final id in _ftsIds(nutri, 'foods_fts', text, limit: limit))
-        for (final r in nutri.select('SELECT * FROM foods WHERE id = ?', [id]))
-          of('food', r, (r['serving_g'] as num?)?.toDouble(), _nutrientsOf(r)),
+      // Government tables first, then search order: "egg" is USDA's egg before a brand's.
+      for (final r in [
+        for (final id in _ftsIds(nutri, 'foods_fts', text, limit: limit))
+          ...nutri.select('SELECT * FROM foods WHERE id = ?', [id])
+      ].indexed.toList()
+        ..sort((a, b) => switch (authority(b.$2['source'] as String) - authority(a.$2['source'] as String)) {
+              0 => a.$1 - b.$1,
+              final d => d,
+            }))
+        of('food', r.$2, (r.$2['serving_g'] as num?)?.toDouble(), _nutrientsOf(r.$2)),
       // Every word must match: among millions of products "any word" buries the one meant.
       for (final r in (products ?? nutri).select(
           'SELECT p.*, p.barcode AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
@@ -983,6 +1037,14 @@ const staples = <String, (String, double?)>{
   'cooked rice': ('Rice, white, medium-grain, enriched, cooked', null),
   'boiled rice': ('Rice, white, medium-grain, enriched, cooked', null),
 };
+
+/// nutri.db foods.source -> how much its numbers are trusted: 2 government tables, 1 USDA-derived
+/// generic (foodstruct), 0 smaller or branded datasets.
+int authority(String source) => switch (source) {
+      'usda_sr28' || 'usda_sr' || 'usda_fdc_foundation' || 'usda_fndds' || 'nz_foodfiles' => 2,
+      'foodstruct' => 1,
+      _ => 0,
+    };
 
 List<String> _split(String s) => [
       for (final p in s.split(RegExp(r',|\band\b|\+|;|\bwith\b', caseSensitive: false)))

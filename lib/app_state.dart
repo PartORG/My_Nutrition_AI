@@ -398,6 +398,7 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final dir = ref.watch(appDirProvider).requireValue;
   final nutri = openNutriDb('${dir.path}/nutri.db');
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
+  fillMissingMicros(user, nutri, nutriDataVersion); // once per data release: past meals get vitamins too
   final data = ProfileData(profile: profile, nutri: nutri, user: user,
       tools: AgentTools(nutri, user, products: openProducts(dir)));
   // listen, not watch: a language switch must not reopen the databases.

@@ -4,6 +4,11 @@
 # ///
 """Build the real nutri.db from the raw datasets in nutrition-ai-assistant/data.
 
+raw_fdc/ holds three USDA FoodData Central bulk CSV releases (public domain), each unzipped in its folder:
+    survey/      https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip
+    foundation/  https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_csv_2026-04-30.zip
+    sr_legacy/   https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip
+
     uv run tool/build_real_nutri_db.py ~/Programming/nutrition-ai-assistant/data assets/nutri.db
 
 Reads every file in raw_nutritions/ and raw_recipes/ (byte-identical copies once) and writes
@@ -42,11 +47,24 @@ csv.field_size_limit(sys.maxsize)
 ROOT = Path(__file__).resolve().parent.parent
 MAX_DB_BYTES = 300_000_000
 NUTRIENTS = ("kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "sugar_g", "sodium_mg")
-# Per 100 g, from USDA SR28 only for now (other sources leave them NULL = unknown).
+# Per 100 g. From USDA SR28, FNDDS, FDC Foundation (bulk), NZ FOODfiles and foodstruct (all seven), FDC Branded
+# (calcium, iron, vitamin C); dishes: the chain's label, else the matching FNDDS food; products: the label (OFF).
+# Other sources leave them NULL = unknown.
 MICROS = ("calcium_mg", "iron_mg", "magnesium_mg", "potassium_mg", "vitamin_c_mg", "vitamin_d_ug", "vitamin_b12_ug")
 SR_MICROS = {"calcium_mg": "Calcium_(mg)", "iron_mg": "Iron_(mg)", "magnesium_mg": "Magnesium_(mg)",
              "potassium_mg": "Potassium_(mg)", "vitamin_c_mg": "Vit_C_(mg)", "vitamin_d_ug": "Vit_D_µg",
              "vitamin_b12_ug": "Vit_B12_(µg)"}
+# Highest plausible value per 100 g in a non-authoritative source (USDA SR28 tops: baking powder calcium
+# 7,364 mg, cream of tartar potassium 16,500 mg, dried thyme iron 124 mg; cod liver oil vitamin D 250 µg,
+# clams B12 ~100 µg, acerola vitamin C ~1,700 mg); above it the unit is wrong, so the value becomes unknown.
+MICRO_MAX = {"calcium_mg": 8000, "iron_mg": 150, "magnesium_mg": 1500, "potassium_mg": 17000, "vitamin_c_mg": 3000,
+             "vitamin_d_ug": 300, "vitamin_b12_ug": 200}
+AUTHORITATIVE = {"usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles"}
+
+
+def plausible(n: dict) -> dict:
+    """Micronutrients above MICRO_MAX (a wrong unit in a label or dataset) become unknown."""
+    return {**n, **{m: None for m, hi in MICRO_MAX.items() if (v := n.get(m)) is not None and not 0 <= v <= hi}}
 REPORT: dict[str, dict] = {}  # file -> {"rows": n, "kept": n, "target": str, "dropped": Counter, "note": str}
 
 
@@ -291,7 +309,8 @@ def load_fdc(raw: Path) -> list[dict]:
             name = f"{name} ({tidy(r['brand_name']).title()})"
         n = {"kcal": num(r["calories"]), "protein_g": num(r["protein_g"]), "fat_g": num(r["fat_g"]),
              "carbs_g": num(r["carbs_g"]), "fiber_g": num(r["fiber_g"]), "sugar_g": num(r["sugar_g"]),
-             "sodium_mg": num(r["sodium_mg"])}
+             "sodium_mg": num(r["sodium_mg"]), "calcium_mg": num(r["calcium_mg"]), "iron_mg": num(r["iron_mg"]),
+             "vitamin_c_mg": num(r["vitamin_c_mg"])}
         if t == "Branded" and (why := check(n, name)):
             rep["dropped"][why] += 1
             continue
@@ -303,6 +322,71 @@ def load_fdc(raw: Path) -> list[dict]:
                     "serving_g": serving, "weights": [], "ingredients": r["ingredients"]})
         rep["kept"] += 1
     return out
+
+
+# FoodData Central nutrient id, and the older nutrient number the FNDDS files use instead.
+FDC_NUTRIENTS = {"kcal": ("1008", "208"), "protein_g": ("1003", "203"), "fat_g": ("1004", "204"),
+                 "carbs_g": ("1005", "205"), "fiber_g": ("1079", "291"), "sugar_g": ("2000", "269"),
+                 "sodium_mg": ("1093", "307"), "calcium_mg": ("1087", "301"), "iron_mg": ("1089", "303"),
+                 "magnesium_mg": ("1090", "304"), "potassium_mg": ("1092", "306"), "vitamin_c_mg": ("1162", "401"),
+                 "vitamin_d_ug": ("1114", "328"), "vitamin_b12_ug": ("1178", "418")}
+FDC_KEY = {code: k for k, codes in FDC_NUTRIENTS.items() for code in codes}
+
+
+def fdc_bulk(folder: Path, data_type: str) -> dict[str, dict]:
+    """One FoodData Central bulk CSV release -> {fdc_id: {"name", "serving_g", nutrients}} of [data_type],
+    per 100 g. The serving is FNDDS's "Quantity not specified" portion: the typical amount eaten (its other
+    portions start at "1 oz" or "1 tablespoon", too small to mean "a serving")."""
+    d = next(p for p in folder.iterdir() if p.is_dir())
+    out = {r["fdc_id"]: {"name": r["description"]} for r in rows(d / "food.csv") if r["data_type"] == data_type}
+    for r in rows(d / "food_nutrient.csv"):
+        if (f := out.get(r["fdc_id"])) and (k := FDC_KEY.get(r["nutrient_id"])) and (v := num(r["amount"])) is not None:
+            f.setdefault(k, v)
+    if (d / "food_portion.csv").exists():
+        for r in rows(d / "food_portion.csv"):
+            if ((f := out.get(r["fdc_id"])) and r["portion_description"] == "Quantity not specified"
+                    and (g := num(r["gram_weight"]))):
+                f["serving_g"] = g
+    return out
+
+
+def load_fndds(raw: Path) -> list[dict]:
+    rep = report("raw_fdc/survey", "foods (generic foods and dishes as eaten, authoritative)",
+                 "USDA FNDDS 2021-2023 (FoodData Central survey foods, bulk CSV 2024-10-31): all seven "
+                 "micronutrients; also the source of the dishes' micronutrients (link_dishes).")
+    out = []
+    for fid, f in fdc_bulk(raw / "raw_fdc/survey", "survey_fndds_food").items():
+        rep["rows"] += 1
+        if None in (f.get("kcal"), f.get("protein_g"), f.get("fat_g"), f.get("carbs_g")):
+            rep["dropped"]["missing kcal/protein/fat/carbs"] += 1
+            continue
+        out.append({"name": tidy(f["name"]), "src": "usda_fndds", "skey": fid, "generic": True,
+                    **{k: f.get(k) for k in (*NUTRIENTS, *MICROS)}, "serving_g": f.get("serving_g"), "weights": []})
+        rep["kept"] += 1
+    return out
+
+
+def fill_foundation(raw: Path, fdc: list[dict]) -> int:
+    """The FDC extract has only calcium, iron and vitamin C: the bulk Foundation release adds the rest."""
+    rep = report("raw_fdc/foundation", "micronutrients of the Foundation foods",
+                 "USDA FoodData Central Foundation foods, bulk CSV 2026-04-30: fills magnesium, potassium, "
+                 "vitamin D and B12 (and any other gap) of comprehensive_foods_usda.csv's Foundation rows, same fdc_id.")
+    bulk = fdc_bulk(raw / "raw_fdc/foundation", "foundation_food")
+    rep["rows"] = len(bulk)
+    filled = 0
+    for f in fdc:
+        if f["src"] == "usda_fdc_foundation" and (b := bulk.get(str(f["skey"]))):
+            gaps = [m for m in MICROS if f.get(m) is None and b.get(m) is not None]
+            for m in gaps:
+                f[m] = b[m]
+            filled += bool(gaps)
+    rep["kept"] = filled
+    rep["dropped"]["no Foundation row of comprehensive_foods_usda.csv to fill"] = len(bulk) - filled
+    rep_sr = report("raw_fdc/sr_legacy", "-", "USDA SR Legacy, bulk CSV 2018-04: the same foods and values as "
+                    "ABBREV.csv (USDA SR28), kept to cross-check it; not loaded twice.")
+    rep_sr["rows"] = sum(1 for _ in rows(next(p for p in (raw / "raw_fdc/sr_legacy").iterdir() if p.is_dir()) / "food.csv"))
+    rep_sr["dropped"]["same foods as ABBREV.csv"] = rep_sr["rows"]
+    return filled
 
 
 def load_nz(raw: Path) -> list[dict]:
@@ -322,7 +406,9 @@ def load_nz(raw: Path) -> list[dict]:
             continue
         rep["rows"] += 1
         n = {"kcal": num(r[4]), "protein_g": num(r[9]), "fat_g": num(r[7]), "carbs_g": num(r[58]),
-             "fiber_g": num(r[10]), "sugar_g": num(r[5]), "sodium_mg": num(r[33])}
+             "fiber_g": num(r[10]), "sugar_g": num(r[5]), "sodium_mg": num(r[33]),
+             "calcium_mg": num(r[13]), "iron_mg": num(r[14]), "magnesium_mg": num(r[15]), "potassium_mg": num(r[16]),
+             "vitamin_c_mg": num(r[11]), "vitamin_d_ug": num(r[34]), "vitamin_b12_ug": num(r[21])}
         if None in (n["kcal"], n["protein_g"], n["fat_g"], n["carbs_g"]):
             rep["dropped"]["missing kcal/protein/fat/carbs"] += 1
             continue
@@ -367,6 +453,12 @@ def simple(raw: Path, file: str, target: str, note: str, src: str, name_col, col
     return out
 
 
+def grams_as(v, factor: float) -> float | None:
+    """A value given in grams, in mg (1e3) or µg (1e6); None stays unknown."""
+    g = num(v)
+    return None if g is None else g * factor
+
+
 def grams_in(text: str) -> float | None:
     """'4.8 oz (136 g)' -> 136; '143.5 g' -> 143.5; '(93 g/3.3 oz)' -> 93; '8 oz' -> 226.8."""
     if not text:
@@ -393,7 +485,14 @@ def load_flat_foods(raw: Path) -> tuple[list[dict], list[dict]]:
     foods += simple(raw, "foodstruct_nutritional_facts.csv", "foods (generic)", "foodstruct.com, per 100 g; minerals in grams.",
                     "foodstruct", "Food Name",
                     {"kcal": "Calories", "protein_g": "Protein", "fat_g": "Fats", "carbs_g": "Carbs", "fiber_g": "Fiber",
-                     "sugar_g": "Sugar", "sodium_mg": lambda r: (num(r["Sodium"]) * 1000 if num(r["Sodium"]) is not None else None)},
+                     "sugar_g": "Sugar", "sodium_mg": lambda r: grams_as(r["Sodium"], 1e3),
+                     # foodstruct gives minerals and vitamins in grams (banana iron 0.00026 = 0.26 mg).
+                     "calcium_mg": lambda r: grams_as(r["Calcium"], 1e3), "iron_mg": lambda r: grams_as(r["Iron"], 1e3),
+                     "magnesium_mg": lambda r: grams_as(r["Magnesium"], 1e3),
+                     "potassium_mg": lambda r: grams_as(r["Potassium"], 1e3),
+                     "vitamin_c_mg": lambda r: grams_as(r["Vitamin C"], 1e3),
+                     "vitamin_d_ug": lambda r: grams_as(r["Vitamin D"], 1e6),
+                     "vitamin_b12_ug": lambda r: grams_as(r["Vitamin B12"], 1e6)},
                     generic=True)
     foods += simple(raw, "Indian_Food_Nutrition_Processed.csv", "foods (Indian dishes, per 100 g)",
                     "Indian Nutrient Databank style, per 100 g; no serving weight so they are foods, not camera dishes.",
@@ -469,10 +568,16 @@ def load_flat_foods(raw: Path) -> tuple[list[dict], list[dict]]:
     def dish_file(file, note, src, name_col, cols, grams, delimiter=","):
         dishes.extend(simple(raw, file, "dishes", note, src, name_col, cols, grams=grams, delimiter=delimiter))
 
-    dish_file("menu.csv", "McDonald's menu; serving weight in 'Serving Size'.", "mcdonalds_menu",
+    def dv(col, daily):  # a label's % Daily Value -> amount per serving
+        return lambda r: None if num(r[col]) is None else num(r[col]) * daily / 100
+
+    dish_file("menu.csv", "McDonald's menu; serving weight in 'Serving Size'; calcium, iron and vitamin C from the "
+              "label's % Daily Value (US values before 2016: 1,000 mg, 18 mg, 60 mg).", "mcdonalds_menu",
               lambda r: f"{r['Item']} (McDonald's)",
               {"kcal": "Calories", "protein_g": "Protein", "fat_g": "Total Fat", "carbs_g": "Carbohydrates",
-               "fiber_g": "Dietary Fiber", "sugar_g": "Sugars", "sodium_mg": "Sodium"},
+               "fiber_g": "Dietary Fiber", "sugar_g": "Sugars", "sodium_mg": "Sodium",
+               "calcium_mg": dv("Calcium (% Daily Value)", 1000), "iron_mg": dv("Iron (% Daily Value)", 18),
+               "vitamin_c_mg": dv("Vitamin C (% Daily Value)", 60)},
               lambda r: grams_in(r["Serving Size"]))
     dish_file("nutrition_values.csv", "Fast-food chains with serving grams.", "chains_nutrition_values",
               lambda r: f"{r['Item']} ({r['Chain']})",
@@ -656,14 +761,22 @@ def off_product(get) -> dict | str:
          "sodium_mg": sod * 1000 if sod is not None else None}
     if why := check(n, name):
         return why
-    return {"barcode": code.zfill(13) if len(code) in (12, 13) else code, "name": name[:200], **n}
+    # The label's minerals and vitamins, in grams per 100 g like every OFF _100g column.
+    micros = {"calcium_mg": grams_as(get("calcium_100g"), 1e3), "iron_mg": grams_as(get("iron_100g"), 1e3),
+              "magnesium_mg": grams_as(get("magnesium_100g"), 1e3), "potassium_mg": grams_as(get("potassium_100g"), 1e3),
+              "vitamin_c_mg": grams_as(get("vitamin-c_100g"), 1e3), "vitamin_d_ug": grams_as(get("vitamin-d_100g"), 1e6),
+              "vitamin_b12_ug": grams_as(get("vitamin-b12_100g"), 1e6)}
+    return {"barcode": code.zfill(13) if len(code) in (12, 13) else code, "name": name[:200], **n, **plausible(micros)}
 
 
 # --------------------------------------------------------------------------- foods -> one table
 
-FOOD_PRIORITY = ["usda_sr28", "usda_sr", "usda_fdc_foundation", "nz_foodfiles", "foodstruct", "fda_produce",
+FOOD_PRIORITY = ["usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles", "foodstruct", "fda_produce",
                  "healthy_foods_db", "food_nutrition_dataset", "nutrients_csvfile", "indb", "indonesia",
                  "usda_fdc_branded", "baked_foods", "off_extract"]
+
+
+MICROS_DROPPED: Counter = Counter()  # source -> micronutrient values out of MICRO_MAX, set unknown
 
 
 def merge_foods(groups: list[list[dict]]) -> list[dict]:
@@ -680,6 +793,10 @@ def merge_foods(groups: list[list[dict]]) -> list[dict]:
             report_src(f["src"])["kept"] -= 1
             continue
         f["id"] = stable_id("food", f["src"], f["skey"])
+        for m, hi in MICRO_MAX.items():
+            if (v := f.get(m)) is not None and not (0 <= v <= hi or f["src"] in AUTHORITATIVE and v >= 0):
+                f[m] = None
+                MICROS_DROPPED[f["src"]] += 1
         f["allergens"] = allergens_from_text(f["name"] + " " + (f.get("ingredients") or "")) | f.get("allergen_flags", set())
         seen[k] = f
         out.append(f)
@@ -688,7 +805,7 @@ def merge_foods(groups: list[list[dict]]) -> list[dict]:
 
 SRC_FILE = {"usda_sr28": "raw_nutritions/ABBREV.csv", "usda_sr": "raw_nutritions/food.csv",
             "usda_fdc_foundation": "raw_nutritions/comprehensive_foods_usda.csv",
-            "usda_fdc_branded": "raw_nutritions/comprehensive_foods_usda.csv",
+            "usda_fdc_branded": "raw_nutritions/comprehensive_foods_usda.csv", "usda_fndds": "raw_fdc/survey",
             "nz_foodfiles": "raw_nutritions/Nutritional Datasets for New Zealand Foods.xlsx",
             "foodstruct": "raw_nutritions/foodstruct_nutritional_facts.csv",
             "fda_produce": "raw_nutritions/nutritionalfacts_fruit_vegetables_seafood.csv",
@@ -1229,11 +1346,11 @@ def write_db(out: Path, foods, dishes, products, recipes) -> dict[str, int]:
     db.execute("PRAGMA journal_mode = OFF")
     db.executescript((ROOT / "db/nutri_schema.sql").read_text())
     db.executemany("INSERT INTO meta VALUES (?, ?)", [
-        ("schema_version", "2"), ("embedding_model", "embeddinggemma-300m"), ("built_at", date.today().isoformat()),
+        ("schema_version", "3"), ("embedding_model", "embeddinggemma-300m"), ("built_at", date.today().isoformat()),
         ("source", "tool/build_real_nutri_db.py; per-file report in docs/DATA_SOURCES.md")])
-    db.executemany("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
-        (f["id"], f["name"], *(r3(f.get(k)) for k in NUTRIENTS), r3(f["serving_g"]), *(r3(f.get(m)) for m in MICROS))
-        for f in foods])
+    db.executemany("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        (f["id"], f["name"], *(r3(f.get(k)) for k in NUTRIENTS), r3(f["serving_g"]), *(r3(f.get(m)) for m in MICROS),
+         f["src"]) for f in foods])
     db.executemany("INSERT INTO allergens VALUES (?, ?)", [(f["id"], a) for f in foods for a in sorted(f["allergens"])])
     db.executemany("INSERT INTO recipes VALUES (?,?,?,?,?,?,?)", [
         (r["id"], r["title"], r["instructions"], r["servings"], r["minutes"], r["tags"], r["texture"]) for r in recipes])
@@ -1245,13 +1362,84 @@ def write_db(out: Path, foods, dishes, products, recipes) -> dict[str, int]:
         if key(d["name"]) in seen:
             continue
         seen.add(key(d["name"]))
-        rows_d.append((stable_id("dish", d["src"], d["skey"]), d["name"], r3(d["serving_g"]), None, *(r3(d.get(k)) for k in NUTRIENTS)))
-    db.executemany("INSERT INTO dishes VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows_d)
-    db.executemany("INSERT INTO products VALUES (?,?,?,?,?,?,?,?,?)", [
-        (p["barcode"], p["name"], *(r3(p.get(k)) for k in NUTRIENTS)) for p in products])
-    medical = apply_medical(db) | apply_food_names(db)
+        rows_d.append((stable_id("dish", d["src"], d["skey"]), d["name"], r3(d["serving_g"]), None,
+                       *(r3(d.get(k)) for k in NUTRIENTS), *(r3(plausible(d).get(m)) for m in MICROS), None))
+    db.executemany("INSERT INTO dishes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows_d)
+    links = link_dishes(db)
+    db.executemany("INSERT INTO products VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        (p["barcode"], p["name"], *(r3(p.get(k)) for k in NUTRIENTS), *(r3(p.get(m)) for m in MICROS)) for p in products])
+    medical = apply_medical(db) | apply_food_names(db) | links
     finish(db, tmp, out)
     return medical
+
+
+DISH_STOP = {"with", "and", "or", "the", "a", "of", "in", "from", "made", "ns", "as", "to", "type", "medium", "small",
+             "large", "regular", "snack", "size", "oz", "pc", "piece", "personal", "slice", "no", "dressing", "premium",
+             "classic", "mc", "donalds", "mcdonald"}
+# Preparation words that don't change what a food is ("Potato, french fries, fast food" = french fries).
+DISH_NEUTRAL = {"fast", "food", "restaurant", "nf", "plain", "cooked", "raw", "baked", "broiled", "roasted", "frozen",
+                "fresh", "prepared", "homemade", "fat", "added", "skin", "eaten", "canned", "ready", "drink"}
+CHAIN_NOTE = re.compile(r"\((?:mc ?donald'?s|burger king|pizza hut|kfc|subway|wendy'?s|taco bell|dominos?|starbucks|"
+                        r"small|medium|large|regular|personal|snack|[^)]*\bpiece)\)", re.I)
+
+
+def dish_words(s: str) -> set[str]:
+    s = CHAIN_NOTE.sub(" ", s).lower()
+    return {w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+            for w in re.findall(r"[a-z]+", s)} - DISH_STOP
+
+
+# A recipe title names the same dish only with filler words gone ("Classic Lasagna" is lasagna; "Hamburger
+# Snacks" and "pork chops with dressing" are not a hamburger or a pork chop).
+TITLE_FILLER = {"with", "and", "or", "the", "a", "of", "in", "classic", "homemade", "easy", "best", "perfect", "oz"}
+
+
+def title_words(s: str) -> frozenset[str]:
+    s = CHAIN_NOTE.sub(" ", re.sub(r"\(\d+\)", "", s)).lower()
+    return frozenset(w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+                     for w in re.findall(r"[a-z]+", s)) - TITLE_FILLER
+
+
+def chain(s: str) -> str | None:
+    s = s.lower()
+    return ("mcdonalds" if re.search(r"mc ?donald", s) else "burger king" if "burger king" in s
+            else "pizza hut" if "pizza hut" in s else None)
+
+
+def link_dishes(db: sqlite3.Connection) -> dict[str, int]:
+    """Each dish -> the USDA FNDDS food of the same name (food_id; fills the micronutrients its source lacks)
+    and a recipe with exactly its title (recipe_id, to open and rate; the dish keeps its own nutrition).
+    A match must cover every word of the dish with calories within 0.7-1.4x; the same chain wins, then the
+    fewest extra words, then the closest calories. No match stays unknown rather than borrowing a near food."""
+    fndds = [(i, n, dish_words(n), k, chain(n)) for i, n, k in
+             db.execute("SELECT id, name, kcal FROM foods WHERE source = 'usda_fndds'")]
+    titles = defaultdict(list)
+    for rid, title in db.execute("SELECT id, title FROM recipes"):
+        titles[title_words(title)].append(rid)
+    n_food = n_recipe = 0
+    for did, name, kcal in db.execute("SELECT id, name, kcal FROM dishes").fetchall():
+        words, own = dish_words(name), chain(name)
+        if not words or kcal is None:
+            continue
+        best = max(((1 if own and own == fc else 0 if fc else 0.5, -len(fw - words - DISH_NEUTRAL), -abs(fk - kcal), fid)
+                    for fid, _, fw, fk, fc in fndds
+                    if words <= fw and len(words & fw) / len(fw) >= 0.34 and 0.7 <= (fk + 1) / (kcal + 1) <= 1.4),
+                   default=None)
+        if best:
+            fid = best[-1]
+            db.execute(f"UPDATE dishes SET food_id = ?, {', '.join(f'{m} = COALESCE({m}, (SELECT {m} FROM foods WHERE id = ?))' for m in MICROS)} "
+                       "WHERE id = ?", (fid, *([fid] * len(MICROS)), did))
+            n_food += 1
+        if own is None and (ids := titles.get(title_words(name))):
+            per100 = {rid: k for rid, k in db.execute(
+                f"SELECT r.id, 100.0 * n.kcal * r.servings / TOTAL(ri.grams) FROM recipes r "
+                f"JOIN recipe_ingredients ri ON ri.recipe_id = r.id JOIN recipe_nutrition n ON n.recipe_id = r.id "
+                f"WHERE r.id IN ({','.join(map(str, ids))}) GROUP BY r.id")}
+            if per100:
+                db.execute("UPDATE dishes SET recipe_id = ? WHERE id = ?", (min(per100, key=lambda r: abs(per100[r] - kcal)), did))
+                n_recipe += 1
+    print(f"dishes linked: {n_food} to a USDA FNDDS food, {n_recipe} to a recipe")
+    return {"dishes linked to a USDA FNDDS food": n_food, "dishes linked to a recipe": n_recipe}
 
 
 def pick_recipes(recipes: list[dict], budget_bytes: int) -> list[dict]:
@@ -1368,9 +1556,10 @@ def write_report(path: Path, counts: dict, medical: dict[str, int]) -> None:
 def main(raw: Path, out: Path) -> None:
     sr = load_sr(raw)
     sr += load_food_csv(raw, sr)
-    fdc, nz = load_fdc(raw), load_nz(raw)
+    fdc, nz, fndds = load_fdc(raw), load_nz(raw), load_fndds(raw)
+    fill_foundation(raw, fdc)
     flat, dishes = load_flat_foods(raw)
-    foods = merge_foods([sr, fdc, nz, flat])
+    foods = merge_foods([sr, fdc, fndds, nz, flat])
     m = Matcher(foods, Path(__file__).parent / "ingredient_map.txt")
     R = Recipes(m)
     load_foodcom(raw, R)
@@ -1397,6 +1586,7 @@ def main(raw: Path, out: Path) -> None:
     report_copies(raw)
     write_report(ROOT / "docs/DATA_SOURCES.md", counts, medical)
     print(json.dumps(counts, indent=1))
+    print("micronutrient values out of range, set unknown:", dict(MICROS_DROPPED))
     # What to add to ingredient_map.txt next: each line here blocked that many recipes.
     print("top unmatched ingredient lines:", *(f"  {n:6} {why}" for why, n in R.unmatched.most_common(30)), sep="\n")
     if size > MAX_DB_BYTES:
