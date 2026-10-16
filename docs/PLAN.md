@@ -426,7 +426,7 @@ columns for them at all.
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
 
-## Data v4 (2026-10-16): European food tables
+## v0.8.1, data v4 (2026-10-16): European food tables
 
 - **New sources:** ANSES-CIQUAL 2025 (France, Licence Ouverte 2.0, 3,243 foods) and McCance and Widdowson's
   CoFID 2021 (UK, OGL v3, 2,632 foods), both authoritative (`authority()` = 2) with all seven micronutrients,
