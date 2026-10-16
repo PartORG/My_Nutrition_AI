@@ -11,7 +11,7 @@ import 'period_view.dart';
 import 'theme.dart';
 import 'today_screen.dart' show NutrientBar, limitNutrients;
 
-/// Pro: the last 12 calendar months — calories per month vs goal, a logging calendar,
+/// Pro: this calendar year — a logging calendar, calories per month vs goal,
 /// nutrient averages with the best and worst month, weight, and what was eaten most.
 class YearView extends StatelessWidget {
   const YearView({super.key, required this.data});
@@ -24,7 +24,7 @@ class YearView extends StatelessWidget {
       builder: (context, _, _) {
         final l = AppLocalizations.of(context)!;
         final now = DateTime.now();
-        final first = DateTime(now.year, now.month - 11);
+        final first = DateTime(now.year);
         // UTC dates: a DST change would make a local difference one hour short of a day.
         final days = DateTime.utc(now.year, now.month, now.day).difference(DateTime.utc(first.year, first.month)).inDays + 1;
         final series = dailyTotals(data.user, now, days);
@@ -123,67 +123,84 @@ class YearView extends StatelessWidget {
   }
 }
 
-/// One row per month, one cell per day, coloured by how close the day's calories were to the goal.
+/// Jan–Dec in a 4 × 3 grid, each month a block of week rows; a cell per day, coloured by how close
+/// the day's calories were to the goal. Days still to come are faint.
 class _YearCalendar extends StatelessWidget {
   const _YearCalendar({required this.series, required this.goal});
   final List<DayTotals> series;
   final double? goal;
 
+  static const _far = Color(0xFFE9A15A);
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final locale = Localizations.localeOf(context).toString();
     final byDay = {for (final d in series) DateTime(d.day.year, d.day.month, d.day.day): d};
-    final first = series.first.day;
-    final on = context.colors.primary, near = on.withValues(alpha: .5), far = const Color(0xFFEB6834);
-    final empty = context.colors.accent.withValues(alpha: .2);
-    Color? color(DayTotals? d) {
-      if (d == null) return null; // not in the range (future, or no such day)
+    final year = series.first.day.year;
+    // Near: the green faded toward the card, so it stays apart from "on" in both themes.
+    final on = c.primary, near = Color.lerp(on, c.surface, .45)!, empty = c.border, future = empty.withValues(alpha: .4);
+    Color color(DayTotals? d) {
+      if (d == null) return future;
       if (d.entries == 0) return empty;
       if (goal == null) return on;
       final off = (d.totals['kcal']! / goal! - 1).abs();
-      return off <= .1 ? on : off <= .25 ? near : far;
+      return off <= .1 ? on : off <= .25 ? near : _far;
     }
 
-    Widget swatch(Color c, String label) => Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 10, height: 10, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 4),
-          Flexible(child: Text(label, style: TextStyle(color: context.colors.textSecondary, fontSize: 11))),
+    Widget month(int m) {
+      // Day 0 of the next month is this month's last day.
+      final days = DateTime(year, m + 1, 0).day;
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(DateFormat.MMM(locale).format(DateTime(year, m)), style: TextStyle(fontSize: 13, color: c.ink2)),
+        const SizedBox(height: 6),
+        for (var week = 0; week * 7 < days; week++)
+          Row(children: [
+            for (var i = 1; i <= 7; i++)
+              Expanded(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: week * 7 + i > days
+                      ? null
+                      : Container(
+                          margin: const EdgeInsets.all(1),
+                          decoration: BoxDecoration(
+                            color: color(byDay[DateTime(year, m, week * 7 + i)]),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                ),
+              ),
+          ]),
+      ]);
+    }
+
+    Widget swatch(Color color, String label) => Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+          const SizedBox(width: 6),
+          Flexible(child: Text(label, style: TextStyle(color: c.ink2, fontSize: 13))),
         ]);
-    final muted = TextStyle(color: context.colors.textSecondary, fontSize: 11);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       ExcludeSemantics(
         child: Column(children: [
-          for (var m = 0; m < 12; m++)
-            () {
-              final month = DateTime(first.year, first.month + m);
-              return Row(children: [
-                SizedBox(width: 18, child: Text(DateFormat.MMM().format(month).substring(0, 1), style: muted)),
-                for (var day = 1; day <= 31; day++)
-                  Expanded(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        margin: const EdgeInsets.all(.75),
-                        decoration: BoxDecoration(
-                          // DateTime(y, m, 31) in a 30-day month rolls over into the next one.
-                          color: DateTime(month.year, month.month, day).month == month.month
-                              ? color(byDay[DateTime(month.year, month.month, day)])
-                              : null,
-                          borderRadius: BorderRadius.circular(1.5),
-                        ),
-                      ),
-                    ),
-                  ),
-              ]);
-            }(),
+          for (var row = 0; row < 3; row++) ...[
+            if (row > 0) const SizedBox(height: 14),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              for (var col = 0; col < 4; col++) ...[
+                if (col > 0) const SizedBox(width: 14),
+                Expanded(child: month(row * 4 + col + 1)),
+              ],
+            ]),
+          ],
         ]),
       ),
-      const SizedBox(height: 8),
-      Wrap(spacing: 12, runSpacing: 4, children: [
+      const SizedBox(height: 14),
+      Wrap(spacing: 14, runSpacing: 6, children: [
         if (goal != null) ...[
           swatch(on, l.calendarOnGoal),
           swatch(near, l.calendarNear),
-          swatch(far, l.calendarFar),
+          swatch(_far, l.calendarFar),
         ],
         swatch(empty, l.calendarNotLogged),
       ]),

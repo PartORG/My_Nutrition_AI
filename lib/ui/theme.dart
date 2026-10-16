@@ -240,6 +240,24 @@ extension AppPaletteX on BuildContext {
       (Theme.of(this).brightness == Brightness.dark ? AppPalette.night : AppPalette.light);
 }
 
+/// The calories card and drawer header: the hero green running into teal.
+LinearGradient heroGradient(AppPalette c) => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [c.hero, Color.lerp(c.hero, const Color(0xFF13A08A), .55)!]);
+
+/// Each meal's colour and icon on Today: white icon on the colour, the card a wash of it.
+const mealStyles = {
+  'breakfast': (Color(0xFFE8961E), Icons.free_breakfast_outlined),
+  'lunch': (Color(0xFF2E9E5B), Icons.lunch_dining_outlined),
+  'dinner': (Color(0xFF5B6CD6), Icons.dinner_dining_outlined),
+  'snack': (Color(0xFFE5674F), Icons.cookie_outlined),
+};
+
+/// [color] washed over the card surface, a little stronger at night to show on the dark.
+Color tint(BuildContext context, Color color) => Color.alphaBlend(
+    color.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .16 : .10), context.colors.surface);
+
 /// Corner radii of the design: cards 20, small cards 18, inputs and tiles 14-16, pills full.
 abstract final class Radii {
   static const card = 20.0;

@@ -97,7 +97,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       if (!mounted) return await cam.dispose();
       setState(() => _cam = cam);
       _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        if (_live) _detect();
+        if (_live && !_naming) _detect(); // Gemma gets the CPU while it names
       });
     } on Object catch (e) {
       if (mounted) setState(() => _error = e); // permission denied, no camera

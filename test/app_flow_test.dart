@@ -68,6 +68,14 @@ void main() {
     await settle(tester);
     expect(find.text('Hello, Anna'), findsOneWidget);
 
+    // The drawer: menu button → tabs and deeper screens → a tab closes it.
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Health'), findsOneWidget);
+    await tester.tap(find.text('Today').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Health'), findsNothing);
+
     // Forgot PIN → confirm → profile and its files are gone, back to sign-up.
     await tester.tap(find.byTooltip('Lock'));
     await tester.pumpAndSettle();

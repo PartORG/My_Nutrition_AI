@@ -100,18 +100,23 @@ class TfliteDetector implements Detector {
 
   final Interpreter _interpreter;
   final IsolateInterpreter _isolate;
+  Future<void>? _running;
 
   @override
   Future<List<Detection>> detect(Uint8List rgb) async {
     final boxes = [List.generate(25, (_) => List.filled(4, 0.0))];
     final classes = [List.filled(25, 0.0)], scores = [List.filled(25, 0.0)], count = [0.0];
-    await _isolate.runForMultipleInputs([rgb], {0: boxes, 1: classes, 2: scores, 3: count});
+    await (_running = _isolate.runForMultipleInputs([rgb], {0: boxes, 1: classes, 2: scores, 3: count}));
     return decodeDetections(boxes[0], classes[0], scores[0], count[0].round());
   }
 
+  /// Waits for a run in flight: freeing the native interpreter under it
+  /// crashed the app on leaving the camera (back, or after Continue).
   @override
   void close() {
-    _isolate.close();
-    _interpreter.close();
+    (_running ?? Future<void>.value()).then((_) {}, onError: (_) {}).whenComplete(() async {
+      await _isolate.close();
+      _interpreter.close();
+    });
   }
 }

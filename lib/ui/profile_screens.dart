@@ -322,7 +322,10 @@ class _PinScreenState extends ConsumerState<PinScreen> {
     const white = Colors.white;
     final google = googleClientId.isEmpty ? null : ref.read(profilesProvider).googleEmail(widget.profile.id);
     final biometric = ref.read(profilesProvider).biometricEnabled(widget.profile.id);
-    final whiteButton = FilledButton.styleFrom(backgroundColor: white, foregroundColor: c.ink);
+    // Fixed dark ink: c.ink is near-white in the dark theme, invisible on white or gold.
+    final whiteButton = FilledButton.styleFrom(backgroundColor: white, foregroundColor: AppPalette.light.ink);
+    final unlockButton = FilledButton.styleFrom(
+        backgroundColor: c.gold, foregroundColor: AppPalette.light.ink, elevation: 2, shadowColor: Colors.black54);
     final outline = OutlinedButton.styleFrom(
         backgroundColor: Colors.transparent, foregroundColor: white, side: BorderSide(color: white.withValues(alpha: .45)));
     return Scaffold(
@@ -354,9 +357,13 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                 Text(l.dataLocked, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: white.withValues(alpha: .85))),
                 const SizedBox(height: 40),
                 if (_showPin) ...[
+                  // Light theme whatever the app's: a white field needs dark text. The label stays
+                  // inside the field: floated, it sat on the green background unreadable.
                   Theme(
-                    data: Theme.of(context).copyWith(
-                      inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(fillColor: white),
+                    data: AppTheme.build(Brightness.light).copyWith(
+                      inputDecorationTheme: AppTheme.build(Brightness.light)
+                          .inputDecorationTheme
+                          .copyWith(fillColor: white, floatingLabelBehavior: FloatingLabelBehavior.never),
                     ),
                     child: _PinField(
                       controller: _pin,
@@ -372,7 +379,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                       child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: c.gold, fontWeight: FontWeight.w600)),
                     ),
                   const SizedBox(height: 14),
-                  FilledButton(style: whiteButton, onPressed: _busy ? null : _unlock, child: _busy ? const _Spinner() : Text(l.unlock)),
+                  FilledButton(style: unlockButton, onPressed: _busy ? null : _unlock, child: _busy ? const _Spinner() : Text(l.unlock)),
                   if (biometric) ...[
                     const SizedBox(height: 10),
                     OutlinedButton.icon(

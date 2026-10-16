@@ -292,8 +292,17 @@ double? trendPerWeek(List<({DateTime at, double kg, double trend})> points) {
 }
 
 /// Anyone can log their weight (goals use it) and see the trend.
-void logWeight(Database user, double value, {required bool imperial, required DateTime at}) =>
-    logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);
+/// One a day: logging again that day replaces the reading, so a typo can be corrected
+/// (a second reading minutes later would barely move the trend).
+void logWeight(Database user, double value, {required bool imperial, required DateTime at}) {
+  final (from, to) = _dayRange(at);
+  user.execute("DELETE FROM readings WHERE kind = 'weight' AND logged_at >= ? AND logged_at < ?", [from, to]);
+  logReading(user, 'weight', value, imperial ? 'lb' : 'kg', at: at);
+}
+
+/// A weight a person can have: anything else is a typo (7.24, 724).
+bool plausibleWeight(double value, {required bool imperial}) =>
+    imperial ? value >= 44 && value <= 770 : value >= 20 && value <= 350;
 
 // ---- per-profile preferences --------------------------------------------------
 

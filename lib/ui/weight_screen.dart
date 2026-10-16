@@ -65,9 +65,13 @@ Future<void> logWeightDialog(BuildContext context, ProfileData data) async {
   final imperial = loadBody(data.user)?.imperial ?? false;
   final v = await showDialog<double>(
     context: context,
-    builder: (_) => TargetDialog(title: imperial ? l.weightLb : l.weightKg, initial: null, allowReset: false),
+    builder: (_) => TargetDialog(
+        title: imperial ? l.weightLb : l.weightKg,
+        initial: null,
+        allowReset: false,
+        valid: (v) => plausibleWeight(v, imperial: imperial)),
   );
-  if (v == null || v <= 0) return;
+  if (v == null || !plausibleWeight(v, imperial: imperial)) return;
   logWeight(data.user, v, imperial: imperial, at: DateTime.now());
   data.changed();
   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.weightLogged)));
@@ -219,12 +223,19 @@ class _WeightScreenState extends State<WeightScreen> {
                             now.difference(points.first.at).inDays.clamp(1, 400)), big: true),
                     ]),
                   const SizedBox(height: 16),
-                  ChoicePills<int>(
-                    values: const [1, 3, 6, 12],
-                    selected: _months,
-                    label: (m) => m == 12 ? l.rangeYear : l.rangeMonths(m),
-                    onChanged: (m) => setState(() => _months = m),
-                  ),
+                  // Four equal pills across, as in the design.
+                  Row(children: [
+                    for (final (i, m) in const [1, 3, 6, 12].indexed) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: Pill(
+                          label: m == 12 ? l.rangeYear : l.rangeMonths(m),
+                          selected: m == _months,
+                          onTap: () => setState(() => _months = m),
+                        ),
+                      ),
+                    ],
+                  ]),
                   const SizedBox(height: 16),
                   Panel(
                     padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
@@ -248,7 +259,10 @@ class _WeightScreenState extends State<WeightScreen> {
                       child: StatTile(
                           value: perWeek == null
                               ? '–'
-                              : signedWeight(perWeek, imperial).replaceAll(' $unit', '').replaceFirst('+', '+'),
+                              : () {
+                                  final w = imperial ? kgToLb(perWeek) : perWeek;
+                                  return '${w > 0.005 ? '+' : w < -0.005 ? '−' : '±'}${w.abs().toStringAsFixed(2)}';
+                                }(),
                           label: l.perWeek(unit)),
                     ),
                     const SizedBox(width: 10),

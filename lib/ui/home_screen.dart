@@ -13,11 +13,16 @@ import '../data/diary.dart' show pref, setPref, waterGoal;
 import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart';
+import 'goals_screen.dart';
+import 'health_screen.dart';
+import 'history_screen.dart';
 import 'log_screen.dart';
 import 'me_screen.dart';
 import 'plan_screen.dart';
+import 'settings_screen.dart' show SettingsScreen;
 import 'theme.dart';
 import 'today_screen.dart';
+import 'weight_screen.dart';
 
 /// The selected tab: Today's buttons open Chat or Log. Log has no tab of its own: the + opens it.
 final homeTabProvider = NotifierProvider<HomeTab, int>(HomeTab.new);
@@ -136,6 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _ => const MeScreen(),
     };
     return Scaffold(
+      drawer: _Drawer(name: widget.name, data: data),
       body: SafeArea(bottom: false, child: body),
       bottomNavigationBar: _BottomBar(tab: tab, onTab: ref.read(homeTabProvider.notifier).go),
     );
@@ -225,6 +231,88 @@ class _BottomBar extends StatelessWidget {
           item(HomeTab.me, Icons.person_outline, Icons.person, l.tabMe),
         ]),
       ),
+    );
+  }
+}
+
+/// Every tab and the screens otherwise a few taps deep in Me, one swipe from the left edge.
+class _Drawer extends ConsumerWidget {
+  const _Drawer({required this.name, required this.data});
+  final String name;
+  final ProfileData? data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final tab = ref.watch(homeTabProvider);
+    final data = this.data;
+    final nav = Navigator.of(context);
+    void go(int t) {
+      nav.pop();
+      ref.read(homeTabProvider.notifier).go(t);
+    }
+
+    void open(Widget screen) {
+      nav.pop();
+      nav.push(MaterialPageRoute<void>(builder: (_) => screen)).then((_) => data?.changed());
+    }
+
+    Widget item(IconData icon, String label, VoidCallback onTap, {bool selected = false}) => ListTile(
+          leading: Icon(icon, color: selected ? c.primary : c.ink2),
+          title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          selected: selected,
+          selectedTileColor: c.mint,
+          selectedColor: c.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.pill)),
+          onTap: onTap,
+        );
+
+    return Drawer(
+      backgroundColor: c.background,
+      child: ListView(padding: EdgeInsets.zero, children: [
+        Container(
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 24, 20, 20),
+          decoration: BoxDecoration(gradient: heroGradient(c)),
+          child: Row(children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.white,
+              child: Text(name.characters.first.toUpperCase(),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: c.hero)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(name,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            item(Icons.calendar_today, l.tabToday, () => go(HomeTab.today), selected: tab == HomeTab.today),
+            item(Icons.chat_bubble_outline, l.tabChat, () => go(HomeTab.chat), selected: tab == HomeTab.chat),
+            item(Icons.add_circle_outline, l.tabLog, () => go(HomeTab.log), selected: tab == HomeTab.log),
+            item(Icons.article_outlined, l.tabPlan, () => go(HomeTab.plan), selected: tab == HomeTab.plan),
+            item(Icons.person_outline, l.tabMe, () => go(HomeTab.me), selected: tab == HomeTab.me),
+            const Divider(height: 24),
+            if (data != null) ...[
+              item(Icons.monitor_weight_outlined, l.weight, () => open(WeightScreen(data: data))),
+              item(Icons.history, l.historyTitle, () => open(HistoryScreen(data: data))),
+            ],
+            item(Icons.flag_outlined, l.goalsTitle, () => open(const GoalsScreen())),
+            item(Icons.monitor_heart_outlined, l.healthTitle, () => open(const HealthScreen())),
+            item(Icons.settings_outlined, l.settingsTitle, () => open(const SettingsScreen())),
+            const Divider(height: 24),
+            item(Icons.lock_outline, l.lock, () {
+              nav.pop();
+              ref.read(unlockedProvider.notifier).lock();
+            }),
+          ]),
+        ),
+      ]),
     );
   }
 }

@@ -420,10 +420,14 @@ class TargetDialog extends StatefulWidget {
     required this.title,
     required this.initial,
     this.allowReset = true,
+    this.valid,
   });
   final String title;
   final double? initial;
   final bool allowReset;
+
+  /// Extra check on the number; a failing one shows "Enter a valid number".
+  final bool Function(double)? valid;
 
   @override
   State<TargetDialog> createState() => _TargetDialogState();
@@ -443,12 +447,14 @@ class _TargetDialogState extends State<TargetDialog> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final v = double.tryParse(_value.text.replaceAll(',', '.'));
+    final parsed = double.tryParse(_value.text.replaceAll(',', '.'));
+    final v = parsed != null && (widget.valid?.call(parsed) ?? true) ? parsed : null;
     return AlertDialog(
       title: Text(widget.title),
       content: TextField(
         controller: _value,
         autofocus: true,
+        decoration: InputDecoration(errorText: _value.text.trim().isNotEmpty && v == null ? l.invalidNumber : null),
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         onChanged: (_) => setState(() {}),
       ),

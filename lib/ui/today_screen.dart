@@ -69,6 +69,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       overline: overline,
       title: title,
       size: _days == 1 ? 28 : 34,
+      leading: RoundIconButton(
+        icon: Icons.menu,
+        tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+        onPressed: () => Scaffold.of(context).openDrawer(),
+      ),
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
         if (_days == 365) const Tag('PRO', tone: TagTone.gold, big: true),
         if (_days == 1 && streak > 0)
@@ -301,7 +306,7 @@ class _HeroCard extends StatelessWidget {
       label: l.calories,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: c.hero, borderRadius: BorderRadius.circular(24)),
+        decoration: BoxDecoration(gradient: heroGradient(c), borderRadius: BorderRadius.circular(24)),
         child: Column(children: [
           // Wrap, not Row: at large text sizes the bars move under the ring.
           LayoutBuilder(
@@ -436,10 +441,21 @@ class _MealCard extends ConsumerWidget {
     final name = mealName(l, type);
     void add() => ref.read(homeTabProvider.notifier).logMeal(type);
     final plan = meals.isEmpty ? planned : null;
+    final (color, icon) = mealStyles[type]!;
+    final badge = ExcludeSemantics(
+      child: Container(
+        width: 32,
+        height: 32,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Icon(icon, size: 18, color: Colors.white),
+      ),
+    );
     if (meals.isEmpty && plan == null) {
       return DashedAdd(
         onTap: add,
         child: Row(children: [
+          badge,
           Expanded(child: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
           Flexible(child: Text(l.addShort, style: TextStyle(fontSize: 15, color: c.primary, fontWeight: FontWeight.w600))),
         ]),
@@ -448,13 +464,18 @@ class _MealCard extends ConsumerWidget {
     final kcal = meals.fold(0.0, (s, m) => s + m.kcal);
     return Panel(
       padding: EdgeInsets.zero,
+      color: tint(context, color),
+      border: false,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
           child: Row(children: [
+            badge,
             Expanded(child: Semantics(header: true, child: Text(name, style: Theme.of(context).textTheme.titleMedium))),
-            Text(plan != null ? l.fromYourPlan : '${_n(context, kcal)} ${l.kcal}',
-                style: TextStyle(fontSize: 14, color: plan != null ? c.muted : c.ink2)),
+            Flexible(
+              child: Text(plan != null ? l.fromYourPlan : '${_n(context, kcal)} ${l.kcal}',
+                  textAlign: TextAlign.end, style: TextStyle(fontSize: 14, color: plan != null ? c.muted : c.ink2)),
+            ),
             IconButton(
               tooltip: l.addToMeal(name),
               icon: Icon(Icons.add_circle_outline, color: c.primary),
@@ -549,13 +570,15 @@ class _WaterTile extends StatelessWidget {
     return Panel(
       radius: Radii.tile,
       padding: const EdgeInsets.all(12),
+      color: c.waterBg,
+      border: false,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           Expanded(child: Text(l.water, style: TextStyle(fontSize: 13, color: c.muted))),
           Tooltip(
             message: l.waterAddGlass,
             child: Material(
-              color: c.waterBg,
+              color: c.surface,
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
@@ -566,6 +589,7 @@ class _WaterTile extends StatelessWidget {
                     ..hideCurrentSnackBar()
                     ..showSnackBar(SnackBar(
                       content: Text(l.glassAdded),
+                      persist: false, // an action makes it stay forever by default
                       action: SnackBarAction(
                           label: l.undo,
                           onPressed: () {
@@ -601,7 +625,7 @@ class _WaterTile extends StatelessWidget {
               Expanded(
                 child: Container(
                   height: 8,
-                  decoration: BoxDecoration(color: i < had ? c.water : c.waterTint, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(color: i < had ? c.water : c.water.withValues(alpha: .2), borderRadius: BorderRadius.circular(2)),
                 ),
               ),
             ],
@@ -647,6 +671,8 @@ class _FastTileState extends State<_FastTile> {
     return Panel(
       radius: Radii.tile,
       padding: const EdgeInsets.all(12),
+      color: c.warm,
+      border: false,
       onTap: () => showModalBottomSheet<void>(context: context, builder: (_) => _FastSheet(data: widget.data)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
@@ -746,6 +772,8 @@ class _StepsTile extends StatelessWidget {
       builder: (context, snap) => Panel(
         radius: Radii.tile,
         padding: const EdgeInsets.all(12),
+        color: c.mint,
+        border: false,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Row(children: [
             Expanded(child: Text(l.steps, style: TextStyle(fontSize: 13, color: c.muted))),

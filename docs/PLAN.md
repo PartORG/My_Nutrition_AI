@@ -426,6 +426,22 @@ columns for them at all.
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
 
+## v0.8.2 (2026-10-16): phone-test fixes, colour, drawer, year view
+
+- **Crashes:** leaving the camera (back, or after Continue) freed the EfficientDet interpreter while a live
+  detection was still running in its isolate (native crash). `TfliteDetector.close()` now waits for it; live
+  detection pauses while Gemma names the foods.
+- **Water:** the "Glass added · Undo" snackbar stayed forever (an action makes it persist by default); now it doesn't.
+- **Unlock:** the PIN field is always light-themed (dark text on white), its label stays inside the field, and
+  Unlock is a gold button so it no longer looks like a second field.
+- **Colour:** each meal on Today has a colour and icon (breakfast amber, lunch green, dinner indigo, snack
+  coral) with a wash on its card; the calories hero and drawer header are a green-to-teal gradient; water,
+  fasting and steps tiles are tinted.
+- **Drawer is back** (menu button on Today, or swipe): the tabs, Weight, History, Goals, Health, Settings, Lock.
+- **Year view** as in `Year view (new).png`: the calendar year (Jan–Dec), months in a 4 × 3 grid of week rows.
+- **Weight:** logging again the same day replaces that day's reading (a typo was otherwise stuck in the trend);
+  20–350 kg (44–770 lb) only; kg per week to two decimals; range pills fill the width as in the design.
+
 ## v0.8.1, data v4 (2026-10-16): European food tables
 
 - **New sources:** ANSES-CIQUAL 2025 (France, Licence Ouverte 2.0, 3,243 foods) and McCance and Widdowson's
@@ -450,7 +466,7 @@ The design lives in `docs/MyFoodMind redesign.html` and `docs/MyFoodMind redesig
     it. Wallpaper colours are still an option.
   - Shared widgets in `lib/ui/kit.dart`.
 - **Navigation:**
-  - The bottom bar is Today · Chat · + (Log) · Plan · Me. The drawer and app bar are gone.
+  - The bottom bar is Today · Chat · + (Log) · Plan · Me. The drawer and app bar are gone (drawer back in v0.8.2).
   - History is in Today's periods and in Me; health, the AI memory, settings and plans are in Me.
 - **New screens:**
   - First run in three steps: name (or Google), PIN and fingerprint, then goals. Goals come last because they

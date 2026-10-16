@@ -8,10 +8,11 @@ import 'theme.dart';
 
 /// A screen's big title, with an optional line above it ("Thursday, 15 October") and a trailing action.
 class ScreenHeader extends StatelessWidget {
-  const ScreenHeader({super.key, required this.title, this.overline, this.trailing, this.back = false, this.size = 34});
+  const ScreenHeader(
+      {super.key, required this.title, this.overline, this.leading, this.trailing, this.back = false, this.size = 34});
   final String title;
   final String? overline;
-  final Widget? trailing;
+  final Widget? leading, trailing;
   final bool back;
   final double size;
 
@@ -21,7 +22,7 @@ class ScreenHeader extends StatelessWidget {
     // Large text: what sits beside the title goes under it instead of squeezing it.
     if (trailing != null && MediaQuery.textScalerOf(context).scale(10) > 13) {
       return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        ScreenHeader(title: title, overline: overline, back: back, size: size),
+        ScreenHeader(title: title, overline: overline, leading: leading, back: back, size: size),
         Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 4), child: trailing),
       ]);
     }
@@ -36,6 +37,7 @@ class ScreenHeader extends StatelessWidget {
           ),
           const SizedBox(width: 4),
         ],
+        if (leading != null) ...[leading!, const SizedBox(width: 12)],
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             if (overline != null)
@@ -240,7 +242,7 @@ class Pill extends StatelessWidget {
             constraints: BoxConstraints(minHeight: compact ? 40 : 48),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 18, vertical: 8),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
+              child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
                 if (icon != null) ...[Icon(icon, size: 18, color: selected ? c.background : c.ink), const SizedBox(width: 6)],
                 Flexible(
                   child: Text(label,
@@ -309,9 +311,14 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final valueText = Text(value,
-        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: c.ink, letterSpacing: -0.3,
-            fontFeatures: const [FontFeature.tabularFigures()]));
+    // Shrinks rather than breaking a word ("Maintai/n") in a narrow tile.
+    final valueText = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(value,
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: c.ink, letterSpacing: -0.3,
+              fontFeatures: const [FontFeature.tabularFigures()])),
+    );
     final labelText = Row(mainAxisSize: MainAxisSize.min, children: [
       if (dot != null) ...[
         Container(width: 9, height: 9, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),

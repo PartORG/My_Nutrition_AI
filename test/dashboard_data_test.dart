@@ -56,6 +56,23 @@ void main() {
     expect(loadBody(user)!.weightKg, closeTo(68.04, .01));
   });
 
+  test('logging weight again the same day corrects it; the next day adds a reading', () {
+    logWeight(user, 80, imperial: false, at: DateTime(2026, 10, 3, 7));
+    logWeight(user, 27.4, imperial: false, at: DateTime(2026, 10, 4, 7)); // typo
+    logWeight(user, 72.4, imperial: false, at: DateTime(2026, 10, 4, 7, 1));
+    final w = weightsSince(user, DateTime(2026, 10, 1));
+    expect([for (final r in w) r.kg], [80, 72.4]);
+    expect(weightTrend(w).last.trend, closeTo(80 + .1 * (72.4 - 80), .01));
+  });
+
+  test('plausibleWeight rejects typos in kg and lb', () {
+    expect(plausibleWeight(72.4, imperial: false), isTrue);
+    expect(plausibleWeight(7.24, imperial: false), isFalse);
+    expect(plausibleWeight(724, imperial: false), isFalse);
+    expect(plausibleWeight(160, imperial: true), isTrue);
+    expect(plausibleWeight(16, imperial: true), isFalse);
+  });
+
   test('weightNow: latest weight and its change over the window', () {
     expect(weightNow(user, DateTime(2026, 9, 1)), isNull);
     logWeight(user, 80, imperial: false, at: DateTime(2026, 8, 1)); // before the window
