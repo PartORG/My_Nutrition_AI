@@ -17,7 +17,7 @@ accounts, no cloud inference and no analytics SDK.
 - **AI chat:** Gemma 4 runs locally with native tool calling. The model routes requests and
   phrases the answers. Code computes the numbers and the database supplies the facts, so nutrition
   values and recipes appear as cards from the database, never as model-generated text.
-- **Food logging:** search about 55,000 foods, 166,000 recipes, 620 dishes and 263,000 packaged
+- **Food logging:** search about 61,000 foods (US, NZ, French and UK government tables), 171,000 recipes, 620 dishes and 263,000 packaged
   products, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
   meal in one tap.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
@@ -106,11 +106,13 @@ version, then re-upload the file to the `build-inputs` release.
 
 ## Food data and vitamins
 
-`nutri.db` holds about 55,600 foods, 166,000 recipes, 620 dishes and 263,000 packaged products. The
+`nutri.db` holds about 61,400 foods, 171,000 recipes, 620 dishes and 263,000 packaged products. The
 generic foods come from government tables first: USDA SR28, FoodData Central (FNDDS survey foods and
 Foundation foods, from the public-domain [bulk downloads](https://fdc.nal.usda.gov/download-datasets)),
-and NZ FOODfiles. Every food row records its `source`, and the app prefers these tables when two
-names match equally well.
+NZ FOODfiles, the French ANSES-CIQUAL 2025 table and the UK's McCance and Widdowson's CoFID 2021 (European
+foods and dishes, all seven micronutrients). Every food row records its `source`, and the app prefers these tables when two
+names match equally well. The EU tables list carbohydrate without fibre; the build adds the fibre back,
+so every `carbs_g` is a total as in USDA (calories stay as published).
 
 Vitamins and minerals (calcium, iron, magnesium, potassium, vitamins C, D and B12) cover:
 
@@ -121,14 +123,16 @@ Vitamins and minerals (calcium, iron, magnesium, potassium, vitamins C, D and B1
 - **Dishes:** McDonald's items take calcium, iron and vitamin C from their own labels. Each dish is
   then matched to a USDA FNDDS food of the same name for the rest (155 of 620). Generic dishes also
   link to a recipe of the same title, which you can open and rate (88).
-- **Products:** whatever the Open Food Facts label states (about half give calcium, iron and
-  vitamin C).
+- **Products:** whatever the Open Food Facts label states (about half of the bundled 2019 products give
+  calcium, iron and vitamin C; about 15 % of the 2 million in the optional download do).
 
 A value outside a believable range in a non-government source is stored as unknown, never shown.
 Meals logged before an update get their vitamins filled in once from the food or dish of the same name.
 
 Raw data lives next to the repository (`nutrition-ai-assistant/data/`). The three FoodData Central
-releases go in `raw_fdc/{survey,foundation,sr_legacy}/`; the build script's docstring has the links.
+releases go in `raw_fdc/{survey,foundation,sr_legacy}/`, CIQUAL's XML files in `raw_eu/ciqual/` and
+CoFID's workbook in `raw_eu/cofid/`; the build script's docstring has the links. The file must stay
+under 400 MB (`MAX_DB_BYTES`, checked by the build and by `test/real_nutri_db_test.dart`).
 
 ## Translated ingredient names
 
@@ -181,7 +185,7 @@ Two large assets are git-ignored and have to be in place before a build:
 
 | File | Source |
 |---|---|
-| `assets/nutri.db` (≈290 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/myfoodmind/releases/tag/build-inputs) release |
+| `assets/nutri.db` (≈310 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/myfoodmind/releases/tag/build-inputs) release |
 | `assets/models/embeddinggemma-300M_seq256.tflite`, `assets/models/embeddinggemma_sentencepiece.model` | EmbeddingGemma (Gemma terms, gated on Hugging Face), or the `build-inputs` release |
 
 ```bash

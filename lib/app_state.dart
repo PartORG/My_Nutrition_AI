@@ -442,9 +442,9 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
 // ---- all packaged products (optional download) -------------------------------
 
 /// Built by tool/build_products_db.py from the current Open Food Facts dump (ODbL), gzipped.
-// Release asset of github.com/PartORG/myfoodmind (published 2026-10-10, sha256 93690976…a533).
-const productsUrl = 'https://github.com/partorg/myfoodmind/releases/download/products-2026-10/products.db.gz';
-const productsDownloadMb = 104; // products.db.gz of 2026-10-07: 2,034,064 products, 276 MB unpacked
+// Release asset of github.com/PartORG/myfoodmind (published 2026-10-16, sha256 aebd412d…6a07).
+const productsUrl = 'https://github.com/partorg/myfoodmind/releases/download/products-2026-10-16/products.db.gz';
+const productsDownloadMb = 117; // products.db.gz of 2026-10-16: 2,034,064 products with label micros, 303 MB unpacked
 
 File _productsFile(Directory dir) => File('${dir.path}/products.db');
 

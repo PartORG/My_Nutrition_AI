@@ -29,6 +29,15 @@ Future<void> main() async {
         'Product data from Open Food Facts (https://world.openfoodfacts.org), available under the Open Database '
         'License (ODbL) v1.0: https://opendatacommons.org/licenses/odbl/1-0/. Individual contents under the '
         'Database Contents License.');
+    // Both licences require attribution (and the source's version and date).
+    yield const LicenseEntryWithLineBreaks(['ANSES-CIQUAL'],
+        'French food composition table: Anses. 2025. Ciqual French food composition table, '
+        'https://doi.org/10.57745/RDMHWY. Licence Ouverte / Open Licence 2.0 (Etalab). Values unchanged '
+        'except units, rounding and merging with other tables.');
+    yield const LicenseEntryWithLineBreaks(['McCance and Widdowson\'s CoFID'],
+        'Contains public sector information licensed under the Open Government Licence v3.0: Public Health '
+        'England / OHID, McCance and Widdowson\'s The Composition of Foods Integrated Dataset 2021, '
+        'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid.');
   });
   WidgetsFlutterBinding.ensureInitialized();
   await trackDownloads();

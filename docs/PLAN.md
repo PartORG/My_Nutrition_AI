@@ -127,7 +127,7 @@ nutrition and micronutrients)` · `products(barcode, name, + per-100 g nutrition
 `docs(id, source, text, embedding BLOB float32[768])` + FTS5 tables.
 
 Rules: recipe nutrition is computed, never stored · additive changes need no version bump ·
-docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 300 MB · data licensing is the data owner's job.
+docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 400 MB · data licensing is the data owner's job.
 
 ## Milestones
 
@@ -326,7 +326,7 @@ Packaged products (Oct 2026): every Open Food Facts product with complete nutrit
 `lib/app_state.dart`, tag `products-2026-10`; **not uploaded yet**). Search uses it instead of nutri.db's 2019
 products once it is on the phone. ODbL: credited on the licences page.
 
-Open: the real `nutri.db` (≤ 300 MB, now built into `assets/` for phone builds) can't also be bundled in the Play build — the base module limit is 500 MB and the app is
+Open: the real `nutri.db` (≤ 400 MB, now built into `assets/` for phone builds) can't also be bundled in the Play build — the base module limit is 500 MB and the app is
 already 257 MB. When the real data exists: an install-time asset pack (≤ 1.5 GB, read via a small native
 bridge) or a download like Gemma 4 (it holds no user data either).
 
@@ -420,8 +420,25 @@ columns for them at all.
   - Recipe ideas follow taste: the ingredients of 4-5 star and saved recipes, weighted by how rare they are,
     add up to 3 points (a requested ingredient is worth 10), in searches and in random ideas.
 - **Products download (`products.db`):** `tool/build_products_db.py` writes the label micronutrients too
-  (schema 2). The published file is still the old one until it is rebuilt from the current Open Food Facts dump.
-- **Size:** `nutri.db` is 299.75 MB, just under the 300 MB contract; the next addition needs a smaller recipe budget.
+  (schema 2). Rebuilt 2026-10-16 from that day's dump and published as release `products-2026-10-16`
+  (117 MB gz, 303 MB): the same 2,034,064 products as 2026-10-07 (OFF's CSV export had not changed), now
+  with label micronutrients (~15 % give calcium/iron). Phones that downloaded the old file keep it until
+  they remove and download again.
+- **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
+
+## Data v4 (2026-10-16): European food tables
+
+- **New sources:** ANSES-CIQUAL 2025 (France, Licence Ouverte 2.0, 3,243 foods) and McCance and Widdowson's
+  CoFID 2021 (UK, OGL v3, 2,632 foods), both authoritative (`authority()` = 2) with all seven micronutrients,
+  many of them European dishes (quiche, moussaka, toad in the hole…). Credited on the app's licences page.
+- **Carbs convention:** both tables give available carbohydrate (fibre excluded); the build stores carbs +
+  fibre so `carbs_g` is a total everywhere, as in USDA (CIQUAL cloves 31.6 + 33.9 = 65.5 g = USDA).
+  Reviewed 2026-10-16: high micronutrient values are real (dried seaweed, cream of tartar, liver).
+  Hugging Face had no better option: its European recipe sets are small or scraped with unclear licences.
+- **Not added:** Fineli (Finland, CC BY 4.0) sits behind a Cloudflare browser check; download the open-data
+  zip by hand into `raw_eu/fineli/` to add it.
+- **Size contract 400 MB** (was 300): the budget no longer drops any recipe; the build is 308 MB with
+  61,415 foods and 170,951 recipes. On the phone the asset plus its installed copy cost about twice that.
 
 ## v0.8.0 (2026-10-16): redesign
 

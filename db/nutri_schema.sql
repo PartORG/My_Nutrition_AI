@@ -37,7 +37,7 @@ CREATE TABLE foods (
   vitamin_d_ug   REAL,
   vitamin_b12_ug REAL,
   -- Where the row comes from. Authoritative (government tables): usda_sr28, usda_sr, usda_fdc_foundation,
-  -- usda_fndds, nz_foodfiles; foodstruct is USDA-derived generic; the rest are smaller or branded datasets.
+  -- usda_fndds, nz_foodfiles, ciqual (France), cofid (UK); foodstruct is USDA-derived generic; the rest are smaller or branded datasets.
   source         TEXT NOT NULL DEFAULT ''
 );
 -- Plain-name lookups ("Banana", staples, filling past meals) without scanning every food.

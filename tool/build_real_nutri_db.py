@@ -8,6 +8,10 @@ raw_fdc/ holds three USDA FoodData Central bulk CSV releases (public domain), ea
     survey/      https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip
     foundation/  https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_csv_2026-04-30.zip
     sr_legacy/   https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip
+raw_eu/ holds the European government tables:
+    ciqual/  alim.xml, compo.xml (+ alim_grp.xml, const.xml) of ANSES-CIQUAL 2025, doi:10.57745/RDMHWY
+             https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/RDMHWY
+    cofid/   cofid2021.xlsx = https://assets.publishing.service.gov.uk/media/60538b91e90e07527df82ae4/McCance_Widdowsons_Composition_of_Foods_Integrated_Dataset_2021..xlsx
 
     uv run tool/build_real_nutri_db.py ~/Programming/nutrition-ai-assistant/data assets/nutri.db
 
@@ -19,7 +23,7 @@ Rules (decided 2026-10-06):
   * a recipe is kept only if every ingredient line maps to a food and a gram amount (so its
     nutrition and allergen filtering are complete) and it states its servings;
   * where a source publishes per-serving calories, the computed value must agree;
-  * nutri.db stays under 300 MB: best recipes first.
+  * nutri.db stays under 400 MB: best recipes first.
 Conditions, condition rules, foods to avoid and medical docs come from db/medical.sql (curated
 from raw_medical/), applied by tool/build_medical.py.
 """
@@ -45,7 +49,7 @@ from build_nutri_db import finish  # noqa: E402
 
 csv.field_size_limit(sys.maxsize)
 ROOT = Path(__file__).resolve().parent.parent
-MAX_DB_BYTES = 300_000_000
+MAX_DB_BYTES = 400_000_000
 NUTRIENTS = ("kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "sugar_g", "sodium_mg")
 # Per 100 g. From USDA SR28, FNDDS, FDC Foundation (bulk), NZ FOODfiles and foodstruct (all seven), FDC Branded
 # (calcium, iron, vitamin C); dishes: the chain's label, else the matching FNDDS food; products: the label (OFF).
@@ -59,7 +63,7 @@ SR_MICROS = {"calcium_mg": "Calcium_(mg)", "iron_mg": "Iron_(mg)", "magnesium_mg
 # clams B12 ~100 µg, acerola vitamin C ~1,700 mg); above it the unit is wrong, so the value becomes unknown.
 MICRO_MAX = {"calcium_mg": 8000, "iron_mg": 150, "magnesium_mg": 1500, "potassium_mg": 17000, "vitamin_c_mg": 3000,
              "vitamin_d_ug": 300, "vitamin_b12_ug": 200}
-AUTHORITATIVE = {"usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles"}
+AUTHORITATIVE = {"usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles", "ciqual", "cofid"}
 
 
 def plausible(n: dict) -> dict:
@@ -421,6 +425,81 @@ def load_nz(raw: Path) -> list[dict]:
     return out
 
 
+def eu_num(v) -> float | None:
+    """CIQUAL/CoFID cells: 'traces'/'Tr' = 0, '-'/'N' = unknown, '< 0,5' -> 0.5."""
+    s = str(v or "").strip().lower()
+    return 0.0 if s in ("traces", "tr") else num(s)
+
+
+def eu_food(rep: dict, src: str, code, name: str, n: dict) -> dict | None:
+    rep["rows"] += 1
+    if not name:
+        rep["dropped"]["no name"] += 1
+        return None
+    if None in (n["kcal"], n["protein_g"], n["fat_g"], n["carbs_g"]):  # authoritative: trusted like NZ/FNDDS
+        rep["dropped"]["missing kcal/protein/fat/carbs"] += 1
+        return None
+    # EU tables give available carbohydrate (fibre excluded); carbs_g is USDA's total (cloves: 31.6 + 33.9 = 65.5).
+    n = {**n, "carbs_g": n["carbs_g"] + (n["fiber_g"] or 0)}
+    rep["kept"] += 1
+    return {"name": tidy(name), "src": src, "skey": code, "generic": True, **n, "serving_g": None, "weights": []}
+
+
+CIQUAL_CONST = {"kcal": "328", "protein_g": "25000", "fat_g": "40000", "carbs_g": "31000", "fiber_g": "34100",
+                "sugar_g": "32000", "sodium_mg": "10110", "calcium_mg": "10200", "iron_mg": "10260",
+                "magnesium_mg": "10120", "potassium_mg": "10190", "vitamin_c_mg": "55100", "vitamin_d_ug": "52100",
+                "vitamin_b12_ug": "56600"}
+
+
+def load_ciqual(raw: Path) -> list[dict]:
+    """ANSES-CIQUAL 2025 (France), the XML release: alim.xml (names) + compo.xml (one value per food x constituent)."""
+    import xml.etree.ElementTree as ET
+    d = raw / "raw_eu/ciqual"
+    rep = report("raw_eu/ciqual", "foods (generic foods and French/European dishes, authoritative)",
+                 "ANSES-CIQUAL 2025 (doi:10.57745/RDMHWY, Licence Ouverte / etalab 2.0): English names, per 100 g, "
+                 "all seven micronutrients; energy per EU Regulation 1169/2011. 'traces' = 0. Carbs + fibre = USDA-style total carbohydrate.")
+    want = {c: k for k, c in CIQUAL_CONST.items()}
+    vals: dict[str, dict] = defaultdict(dict)
+    for _, e in ET.iterparse(d / "compo.xml"):
+        if e.tag == "COMPO":
+            if (k := want.get((e.findtext("const_code") or "").strip())):
+                vals[e.findtext("alim_code").strip()][k] = eu_num(e.findtext("teneur"))
+            e.clear()
+    out = []
+    for a in ET.parse(d / "alim.xml").getroot():
+        code = a.findtext("alim_code").strip()
+        n = {k: vals[code].get(k) for k in (*NUTRIENTS, *MICROS)}
+        if f := eu_food(rep, "ciqual", code, (a.findtext("alim_nom_eng") or "").strip(), n):
+            out.append(f)
+    return out
+
+
+def load_cofid(raw: Path) -> list[dict]:
+    """UK CoFID 2021 (McCance and Widdowson's): three sheets keyed by food code, values per 100 g."""
+    import openpyxl
+    wb = openpyxl.load_workbook(raw / "raw_eu/cofid/cofid2021.xlsx", read_only=True, data_only=True)
+    rep = report("raw_eu/cofid", "foods (generic foods and British dishes, authoritative)",
+                 "McCance and Widdowson's Composition of Foods Integrated Dataset 2021 (OHID, Open Government Licence "
+                 "v3.0): per 100 g (drinks per 100 ml), all seven micronutrients; fibre = AOAC, else NSP. 'Tr' = 0, "
+                 "'N' = unknown. Carbs + fibre = USDA-style total carbohydrate.")
+
+    def sheet(title: str) -> dict:
+        return {r[0]: r for r in wb[title].iter_rows(min_row=4, values_only=True) if r and r[0]}
+    prox, inorg, vit = sheet("1.3 Proximates"), sheet("1.4 Inorganics"), sheet("1.5 Vitamins")
+    out = []
+    for code, p in prox.items():
+        i, v = inorg.get(code, ()), vit.get(code, ())
+        at = lambda r, c: eu_num(r[c]) if len(r) > c else None
+        fib = at(p, 25)
+        n = {"kcal": at(p, 12), "protein_g": at(p, 9), "fat_g": at(p, 10), "carbs_g": at(p, 11),
+             "fiber_g": fib if fib is not None else at(p, 24), "sugar_g": at(p, 16), "sodium_mg": at(i, 7),
+             "calcium_mg": at(i, 9), "iron_mg": at(i, 12), "magnesium_mg": at(i, 10), "potassium_mg": at(i, 8),
+             "vitamin_c_mg": at(v, 23), "vitamin_d_ug": at(v, 10), "vitamin_b12_ug": at(v, 19)}
+        if f := eu_food(rep, "cofid", code, str(p[1] or ""), n):
+            out.append(f)
+    return out
+
+
 def simple(raw: Path, file: str, target: str, note: str, src: str, name_col, cols: dict, *, grams=None,
            generic=False, encoding="utf-8-sig", skip=None, scale=None, serving=None, delimiter=",") -> list[dict]:
     """One flat per-100 g (or per-serving with known grams) CSV -> checked food rows."""
@@ -771,7 +850,8 @@ def off_product(get) -> dict | str:
 
 # --------------------------------------------------------------------------- foods -> one table
 
-FOOD_PRIORITY = ["usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles", "foodstruct", "fda_produce",
+FOOD_PRIORITY = ["usda_sr28", "usda_sr", "usda_fdc_foundation", "usda_fndds", "nz_foodfiles", "ciqual", "cofid",
+                 "foodstruct", "fda_produce",
                  "healthy_foods_db", "food_nutrition_dataset", "nutrients_csvfile", "indb", "indonesia",
                  "usda_fdc_branded", "baked_foods", "off_extract"]
 
@@ -807,6 +887,7 @@ SRC_FILE = {"usda_sr28": "raw_nutritions/ABBREV.csv", "usda_sr": "raw_nutritions
             "usda_fdc_foundation": "raw_nutritions/comprehensive_foods_usda.csv",
             "usda_fdc_branded": "raw_nutritions/comprehensive_foods_usda.csv", "usda_fndds": "raw_fdc/survey",
             "nz_foodfiles": "raw_nutritions/Nutritional Datasets for New Zealand Foods.xlsx",
+            "ciqual": "raw_eu/ciqual", "cofid": "raw_eu/cofid",
             "foodstruct": "raw_nutritions/foodstruct_nutritional_facts.csv",
             "fda_produce": "raw_nutritions/nutritionalfacts_fruit_vegetables_seafood.csv",
             "healthy_foods_db": "raw_nutritions/healthy_foods_database.csv",
@@ -1451,7 +1532,7 @@ def pick_recipes(recipes: list[dict], budget_bytes: int) -> list[dict]:
         # ponytail: estimate from measured builds (text ~2.3x with FTS + page overhead, ~40 B per ingredient row)
         cost = 2.3 * (len(r["title"]) + len(r["instructions"]) + len(r["tags"]) + 40) + 40 * len(r["items"])
         if used + cost > budget_bytes:
-            r["file"]["dropped"]["over the 300 MB size budget (lower-ranked)"] += 1
+            r["file"]["dropped"]["over the 400 MB size budget (lower-ranked)"] += 1
             r["file"]["kept"] -= 1
             continue
         used += cost
@@ -1532,7 +1613,7 @@ def write_report(path: Path, counts: dict, medical: dict[str, int]) -> None:
              "match can never hide an allergen from the filter.",
              "- Where the source publishes calories per serving, ours must agree within ±30 % (±80 kcal).",
              "- Recipes are ranked by rating × log(reviews) (+1 when calories were confirmed) and kept until the "
-             "300 MB budget.", "",
+             "400 MB budget.", "",
              "## Per file", "",
              "| file | rows | kept | used for | dropped (reason: rows) | notes |", "|---|---|---|---|---|---|"]
     for f in sorted(REPORT):
@@ -1556,10 +1637,10 @@ def write_report(path: Path, counts: dict, medical: dict[str, int]) -> None:
 def main(raw: Path, out: Path) -> None:
     sr = load_sr(raw)
     sr += load_food_csv(raw, sr)
-    fdc, nz, fndds = load_fdc(raw), load_nz(raw), load_fndds(raw)
+    fdc, nz, fndds, eu = load_fdc(raw), load_nz(raw), load_fndds(raw), load_ciqual(raw) + load_cofid(raw)
     fill_foundation(raw, fdc)
     flat, dishes = load_flat_foods(raw)
-    foods = merge_foods([sr, fdc, fndds, nz, flat])
+    foods = merge_foods([sr, fdc, fndds, nz, eu, flat])
     m = Matcher(foods, Path(__file__).parent / "ingredient_map.txt")
     R = Recipes(m)
     load_foodcom(raw, R)
@@ -1568,8 +1649,8 @@ def main(raw: Path, out: Path) -> None:
     load_unusable_recipes(raw)
     products = load_off_products(raw)
     # Budget, in pick_recipes' estimate: it runs ~1.35x the real bytes (2026-10-06: 170 MB estimated = 126 MB
-    # of recipes + FTS). 300 MB estimated ~ 222 MB real, plus ~62 MB other tables, stays under the contract.
-    budget = int(sys.argv[3]) if len(sys.argv) > 3 else 300_000_000
+    # of recipes + FTS). 2026-10-15 a 300 MB budget built a 300 MB file; 400 MB keeps every recipe; MAX_DB_BYTES guards.
+    budget = int(sys.argv[3]) if len(sys.argv) > 3 else 400_000_000
     recipes = pick_recipes(list(R.kept.values()), budget)
     renamed = retitle_duplicates(recipes)
     used_foods = {fid for r in recipes for fid in r["items"]}

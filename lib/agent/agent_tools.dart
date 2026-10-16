@@ -1044,7 +1044,7 @@ const staples = <String, (String, double?)>{
 /// nutri.db foods.source -> how much its numbers are trusted: 2 government tables, 1 USDA-derived
 /// generic (foodstruct), 0 smaller or branded datasets.
 int authority(String source) => switch (source) {
-      'usda_sr28' || 'usda_sr' || 'usda_fdc_foundation' || 'usda_fndds' || 'nz_foodfiles' => 2,
+      'usda_sr28' || 'usda_sr' || 'usda_fdc_foundation' || 'usda_fndds' || 'nz_foodfiles' || 'ciqual' || 'cofid' => 2,
       'foodstruct' => 1,
       _ => 0,
     };

@@ -13,7 +13,7 @@
 --  * foods.name is matched with REGEXP (Python re, registered by the builder).
 
 -- Content release of nutri.db: the app (nutriDataVersion in lib/data/nutri_db.dart) replaces older copies.
-INSERT OR REPLACE INTO meta (key, value) VALUES ('data_version', '3');
+INSERT OR REPLACE INTO meta (key, value) VALUES ('data_version', '4');
 
 INSERT INTO conditions (id, name) VALUES
   (1, 'diabetes_t2'), (2, 'hypertension'), (3, 'gout'), (4, 'als'), (5, 'ms');

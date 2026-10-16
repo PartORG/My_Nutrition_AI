@@ -14,7 +14,7 @@ void main() {
   final skip = asset.existsSync() ? false : 'assets/nutri.db not built (tool/build_real_nutri_db.py)';
 
   test('real nutri.db keeps the data contract', () {
-    expect(asset.lengthSync(), lessThanOrEqualTo(300000000), reason: 'contract: nutri.db <= 300 MB');
+    expect(asset.lengthSync(), lessThanOrEqualTo(400000000), reason: 'contract: nutri.db <= 400 MB');
     final db = openNutriDb(asset.path);
     int count(String sql) => db.select(sql).single.values.first as int;
 
@@ -191,6 +191,12 @@ void main() {
     expect(count("SELECT COUNT(*) FROM foods WHERE source = ''"), 0);
     expect(authority(db.select('SELECT source FROM foods WHERE id = ?',
         [tools.searchFood('egg').firstWhere((f) => f.kind == 'food').id]).single['source'] as String), greaterThan(0));
+    // European tables (CIQUAL, CoFID): their dishes are found, with vitamins and authority 2.
+    expect(count("SELECT COUNT(*) FROM foods WHERE source IN ('ciqual', 'cofid')"), greaterThan(5000));
+    final toad = db.select('SELECT source, iron_mg FROM foods WHERE id = ?',
+        [tools.searchFood('toad in the hole').firstWhere((f) => f.kind == 'food').id]).single;
+    expect(authority(toad['source'] as String), 2);
+    expect(toad['iron_mg'], isNotNull);
     // Products: what the label gives (about half state calcium in the 2019 dump).
     expect(count('SELECT COUNT(*) FROM products WHERE calcium_mg IS NOT NULL') / count('SELECT COUNT(*) FROM products'),
         greaterThan(.3));
