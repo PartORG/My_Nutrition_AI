@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../billing/billing.dart';
 import '../l10n/app_localizations.dart';
 import 'nutrients.dart';
+import 'kit.dart';
 import 'theme.dart';
 
 /// Rebuilds with the current tier; shows nothing while billing loads.
@@ -29,23 +30,22 @@ class LockedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return Card(
-      color: context.colors.cardGreen,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, color: context.colors.primary, size: 32),
-          const SizedBox(height: 8),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(body),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
-            child: Text(l.seePlans),
-          ),
-        ]),
-      ),
+    return Panel(
+      color: context.colors.mint,
+      border: false,
+      padding: const EdgeInsets.all(20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, color: context.colors.primary, size: 32),
+        const SizedBox(height: 10),
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(body, style: const TextStyle(fontSize: 15)),
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
+          child: Text(l.seePlans),
+        ),
+      ]),
     );
   }
 }
@@ -64,6 +64,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   var _yearly = true;
+  Tier? _pick; // null = the default: Pro (the trial) unless that's the current tier
   Future<List<Offer>>? _offers;
   bool _busy = false;
 
@@ -82,6 +83,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     final billing = ref.watch(billingProvider).value;
     if (billing == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     _offers ??= billing.offers();
@@ -90,60 +92,96 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       Tier.medium: [l.featMedium1, l.featMedium2, l.featMedium3, l.featMedium4],
       Tier.pro: [l.featPro1, l.featPro2, l.featPro3, l.featPro4],
     };
-    return Scaffold(
-      appBar: AppBar(title: Text(l.plansTitle)),
-      body: ValueListenableBuilder(
-        valueListenable: billing.tier,
-        builder: (context, current, _) => FutureBuilder(
-          future: _offers,
-          builder: (context, snap) {
-            final offers = snap.data ?? const <Offer>[];
-            return ListView(padding: const EdgeInsets.all(16), children: [
-              if (billing.isDev)
-                Card(
-                  color: context.colors.cardGreen,
-                  child: Padding(padding: const EdgeInsets.all(12), child: Text(l.devBillingBanner)),
+    return ValueListenableBuilder(
+      valueListenable: billing.tier,
+      builder: (context, current, _) => FutureBuilder(
+        future: _offers,
+        builder: (context, snap) {
+          final offers = snap.data ?? const <Offer>[];
+          Offer? offerFor(Tier t) => offers.where((o) => o.tier == t && o.yearly == _yearly).firstOrNull;
+          final pick = _pick ?? (current == Tier.pro ? null : Tier.pro);
+          final chosen = pick == null || pick == current ? null : offerFor(pick);
+          final price = chosen == null ? null : (chosen.yearly ? l.perYear(chosen.price) : l.perMonth(chosen.price));
+          final action = chosen == null
+              ? null
+              : chosen.trial && current == Tier.free
+                  ? l.startTrial
+                  : current == Tier.free
+                      ? l.subscribe
+                      : chosen.tier.index > current.index
+                          ? l.upgrade
+                          : l.switchPlan;
+          return Scaffold(
+            body: SafeArea(
+              child: ListView(padding: const EdgeInsets.only(bottom: 16), children: [
+                ScreenHeader(
+                  title: l.plansTitle,
+                  back: true,
+                  trailing: Text(l.currentTier(tierName(current, l)), style: TextStyle(fontSize: 15, color: c.muted)),
                 ),
-              Center(
-                child: SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(value: false, label: Text(l.monthly)),
-                    ButtonSegment(value: true, label: Text(l.yearly)),
-                  ],
-                  selected: {_yearly},
-                  onSelectionChanged: (s) => setState(() => _yearly = s.single),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    if (billing.isDev)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Panel(color: c.mint, border: false, child: Text(l.devBillingBanner)),
+                      ),
+                    PillTabs<bool>(
+                      values: const [false, true],
+                      selected: _yearly,
+                      label: (y) => y ? l.yearly : l.monthly,
+                      onChanged: (y) => setState(() => _yearly = y),
+                    ),
+                    const SizedBox(height: 14),
+                    for (final tier in [Tier.basic, Tier.medium, Tier.pro])
+                      if (offerFor(tier) case final offer?)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _TierCard(
+                            tier: tier,
+                            offer: offer,
+                            features: features[tier]!,
+                            current: current == tier,
+                            selected: pick == tier,
+                            onTap: current == tier ? null : () => setState(() => _pick = tier),
+                          ),
+                        ),
+                    if (snap.connectionState == ConnectionState.waiting)
+                      const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
+                    else if (offers.isEmpty)
+                      Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(l.plansUnavailable))),
+                    Text(l.subscriptionTerms, style: TextStyle(color: c.muted, fontSize: 13)),
+                    legalLinks(context),
+                    if (billing case DevBilling dev when current != Tier.free)
+                      TextButton(onPressed: () => dev.setTier(Tier.free), child: Text(l.devBackToFree)),
+                  ]),
+                ),
+              ]),
+            ),
+            bottomNavigationBar: DecoratedBox(
+              decoration: BoxDecoration(color: c.surface, border: Border(top: BorderSide(color: c.border))),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    // The full price is always next to the button, with the trial spelled out.
+                    if (price != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(chosen!.trial && current == Tier.free ? l.trialThen(price) : price,
+                            textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, color: c.ink2)),
+                      ),
+                    if (action != null)
+                      FilledButton(onPressed: _busy ? null : () => _buy(billing, chosen!), child: Text(action)),
+                    TextButton(onPressed: _busy ? null : billing.restore, child: Text(l.restorePurchases)),
+                  ]),
                 ),
               ),
-              const SizedBox(height: 8),
-              for (final tier in [Tier.basic, Tier.medium, Tier.pro])
-                if (offers.where((o) => o.tier == tier && o.yearly == _yearly).firstOrNull case final offer?)
-                  _TierCard(
-                    tier: tier,
-                    offer: offer,
-                    features: features[tier]!,
-                    current: current == tier,
-                    action: current == tier
-                        ? null
-                        : current == Tier.free
-                            ? l.subscribe
-                            : tier.index > current.index
-                                ? l.upgrade
-                                : l.switchPlan,
-                    onBuy: _busy ? null : () => _buy(billing, offer),
-                  ),
-              if (snap.connectionState == ConnectionState.waiting)
-                const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
-              else if (offers.isEmpty)
-                Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(l.plansUnavailable))),
-              const SizedBox(height: 8),
-              Text(l.subscriptionTerms, style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
-              TextButton(onPressed: _busy ? null : billing.restore, child: Text(l.restorePurchases)),
-              legalLinks(context),
-              if (billing case DevBilling dev when current != Tier.free)
-                TextButton(onPressed: () => dev.setTier(Tier.free), child: Text(l.devBackToFree)),
-            ]);
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -155,51 +193,49 @@ class _TierCard extends StatelessWidget {
     required this.offer,
     required this.features,
     required this.current,
-    required this.action,
-    required this.onBuy,
+    required this.selected,
+    required this.onTap,
   });
   final Tier tier;
   final Offer offer;
   final List<String> features;
-  final bool current;
-  final String? action;
-  final VoidCallback? onBuy;
+  final bool current, selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final pro = tier == Tier.pro;
+    final fg = pro ? c.background : c.ink;
     final price = offer.yearly ? l.perYear(offer.price) : l.perMonth(offer.price);
-    return Card(
-      shape: current
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16), side: BorderSide(color: context.colors.primary, width: 2))
-          : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            Text(tierName(tier, l), style: Theme.of(context).textTheme.titleLarge),
-            if (current) Chip(label: Text(l.currentPlan), visualDensity: VisualDensity.compact),
-          ]),
-          const SizedBox(height: 6),
-          for (final f in features)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(children: [
-                Icon(Icons.check_circle, size: 18, color: context.colors.primaryLight),
-                const SizedBox(width: 8),
-                Expanded(child: Text(f)),
+    return Semantics(
+      selected: selected,
+      button: onTap != null,
+      child: Material(
+        color: pro ? c.dark : c.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.card),
+          side: BorderSide(color: selected ? c.primary : (pro ? c.dark : c.border), width: selected ? 2.5 : 1),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.card),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(tierName(tier, l), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: fg)),
+                if (offer.trial && !current) Tag(l.trialBadge, tone: TagTone.gold),
+                if (current) Tag(l.currentPlan, tone: TagTone.mint),
               ]),
-            ),
-          const SizedBox(height: 10),
-          // The full price is always next to the button, with the trial spelled out.
-          Text(offer.trial && !current ? l.trialThen(price) : price,
-              style: TextStyle(fontWeight: FontWeight.w700, color: context.colors.textPrimary)),
-          if (action != null) ...[
-            const SizedBox(height: 8),
-            SizedBox(width: double.infinity, child: ElevatedButton(onPressed: onBuy, child: Text(action!))),
-          ],
-        ]),
+              const SizedBox(height: 4),
+              Text(price, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: fg)),
+              const SizedBox(height: 8),
+              Text(features.join(' · '), style: TextStyle(fontSize: 15, height: 1.4, color: fg.withValues(alpha: pro ? .85 : 1))),
+            ]),
+          ),
+        ),
       ),
     );
   }

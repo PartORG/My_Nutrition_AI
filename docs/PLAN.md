@@ -422,3 +422,36 @@ columns for them at all.
 - **Products download (`products.db`):** `tool/build_products_db.py` writes the label micronutrients too
   (schema 2). The published file is still the old one until it is rebuilt from the current Open Food Facts dump.
 - **Size:** `nutri.db` is 299.75 MB, just under the 300 MB contract; the next addition needs a smaller recipe budget.
+
+## v0.8.0 (2026-10-16): redesign
+
+The design lives in `docs/MyFoodMind redesign.html` and `docs/MyFoodMind redesign-png/` (19 screens).
+
+- **Design system:**
+  - Onest font, bundled (OFL, static 400/500/600/700).
+  - A warm paper and deep green palette (`AppPalette` in `lib/ui/theme.dart`), with a dark variant derived from
+    it. Wallpaper colours are still an option.
+  - Shared widgets in `lib/ui/kit.dart`.
+- **Navigation:**
+  - The bottom bar is Today · Chat · + (Log) · Plan · Me. The drawer and app bar are gone.
+  - History is in Today's periods and in Me; health, the AI memory, settings and plans are in Me.
+- **New screens:**
+  - First run in three steps: name (or Google), PIN and fingerprint, then goals. Goals come last because they
+    live in the profile's own database.
+  - A green unlock screen.
+  - The Plan hub (Plan · Recipes · Shopping) with the recipe box and "What can I cook?".
+  - A recipe screen with servings scaling, add to plan and log a serving.
+  - Cook mode: steps from the numbered instructions, the timer each step names, the ingredients it uses, and the
+    screen kept on through the `myfoodmind/screen` channel in `MainActivity`.
+  - A weight trend screen (a 10 % daily exponential average).
+- **New behaviour:**
+  - Shopping items get an aisle (keywords on the English food name) and "For: recipe" (user.db v11).
+  - Change PIN.
+  - Link or unlink the Google account.
+  - Add an allergy or diet from "What the AI knows".
+  - Delete a meal from its edit sheet.
+- **200 % text:**
+  - Fixed headers and tabs are capped at 1.5× text.
+  - At large text, chat's header and disclaimer scroll with the conversation.
+  - A header's trailing item goes under the title.
+

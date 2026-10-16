@@ -9,8 +9,10 @@ import '../data/pin.dart';
 import '../data/profiles.dart';
 import '../l10n/app_localizations.dart';
 import 'goals_screen.dart';
+import 'kit.dart';
+import 'theme.dart';
 
-/// The lock: sign-up while the phone has no profile, else its unlock screen.
+/// The lock: first run while the phone has no profile, else its unlock screen.
 class ProfilesScreen extends ConsumerStatefulWidget {
   const ProfilesScreen({super.key});
 
@@ -19,62 +21,31 @@ class ProfilesScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfilesScreenState extends ConsumerState<ProfilesScreen> {
-  Future<void> _create({String? name, String? googleEmail}) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => CreateProfileScreen(name: name, googleEmail: googleEmail)));
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _google() async {
-    final account = await signInWithGoogle();
-    if (account != null && mounted) await _create(name: account.displayName, googleEmail: account.email);
-  }
-
   @override
   Widget build(BuildContext context) {
     final owner = ref.watch(profilesProvider).owner;
     if (owner != null) return PinScreen(profile: owner, onDeleted: () => setState(() {}));
-    final l = AppLocalizations.of(context)!;
-    final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    return _Welcome(children: [
-      const _Eva(),
-      const SizedBox(height: 16),
-      Text(l.appTitle, style: text.headlineMedium?.copyWith(color: scheme.onSurface), textAlign: TextAlign.center),
-      const SizedBox(height: 32),
-      FilledButton.tonalIcon(
-        icon: const Icon(Icons.person_add),
-        label: Text(l.addProfile),
-        onPressed: _create,
-      ),
-      if (googleClientId.isNotEmpty) ...[
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.account_circle),
-          label: Text(l.continueWithGoogle),
-          onPressed: _google,
-        ),
-      ],
-    ]);
+    return const FirstRunScreen();
   }
 }
 
-class CreateProfileScreen extends ConsumerStatefulWidget {
-  const CreateProfileScreen({super.key, this.name, this.googleEmail});
-
-  /// From the Google account, when signing up with it.
-  final String? name, googleEmail;
+/// First run, three steps: your name (or Google's), a PIN and the fingerprint, then the goals form.
+class FirstRunScreen extends ConsumerStatefulWidget {
+  const FirstRunScreen({super.key});
 
   @override
-  ConsumerState<CreateProfileScreen> createState() => _CreateProfileScreenState();
+  ConsumerState<FirstRunScreen> createState() => _FirstRunScreenState();
 }
 
-class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
-  final _form = GlobalKey<FormState>();
-  late final _name = TextEditingController(text: widget.name);
+class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
+  final _name = TextEditingController();
   final _pin = TextEditingController();
   final _pin2 = TextEditingController();
-  bool _busy = false;
+  final _form = GlobalKey<FormState>();
+  String? _googleEmail;
+  var _step = 0;
+  var _fingerprint = true;
+  var _busy = false;
 
   @override
   void dispose() {
@@ -84,54 +55,176 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _google() async {
+    final account = await signInWithGoogle();
+    if (account == null || !mounted) return;
+    setState(() {
+      _name.text = account.displayName ?? _name.text;
+      _googleEmail = account.email;
+      if (_name.text.trim().isNotEmpty) _step = 1;
+    });
+  }
+
   Future<void> _create() async {
     if (!_form.currentState!.validate()) return;
+    final l = AppLocalizations.of(context)!;
     setState(() => _busy = true);
     final name = _name.text.trim();
-    final id = await ref.read(profilesProvider).create(name, _pin.text, googleEmail: widget.googleEmail);
+    final profiles = ref.read(profilesProvider);
+    final id = await profiles.create(name, _pin.text, googleEmail: _googleEmail);
+    if (!mounted) return;
+    // Turning fingerprint unlock on takes one scan, so it's the owner's finger.
+    if (_fingerprint &&
+        ref.read(biometricsAvailableProvider).value == true &&
+        await authenticateFingerprint(ref, l.fingerprintReason(name))) {
+      profiles.setBiometric(id, true);
+    }
     if (!mounted) return;
     ref.read(unlockedProvider.notifier).unlock((id: id, name: name));
-    // Skippable onboarding: straight to the goals form, with a "Later" button.
-    Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const GoalsScreen(onboarding: true)));
+    // Step three: the goals form, with a "Later" button.
+    unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GoalsScreen(onboarding: true))));
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(l.addProfile)),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: InputDecoration(labelText: l.profileName),
-              textCapitalization: TextCapitalization.words,
-              validator: (v) => v!.trim().isEmpty ? l.nameRequired : null,
+    final c = context.colors;
+    final progress = ExcludeSemantics(
+      child: Row(children: [
+        for (var i = 0; i < 3; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 5,
+              decoration: BoxDecoration(color: i <= _step ? c.primary : c.outline, borderRadius: BorderRadius.circular(3)),
             ),
-            const SizedBox(height: 12),
-            _PinField(controller: _pin, label: l.pinLabel,
-                validator: (v) => isValidPin(v!) ? null : l.pinInvalid),
-            const SizedBox(height: 12),
-            _PinField(controller: _pin2, label: l.pinConfirmLabel,
-                validator: (v) => v == _pin.text ? null : l.pinMismatch),
-            const SizedBox(height: 12),
-            Text(l.pinHint, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _busy ? null : _create,
-              child: _busy ? const _Spinner() : Text(l.create),
+          ),
+        ],
+      ]),
+    );
+    return PopScope(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (popped, _) {
+        if (!popped) setState(() => _step = 0);
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Form(
+                key: _form,
+                child: ListView(padding: const EdgeInsets.fromLTRB(24, 24, 24, 24), children: [
+                  progress,
+                  const SizedBox(height: 24),
+                  if (_step == 0) ..._nameStep(l, c) else ..._pinStep(l, c),
+                ]),
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+  List<Widget> _nameStep(AppLocalizations l, AppPalette c) {
+    Widget point(IconData icon, Color bg, Color fg, String text) => Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: fg, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Text(text, style: TextStyle(fontSize: 16, color: c.ink))),
+          ]),
+        );
+    return [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(color: c.hero, borderRadius: BorderRadius.circular(18)),
+          child: const Icon(Icons.eco_outlined, color: Colors.white, size: 34),
+        ),
+      ),
+      const SizedBox(height: 20),
+      Semantics(header: true, child: Text(l.welcomeHeadline, style: Theme.of(context).textTheme.headlineLarge)),
+      const SizedBox(height: 10),
+      Text(l.welcomeIntro, style: TextStyle(fontSize: 17, color: c.ink2, height: 1.4)),
+      const SizedBox(height: 22),
+      point(Icons.lock_outline, c.mint, c.primary, l.welcomePointPrivate),
+      point(Icons.search, c.waterBg, c.water, l.welcomePointData),
+      point(Icons.shield_outlined, c.warm, c.onWarm, l.welcomePointAllergens),
+      const SizedBox(height: 28),
+      Text(l.yourName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _name,
+        decoration: InputDecoration(hintText: l.nameExample),
+        textCapitalization: TextCapitalization.words,
+        textInputAction: TextInputAction.next,
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (t) {
+          if (t.trim().isNotEmpty) setState(() => _step = 1);
+        },
+      ),
+      const SizedBox(height: 14),
+      FilledButton(
+        onPressed: _name.text.trim().isEmpty ? null : () => setState(() => _step = 1),
+        child: Text(l.continueButton),
+      ),
+      if (googleClientId.isNotEmpty) ...[
+        const SizedBox(height: 10),
+        OutlinedButton.icon(icon: const Icon(Icons.account_circle_outlined), label: Text(l.continueWithGoogle), onPressed: _google),
+      ],
+      const SizedBox(height: 12),
+      Text(googleClientId.isEmpty ? l.firstRunNext : '${l.googleOnlyName} ${l.firstRunNext}',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: c.muted)),
+    ];
+  }
+
+  List<Widget> _pinStep(AppLocalizations l, AppPalette c) {
+    final biometrics = ref.watch(biometricsAvailableProvider).value == true;
+    return [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => setState(() => _step = 0),
+        ),
+      ),
+      Semantics(header: true, child: Text(l.lockItTitle, style: Theme.of(context).textTheme.headlineLarge)),
+      const SizedBox(height: 10),
+      Text(l.pinHint, style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4)),
+      const SizedBox(height: 20),
+      _PinField(controller: _pin, label: l.pinLabel, validator: (v) => isValidPin(v!) ? null : l.pinInvalid),
+      const SizedBox(height: 12),
+      _PinField(controller: _pin2, label: l.pinConfirmLabel, validator: (v) => v == _pin.text ? null : l.pinMismatch),
+      if (biometrics) ...[
+        const SizedBox(height: 12),
+        Panel(
+          padding: EdgeInsets.zero,
+          child: SwitchListTile(
+            secondary: Icon(Icons.fingerprint, color: c.primary),
+            title: Text(l.fingerprintTitle),
+            subtitle: Text(l.fingerprintHint),
+            value: _fingerprint,
+            onChanged: (on) => setState(() => _fingerprint = on),
+          ),
+        ),
+      ],
+      const SizedBox(height: 20),
+      FilledButton(onPressed: _busy ? null : _create, child: _busy ? const _Spinner() : Text(l.create)),
+    ];
+  }
 }
 
+/// Unlock: the profile on deep green, the fingerprint first; the PIN, Google and "forgot" below.
 class PinScreen extends ConsumerStatefulWidget {
   const PinScreen({super.key, required this.profile, required this.onDeleted});
   final ProfileInfo profile;
@@ -147,14 +240,13 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   final _pin = TextEditingController();
   String? _error;
   bool _busy = false;
+  late bool _showPin = !ref.read(profilesProvider).biometricEnabled(widget.profile.id);
 
   @override
   void initState() {
     super.initState();
     // Offer the fingerprint straight away when this profile uses it.
-    if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fingerprint());
-    }
+    if (!_showPin) WidgetsBinding.instance.addPostFrameCallback((_) => _fingerprint());
   }
 
   @override
@@ -226,51 +318,119 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    const white = Colors.white;
     final google = googleClientId.isEmpty ? null : ref.read(profilesProvider).googleEmail(widget.profile.id);
-    return _Welcome(children: [
-      _Avatar(profile: widget.profile),
-      const SizedBox(height: 16),
-      Text(widget.profile.name, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-      const SizedBox(height: 24),
-      ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 280),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _PinField(
-            controller: _pin,
-            label: l.enterPinFor(widget.profile.name),
-            autofocus: true,
-            errorText: _error,
-            centered: true,
-            onSubmitted: (_) => _busy ? null : _unlock(),
+    final biometric = ref.read(profilesProvider).biometricEnabled(widget.profile.id);
+    final whiteButton = FilledButton.styleFrom(backgroundColor: white, foregroundColor: c.ink);
+    final outline = OutlinedButton.styleFrom(
+        backgroundColor: Colors.transparent, foregroundColor: white, side: BorderSide(color: white.withValues(alpha: .45)));
+    return Scaffold(
+      backgroundColor: c.hero,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const SizedBox(height: 24),
+                Center(
+                  child: CircleAvatar(
+                    radius: 48,
+                    backgroundColor: white,
+                    child: Text(widget.profile.name.characters.first.toUpperCase(),
+                        style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: c.hero)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Semantics(
+                  header: true,
+                  child: Text(l.welcomeBack(widget.profile.name),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: white, letterSpacing: -0.5)),
+                ),
+                const SizedBox(height: 6),
+                Text(l.dataLocked, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: white.withValues(alpha: .85))),
+                const SizedBox(height: 40),
+                if (_showPin) ...[
+                  Theme(
+                    data: Theme.of(context).copyWith(
+                      inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(fillColor: white),
+                    ),
+                    child: _PinField(
+                      controller: _pin,
+                      label: l.enterPinFor(widget.profile.name),
+                      autofocus: true,
+                      centered: true,
+                      onSubmitted: (_) => _busy ? null : _unlock(),
+                    ),
+                  ),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: c.gold, fontWeight: FontWeight.w600)),
+                    ),
+                  const SizedBox(height: 14),
+                  FilledButton(style: whiteButton, onPressed: _busy ? null : _unlock, child: _busy ? const _Spinner() : Text(l.unlock)),
+                  if (biometric) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      style: outline,
+                      icon: const Icon(Icons.fingerprint),
+                      label: Text(l.useFingerprint),
+                      onPressed: _busy ? null : _fingerprint,
+                    ),
+                  ],
+                ] else ...[
+                  Center(
+                    child: Semantics(
+                      button: true,
+                      label: l.useFingerprint,
+                      excludeSemantics: true,
+                      child: Material(
+                        color: white.withValues(alpha: .14),
+                        shape: CircleBorder(side: BorderSide(color: white.withValues(alpha: .4), width: 2)),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _fingerprint,
+                          child: const SizedBox.square(dimension: 128, child: Icon(Icons.fingerprint, size: 56, color: white)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l.touchSensor,
+                      textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: white)),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: c.gold, fontWeight: FontWeight.w600)),
+                    ),
+                  const SizedBox(height: 56),
+                  FilledButton(style: whiteButton, onPressed: () => setState(() => _showPin = true), child: Text(l.usePin)),
+                ],
+                if (google != null) ...[
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    style: outline,
+                    icon: const Icon(Icons.account_circle_outlined),
+                    label: Text(l.signInWithGoogle),
+                    onPressed: _busy ? null : () => _google(google),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: white),
+                  onPressed: _busy ? null : _forgot,
+                  child: Text(l.forgotPin, style: const TextStyle(decoration: TextDecoration.underline, decorationColor: white)),
+                ),
+              ]),
+            ),
           ),
-          const SizedBox(height: 16),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-            onPressed: _busy ? null : _unlock,
-            child: _busy ? const _Spinner() : Text(l.unlock),
-          ),
-        ]),
+        ),
       ),
-      if (ref.read(profilesProvider).biometricEnabled(widget.profile.id)) ...[
-        const SizedBox(height: 16),
-        IconButton.filledTonal(
-          iconSize: 32,
-          tooltip: l.useFingerprint,
-          icon: const Icon(Icons.fingerprint),
-          onPressed: _busy ? null : _fingerprint,
-        ),
-      ],
-      if (google != null) ...[
-        const SizedBox(height: 8),
-        TextButton.icon(
-          icon: const Icon(Icons.account_circle),
-          label: Text(l.signInWithGoogle),
-          onPressed: _busy ? null : () => _google(google),
-        ),
-      ],
-      const SizedBox(height: 8),
-      TextButton(onPressed: _busy ? null : _forgot, child: Text(l.forgotPin)),
-    ]);
+    );
   }
 }
 
@@ -279,7 +439,6 @@ class _PinField extends StatelessWidget {
     required this.controller,
     required this.label,
     this.validator,
-    this.errorText,
     this.autofocus = false,
     this.centered = false,
     this.onSubmitted,
@@ -290,14 +449,13 @@ class _PinField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final FormFieldValidator<String>? validator;
-  final String? errorText;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) => TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label, errorText: errorText, counterText: ''),
+        decoration: InputDecoration(labelText: label, counterText: ''),
         obscureText: true,
         autofocus: autofocus,
         textAlign: centered ? TextAlign.center : TextAlign.start,
@@ -317,67 +475,4 @@ class _Spinner extends StatelessWidget {
   // No fixed colour: inside a disabled button white was invisible on the light theme.
   Widget build(BuildContext context) =>
       const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2));
-}
-
-/// The locked screens: a soft gradient from the theme's colours, content centred and
-/// scrollable (200 % text), at most 420 dp wide.
-class _Welcome extends StatelessWidget {
-  const _Welcome({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [scheme.primaryContainer, scheme.surface],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(mainAxisSize: MainAxisSize.min, children: children),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The assistant's face, as in the chat.
-class _Eva extends StatelessWidget {
-  const _Eva();
-
-  @override
-  Widget build(BuildContext context) => CircleAvatar(
-        radius: 56,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Image.asset('assets/icons/icon_chat.png', width: 80, height: 80, excludeFromSemantics: true),
-      );
-}
-
-/// A profile's initial.
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.profile});
-  final ProfileInfo profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return CircleAvatar(
-      radius: 48,
-      backgroundColor: scheme.secondaryContainer,
-      child: Text(profile.name.characters.first.toUpperCase(),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSecondaryContainer, fontSize: 36)),
-    );
-  }
 }

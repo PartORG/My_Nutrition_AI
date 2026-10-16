@@ -1656,4 +1656,565 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get translateNeedsAi =>
       'Для перекладу потрібна модель ШІ (див. вкладку «Чат»).';
+
+  @override
+  String get tabPlan => 'План';
+
+  @override
+  String get trendWeight => 'Тренд ваги';
+
+  @override
+  String weightChangeIn(String change, int days) {
+    return '$change за $days дн.';
+  }
+
+  @override
+  String rangeMonths(int n) {
+    return '$n міс';
+  }
+
+  @override
+  String get rangeYear => '1 рік';
+
+  @override
+  String get legendScale => 'Ваги';
+
+  @override
+  String get legendTrend => 'Тренд';
+
+  @override
+  String perWeek(String unit) {
+    return '$unit на тиждень';
+  }
+
+  @override
+  String get latestScale => 'Останнє зважування';
+
+  @override
+  String get weightTrendNote =>
+      'Тренд згладжує щоденні коливання води, тож один «важкий» ранок не сприймається як справжня зміна.';
+
+  @override
+  String weightChartLabel(int n, String from, String to) {
+    return 'Вага, $n зважувань, тренд від $from до $to';
+  }
+
+  @override
+  String get addShort => '+ Додати';
+
+  @override
+  String get calories => 'Калорії';
+
+  @override
+  String get cook => 'Готувати';
+
+  @override
+  String get eatenWord => 'З’їдено';
+
+  @override
+  String get leftWord => 'Залишок';
+
+  @override
+  String get kcalLeftShort => 'ккал лишилось';
+
+  @override
+  String get kcalOverShort => 'ккал понад';
+
+  @override
+  String get fastNotRunning => 'Не голодуєте';
+
+  @override
+  String get fromYourPlan => 'з вашого плану';
+
+  @override
+  String get glassAdded => 'Склянку води додано';
+
+  @override
+  String get undo => 'Скасувати';
+
+  @override
+  String get water => 'Вода';
+
+  @override
+  String get litreUnit => 'л';
+
+  @override
+  String get showFewer => 'Менше';
+
+  @override
+  String showAllCount(int n) {
+    return 'Усі $n ›';
+  }
+
+  @override
+  String get yourWeek => 'Ваш тиждень';
+
+  @override
+  String get yourMonth => 'Ваш місяць';
+
+  @override
+  String get yourYear => 'Ваш рік';
+
+  @override
+  String addToMeal(String meal) {
+    return 'Додати: $meal';
+  }
+
+  @override
+  String fastGoalHours(int hours) {
+    return 'ціль $hours год';
+  }
+
+  @override
+  String fitsLeft(String amount) {
+    return 'вміщається у ваші $amount';
+  }
+
+  @override
+  String hoursMinutes(int h, int m) {
+    return '$h год $m хв';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes хв';
+  }
+
+  @override
+  String get kindAll => 'Усе';
+
+  @override
+  String get lessServing => 'На пів порції менше';
+
+  @override
+  String get moreServing => 'На пів порції більше';
+
+  @override
+  String get logFoodTitle => 'Записати їжу';
+
+  @override
+  String get quickAddBody => 'Лише калорії та БЖВ';
+
+  @override
+  String get snapPhoto => 'Сфотографувати';
+
+  @override
+  String get snapPhotoBody => 'Називає страви й оцінює порції';
+
+  @override
+  String servingsAmount(String amount) {
+    return '$amount × порція';
+  }
+
+  @override
+  String yesterdaysMeal(String meal) {
+    return 'Вчора: $meal';
+  }
+
+  @override
+  String get assistantTitle => 'Асистент';
+
+  @override
+  String get openRecipe => 'Відкрити рецепт';
+
+  @override
+  String get runsOnPhone =>
+      'Працює на цьому телефоні · нічого не виходить назовні';
+
+  @override
+  String gramsProtein(int n) {
+    return '$n г білка';
+  }
+
+  @override
+  String messagesLeft(int n, int total) {
+    return '$n з $total сьогодні';
+  }
+
+  @override
+  String get addedToPlan => 'Додано до плану';
+
+  @override
+  String get addToPlan => 'Додати до плану';
+
+  @override
+  String get addToShoppingShort => '+ До покупок';
+
+  @override
+  String get aisleProduce => 'Фрукти й овочі';
+
+  @override
+  String get aisleMeatFish => 'М’ясо й риба';
+
+  @override
+  String get aisleDairyEggs => 'Молочне та яйця';
+
+  @override
+  String get aisleBakery => 'Хліб і випічка';
+
+  @override
+  String get aislePantry => 'Бакалія';
+
+  @override
+  String get aisleSpices => 'Спеції';
+
+  @override
+  String get aisleFrozen => 'Заморожене';
+
+  @override
+  String get aisleDrinks => 'Напої';
+
+  @override
+  String get aisleOther => 'Інше';
+
+  @override
+  String get back => 'Назад';
+
+  @override
+  String get badgeMorning => 'РАНОК';
+
+  @override
+  String get badgeNoon => 'ОБІД';
+
+  @override
+  String get badgeEvening => 'ВЕЧІР';
+
+  @override
+  String get boxEmpty =>
+      'Тут поки порожньо. Збережіть рецепт закладкою або скористайтеся пошуком.';
+
+  @override
+  String get boxFootnote =>
+      'Рецепти з вашими алергенами тут ніколи не з’являються. Ідеї враховують ваші зірки.';
+
+  @override
+  String get close => 'Закрити';
+
+  @override
+  String get doneCooking => 'Готово';
+
+  @override
+  String get fewerServings => 'Менше порцій';
+
+  @override
+  String get moreServings => 'Більше порцій';
+
+  @override
+  String get findRecipes => 'Знайти рецепти';
+
+  @override
+  String get forThisStep => 'Для цього кроку';
+
+  @override
+  String get fridgeHint => 'напр. яйця, шпинат, фета';
+
+  @override
+  String get logServing => 'Записати порцію';
+
+  @override
+  String get nextStep => 'Далі';
+
+  @override
+  String get noSteps => 'У цьому рецепті немає кроків.';
+
+  @override
+  String get recipesTitle => 'Рецепти';
+
+  @override
+  String get removeSaved => 'Прибрати зі збережених';
+
+  @override
+  String get savedLabel => 'Збережено';
+
+  @override
+  String get searchRecipes => 'Пошук серед 166 000 рецептів…';
+
+  @override
+  String get servingsLabel => 'Порції';
+
+  @override
+  String get servingsHint => 'Кількості й поживність оновлюються';
+
+  @override
+  String get shelfCooked => 'Приготовані';
+
+  @override
+  String get shelfLoved => '4★ і вище';
+
+  @override
+  String get shelfQuick => '≤ 30 хв';
+
+  @override
+  String get startCooking => 'Почати готувати';
+
+  @override
+  String get thisWeek => 'Цей тиждень';
+
+  @override
+  String get timerDone => 'Час минув';
+
+  @override
+  String get whatCanICook => 'Що приготувати?';
+
+  @override
+  String get whatCanICookBody => 'Скажіть або сфотографуйте, що в холодильнику';
+
+  @override
+  String allergensLeftOut(String list) {
+    return '$list виключено: вони у вашому списку алергій.';
+  }
+
+  @override
+  String clearTickedN(int n) {
+    return 'Прибрати позначені ($n)';
+  }
+
+  @override
+  String cookedTimes(int n) {
+    return 'готували $n×';
+  }
+
+  @override
+  String cookSubtitle(int servings) {
+    return 'Екран не гасне · порцій: $servings';
+  }
+
+  @override
+  String forRecipe(String title) {
+    return 'Для: $title';
+  }
+
+  @override
+  String ideasFor(String list) {
+    return 'Ідеї для: $list';
+  }
+
+  @override
+  String itemsLeft(int n, int total) {
+    return 'Лишилось $n з $total';
+  }
+
+  @override
+  String plannedFor(String day) {
+    return 'План на $day';
+  }
+
+  @override
+  String planOfKcal(int n, int total) {
+    return '$n з $total ккал';
+  }
+
+  @override
+  String roomForSnack(int kcal) {
+    return 'Є місце для перекусу на $kcal ккал.';
+  }
+
+  @override
+  String shelfSaved(int n) {
+    return 'Збережені · $n';
+  }
+
+  @override
+  String shoppingTabCount(int n) {
+    return 'Покупки · $n';
+  }
+
+  @override
+  String startTimer(String time) {
+    return 'Таймер на $time';
+  }
+
+  @override
+  String stepOf(int step, int steps) {
+    return 'Крок $step з $steps';
+  }
+
+  @override
+  String timerRunning(String time) {
+    return '$time · торкніться, щоб зупинити';
+  }
+
+  @override
+  String youRated(int stars) {
+    return 'ваша оцінка $stars';
+  }
+
+  @override
+  String get changePin => 'Змінити PIN';
+
+  @override
+  String get currentPin => 'Поточний PIN';
+
+  @override
+  String get pinChanged => 'PIN змінено';
+
+  @override
+  String get dailyTargets => 'Денні цілі';
+
+  @override
+  String get tapToOverride => 'Торкніться, щоб змінити';
+
+  @override
+  String get googleAccount => 'Обліковий запис Google';
+
+  @override
+  String get googleNotLinked => 'Не пов’язано: лише PIN і відбиток';
+
+  @override
+  String googleLinked(String email) {
+    return '$email · лише ім’я';
+  }
+
+  @override
+  String get historyAndYear => 'Історія та рік';
+
+  @override
+  String get limitShort => 'макс.';
+
+  @override
+  String get link => 'Пов’язати';
+
+  @override
+  String get unlink => 'Від’єднати';
+
+  @override
+  String get lookAndLanguage => 'Вигляд і мова';
+
+  @override
+  String get onDeviceAiAndData => 'ШІ на телефоні та дані';
+
+  @override
+  String get savedRecipesTitle => 'Збережені рецепти';
+
+  @override
+  String bornIn(int year) {
+    return '$year р. н.';
+  }
+
+  @override
+  String planChip(String tier) {
+    return 'Тариф $tier · Тарифи';
+  }
+
+  @override
+  String get addAllergyTitle => 'Додати алергію чи дієту';
+
+  @override
+  String get addAllergyHint => 'напр. арахіс, глютен, вегетаріанство';
+
+  @override
+  String allergyUnknown(String text) {
+    return '«$text» — не алерген чи дієта, які застосунок уміє фільтрувати. Спробуйте: арахіс, горіхи, молоко, яйця, глютен, молюски, риба, соя, кунжут, вегетаріанство, веганство, пескетаріанство.';
+  }
+
+  @override
+  String get continueButton => 'Продовжити';
+
+  @override
+  String get dataLocked => 'Ваші дані заблоковано на цьому телефоні.';
+
+  @override
+  String get firstRunNext => 'Далі: PIN або відбиток, потім ваші цілі.';
+
+  @override
+  String get googleOnlyName => 'Google лише підставляє ваше ім’я.';
+
+  @override
+  String get lockItTitle => 'Захистіть доступ';
+
+  @override
+  String get nameExample => 'напр. Оля';
+
+  @override
+  String get recordsNotInterprets =>
+      'Застосунок записує те, що ви вводите, і ніколи цього не тлумачить. Загальна інформація з опублікованих настанов, не медична порада.';
+
+  @override
+  String get recordTitle => 'Записати';
+
+  @override
+  String get reportHintShort => 'PDF і CSV того, що ви записали';
+
+  @override
+  String get startTrial => 'Почати 7 днів безкоштовно';
+
+  @override
+  String get touchSensor => 'Торкніться сенсора, щоб розблокувати';
+
+  @override
+  String get trialBadge => '7 ДНІВ БЕЗКОШТОВНО';
+
+  @override
+  String get usePin => 'Ввести PIN';
+
+  @override
+  String get welcomeHeadline => 'Харчуйтеся добре — приватно';
+
+  @override
+  String get welcomeIntro =>
+      'ШІ-асистент з харчування, що працює на цьому телефоні. Без хмарного ШІ, без аналітики.';
+
+  @override
+  String get welcomePointPrivate =>
+      'Ваші страви й розмови не залишають телефон';
+
+  @override
+  String get welcomePointData =>
+      '55 000 продуктів і 166 000 рецептів усередині';
+
+  @override
+  String get welcomePointAllergens =>
+      'Алергени відфільтровано з кожного рецепта';
+
+  @override
+  String get yourName => 'Ваше ім’я';
+
+  @override
+  String currentTier(String tier) {
+    return 'Зараз: $tier';
+  }
+
+  @override
+  String severityN(int n) {
+    return 'сила $n';
+  }
+
+  @override
+  String welcomeBack(String name) {
+    return 'З поверненням, $name';
+  }
+
+  @override
+  String get bestStreak => 'найдовша серія';
+
+  @override
+  String get daysLogged => 'днів із записами';
+
+  @override
+  String avgValue(String value) {
+    return 'сер. $value';
+  }
+
+  @override
+  String dayLine(String amount, int n) {
+    return '$amount ккал · $n записів';
+  }
+
+  @override
+  String sinceMonth(String month) {
+    return 'з $month';
+  }
+
+  @override
+  String streakShort(int n) {
+    return 'серія $n дн.';
+  }
+
+  @override
+  String get estimatedTotal => 'Орієнтовно разом';
+
+  @override
+  String logThisMeal(String meal) {
+    return 'Записати: $meal';
+  }
 }

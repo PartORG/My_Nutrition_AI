@@ -445,6 +445,9 @@ class AgentTools {
   }
 
   /// The profile's allergies and diets, as stored in user_allergens.
+  /// The profile's allergens and diets ("peanuts", "vegetarian").
+  List<String> myAllergens() => _myAllergens();
+
   List<String> _myAllergens() =>
       [for (final r in user.select('SELECT allergen FROM user_allergens')) r['allergen'] as String];
 
@@ -1184,6 +1187,9 @@ final _moreAsk = RegExp(r"\b(?:more|others?|another|different|else|instead|again
     caseSensitive: false);
 
 final _allergenNames = {for (final (_, name) in _allergenAliases) name};
+
+/// "Peanuts", "арахіс", "vegan" → the allergen or diet the app filters by; null when it knows none.
+String? knownAllergen(String raw) => switch (normalizeAllergen(raw)) { final a when _allergenNames.contains(a) => a, _ => null };
 
 /// "I ate 2 bananas for breakfast today" → "2 bananas"; "add breakfast" → "".
 String mealFoods(String text) => text

@@ -196,6 +196,22 @@ void main() {
       p.close();
     });
 
+    test('change PIN needs the current one; Google can be linked and unlinked', () async {
+      final p = Profiles.open(tmp);
+      final anna = await p.create('Anna', '1234');
+      expect(await p.changePin(anna, '0000', '5678'), isA<PinWrong>());
+      expect(await p.unlock(anna, '1234'), isA<PinOk>(), reason: 'unchanged after a wrong current PIN');
+      expect(await p.changePin(anna, '1234', '5678'), isA<PinOk>());
+      expect(await p.unlock(anna, '1234'), isA<PinWrong>());
+      expect(await p.unlock(anna, '5678'), isA<PinOk>());
+      await expectLater(p.changePin(anna, '5678', '12'), throwsArgumentError);
+      p.setGoogleEmail(anna, 'Anna@Gmail.com');
+      expect(p.googleEmail(anna), 'anna@gmail.com');
+      p.setGoogleEmail(anna, null);
+      expect(p.googleEmail(anna), isNull);
+      p.close();
+    });
+
     test('data survives reopening', () async {
       final first = Profiles.open(tmp);
       await first.create('Anna', '1234');

@@ -137,15 +137,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Check what was found'), findsOneWidget);
-      expect(find.text('banana'), findsOneWidget);
-      expect(find.text('≈210 kcal'), findsOneWidget); // two bananas: 2 × 118 g × 89 kcal/100 g
-      expect(find.text('broccoli'), findsOneWidget);
+      expect(find.text('banana'), findsNWidgets(2)); // the band above and its row
+      expect(find.text('broccoli'), findsNWidgets(2));
       // The user corrects the amount and removes broccoli before logging.
       await tester.enterText(find.widgetWithText(TextFormField, '236'), '200');
       await tester.tap(find.byTooltip('Delete').last);
       await tester.pump();
+      expect(find.text('≈ 178 kcal'), findsOneWidget); // the total: 200 g × 89 kcal/100 g
       await tester.tap(find.text('Lunch'));
-      await tester.tap(find.textContaining('Log this meal'));
+      await tester.pump();
+      await tester.tap(find.text('Log this lunch'));
       await tester.pumpAndSettle();
 
       expect(meals().map((r) => (r['description'], r['grams'], r['estimated'])), [('banana', 200.0, 1)]);
@@ -164,8 +165,8 @@ void main() {
 
       expect(find.widgetWithText(TextFormField, '150'), findsOneWidget); // Gemma's grams, not a serving
       expect(find.widgetWithText(TextFormField, '90'), findsOneWidget);
-      expect(find.textContaining('unicorn stew'), findsOneWidget); // not in nutri.db: shown, not loggable
-      await tester.tap(find.textContaining('Log this meal'));
+      expect(find.textContaining('unicorn stew'), findsNWidgets(2)); // not in nutri.db: shown, not loggable
+      await tester.tap(find.textContaining('Log this'));
       await tester.pumpAndSettle();
       expect(meals().map((r) => (r['description'], r['grams'])), [('banana', 150.0), ('broccoli', 90.0)]);
       expect(scans(), ['photo: banana, broccoli']);
@@ -175,9 +176,8 @@ void main() {
       final found = await FakeDetector().detect(Uint8List(0));
       capture = (_) => (found, true);
       await pumpChat(tester);
-      await tester.tap(find.byTooltip('Open camera'));
+      await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('What can I cook?'), 200, scrollable: find.byType(Scrollable).first);
       await tester.tap(find.text('What can I cook?'));
       await tester.pumpAndSettle();
 

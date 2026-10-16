@@ -93,7 +93,7 @@ void main() {
   }
 
   for (final lang in ['en', 'uk', 'de', 'fr']) {
-    testWidgets('$lang: drawer opens the shopping list; Settings at 200 % text', (tester) async {
+    testWidgets('$lang: Plan tab opens the shopping list; Settings at 200 % text', (tester) async {
       smallPhone(tester);
       final settings = migrated(sqlite3.openInMemory(), profilesDbMigrations);
       addTearDown(settings.close);
@@ -103,18 +103,13 @@ void main() {
       ]));
       await tester.pump();
       final l = lookupAppLocalizations(Locale(lang));
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.tap(find.text(l.tabPlan));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text(l.shoppingListNav)); // below the fold at 200 % in some languages
+      await scrollAll(tester, 'Plan ($lang)');
+      await tester.tap(find.text(l.shoppingList).first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l.shoppingListNav));
-      await tester.pumpAndSettle();
-      expect(find.text(l.shoppingEmpty), findsOneWidget, reason: 'opened on the Shopping tab');
-      await tester.tap(find.byType(BackButton)); // pageBack() only knows the English tooltip
-      await tester.pumpAndSettle();
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
-      await tester.pumpAndSettle();
-      await scrollAll(tester, 'drawer ($lang)');
+      expect(find.text(l.shoppingEmpty), findsOneWidget, reason: 'the Shopping tab');
+      await scrollAll(tester, 'Shopping ($lang)');
 
       await tester.pumpWidget(app(const SettingsScreen(), locale: Locale(lang), overrides: [
         billingProvider.overrideWith((ref) async => billing),
@@ -146,7 +141,7 @@ void main() {
     await tester.pump();
     await scrollAll(tester, 'Today');
 
-    await tester.tap(find.text('Log'));
+    await tester.tap(find.byTooltip('Log'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'chicken');
     await tester.pump();
@@ -164,7 +159,7 @@ void main() {
       await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang)));
       await tester.pump();
       await scrollAll(tester, 'Today ($lang)');
-      await tester.tap(find.byIcon(Icons.add_circle_outline).last); // the Log tab
+      await tester.tap(find.byTooltip(lookupAppLocalizations(Locale(lang)).tabLog)); // the + in the bar
       await tester.pumpAndSettle();
       await scrollAll(tester, 'Log ($lang)');
       await tester.tap(find.byIcon(Icons.person_outline));
@@ -180,9 +175,9 @@ void main() {
     await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), theme: AppTheme.build(Brightness.dark)));
     await tester.pump();
     expect(tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor ?? Theme.of(tester.element(find.byType(Scaffold).first)).scaffoldBackgroundColor,
-        AppPalette.dark.background);
+        AppPalette.night.background);
     await scrollAll(tester, 'Today (dark)');
-    await tester.tap(find.text('Log'));
+    await tester.tap(find.byTooltip('Log'));
     await tester.pumpAndSettle();
     await scrollAll(tester, 'Log (dark)');
     await tester.tap(find.text('Me'));
@@ -228,12 +223,12 @@ void main() {
     expect(symptomsBetween(data.user, now.subtract(const Duration(days: 1)), DateTime.now()).last,
         isA<Symptom>().having((s) => s.symptom, 'symptom', 'headache').having((s) => s.severity, 'severity', 4));
 
-    await tapText('Report for your doctor', 200);
+    await tapText('Create', 200); // on the "Report for your doctor" card
     expect(tester.takeException(), isNull, reason: 'report sheet');
     tester.state<NavigatorState>(find.byType(Navigator)).pop(); // close the sheet (it fills the screen at 200 %)
     await tester.pumpAndSettle();
 
-    await tapText('Timeline', 200);
+    await tapText('Timeline', -200); // above the report card now
     // One unit per chart: the latest reading's.
     await tester.scrollUntilVisible(find.text('Blood glucose (mmol/L)'), 200, scrollable: find.byType(Scrollable).first);
     await scrollAll(tester, 'Timeline');
@@ -298,7 +293,7 @@ void main() {
     handle.dispose();
     for (var i = 0; i < 14; i++) {
       expect(tester.takeException(), isNull, reason: 'chat, scroll step $i');
-      await tester.drag(find.byType(ListView), const Offset(0, 300));
+      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
       await tester.pump();
     }
   });

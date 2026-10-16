@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'agent_tools.dart' show knownAllergen;
+
 import '../data/conditions.dart';
 import '../data/diary.dart' show waterGoal, waterOn;
 import '../data/goals.dart';
@@ -156,6 +158,16 @@ class Memory {
 
   List<String> allergies() =>
       [for (final r in user.select('SELECT allergen FROM user_allergens ORDER BY 1')) r['allergen'] as String];
+
+  /// "+ Add" on the memory screen: the tap is the confirmation. Unknown words are refused (null).
+  String? addAllergy(String raw) {
+    final allergen = knownAllergen(raw);
+    if (allergen != null) {
+      user.execute('INSERT OR IGNORE INTO user_allergens (allergen, added_at) VALUES (?, ?)',
+          [allergen, DateTime.now().millisecondsSinceEpoch]);
+    }
+    return allergen;
+  }
 
   void removeAllergy(String allergen) =>
       user.execute('DELETE FROM user_allergens WHERE allergen = ?', [allergen]);

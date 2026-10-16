@@ -17,16 +17,22 @@ accounts, no cloud inference and no analytics SDK.
 - **AI chat:** Gemma 4 runs locally with native tool calling. The model routes requests and
   phrases the answers. Code computes the numbers and the database supplies the facts, so nutrition
   values and recipes appear as cards from the database, never as model-generated text.
-- **Food logging:** search about 50,000 foods, 166,000 recipes and 263,000 packaged products, or
-  log by chat or voice.
+- **Food logging:** search about 55,000 foods, 166,000 recipes, 620 dishes and 263,000 packaged
+  products, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
+  meal in one tap.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
   (lose, maintain or gain), with a manual override for every value. Micronutrients: calcium, iron,
   magnesium, potassium and vitamins C, D and B12.
-- **Dashboards:** Today, Week (with a weekly review), Month and Year views, a weight card on Today and
-  Me (latest weight, 30-day change, quick log), water tracking, fasting, streaks and an Android
-  home-screen widget.
+- **Dashboards:** Today, Week (with a weekly review), Month and Year views, water tracking, fasting,
+  streaks and an Android home-screen widget. A weight trend screen shows a smoothed trend line over
+  1, 3, 6 or 12 months, so a heavy morning isn't mistaken for a real change.
 - **History:** every logged meal and recipe, day by day, for a date range you pick.
-- **Meal plan and shopping list:** plan the week and turn the plan into a shopping list.
+- **Plan, recipes and shopping:** plan the week and swap any meal. The recipe box holds what you
+  saved, cooked or rated 4★+, searches every recipe, and suggests recipes from what's in your
+  fridge. The shopping list is grouped by aisle and shows which recipe each item is for.
+- **Recipes and Cook mode:** a servings stepper scales the amounts and nutrition. Add a recipe to
+  the plan, log a serving, or cook it step by step: the screen stays on, each step shows the
+  ingredients it uses, and a timer starts when the step names a time.
 - **Allergies and conditions:** recipes containing your allergens are always filtered out.
   Conditions (type 2 diabetes, high blood pressure, gout, ALS, multiple sclerosis) come from
   published clinical guidelines: they cap daily limits (they only ever *tighten*), hide recipes
@@ -42,8 +48,9 @@ accounts, no cloud inference and no analytics SDK.
   food searches from the logged name, so near matches show at once.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
   edit or delete everything it knows about you.
-- **One profile per phone:** unlocked by fingerprint, with a PIN as the fallback. Signing up with
-  Google is optional (see Build flags). Nothing leaves the phone.
+- **One profile per phone:** unlocked by fingerprint, with a PIN as the fallback. You can change the
+  PIN in Settings. Signing up with Google is optional (see Build flags), and the account can be linked
+  or unlinked later. Nothing leaves the phone.
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
   follow the phone). The assistant answers in the chosen language.
 - **Safety:** a medical disclaimer under the chat input, on every health-information card and in

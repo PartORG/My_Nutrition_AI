@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../agent/agent.dart';
 import '../agent/memory.dart';
 import '../l10n/app_localizations.dart';
+import 'kit.dart';
 import 'theme.dart';
 
 /// "What the AI knows about you": every memory the agent is fed, editable.
@@ -45,88 +46,144 @@ class _MemoryScreenState extends State<MemoryScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _addAllergy() async {
+    final l = AppLocalizations.of(context)!;
+    final text = await showDialog<String>(
+        context: context, builder: (_) => _EditDialog('', title: l.addAllergyTitle, hint: l.addAllergyHint));
+    if (text == null || text.trim().isEmpty || !mounted) return;
+    final added = _memory.addAllergy(text);
+    setState(() {});
+    if (added == null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.allergyUnknown(text.trim()))));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     final facts = _memory.facts();
     final allergies = _memory.allergies();
     final habits = _memory.habits();
     final messages = _memory.conversationCount();
+    const diets = {'vegetarian', 'vegan', 'pescatarian'};
     return Scaffold(
-      appBar: AppBar(title: Text(l.aiKnowsTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.aiKnowsIntro, style: TextStyle(color: context.colors.textSecondary)),
-        _Section(icon: Icons.lightbulb_outline, title: l.factsSection, children: [
-          if (facts.isEmpty) Text(l.factsEmpty),
-          for (final f in facts)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(f.text),
-              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(tooltip: l.edit, icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => _editFact(f.id, f.text)),
-                IconButton(tooltip: l.delete, icon: const Icon(Icons.delete_outline),
-                    onPressed: () => setState(() => _memory.deleteFact(f.id))),
-              ]),
+      body: SafeArea(
+        child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.of(context).maybePop(),
             ),
-        ]),
-        _Section(icon: Icons.no_food_outlined, title: l.allergiesSection, children: [
-          if (allergies.isEmpty) Text(l.allergiesEmpty),
-          Wrap(spacing: 8, children: [
-            for (final a in allergies)
-              InputChip(
-                label: Text(a),
-                deleteButtonTooltipMessage: l.delete,
-                onDeleted: () => setState(() => _memory.removeAllergy(a)),
-              ),
+          ),
+          Semantics(header: true, child: Text(l.aiKnowsTitle, style: Theme.of(context).textTheme.headlineLarge)),
+          const SizedBox(height: 10),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.lock_outline, size: 18, color: c.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(l.aiKnowsIntro, style: TextStyle(fontSize: 15, color: c.ink2))),
           ]),
-        ]),
-        _Section(icon: Icons.insights_outlined, title: l.habitsSection, children: [
-          Text(habits?.replaceFirst('Habits (30 days): ', '') ?? l.habitsEmpty),
-        ]),
-        _Section(icon: Icons.forum_outlined, title: l.conversationsSection, children: [
-          Text(l.conversationsCount(messages)),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            label: Text(l.forgetConversations),
-            onPressed: messages == 0 ? null : _forget,
+          const SizedBox(height: 16),
+          Panel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(l.factsSection, style: Theme.of(context).textTheme.titleMedium),
+              if (facts.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.factsEmpty)),
+              for (final (i, f) in facts.indexed) ...[
+                if (i > 0) Divider(color: c.divider),
+                Row(children: [
+                  Expanded(child: Text(f.text, style: const TextStyle(fontSize: 16))),
+                  IconButton(tooltip: l.edit, icon: const Icon(Icons.edit_outlined), onPressed: () => _editFact(f.id, f.text)),
+                ]),
+              ],
+            ]),
+          ),
+          const SizedBox(height: 12),
+          Panel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.allergiesSection, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final a in allergies)
+                  _RemovableChip(
+                    label: a,
+                    diet: diets.contains(a),
+                    tooltip: l.delete,
+                    onRemove: () => setState(() => _memory.removeAllergy(a)),
+                  ),
+                SizedBox(
+                  width: 120,
+                  child: DashedAdd(
+                    radius: 26,
+                    onTap: _addAllergy,
+                    child: Center(
+                      child: Text(l.addShort, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: c.primary)),
+                    ),
+                  ),
+                ),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          Panel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text.rich(TextSpan(children: [
+                TextSpan(text: l.habitsSection, style: Theme.of(context).textTheme.titleMedium),
+                TextSpan(text: ' · ${l.lastDays(30)}', style: TextStyle(fontSize: 14, color: c.muted)),
+              ])),
+              const SizedBox(height: 8),
+              Text(habits?.replaceFirst('Habits (30 days): ', '') ?? l.habitsEmpty, style: TextStyle(fontSize: 15, color: c.ink2)),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          Panel(
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(l.conversationsSection, style: Theme.of(context).textTheme.titleMedium),
+                  Text(l.conversationsCount(messages), style: TextStyle(color: c.muted)),
+                ]),
+              ),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(foregroundColor: c.danger, side: BorderSide(color: c.danger)),
+                onPressed: messages == 0 ? null : _forget,
+                child: Text(l.forget),
+              ),
+            ]),
           ),
         ]),
+      ),
+    );
+  }
+}
+
+/// An allergy (red) or diet (green) with its × to remove it.
+class _RemovableChip extends StatelessWidget {
+  const _RemovableChip({required this.label, required this.diet, required this.tooltip, required this.onRemove});
+  final String label, tooltip;
+  final bool diet;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final (bg, fg) = diet ? (c.mint, c.onMint) : (c.dangerBg, c.danger);
+    return Container(
+      padding: const EdgeInsets.only(left: 16),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(Radii.pill)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label[0].toUpperCase() + label.substring(1), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: fg)),
+        IconButton(tooltip: '$tooltip $label', icon: Icon(Icons.close, size: 18, color: fg), onPressed: onRemove),
       ]),
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.icon, required this.title, required this.children});
-  final IconData icon;
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(top: 16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Icon(icon, color: context.colors.primary),
-              const SizedBox(width: 8),
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-            ]),
-            const SizedBox(height: 8),
-            ...children,
-          ]),
-        ),
-      );
-}
-
 /// Owns its controller: disposing it when showDialog returns would crash,
 /// because the dialog is still animating out and its TextField still uses it.
 class _EditDialog extends StatefulWidget {
-  const _EditDialog(this.text);
+  const _EditDialog(this.text, {this.title, this.hint});
   final String text;
+  final String? title, hint;
 
   @override
   State<_EditDialog> createState() => _EditDialogState();
@@ -145,11 +202,12 @@ class _EditDialogState extends State<_EditDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(l.edit),
-      content: TextField(controller: _controller, autofocus: true, maxLines: 3, minLines: 1),
+      title: Text(widget.title ?? l.edit),
+      content: TextField(
+          controller: _controller, autofocus: true, maxLines: 3, minLines: 1, decoration: InputDecoration(hintText: widget.hint)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
-        ElevatedButton(onPressed: () => Navigator.pop(context, _controller.text), child: Text(l.confirmSave)),
+        FilledButton(onPressed: () => Navigator.pop(context, _controller.text), child: Text(l.confirmSave)),
       ],
     );
   }

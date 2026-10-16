@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'kit.dart';
 import 'nutrients.dart';
 import 'period_view.dart';
 import 'theme.dart';
@@ -40,7 +41,34 @@ class YearView extends StatelessWidget {
             loggedDays.isEmpty ? 0 : loggedDays.fold(0.0, (s, d) => s + d.totals[k]!) / loggedDays.length;
         String kg(double v) => (imperial ? kgToLb(v) : v).toStringAsFixed(1);
 
-        return ListView(padding: const EdgeInsets.all(16), children: [
+        final change = weights.length < 2 ? null : weights.last.kg - weights.first.kg;
+        return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
+          IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: StatTile(value: '${loggedDays.length}', label: l.daysLogged)),
+              const SizedBox(width: 10),
+              Expanded(child: StatTile(value: '${bestStreak(series)}', label: l.bestStreak)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: StatTile(
+                  value: change == null ? '–' : '${change >= 0 ? '+' : '−'}${kg(change.abs())} ${imperial ? 'lb' : 'kg'}',
+                  label: l.sinceMonth(DateFormat.MMM(Localizations.localeOf(context).toString()).format(first)),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          ChartSection(
+            title: l.yearCalendar,
+            child: _YearCalendar(series: series, goal: targets['kcal']),
+          ),
+          if (top.isNotEmpty)
+            ChartSection(
+              title: l.yearTopFoods,
+              child: Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final f in top) Tag('${f.label} · ${f.times}×', tone: TagTone.neutral, big: true),
+              ]),
+            ),
           ChartSection(
             title: l.yearCalories,
             child: SizedBox(
@@ -52,14 +80,6 @@ class YearView extends StatelessWidget {
                 monthly: true,
               ),
             ),
-          ),
-          ChartSection(
-            title: l.yearCalendar,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _YearCalendar(series: series, goal: targets['kcal']),
-              const SizedBox(height: 8),
-              Text(l.yearLoggedDays(loggedDays.length, bestStreak(series))),
-            ]),
           ),
           if (logged.isNotEmpty)
             ChartSection(
@@ -97,19 +117,6 @@ class YearView extends StatelessWidget {
               ],
             ]),
           ),
-          if (top.isNotEmpty)
-            ChartSection(
-              title: l.yearTopFoods,
-              child: Column(children: [
-                for (final f in top)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(f.label),
-                    trailing: Text('×${f.times}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-              ]),
-            ),
         ]);
       },
     );

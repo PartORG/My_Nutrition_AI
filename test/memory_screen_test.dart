@@ -56,31 +56,43 @@ void main() {
       home: MemoryScreen(agent: agent),
     ));
     expect(find.text('has an air fryer'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('1 message stored.'), 200);
     expect(find.text('1 message stored.'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('has an air fryer'), -200);
 
-    // Edit a fact.
-    await tester.tap(find.descendant(
-        of: find.widgetWithText(ListTile, 'has an air fryer'), matching: find.byTooltip('Edit')));
+    // Edit a fact (the pencil next to it).
+    await tester.tap(find.byTooltip('Edit').first);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'has an air fryer and a slow cooker');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('has an air fryer and a slow cooker'), findsOneWidget);
 
-    // Delete a fact and an allergy.
-    await tester.tap(find.descendant(
-        of: find.widgetWithText(ListTile, 'hates olives'), matching: find.byTooltip('Delete')));
+    // Delete a fact (saved empty) and an allergy (its ×).
+    await tester.tap(find.byTooltip('Edit').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '');
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('hates olives'), findsNothing);
-    await tester.tap(find.descendant(of: find.widgetWithText(InputChip, 'milk'), matching: find.byTooltip('Delete')));
+    await tester.tap(find.byTooltip('Delete milk'));
     await tester.pumpAndSettle();
     expect(agent.memory.allergies(), ['peanuts']);
 
-    // Forget conversations: chat gone, meals remembered, model conversation reset.
-    await tester.scrollUntilVisible(find.text('Forget past conversations'), 200);
-    await tester.tap(find.text('Forget past conversations'));
+    // "+ Add": a known allergen or diet is added; anything else is refused with a note.
+    await tester.tap(find.text('+ Add'));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'sesame');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(agent.memory.allergies(), ['peanuts', 'sesame']);
+
+    // Forget conversations: chat gone, meals remembered, model conversation reset.
+    await tester.scrollUntilVisible(find.text('Forget'), 200);
     await tester.tap(find.text('Forget'));
+    await tester.pumpAndSettle();
+    expect(find.text('Forget past conversations'), findsOneWidget, reason: 'the confirmation');
+    await tester.tap(find.text('Forget').last);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pumpAndSettle();
     expect(find.text('No messages stored.'), findsOneWidget);

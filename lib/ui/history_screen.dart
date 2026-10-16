@@ -5,7 +5,7 @@ import '../app_state.dart';
 import '../billing/billing.dart';
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
-import 'chat_screen.dart' show RecipeScreen;
+import 'recipe_screen.dart' show RecipeScreen;
 import 'paywall_screen.dart';
 import 'theme.dart';
 import 'today_screen.dart' show mealName;

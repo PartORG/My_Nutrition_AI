@@ -13,30 +13,41 @@ import '../data/diary.dart' show pref, setPref, waterGoal;
 import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart';
-import 'health_screen.dart';
-import 'history_screen.dart';
 import 'log_screen.dart';
 import 'me_screen.dart';
-import 'memory_screen.dart';
-import 'paywall_screen.dart';
 import 'plan_screen.dart';
-import 'settings_screen.dart' show LanguageMenu, SettingsScreen;
 import 'theme.dart';
 import 'today_screen.dart';
 
-/// The selected tab: Today's buttons open Chat or Log.
+/// The selected tab: Today's buttons open Chat or Log. Log has no tab of its own: the + opens it.
 final homeTabProvider = NotifierProvider<HomeTab, int>(HomeTab.new);
 
 class HomeTab extends Notifier<int> {
-  static const today = 0, chat = 1, log = 2, me = 3;
+  static const today = 0, chat = 1, log = 2, plan = 3, me = 4;
 
   @override
   int build() => today;
 
   void go(int tab) => state = tab;
+
+  /// The + on a meal card: Log, already on that meal.
+  void logMeal(String meal) {
+    ref.read(logMealProvider.notifier).set(meal);
+    state = log;
+  }
 }
 
-/// The unlocked profile: Today · Chat · Log · Me.
+/// The meal the Log tab opens on; null = the one for this time of day.
+final logMealProvider = NotifierProvider<LogMeal, String?>(LogMeal.new);
+
+class LogMeal extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void set(String? meal) => state = meal;
+}
+
+/// The unlocked profile: Today · Chat · (+ Log) · Plan · Me.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.name});
   final String name;
@@ -112,113 +123,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
     // Keep the profile's databases and the loaded AI alive across tab switches;
     // both are auto-dispose and close only when this screen goes (Lock).
-    ref.watch(profileDataProvider);
+    final data = ref.watch(profileDataProvider);
     ref.watch(agentProvider);
     final tab = ref.watch(homeTabProvider);
     final body = switch (tab) {
-      0 => const TodayScreen(),
-      1 => const _ChatTab(),
-      2 => const LogScreen(),
+      HomeTab.today => TodayScreen(name: widget.name),
+      HomeTab.chat => const _ChatTab(),
+      HomeTab.log => const LogScreen(),
+      HomeTab.plan => data == null ? const Center(child: CircularProgressIndicator()) : PlanScreen(data: data),
       _ => const MeScreen(),
     };
     return Scaffold(
-      drawer: _Drawer(name: widget.name),
-      appBar: AppBar(
-        title: Text(l.hello(widget.name)),
-        actions: [
-          const LanguageMenu(),
-          IconButton(
-            tooltip: l.lock,
-            icon: const Icon(Icons.lock),
-            onPressed: () => ref.read(unlockedProvider.notifier).lock(),
-          ),
-        ],
-      ),
-      body: body,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: ref.read(homeTabProvider.notifier).go,
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.today_outlined), selectedIcon: const Icon(Icons.today), label: l.tabToday),
-          NavigationDestination(icon: const Icon(Icons.chat_bubble_outline), selectedIcon: const Icon(Icons.chat_bubble), label: l.tabChat),
-          NavigationDestination(icon: const Icon(Icons.add_circle_outline), selectedIcon: const Icon(Icons.add_circle), label: l.tabLog),
-          NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: l.tabMe),
-        ],
-      ),
+      body: SafeArea(bottom: false, child: body),
+      bottomNavigationBar: _BottomBar(tab: tab, onTab: ref.read(homeTabProvider.notifier).go),
     );
   }
 }
 
-/// The main tabs again, then everything that isn't a tab: history, the plan and shopping
-/// list, health, what the AI knows, settings. Each of those opens its own screen on top.
-// A Drawer of ListTiles, not NavigationDrawer: its fixed 56 dp rows can't wrap at 200 % text.
-class _Drawer extends ConsumerWidget {
-  const _Drawer({required this.name});
-  final String name;
+/// Today · Chat · + · Plan · Me. The selected tab sits in a mint pill; the + (log food) is raised,
+/// near-black, and green while Log is open.
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({required this.tab, required this.onTab});
+  final int tab;
+  final ValueChanged<int> onTab;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
-    final data = ref.watch(profileDataProvider);
-    final agent = ref.watch(agentProvider);
-    void open(Widget Function() screen) {
-      Navigator.of(context).pop(); // the drawer
-      Navigator.of(context)
-          .push(MaterialPageRoute<void>(builder: (_) => screen()))
-          .then((_) => data?.changed()); // e.g. a new plan shows on Today
+    final c = context.colors;
+    Widget item(int i, IconData icon, IconData selectedIcon, String label) {
+      final on = tab == i;
+      return Expanded(
+        child: Semantics(
+          selected: on,
+          button: true,
+          label: label,
+          excludeSemantics: true,
+          child: InkResponse(
+            onTap: () => onTab(i),
+            radius: 40,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                AnimatedContainer(
+                  duration: Durations.short4,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                  decoration: BoxDecoration(color: on ? c.mint : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+                  child: Icon(on ? selectedIcon : icon, color: on ? c.primary : c.muted, size: 24),
+                ),
+                const SizedBox(height: 4),
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                        color: on ? c.primary : c.muted)),
+              ]),
+            ),
+          ),
+        ),
+      );
     }
 
-    Widget section(String title) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant)),
-        );
-    Widget item(IconData icon, String label, VoidCallback? onTap) =>
-        ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
-    Widget tab(IconData icon, String label, int tab) => item(icon, label, () {
-          Navigator.of(context).pop(); // the drawer
-          ref.read(homeTabProvider.notifier).go(tab);
-        });
-    return Drawer(
+    final logOn = tab == HomeTab.log;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: c.surface, border: Border(top: BorderSide(color: c.border))),
       child: SafeArea(
-        child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: scheme.primaryContainer,
-                child: Image.asset('assets/icons/icon_chat.png', width: 36, height: 36, excludeFromSemantics: true),
+        top: false,
+        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          item(HomeTab.today, Icons.calendar_today_outlined, Icons.calendar_today, l.tabToday),
+          item(HomeTab.chat, Icons.chat_bubble_outline, Icons.chat_bubble, l.tabChat),
+          Expanded(
+            // heightFactor 1: a plain Center grows to the bar's max height, i.e. the whole screen.
+            child: Center(
+              heightFactor: 1,
+              child: Tooltip(
+                message: l.tabLog,
+                child: Semantics(
+                  selected: logOn,
+                  button: true,
+                  label: l.tabLog,
+                  excludeSemantics: true,
+                  child: Material(
+                    color: logOn ? c.primary : c.dark,
+                    elevation: 6,
+                    shadowColor: c.ink.withValues(alpha: .35),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () => onTab(HomeTab.log),
+                      child: SizedBox.square(
+                          dimension: 60, child: Icon(Icons.add, size: 30, color: logOn ? c.onPrimary : c.background)),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(child: Text(name, style: Theme.of(context).textTheme.titleLarge)),
-            ]),
+            ),
           ),
-          tab(Icons.today_outlined, l.tabToday, HomeTab.today),
-          tab(Icons.chat_bubble_outline, l.tabChat, HomeTab.chat),
-          tab(Icons.add_circle_outline, l.tabLog, HomeTab.log),
-          if (data != null) ...[
-            section(l.drawerFood),
-            item(Icons.history, l.historyTitle, () => open(() => HistoryScreen(data: data))),
-            item(Icons.event_note_outlined, l.mealPlan, () => open(() => PlanScreen(data: data))),
-            item(Icons.shopping_cart_outlined, l.shoppingListNav,
-                () => open(() => PlanScreen(data: data, initialTab: 1))),
-          ],
-          section(l.healthTitle),
-          item(Icons.monitor_heart_outlined, l.healthJournalNav, () => open(() => const HealthScreen())),
-          section(l.drawerAssistant),
-          item(Icons.psychology_outlined, l.aiKnowsTitle,
-              agent.hasValue ? () => open(() => MemoryScreen(agent: agent.requireValue)) : null),
-          const Divider(indent: 16, endIndent: 16),
-          item(Icons.settings_outlined, l.settingsTitle, () => open(() => const SettingsScreen())),
-          item(Icons.workspace_premium_outlined, l.yourPlan, () => open(() => const PaywallScreen())),
-          item(Icons.lock_outline, l.switchProfile, () {
-            Navigator.of(context).pop();
-            ref.read(unlockedProvider.notifier).lock();
-          }),
+          item(HomeTab.plan, Icons.article_outlined, Icons.article, l.tabPlan),
+          item(HomeTab.me, Icons.person_outline, Icons.person, l.tabMe),
         ]),
       ),
     );

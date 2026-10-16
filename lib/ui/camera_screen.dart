@@ -13,9 +13,11 @@ import '../billing/billing.dart';
 import '../l10n/app_localizations.dart';
 import '../vision/detector.dart';
 import '../vision/scan.dart';
+import 'kit.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'theme.dart';
+import 'today_screen.dart' show mealName;
 
 /// Pro: camera (photo / live) → review → "What can I cook?" or
 /// "Log this meal". [onCook] is null where cooking ideas can't be shown (Log tab).
@@ -305,94 +307,153 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     final data = widget.data;
     final loggable = _items.where((i) => i.food != null && i.grams > 0).toList();
     final kcal = loggable.fold(0.0, (s, i) => s + i.food!.per100['kcal']! * i.grams / 100);
-    final approx = loggable.any((i) => i.food!.estimated) ? '≈' : '';
+    final approx = loggable.any((i) => i.food!.estimated) ? '≈ ' : '';
+    const tints = [Color(0xFF7FDDB6), Color(0xFFF7C74F), Color(0xFF9BC1EE), Color(0xFFF6A27F)];
+    void log() {
+      final n = logScan(data.tools, _items, _meal);
+      recordScan(data.user, widget.mode, loggable, at: DateTime.now());
+      data.changed();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
+      Navigator.pop(context);
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(l.reviewTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.reviewHint, style: TextStyle(color: context.colors.textSecondary)),
-        const SizedBox(height: 8),
-        if (_items.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(l.reviewEmpty)),
-        for (final i in _items)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(i.food?.label ?? l.notInDatabase(i.name),
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: i.food == null ? Theme.of(context).colorScheme.error : context.colors.textPrimary)),
-                  ),
-                  IconButton(tooltip: l.reviewChange, icon: const Icon(Icons.edit_outlined), onPressed: () => _pick(i)),
-                  IconButton(
-                      tooltip: l.delete,
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => setState(() => _items.remove(i))),
+      backgroundColor: c.dark,
+      body: SafeArea(
+        bottom: false,
+        child: Column(children: [
+          // The photo is never stored: the band shows what was seen, by name.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              RoundIconButton(
+                icon: Icons.arrow_back_ios_new,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                background: Colors.white.withValues(alpha: .12),
+                foreground: Colors.white,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final (n, i) in _items.indexed)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: tints[n % tints.length], borderRadius: BorderRadius.circular(10)),
+                      child: Text(i.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF16201A))),
+                    ),
                 ]),
-                if (i.food != null)
-                  Row(children: [
-                    SizedBox(
-                      width: 110,
-                      child: TextFormField(
-                        initialValue: '${i.grams.round()}',
-                        decoration: InputDecoration(labelText: l.grams, suffixText: 'g'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (t) => setState(() => i.grams = double.tryParse(t.replaceAll(',', '.')) ?? 0),
+              ),
+            ]),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(color: c.background, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
+              child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 24), children: [
+                Semantics(header: true, child: Text(l.reviewTitle, style: Theme.of(context).textTheme.headlineMedium)),
+                const SizedBox(height: 6),
+                Text(l.reviewHint, style: TextStyle(fontSize: 16, color: c.ink2)),
+                const SizedBox(height: 16),
+                if (_items.isEmpty) Panel(child: Text(l.reviewEmpty)),
+                if (_items.isNotEmpty)
+                  PanelList(children: [
+                    for (final i in _items)
+                      i.food == null
+                          ? Container(
+                              color: c.warm,
+                              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                              child: Row(children: [
+                                Expanded(child: Text(l.notInDatabase(i.name), style: TextStyle(fontSize: 15, color: c.onWarm))),
+                                const SizedBox(width: 8),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(backgroundColor: c.dark, foregroundColor: c.background,
+                                      minimumSize: const Size(64, 48)),
+                                  onPressed: () => _pick(i),
+                                  child: Text(l.reviewChange),
+                                ),
+                              ]),
+                            )
+                          : Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+                              child: Row(children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _pick(i),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(i.food!.label, style: const TextStyle(fontSize: 16)),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 104,
+                                  child: TextFormField(
+                                    initialValue: '${i.grams.round()}',
+                                    textAlign: TextAlign.end,
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      prefixText: '≈ ',
+                                      suffixText: 'g',
+                                      hintText: l.grams,
+                                      contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.pill)),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(Radii.pill), borderSide: BorderSide(color: c.outline)),
+                                    ),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    onChanged: (t) => setState(() => i.grams = double.tryParse(t.replaceAll(',', '.')) ?? 0),
+                                  ),
+                                ),
+                                IconButton(tooltip: l.delete, icon: const Icon(Icons.close), onPressed: () => setState(() => _items.remove(i))),
+                              ]),
+                            ),
+                  ]),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 180,
+                    child: DashedAdd(
+                      radius: 26,
+                      onTap: () => _pick(null),
+                      child: Center(
+                        child: Text('+ ${l.reviewAdd}',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: c.primary)),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                          '${i.food!.estimated ? '≈' : ''}${(i.food!.per100['kcal']! * i.grams / 100).round()} ${l.kcal}'),
-                    ),
-                  ]),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ChoicePills<String>(
+                  values: const ['breakfast', 'lunch', 'dinner', 'snack'],
+                  selected: _meal,
+                  scroll: true,
+                  label: (t) => mealName(l, t),
+                  onChanged: (t) => setState(() => _meal = t),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  children: [
+                    Text(l.estimatedTotal, style: TextStyle(fontSize: 16, color: c.ink2)),
+                    Text('$approx${kcal.round()} ${l.kcal}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+                  ],
+                ),
               ]),
             ),
           ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(icon: const Icon(Icons.add), label: Text(l.reviewAdd), onPressed: () => _pick(null)),
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<String>(
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment(value: 'breakfast', label: Text(l.mealBreakfast)),
-            ButtonSegment(value: 'lunch', label: Text(l.mealLunch)),
-            ButtonSegment(value: 'dinner', label: Text(l.mealDinner)),
-            ButtonSegment(value: 'snack', label: Text(l.mealSnack)),
-          ],
-          selected: {_meal},
-          onSelectionChanged: (s) => setState(() => _meal = s.single),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.check),
-            label: Text(loggable.isEmpty ? l.reviewLog : '${l.reviewLog} · $approx${kcal.round()} ${l.kcal}'),
-            onPressed: loggable.isEmpty
-                ? null
-                : () {
-                    final n = logScan(data.tools, _items, _meal);
-                    recordScan(data.user, widget.mode, loggable, at: DateTime.now());
-                    data.changed();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
-                    Navigator.pop(context);
-                  },
-          ),
-        ),
-        if (widget.onCook != null) ...[
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.restaurant_menu),
-              label: Text(l.reviewCook),
+        ]),
+      ),
+      bottomNavigationBar: BottomActions(children: [
+        if (widget.onCook != null)
+          Expanded(
+            child: OutlinedButton(
               onPressed: _items.isEmpty
                   ? null
                   : () {
@@ -400,9 +461,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       Navigator.pop(context);
                       widget.onCook!(cookNames(_items));
                     },
+              child: Text(l.reviewCook, textAlign: TextAlign.center),
             ),
           ),
-        ],
+        Expanded(
+          child: FilledButton(
+            onPressed: loggable.isEmpty ? null : log,
+            child: Text(l.logThisMeal(inSentence(context, mealName(l, _meal))), textAlign: TextAlign.center),
+          ),
+        ),
       ]),
     );
   }

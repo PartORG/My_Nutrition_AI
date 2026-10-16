@@ -1628,4 +1628,562 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get translateNeedsAi =>
       'Translating needs the AI model (see the Chat tab).';
+
+  @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get trendWeight => 'Trend weight';
+
+  @override
+  String weightChangeIn(String change, int days) {
+    return '$change in $days days';
+  }
+
+  @override
+  String rangeMonths(int n) {
+    return '${n}M';
+  }
+
+  @override
+  String get rangeYear => '1Y';
+
+  @override
+  String get legendScale => 'Scale';
+
+  @override
+  String get legendTrend => 'Trend';
+
+  @override
+  String perWeek(String unit) {
+    return '$unit per week';
+  }
+
+  @override
+  String get latestScale => 'Latest on the scale';
+
+  @override
+  String get weightTrendNote =>
+      'The trend smooths out daily water swings, so one heavy morning is not mistaken for a real change.';
+
+  @override
+  String weightChartLabel(int n, String from, String to) {
+    return 'Weight, $n readings, trend from $from to $to';
+  }
+
+  @override
+  String get addShort => '+ Add';
+
+  @override
+  String get calories => 'Calories';
+
+  @override
+  String get cook => 'Cook';
+
+  @override
+  String get eatenWord => 'Eaten';
+
+  @override
+  String get leftWord => 'Left';
+
+  @override
+  String get kcalLeftShort => 'kcal left';
+
+  @override
+  String get kcalOverShort => 'kcal over';
+
+  @override
+  String get fastNotRunning => 'Not fasting';
+
+  @override
+  String get fromYourPlan => 'from your plan';
+
+  @override
+  String get glassAdded => 'Glass of water added';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get water => 'Water';
+
+  @override
+  String get litreUnit => 'L';
+
+  @override
+  String get showFewer => 'Show fewer';
+
+  @override
+  String showAllCount(int n) {
+    return 'Show all $n ›';
+  }
+
+  @override
+  String get yourWeek => 'Your week';
+
+  @override
+  String get yourMonth => 'Your month';
+
+  @override
+  String get yourYear => 'Your year';
+
+  @override
+  String addToMeal(String meal) {
+    return 'Add to $meal';
+  }
+
+  @override
+  String fastGoalHours(int hours) {
+    return '$hours h goal';
+  }
+
+  @override
+  String fitsLeft(String amount) {
+    return 'fits your $amount left';
+  }
+
+  @override
+  String hoursMinutes(int h, int m) {
+    return '$h h $m min';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get kindAll => 'All';
+
+  @override
+  String get lessServing => 'Half a serving less';
+
+  @override
+  String get moreServing => 'Half a serving more';
+
+  @override
+  String get logFoodTitle => 'Log food';
+
+  @override
+  String get quickAddBody => 'Just calories and macros';
+
+  @override
+  String get snapPhoto => 'Snap a photo';
+
+  @override
+  String get snapPhotoBody => 'Names foods and estimates portions';
+
+  @override
+  String servingsAmount(String amount) {
+    return '$amount × serving';
+  }
+
+  @override
+  String yesterdaysMeal(String meal) {
+    return 'Yesterday\'s $meal';
+  }
+
+  @override
+  String get assistantTitle => 'Assistant';
+
+  @override
+  String get openRecipe => 'Open recipe';
+
+  @override
+  String get runsOnPhone => 'Runs on this phone · nothing leaves it';
+
+  @override
+  String gramsProtein(int n) {
+    return '$n g protein';
+  }
+
+  @override
+  String messagesLeft(int n, int total) {
+    return '$n of $total left today';
+  }
+
+  @override
+  String get addedToPlan => 'Added to your plan';
+
+  @override
+  String get addToPlan => 'Add to plan';
+
+  @override
+  String get addToShoppingShort => '+ Add to shopping';
+
+  @override
+  String get aisleProduce => 'Fruit and vegetables';
+
+  @override
+  String get aisleMeatFish => 'Meat and fish';
+
+  @override
+  String get aisleDairyEggs => 'Dairy and eggs';
+
+  @override
+  String get aisleBakery => 'Bakery';
+
+  @override
+  String get aislePantry => 'Pantry';
+
+  @override
+  String get aisleSpices => 'Spices';
+
+  @override
+  String get aisleFrozen => 'Frozen';
+
+  @override
+  String get aisleDrinks => 'Drinks';
+
+  @override
+  String get aisleOther => 'Other';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get badgeMorning => 'AM';
+
+  @override
+  String get badgeNoon => 'NOON';
+
+  @override
+  String get badgeEvening => 'PM';
+
+  @override
+  String get boxEmpty =>
+      'Nothing here yet. Save a recipe with its bookmark, or search above.';
+
+  @override
+  String get boxFootnote =>
+      'Recipes with your allergens never appear here. Ideas follow your stars.';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get doneCooking => 'Done';
+
+  @override
+  String get fewerServings => 'Fewer servings';
+
+  @override
+  String get moreServings => 'More servings';
+
+  @override
+  String get findRecipes => 'Find recipes';
+
+  @override
+  String get forThisStep => 'For this step';
+
+  @override
+  String get fridgeHint => 'e.g. eggs, spinach, feta';
+
+  @override
+  String get logServing => 'Log a serving';
+
+  @override
+  String get nextStep => 'Next step';
+
+  @override
+  String get noSteps => 'This recipe has no steps.';
+
+  @override
+  String get recipesTitle => 'Recipes';
+
+  @override
+  String get removeSaved => 'Remove from saved';
+
+  @override
+  String get savedLabel => 'Saved';
+
+  @override
+  String get searchRecipes => 'Search 166,000 recipes…';
+
+  @override
+  String get servingsLabel => 'Servings';
+
+  @override
+  String get servingsHint => 'Amounts and nutrition update';
+
+  @override
+  String get shelfCooked => 'Cooked';
+
+  @override
+  String get shelfLoved => '4★ and up';
+
+  @override
+  String get shelfQuick => '≤ 30 min';
+
+  @override
+  String get startCooking => 'Start cooking';
+
+  @override
+  String get thisWeek => 'This week';
+
+  @override
+  String get timerDone => 'Time\'s up';
+
+  @override
+  String get whatCanICook => 'What can I cook?';
+
+  @override
+  String get whatCanICookBody => 'Say or snap what\'s in your fridge';
+
+  @override
+  String allergensLeftOut(String list) {
+    return '$list are left out: they\'re on your allergy list.';
+  }
+
+  @override
+  String clearTickedN(int n) {
+    return 'Clear ticked ($n)';
+  }
+
+  @override
+  String cookedTimes(int n) {
+    return 'cooked $n×';
+  }
+
+  @override
+  String cookSubtitle(int servings) {
+    return 'Screen stays on · $servings servings';
+  }
+
+  @override
+  String forRecipe(String title) {
+    return 'For: $title';
+  }
+
+  @override
+  String ideasFor(String list) {
+    return 'Ideas for: $list';
+  }
+
+  @override
+  String itemsLeft(int n, int total) {
+    return '$n of $total left';
+  }
+
+  @override
+  String plannedFor(String day) {
+    return 'Planned for $day';
+  }
+
+  @override
+  String planOfKcal(int n, int total) {
+    return '$n of $total kcal';
+  }
+
+  @override
+  String roomForSnack(int kcal) {
+    return 'Room for a $kcal kcal snack.';
+  }
+
+  @override
+  String shelfSaved(int n) {
+    return 'Saved · $n';
+  }
+
+  @override
+  String shoppingTabCount(int n) {
+    return 'Shopping · $n';
+  }
+
+  @override
+  String startTimer(String time) {
+    return 'Start $time timer';
+  }
+
+  @override
+  String stepOf(int step, int steps) {
+    return 'Step $step of $steps';
+  }
+
+  @override
+  String timerRunning(String time) {
+    return '$time · tap to stop';
+  }
+
+  @override
+  String youRated(int stars) {
+    return 'you rated $stars';
+  }
+
+  @override
+  String get changePin => 'Change PIN';
+
+  @override
+  String get currentPin => 'Current PIN';
+
+  @override
+  String get pinChanged => 'PIN changed';
+
+  @override
+  String get dailyTargets => 'Daily targets';
+
+  @override
+  String get tapToOverride => 'Tap to override';
+
+  @override
+  String get googleAccount => 'Google account';
+
+  @override
+  String get googleNotLinked => 'Not linked: PIN and fingerprint only';
+
+  @override
+  String googleLinked(String email) {
+    return '$email · name only';
+  }
+
+  @override
+  String get historyAndYear => 'History and Year view';
+
+  @override
+  String get limitShort => 'max';
+
+  @override
+  String get link => 'Link';
+
+  @override
+  String get unlink => 'Unlink';
+
+  @override
+  String get lookAndLanguage => 'Look and language';
+
+  @override
+  String get onDeviceAiAndData => 'On-device AI and data';
+
+  @override
+  String get savedRecipesTitle => 'Saved recipes';
+
+  @override
+  String bornIn(int year) {
+    return 'born $year';
+  }
+
+  @override
+  String planChip(String tier) {
+    return '$tier plan · See plans';
+  }
+
+  @override
+  String get addAllergyTitle => 'Add an allergy or diet';
+
+  @override
+  String get addAllergyHint => 'e.g. peanuts, gluten, vegetarian';
+
+  @override
+  String allergyUnknown(String text) {
+    return '\"$text\" isn\'t an allergen or diet the app can filter. Try peanuts, tree nuts, milk, egg, gluten, shellfish, fish, soy, sesame, vegetarian, vegan or pescatarian.';
+  }
+
+  @override
+  String get continueButton => 'Continue';
+
+  @override
+  String get dataLocked => 'Your data is locked on this phone.';
+
+  @override
+  String get firstRunNext => 'Next: a PIN or fingerprint, then your goals.';
+
+  @override
+  String get googleOnlyName => 'Google only fills in your name.';
+
+  @override
+  String get lockItTitle => 'Lock it to you';
+
+  @override
+  String get nameExample => 'e.g. Sam';
+
+  @override
+  String get recordsNotInterprets =>
+      'The app records what you enter and never interprets it. General information from published guidelines, not medical advice.';
+
+  @override
+  String get recordTitle => 'Record';
+
+  @override
+  String get reportHintShort => 'PDF and CSV of what you logged';
+
+  @override
+  String get startTrial => 'Start 7-day free trial';
+
+  @override
+  String get touchSensor => 'Touch the sensor to unlock';
+
+  @override
+  String get trialBadge => '7 DAYS FREE';
+
+  @override
+  String get usePin => 'Use PIN';
+
+  @override
+  String get welcomeHeadline => 'Eat well, privately';
+
+  @override
+  String get welcomeIntro =>
+      'An AI nutrition assistant that runs on this phone. No cloud AI, no analytics.';
+
+  @override
+  String get welcomePointPrivate =>
+      'Your meals and chats never leave the phone';
+
+  @override
+  String get welcomePointData => '55,000 foods and 166,000 recipes built in';
+
+  @override
+  String get welcomePointAllergens => 'Allergens filtered out of every recipe';
+
+  @override
+  String get yourName => 'Your name';
+
+  @override
+  String currentTier(String tier) {
+    return 'Current: $tier';
+  }
+
+  @override
+  String severityN(int n) {
+    return 'severity $n';
+  }
+
+  @override
+  String welcomeBack(String name) {
+    return 'Welcome back, $name';
+  }
+
+  @override
+  String get bestStreak => 'best streak';
+
+  @override
+  String get daysLogged => 'days logged';
+
+  @override
+  String avgValue(String value) {
+    return 'avg $value';
+  }
+
+  @override
+  String dayLine(String amount, int n) {
+    return '$amount kcal · $n meals';
+  }
+
+  @override
+  String sinceMonth(String month) {
+    return 'since $month';
+  }
+
+  @override
+  String streakShort(int n) {
+    return '$n-day streak';
+  }
+
+  @override
+  String get estimatedTotal => 'Estimated total';
+
+  @override
+  String logThisMeal(String meal) {
+    return 'Log this $meal';
+  }
 }

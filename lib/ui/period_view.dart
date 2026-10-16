@@ -7,6 +7,8 @@ import '../app_state.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'history_screen.dart';
+import 'kit.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart' show LockedCard;
 import 'theme.dart';
@@ -16,8 +18,11 @@ import 'today_screen.dart';
 /// The week in a few lines, computed from the logs; "Ideas for next week" asks the
 /// assistant about the weakest point.
 class _WeekReviewCard extends ConsumerWidget {
-  const _WeekReviewCard({required this.review});
+  const _WeekReviewCard({required this.review, required this.streak});
   final WeekReview review;
+
+  /// The logging streak (Basic); null = not shown.
+  final int? streak;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,30 +40,42 @@ class _WeekReviewCard extends ConsumerWidget {
       if (r.topFood != null) l.reviewTop(r.topFood!),
     ];
     final focus = r.focus;
-    return Card(
-      color: context.colors.cardGreen,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.weekReviewTitle, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          for (final t in lines) Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('• $t')),
-          if (focus != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                icon: const Icon(Icons.lightbulb_outline),
-                label: Text(l.reviewIdeas),
-                onPressed: () {
-                  final name = inSentence(context, names[focus]!.$1);
-                  ref.read(homeTabProvider.notifier).go(HomeTab.chat);
-                  ref.read(agentProvider).value?.send(
-                      focus == 'sugar_g' || focus == 'sodium_mg' ? l.reviewAskLow(name) : l.reviewAskHigh(name));
-                },
-              ),
-            ),
+    final ask = focus == null
+        ? null
+        : (focus == 'sugar_g' || focus == 'sodium_mg'
+            ? l.reviewAskLow(inSentence(context, names[focus]!.$1))
+            : l.reviewAskHigh(inSentence(context, names[focus]!.$1)));
+    return Panel(
+      color: context.colors.mint,
+      border: false,
+      padding: const EdgeInsets.all(20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text(l.weekReviewTitle, style: Theme.of(context).textTheme.titleLarge)),
+          if (streak != null && streak! > 1) Flexible(child: Tag(l.streakShort(streak!), tone: TagTone.dark, big: true)),
         ]),
-      ),
+        const SizedBox(height: 10),
+        for (final t in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('•  ', style: TextStyle(fontSize: 16)),
+              Expanded(child: Text(t, style: const TextStyle(fontSize: 16, height: 1.35))),
+            ]),
+          ),
+        if (ask != null) ...[
+          const SizedBox(height: 8),
+          Text(l.reviewIdeas, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Pill(
+            label: ask,
+            onTap: () {
+              ref.read(homeTabProvider.notifier).go(HomeTab.chat);
+              ref.read(agentProvider).value?.send(ask);
+            },
+          ),
+        ],
+      ]),
     );
   }
 }
@@ -86,12 +103,34 @@ class PeriodView extends StatelessWidget {
         double avg(String k) => logged.isEmpty ? 0 : logged.fold(0.0, (s, d) => s + d.totals[k]!) / logged.length;
         final streak = loggingStreak(data.user, now);
         final body = loadBody(data.user);
-        return ListView(padding: const EdgeInsets.all(16), children: [
-          if (days == 7) _WeekReviewCard(review: weeklyReview(data.user, targets, now)),
+        final locale = Localizations.localeOf(context).toString();
+        return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
           ChartSection(
             title: l.caloriesPerDay,
+            trailing: logged.isEmpty ? null : l.avgValue(NumberFormat.decimalPattern(locale).format(avg('kcal').round())),
             child: SizedBox(height: 200, child: DailyBarChart(series: series, nutrient: 'kcal', goal: targets['kcal'])),
           ),
+          if (days == 7) _WeekReviewCard(review: weeklyReview(data.user, targets, now), streak: basic ? streak : null),
+          if (logged.isNotEmpty) ...[
+            SectionTitle(l.historyTitle),
+            PanelList(children: [
+              for (final d in logged.reversed.take(days == 7 ? 7 : 10))
+                InkWell(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(data: data))),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(children: [
+                      Expanded(child: Text(DateFormat.MMMEd(locale).format(d.day), style: const TextStyle(fontSize: 16))),
+                      Flexible(
+                        child: Text(l.dayLine(NumberFormat.decimalPattern(locale).format(d.totals['kcal']!.round()), d.entries),
+                            textAlign: TextAlign.end, style: TextStyle(fontSize: 15, color: context.colors.muted)),
+                      ),
+                    ]),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 4),
+          ],
           if (logged.isNotEmpty)
             ChartSection(
               title: l.dailyAverage(logged.length),
@@ -101,12 +140,13 @@ class PeriodView extends StatelessWidget {
                     NutrientBar(nutrient: k, eaten: avg(k), goal: targets[k]!, limited: t.limited.containsKey(k)),
               ]),
             ),
-          if (basic)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.local_fire_department, color: Color(0xFFEB6834), size: 32),
-                title: Text(l.streakDays(streak), style: const TextStyle(fontWeight: FontWeight.w600)),
-              ),
+          if (basic && days != 7)
+            Panel(
+              child: Row(children: [
+                const Icon(Icons.local_fire_department, color: Color(0xFFEB6834), size: 28),
+                const SizedBox(width: 12),
+                Expanded(child: Text(l.streakDays(streak), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+              ]),
             ),
           ChartSection(
             title: l.weightTrend,
@@ -124,16 +164,22 @@ class PeriodView extends StatelessWidget {
 }
 
 class ChartSection extends StatelessWidget {
-  const ChartSection({super.key, required this.title, required this.child});
+  const ChartSection({super.key, required this.title, required this.child, this.trailing});
   final String title;
   final Widget child;
+  final String? trailing;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Panel(
+          padding: const EdgeInsets.all(18),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Row(children: [
+              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
+              if (trailing != null)
+                Flexible(child: Text(trailing!, textAlign: TextAlign.end, style: TextStyle(fontSize: 15, color: context.colors.muted))),
+            ]),
             const SizedBox(height: 12),
             child,
           ]),

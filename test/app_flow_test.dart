@@ -33,10 +33,13 @@ void main() {
       child: const MyFoodMindApp(),
     ));
     await settle(tester);
-    // No profile yet: sign-up.
-    await tester.tap(find.text('Create profile'));
+    // No profile yet: first run, step 1 your name, step 2 the PIN.
+    expect(find.text('Eat well, privately'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Continue'), 200);
+    await tester.enterText(find.byType(TextField), 'Anna');
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    await enter(tester, 'Name', 'Anna');
     await enter(tester, 'PIN (4–6 digits)', '1234');
     await enter(tester, 'Repeat PIN', '1235');
     await tester.tap(find.text('Create'));
@@ -47,6 +50,7 @@ void main() {
     await settle(tester);
     // Skippable onboarding comes first.
     expect(find.text('Your daily goals'), findsOneWidget);
+    await tester.ensureVisible(find.text('Later'));
     await tester.tap(find.text('Later'));
     await tester.pumpAndSettle();
     expect(find.text('Hello, Anna'), findsOneWidget);
@@ -72,7 +76,7 @@ void main() {
     expect(find.text('Delete Anna?'), findsOneWidget);
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
-    expect(find.text('Create profile'), findsOneWidget);
+    expect(find.text('Eat well, privately'), findsOneWidget, reason: 'back to the first run');
     expect(Directory('${tmp.path}/profiles/1').existsSync(), isFalse);
 
   });

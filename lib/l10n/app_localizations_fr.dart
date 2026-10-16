@@ -1638,4 +1638,564 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get translateNeedsAi =>
       'La traduction nécessite le modèle d’IA (voir l’onglet Chat).';
+
+  @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get trendWeight => 'Poids tendance';
+
+  @override
+  String weightChangeIn(String change, int days) {
+    return '$change en $days jours';
+  }
+
+  @override
+  String rangeMonths(int n) {
+    return '$n m';
+  }
+
+  @override
+  String get rangeYear => '1 an';
+
+  @override
+  String get legendScale => 'Balance';
+
+  @override
+  String get legendTrend => 'Tendance';
+
+  @override
+  String perWeek(String unit) {
+    return '$unit par semaine';
+  }
+
+  @override
+  String get latestScale => 'Dernière pesée';
+
+  @override
+  String get weightTrendNote =>
+      'La tendance lisse les variations d’eau quotidiennes : un matin plus lourd n’est pas pris pour un vrai changement.';
+
+  @override
+  String weightChartLabel(int n, String from, String to) {
+    return 'Poids, $n pesées, tendance de $from à $to';
+  }
+
+  @override
+  String get addShort => '+ Ajouter';
+
+  @override
+  String get calories => 'Calories';
+
+  @override
+  String get cook => 'Cuisiner';
+
+  @override
+  String get eatenWord => 'Mangé';
+
+  @override
+  String get leftWord => 'Reste';
+
+  @override
+  String get kcalLeftShort => 'kcal restantes';
+
+  @override
+  String get kcalOverShort => 'kcal en trop';
+
+  @override
+  String get fastNotRunning => 'Pas de jeûne';
+
+  @override
+  String get fromYourPlan => 'de votre plan';
+
+  @override
+  String get glassAdded => 'Verre d’eau ajouté';
+
+  @override
+  String get undo => 'Annuler';
+
+  @override
+  String get water => 'Eau';
+
+  @override
+  String get litreUnit => 'L';
+
+  @override
+  String get showFewer => 'Moins';
+
+  @override
+  String showAllCount(int n) {
+    return 'Voir les $n ›';
+  }
+
+  @override
+  String get yourWeek => 'Votre semaine';
+
+  @override
+  String get yourMonth => 'Votre mois';
+
+  @override
+  String get yourYear => 'Votre année';
+
+  @override
+  String addToMeal(String meal) {
+    return 'Ajouter : $meal';
+  }
+
+  @override
+  String fastGoalHours(int hours) {
+    return 'objectif $hours h';
+  }
+
+  @override
+  String fitsLeft(String amount) {
+    return 'tient dans vos $amount restantes';
+  }
+
+  @override
+  String hoursMinutes(int h, int m) {
+    return '$h h $m min';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get kindAll => 'Tout';
+
+  @override
+  String get lessServing => 'Une demi-portion de moins';
+
+  @override
+  String get moreServing => 'Une demi-portion de plus';
+
+  @override
+  String get logFoodTitle => 'Noter un repas';
+
+  @override
+  String get quickAddBody => 'Juste calories et macros';
+
+  @override
+  String get snapPhoto => 'Prendre une photo';
+
+  @override
+  String get snapPhotoBody => 'Nomme les aliments et estime les portions';
+
+  @override
+  String servingsAmount(String amount) {
+    return '$amount × portion';
+  }
+
+  @override
+  String yesterdaysMeal(String meal) {
+    return 'Hier : $meal';
+  }
+
+  @override
+  String get assistantTitle => 'Assistant';
+
+  @override
+  String get openRecipe => 'Ouvrir la recette';
+
+  @override
+  String get runsOnPhone => 'Tourne sur ce téléphone · rien n’en sort';
+
+  @override
+  String gramsProtein(int n) {
+    return '$n g de protéines';
+  }
+
+  @override
+  String messagesLeft(int n, int total) {
+    return '$n sur $total restants aujourd’hui';
+  }
+
+  @override
+  String get addedToPlan => 'Ajouté à votre plan';
+
+  @override
+  String get addToPlan => 'Ajouter au plan';
+
+  @override
+  String get addToShoppingShort => '+ Aux courses';
+
+  @override
+  String get aisleProduce => 'Fruits et légumes';
+
+  @override
+  String get aisleMeatFish => 'Viande et poisson';
+
+  @override
+  String get aisleDairyEggs => 'Produits laitiers et œufs';
+
+  @override
+  String get aisleBakery => 'Boulangerie';
+
+  @override
+  String get aislePantry => 'Épicerie';
+
+  @override
+  String get aisleSpices => 'Épices';
+
+  @override
+  String get aisleFrozen => 'Surgelés';
+
+  @override
+  String get aisleDrinks => 'Boissons';
+
+  @override
+  String get aisleOther => 'Autres';
+
+  @override
+  String get back => 'Retour';
+
+  @override
+  String get badgeMorning => 'MATIN';
+
+  @override
+  String get badgeNoon => 'MIDI';
+
+  @override
+  String get badgeEvening => 'SOIR';
+
+  @override
+  String get boxEmpty =>
+      'Rien ici pour l’instant. Enregistrez une recette avec son signet, ou cherchez ci-dessus.';
+
+  @override
+  String get boxFootnote =>
+      'Les recettes avec vos allergènes n’apparaissent jamais ici. Les idées suivent vos étoiles.';
+
+  @override
+  String get close => 'Fermer';
+
+  @override
+  String get doneCooking => 'Terminé';
+
+  @override
+  String get fewerServings => 'Moins de portions';
+
+  @override
+  String get moreServings => 'Plus de portions';
+
+  @override
+  String get findRecipes => 'Trouver des recettes';
+
+  @override
+  String get forThisStep => 'Pour cette étape';
+
+  @override
+  String get fridgeHint => 'ex. œufs, épinards, feta';
+
+  @override
+  String get logServing => 'Noter une portion';
+
+  @override
+  String get nextStep => 'Étape suivante';
+
+  @override
+  String get noSteps => 'Cette recette n’a pas d’étapes.';
+
+  @override
+  String get recipesTitle => 'Recettes';
+
+  @override
+  String get removeSaved => 'Retirer des favoris';
+
+  @override
+  String get savedLabel => 'Enregistrée';
+
+  @override
+  String get searchRecipes => 'Chercher parmi 166 000 recettes…';
+
+  @override
+  String get servingsLabel => 'Portions';
+
+  @override
+  String get servingsHint => 'Quantités et valeurs s’ajustent';
+
+  @override
+  String get shelfCooked => 'Cuisinées';
+
+  @override
+  String get shelfLoved => '4★ et plus';
+
+  @override
+  String get shelfQuick => '≤ 30 min';
+
+  @override
+  String get startCooking => 'Commencer';
+
+  @override
+  String get thisWeek => 'Cette semaine';
+
+  @override
+  String get timerDone => 'C’est l’heure';
+
+  @override
+  String get whatCanICook => 'Que cuisiner ?';
+
+  @override
+  String get whatCanICookBody =>
+      'Dites ou photographiez ce qu’il y a dans le frigo';
+
+  @override
+  String allergensLeftOut(String list) {
+    return '$list sont exclus : ils figurent sur votre liste d’allergies.';
+  }
+
+  @override
+  String clearTickedN(int n) {
+    return 'Effacer les cochés ($n)';
+  }
+
+  @override
+  String cookedTimes(int n) {
+    return 'cuisinée $n×';
+  }
+
+  @override
+  String cookSubtitle(int servings) {
+    return 'L’écran reste allumé · $servings portions';
+  }
+
+  @override
+  String forRecipe(String title) {
+    return 'Pour : $title';
+  }
+
+  @override
+  String ideasFor(String list) {
+    return 'Idées pour : $list';
+  }
+
+  @override
+  String itemsLeft(int n, int total) {
+    return '$n sur $total restants';
+  }
+
+  @override
+  String plannedFor(String day) {
+    return 'Prévu pour $day';
+  }
+
+  @override
+  String planOfKcal(int n, int total) {
+    return '$n sur $total kcal';
+  }
+
+  @override
+  String roomForSnack(int kcal) {
+    return 'De la place pour une collation de $kcal kcal.';
+  }
+
+  @override
+  String shelfSaved(int n) {
+    return 'Enregistrées · $n';
+  }
+
+  @override
+  String shoppingTabCount(int n) {
+    return 'Courses · $n';
+  }
+
+  @override
+  String startTimer(String time) {
+    return 'Minuteur $time';
+  }
+
+  @override
+  String stepOf(int step, int steps) {
+    return 'Étape $step sur $steps';
+  }
+
+  @override
+  String timerRunning(String time) {
+    return '$time · touchez pour arrêter';
+  }
+
+  @override
+  String youRated(int stars) {
+    return 'votre note $stars';
+  }
+
+  @override
+  String get changePin => 'Modifier le code PIN';
+
+  @override
+  String get currentPin => 'Code PIN actuel';
+
+  @override
+  String get pinChanged => 'Code PIN modifié';
+
+  @override
+  String get dailyTargets => 'Objectifs du jour';
+
+  @override
+  String get tapToOverride => 'Touchez pour modifier';
+
+  @override
+  String get googleAccount => 'Compte Google';
+
+  @override
+  String get googleNotLinked => 'Non lié : code PIN et empreinte uniquement';
+
+  @override
+  String googleLinked(String email) {
+    return '$email · nom uniquement';
+  }
+
+  @override
+  String get historyAndYear => 'Historique et vue annuelle';
+
+  @override
+  String get limitShort => 'max.';
+
+  @override
+  String get link => 'Lier';
+
+  @override
+  String get unlink => 'Délier';
+
+  @override
+  String get lookAndLanguage => 'Apparence et langue';
+
+  @override
+  String get onDeviceAiAndData => 'IA sur l’appareil et données';
+
+  @override
+  String get savedRecipesTitle => 'Recettes enregistrées';
+
+  @override
+  String bornIn(int year) {
+    return 'né·e en $year';
+  }
+
+  @override
+  String planChip(String tier) {
+    return 'Offre $tier · Voir les offres';
+  }
+
+  @override
+  String get addAllergyTitle => 'Ajouter une allergie ou un régime';
+
+  @override
+  String get addAllergyHint => 'ex. arachides, gluten, végétarien';
+
+  @override
+  String allergyUnknown(String text) {
+    return '« $text » n’est pas un allergène ou un régime que l’app sait filtrer. Essayez arachides, fruits à coque, lait, œuf, gluten, crustacés, poisson, soja, sésame, végétarien, végan ou pescétarien.';
+  }
+
+  @override
+  String get continueButton => 'Continuer';
+
+  @override
+  String get dataLocked => 'Vos données sont verrouillées sur ce téléphone.';
+
+  @override
+  String get firstRunNext =>
+      'Ensuite : un code PIN ou l’empreinte, puis vos objectifs.';
+
+  @override
+  String get googleOnlyName => 'Google ne remplit que votre nom.';
+
+  @override
+  String get lockItTitle => 'Rien qu’à vous';
+
+  @override
+  String get nameExample => 'ex. Sam';
+
+  @override
+  String get recordsNotInterprets =>
+      'L’app enregistre ce que vous saisissez et ne l’interprète jamais. Informations générales issues de recommandations publiées, pas un avis médical.';
+
+  @override
+  String get recordTitle => 'Noter';
+
+  @override
+  String get reportHintShort => 'PDF et CSV de vos saisies';
+
+  @override
+  String get startTrial => 'Commencer l’essai gratuit de 7 jours';
+
+  @override
+  String get touchSensor => 'Touchez le capteur pour déverrouiller';
+
+  @override
+  String get trialBadge => '7 JOURS OFFERTS';
+
+  @override
+  String get usePin => 'Utiliser le code PIN';
+
+  @override
+  String get welcomeHeadline => 'Bien manger, en toute discrétion';
+
+  @override
+  String get welcomeIntro =>
+      'Un assistant nutrition IA qui tourne sur ce téléphone. Pas d’IA dans le cloud, pas d’analytics.';
+
+  @override
+  String get welcomePointPrivate =>
+      'Vos repas et vos échanges ne quittent jamais le téléphone';
+
+  @override
+  String get welcomePointData => '55 000 aliments et 166 000 recettes intégrés';
+
+  @override
+  String get welcomePointAllergens => 'Allergènes filtrés de chaque recette';
+
+  @override
+  String get yourName => 'Votre prénom';
+
+  @override
+  String currentTier(String tier) {
+    return 'Actuel : $tier';
+  }
+
+  @override
+  String severityN(int n) {
+    return 'intensité $n';
+  }
+
+  @override
+  String welcomeBack(String name) {
+    return 'Bon retour, $name';
+  }
+
+  @override
+  String get bestStreak => 'meilleure série';
+
+  @override
+  String get daysLogged => 'jours notés';
+
+  @override
+  String avgValue(String value) {
+    return 'moy. $value';
+  }
+
+  @override
+  String dayLine(String amount, int n) {
+    return '$amount kcal · $n repas';
+  }
+
+  @override
+  String sinceMonth(String month) {
+    return 'depuis $month';
+  }
+
+  @override
+  String streakShort(int n) {
+    return 'série de $n jours';
+  }
+
+  @override
+  String get estimatedTotal => 'Total estimé';
+
+  @override
+  String logThisMeal(String meal) {
+    return 'Noter : $meal';
+  }
 }

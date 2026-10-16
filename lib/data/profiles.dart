@@ -142,9 +142,23 @@ class Profiles {
   void setBiometric(int id, bool on) =>
       _db.execute('UPDATE profiles SET biometric = ? WHERE id = ?', [on ? 1 : 0, id]);
 
+  /// Settings → Change PIN: the current PIN must be right (wrong ones count towards the lockout).
+  Future<PinResult> changePin(int id, String current, String next) async {
+    if (!isValidPin(next)) throw ArgumentError('PIN must be 4-6 digits');
+    final r = await unlock(id, current);
+    if (r is! PinOk) return r;
+    final salt = newSalt();
+    _db.execute('UPDATE profiles SET pin_hash = ?, pin_salt = ? WHERE id = ?', [await _hash(next, salt), salt, id]);
+    return r;
+  }
+
+  /// Links (or with null unlinks) a Google account: it then unlocks the profile like the PIN.
+  void setGoogleEmail(int id, String? email) =>
+      _db.execute('UPDATE profiles SET google_email = ? WHERE id = ?', [email?.toLowerCase(), id]);
+
   /// The linked Google account (lower case); null = PIN and fingerprint only.
   String? googleEmail(int id) =>
-      _db.select('SELECT google_email FROM profiles WHERE id = ?', [id]).single['google_email'] as String?;
+      _db.select('SELECT google_email FROM profiles WHERE id = ?', [id]).firstOrNull?['google_email'] as String?;
 
   /// A fingerprint or the linked Google account also clears PIN failures, like a correct PIN.
   void unlockedOtherwise(int id) =>

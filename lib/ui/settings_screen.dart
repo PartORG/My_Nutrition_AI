@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
@@ -10,13 +11,17 @@ import '../billing/billing.dart' show Tier;
 import '../data/diary.dart';
 import '../data/goals.dart';
 import '../data/health_sync.dart';
+import '../data/pin.dart' show isValidPin;
+import '../data/profiles.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
 import 'me_screen.dart' show TargetDialog;
 import 'memory_screen.dart';
 import 'nutrients.dart';
+import 'kit.dart';
 import 'paywall_screen.dart';
+import 'theme.dart';
 
 /// Everything that is set once and rarely touched, out of the Me tab.
 class SettingsScreen extends ConsumerWidget {
@@ -30,161 +35,187 @@ class SettingsScreen extends ConsumerWidget {
     final agent = ref.watch(agentProvider);
     final profiles = ref.watch(profilesProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l.settingsTitle)),
-      body: ValueListenableBuilder(
-        valueListenable: data.changes,
-        builder: (context, _, _) {
-          final body = loadBody(data.user);
-          final adult = body == null || computeTargets(body, now: DateTime.now()) != null;
-          return ListView(padding: const EdgeInsets.only(bottom: 24), children: [
-            _Section(l.appearance),
-            const _Appearance(),
-            ListTile(
-              leading: const Icon(Icons.translate),
-              title: Text(l.language),
-              // Under the title, not trailing: at 200 % text it wouldn't fit beside it.
-              subtitle: DropdownButton<String>(
-                isExpanded: true,
-                value: ref.watch(languageProvider),
-                underline: const SizedBox.shrink(),
-                items: [
-                  for (final MapEntry(:key, :value) in languageOptions(l).entries)
-                    DropdownMenuItem(value: key, child: Text(value)),
-                ],
-                onChanged: (code) => ref.read(languageProvider.notifier).set(code ?? ''),
-              ),
-            ),
-
-            _Section(l.settingsAi),
-            if (llmChoices().length > 1)
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: AiModelCard()),
-            _Products(data: data),
-            ListTile(
-              leading: const Icon(Icons.psychology_outlined),
-              title: Text(l.aiKnowsTitle),
-              subtitle: agent.hasValue ? null : Text(l.aiKnowsLoading),
-              trailing: const Icon(Icons.chevron_right),
-              enabled: agent.hasValue,
-              onTap: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => MemoryScreen(agent: agent.requireValue))),
-            ),
-
-            _Section(l.remindersTitle),
-            _Reminders(data: data),
-
-            _Section(l.settingsTracking),
-            ListTile(
-              leading: const Icon(Icons.water_drop_outlined),
-              title: Text(l.waterGoal),
-              trailing: Text('${waterGoal(data.user).round()} ml'),
-              onTap: () async {
-                // null = cancelled, -1 = back to the computed goal.
-                final ml = await showDialog<double>(
-                    context: context, builder: (_) => TargetDialog(title: l.waterGoal, initial: waterGoal(data.user)));
-                if (ml == null) return;
-                setPref(data.user, 'water_goal_ml', ml < 0 ? '' : '${ml.clamp(500, 6000)}');
-                data.changed();
-              },
-            ),
-            // Not offered under 18; the caution stays visible next to the switch.
-            if (adult)
-              SwitchListTile(
-                secondary: const Icon(Icons.timer_outlined),
-                title: Text(l.fastingSwitch),
-                subtitle: Text(l.fastingCaution),
-                value: pref(data.user, 'fasting') == '1',
-                onChanged: (on) {
-                  setPref(data.user, 'fasting', on ? '1' : '0');
-                  if (!on) endFast(data.user, DateTime.now());
-                  data.changed();
-                },
-              ),
-
-            _Section(l.settingsPrivacy),
-            if (ref.watch(biometricsAvailableProvider).value == true)
-              SwitchListTile(
-                secondary: const Icon(Icons.fingerprint),
-                title: Text(l.fingerprintTitle),
-                subtitle: Text(l.fingerprintHint),
-                value: profiles.biometricEnabled(data.profile.id),
-                onChanged: (on) async {
-                  // Turning it on needs one successful scan, so it's the owner doing it.
-                  if (on && !await authenticateFingerprint(ref, l.fingerprintReason(data.profile.name))) return;
-                  profiles.setBiometric(data.profile.id, on);
-                  data.changed();
-                },
-              ),
-            // Visible without the PIN, so off until the owner says so.
-            if (Platform.isAndroid)
-              SwitchListTile(
-                secondary: const Icon(Icons.widgets_outlined),
-                title: Text(l.widgetKcalTitle),
-                subtitle: Text(l.widgetKcalHint),
-                value: widgetShowsKcal(profiles),
-                onChanged: (on) {
-                  profiles.setSetting('widget_kcal', on ? '1' : '0');
-                  data.changed(); // redraws this switch and the widget
-                },
-              ),
-            if (healthSupported)
-              SwitchListTile(
-                secondary: const Icon(Icons.favorite_border),
-                title: Text(Platform.isIOS ? l.appleHealth : l.healthConnect),
-                subtitle: Text(l.healthSyncHint),
-                value: healthSyncOn(data.user),
-                onChanged: (on) async {
-                  if (!on) {
-                    disconnectHealth(data.user);
-                  } else if (!await connectHealth(data.user) && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.healthSyncDenied)));
-                  }
-                  data.changed();
-                },
-              ),
-
-            _Section(l.settingsAbout),
-            ListTile(
-              leading: const Icon(Icons.health_and_safety_outlined),
-              title: Text(l.medicalDisclaimerTitle),
-              onTap: () => showDialog<void>(
-                context: context,
-                builder: (context) => AlertDialog(
+      body: SafeArea(
+        child: ValueListenableBuilder(
+          valueListenable: data.changes,
+          builder: (context, _, _) {
+            final c = context.colors;
+            final body = loadBody(data.user);
+            final adult = body == null || computeTargets(body, now: DateTime.now()) != null;
+            final google = profiles.googleEmail(data.profile.id);
+            return ListView(padding: const EdgeInsets.only(bottom: 32), children: [
+              ScreenHeader(title: l.settingsTitle, back: true),
+              _Group(title: l.lookAndLanguage, children: [
+                ListTile(
+                  title: Text(l.language),
+                  // Under the title, not trailing: at 200 % text it wouldn't fit beside it.
+                  subtitle: DropdownButton<String>(
+                    isExpanded: true,
+                    value: ref.watch(languageProvider),
+                    underline: const SizedBox.shrink(),
+                    borderRadius: BorderRadius.circular(16),
+                    items: [
+                      for (final MapEntry(:key, :value) in languageOptions(l).entries)
+                        DropdownMenuItem(value: key, child: Text(value)),
+                    ],
+                    onChanged: (code) => ref.read(languageProvider.notifier).set(code ?? ''),
+                  ),
+                ),
+                const _Appearance(),
+              ]),
+              _Group(title: l.remindersTitle, children: [
+                _Reminders(data: data),
+                ListTile(
+                  title: Text(l.waterGoal),
+                  trailing: Text('${waterGoal(data.user).round()} ml', style: TextStyle(fontSize: 15, color: c.muted)),
+                  onTap: () async {
+                    // null = cancelled, -1 = back to the computed goal.
+                    final ml = await showDialog<double>(
+                        context: context, builder: (_) => TargetDialog(title: l.waterGoal, initial: waterGoal(data.user)));
+                    if (ml == null) return;
+                    setPref(data.user, 'water_goal_ml', ml < 0 ? '' : '${ml.clamp(500, 6000)}');
+                    data.changed();
+                  },
+                ),
+                // Not offered under 18; the caution stays visible next to the switch.
+                if (adult)
+                  SwitchListTile(
+                    title: Text(l.fastingSwitch),
+                    subtitle: Text(l.fastingCaution),
+                    value: pref(data.user, 'fasting') == '1',
+                    onChanged: (on) {
+                      setPref(data.user, 'fasting', on ? '1' : '0');
+                      if (!on) endFast(data.user, DateTime.now());
+                      data.changed();
+                    },
+                  ),
+              ]),
+              _Group(title: l.onDeviceAiAndData, children: [
+                if (llmChoices().length > 1) const AiModelCard(),
+                if (healthSupported)
+                  SwitchListTile(
+                    title: Text(Platform.isIOS ? l.appleHealth : l.healthConnect),
+                    subtitle: Text(l.healthSyncHint),
+                    value: healthSyncOn(data.user),
+                    onChanged: (on) async {
+                      if (!on) {
+                        disconnectHealth(data.user);
+                      } else if (!await connectHealth(data.user) && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.healthSyncDenied)));
+                      }
+                      data.changed();
+                    },
+                  ),
+                _Products(data: data),
+                ListTile(
+                  title: Text(l.aiKnowsTitle),
+                  subtitle: agent.hasValue ? null : Text(l.aiKnowsLoading),
+                  trailing: const Icon(Icons.chevron_right),
+                  enabled: agent.hasValue,
+                  onTap: () => Navigator.of(context)
+                      .push(MaterialPageRoute<void>(builder: (_) => MemoryScreen(agent: agent.requireValue))),
+                ),
+              ]),
+              _Group(title: l.settingsPrivacy, children: [
+                if (ref.watch(biometricsAvailableProvider).value == true)
+                  SwitchListTile(
+                    title: Text(l.fingerprintTitle),
+                    subtitle: Text(l.fingerprintHint),
+                    value: profiles.biometricEnabled(data.profile.id),
+                    onChanged: (on) async {
+                      // Turning it on needs one successful scan, so it's the owner doing it.
+                      if (on && !await authenticateFingerprint(ref, l.fingerprintReason(data.profile.name))) return;
+                      profiles.setBiometric(data.profile.id, on);
+                      data.changed();
+                    },
+                  ),
+                ListTile(
+                  title: Text(l.changePin),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showDialog<void>(context: context, builder: (_) => _ChangePinDialog(id: data.profile.id)),
+                ),
+                if (google != null || googleClientId.isNotEmpty)
+                  ListTile(
+                    title: Text(l.googleAccount),
+                    subtitle: Text(google == null ? l.googleNotLinked : l.googleLinked(google)),
+                    trailing: OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(64, 44)),
+                      onPressed: () async {
+                        if (google != null) {
+                          profiles.setGoogleEmail(data.profile.id, null);
+                        } else if (await signInWithGoogle() case final account?) {
+                          profiles.setGoogleEmail(data.profile.id, account.email);
+                        }
+                        data.changed();
+                      },
+                      child: Text(google == null ? l.link : l.unlink),
+                    ),
+                  ),
+                // Visible without the PIN, so off until the owner says so.
+                if (Platform.isAndroid)
+                  SwitchListTile(
+                    title: Text(l.widgetKcalTitle),
+                    subtitle: Text(l.widgetKcalHint),
+                    value: widgetShowsKcal(profiles),
+                    onChanged: (on) {
+                      profiles.setSetting('widget_kcal', on ? '1' : '0');
+                      data.changed(); // redraws this switch and the widget
+                    },
+                  ),
+              ]),
+              _Group(title: l.settingsAbout, children: [
+                ListTile(
                   title: Text(l.medicalDisclaimerTitle),
-                  content: SingleChildScrollView(child: Text(l.medicalDisclaimerBody)),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(MaterialLocalizations.of(context).closeButtonLabel)),
-                  ],
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(l.medicalDisclaimerTitle),
+                      content: SingleChildScrollView(child: Text(l.medicalDisclaimerBody)),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(MaterialLocalizations.of(context).closeButtonLabel)),
+                      ],
+                    ),
+                  ),
+                ),
+                ListTile(
+                  title: Text(l.licenses),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showLicensePage(context: context, applicationName: l.appTitle),
+                ),
+                ListTile(
+                  title: Text(l.privacyPolicy),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () => openLegal('privacy.html'),
+                ),
+                ListTile(
+                  title: Text(l.termsOfUse),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () => openLegal('terms.html'),
+                ),
+              ]),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Panel(
+                  color: c.dangerBg,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SectionLabel(l.settingsDanger, color: c.danger, padding: EdgeInsets.zero),
+                    const SizedBox(height: 8),
+                    Text(l.deleteThisProfileBody, style: TextStyle(color: c.ink2)),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(foregroundColor: c.danger, side: BorderSide(color: c.danger)),
+                      onPressed: () => _delete(context, ref, data),
+                      child: Text(l.deleteThisProfile),
+                    ),
+                  ]),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text(l.licenses),
-              onTap: () => showLicensePage(context: context, applicationName: l.appTitle),
-            ),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(l.privacyPolicy),
-              trailing: const Icon(Icons.open_in_new),
-              onTap: () => openLegal('privacy.html'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel_outlined),
-              title: Text(l.termsOfUse),
-              trailing: const Icon(Icons.open_in_new),
-              onTap: () => openLegal('terms.html'),
-            ),
-
-            _Section(l.settingsDanger),
-            ListTile(
-              leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
-              title: Text(l.deleteThisProfile, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: () => _delete(context, ref, data),
-            ),
-          ]);
-        },
+            ]);
+          },
+        ),
       ),
     );
   }
@@ -239,17 +270,101 @@ class LanguageMenu extends ConsumerWidget {
   }
 }
 
-/// M3 list section header: titleSmall in primary.
-class _Section extends StatelessWidget {
-  const _Section(this.title);
+/// A caps label and its rows in one card.
+class _Group extends StatelessWidget {
+  const _Group({required this.title, required this.children});
   final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-        child: Text(title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary)),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SectionLabel(title),
+          PanelList(children: children),
+        ]),
       );
+}
+
+/// Settings → Change PIN: the current one, then the new one twice.
+class _ChangePinDialog extends ConsumerStatefulWidget {
+  const _ChangePinDialog({required this.id});
+  final int id;
+
+  @override
+  ConsumerState<_ChangePinDialog> createState() => _ChangePinDialogState();
+}
+
+class _ChangePinDialogState extends ConsumerState<_ChangePinDialog> {
+  final _current = TextEditingController(), _next = TextEditingController(), _again = TextEditingController();
+  String? _error;
+  var _busy = false;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    _again.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final l = AppLocalizations.of(context)!;
+    if (!isValidPin(_next.text)) return setState(() => _error = l.pinInvalid);
+    if (_next.text != _again.text) return setState(() => _error = l.pinMismatch);
+    setState(() => _busy = true);
+    final r = await ref.read(profilesProvider).changePin(widget.id, _current.text, _next.text);
+    if (!mounted) return;
+    switch (r) {
+      case PinOk():
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.pinChanged)));
+      case PinWrong(:final attemptsLeft):
+        setState(() {
+          _busy = false;
+          _error = l.pinWrong(attemptsLeft);
+        });
+      case PinLocked(:final until):
+        setState(() {
+          _busy = false;
+          _error = l.pinLocked(until.difference(DateTime.now()).inSeconds + 1);
+        });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    TextField pin(TextEditingController c, String label) => TextField(
+          controller: c,
+          obscureText: true,
+          maxLength: 6,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(labelText: label, counterText: ''),
+        );
+    return AlertDialog(
+      title: Text(l.changePin),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          pin(_current, l.currentPin),
+          const SizedBox(height: 10),
+          pin(_next, l.pinLabel),
+          const SizedBox(height: 10),
+          pin(_again, l.pinConfirmLabel),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(_error!, style: TextStyle(color: context.colors.danger)),
+            ),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
+        FilledButton(onPressed: _busy ? null : _save, child: Text(l.confirmSave)),
+      ],
+    );
+  }
 }
 
 /// System / light / dark, and the phone's wallpaper colours (Android 12+).
@@ -263,24 +378,19 @@ class _Appearance extends ConsumerWidget {
     final set = ref.read(appearanceProvider.notifier).set;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        // Scrolls at large text: "System" in German or French doesn't fit three segments.
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SegmentedButton<ThemeMode>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(value: ThemeMode.system, label: Text(l.themeSystem)),
-              ButtonSegment(value: ThemeMode.light, label: Text(l.themeLight)),
-              ButtonSegment(value: ThemeMode.dark, label: Text(l.themeDark)),
-            ],
-            selected: {look.mode},
-            onSelectionChanged: (s) => set(mode: s.single),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(l.appearance, style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 8),
+          PillTabs<ThemeMode>(
+            values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
+            selected: look.mode,
+            label: (m) => switch (m) { ThemeMode.system => l.themeSystem, ThemeMode.light => l.themeLight, _ => l.themeDark },
+            onChanged: (m) => set(mode: m),
           ),
-        ),
+        ]),
       ),
       SwitchListTile(
-        secondary: const Icon(Icons.palette_outlined),
         title: Text(l.wallpaperColors),
         subtitle: Text(l.wallpaperColorsHint),
         value: look.wallpaper,

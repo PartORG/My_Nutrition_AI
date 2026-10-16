@@ -168,6 +168,8 @@ const userDbMigrations = <String>[
     PRIMARY KEY (recipe_id, lang)
   ) WITHOUT ROWID;
   ''',
+  // v11: which recipe a shopping item is for ("For: Lentil dal").
+  'ALTER TABLE shopping_list ADD COLUMN for_recipe TEXT;',
 ];
 
 Database openUserDb(String path) {

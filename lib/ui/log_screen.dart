@@ -6,8 +6,12 @@ import '../app_state.dart';
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
+import 'home_screen.dart' show logMealProvider;
+import 'kit.dart';
 import 'nutrients.dart';
 import 'theme.dart';
+import 'today_screen.dart' show mealName;
+import 'voice.dart';
 
 /// Search the food database and log an amount, no AI involved.
 class LogScreen extends ConsumerStatefulWidget {
@@ -19,19 +23,28 @@ class LogScreen extends ConsumerStatefulWidget {
 
 class _LogScreenState extends ConsumerState<LogScreen> {
   final _search = TextEditingController();
+  late final _voice = Dictation(_search, () {
+    if (mounted) setState(() => _results = _find(_search.text));
+  });
   List<FoodChoice> _results = [];
+  String? _kind; // null = everything (or recent, before searching)
+  late String _meal = ref.read(logMealProvider) ?? ref.read(profileDataProvider)?.tools.mealTypeNow() ?? 'snack';
 
   @override
   void dispose() {
+    _voice.dispose();
     _search.dispose();
     super.dispose();
   }
+
+  List<FoodChoice> _find(String t) =>
+      t.trim().length < 2 ? [] : ref.read(profileDataProvider)?.tools.searchFood(t) ?? [];
 
   Future<void> _pick(FoodChoice food) async {
     final logged = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _AmountSheet(food: food),
+      builder: (_) => _AmountSheet(food: food, meal: _meal),
     );
     if (logged == true && mounted) {
       ScaffoldMessenger.of(context)
@@ -42,114 +55,237 @@ class _LogScreenState extends ConsumerState<LogScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final tools = ref.watch(profileDataProvider)?.tools;
-    if (tools == null) return const SizedBox.shrink();
-    final kinds = {'food': (l.kindFood, Icons.eco_outlined), 'dish': (l.kindDish, Icons.dinner_dining_outlined),
-        'recipe': (l.kindRecipe, Icons.menu_book_outlined), 'product': (l.kindProduct, Icons.qr_code_2),
-        'recent': (l.kindRecent, Icons.history)};
-    final data = ref.watch(profileDataProvider)!;
+    final c = context.colors;
+    final data = ref.watch(profileDataProvider);
+    if (data == null) return const SizedBox.shrink();
+    // "+" on a meal card: follow it, then forget it, so the next visit goes by the clock again.
+    ref.listen(logMealProvider, (_, meal) {
+      if (meal != null) setState(() => _meal = meal);
+    });
+    final kinds = {'food': l.kindFood, 'dish': l.kindDish, 'recipe': l.kindRecipe, 'product': l.kindProduct};
     final searching = _search.text.trim().length >= 2;
     final now = DateTime.now();
-    // Empty search: what the user eats most, and yesterday's meals to repeat in one tap.
-    final list = searching ? _results : recentFoods(data.user, now);
-    final yesterday = searching ? const <String, double>{} : mealTotalsOn(data.user, now.subtract(const Duration(days: 1)));
-    String meal(String t) => switch (t) {
-          'breakfast' => l.mealBreakfast,
-          'lunch' => l.mealLunch,
-          'dinner' => l.mealDinner,
-          _ => l.mealSnack,
-        };
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _search,
-              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: l.searchFood),
-              textInputAction: TextInputAction.search,
-              onChanged: (t) => setState(() => _results = t.trim().length < 2 ? [] : tools.searchFood(t)),
+    final all = searching ? _results : recentFoods(data.user, now);
+    final list = _kind == null ? all : [for (final f in all) if (f.kind == _kind || (_kind == 'recipe' && f.kind == 'recipe')) f];
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yMeals = [for (final m in mealsOn(data.user, yesterday)) if (m.type == _meal) m];
+    return CustomScrollView(slivers: [
+      SliverToBoxAdapter(child: ScreenHeader(title: l.logFoodTitle)),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        sliver: SliverList.list(children: [
+          ChoicePills<String>(
+            values: const ['breakfast', 'lunch', 'dinner', 'snack'],
+            selected: _meal,
+            label: (t) => mealName(l, t),
+            scroll: true,
+            onChanged: (t) {
+              ref.read(logMealProvider.notifier).set(null);
+              setState(() => _meal = t);
+            },
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _search,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: l.searchFood,
+              suffixIcon: Padding(
+                padding: const EdgeInsets.all(4),
+                child: MicButton(dictation: _voice, onPressed: () => _voice.toggle(context)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(Radii.input), borderSide: BorderSide(color: c.primary)),
             ),
+            textInputAction: TextInputAction.search,
+            onChanged: (t) => setState(() => _results = _find(t)),
           ),
-          // Pro: log from a photo. The paywall opens below Pro.
-          IconButton(
-            tooltip: l.cameraOpen,
-            iconSize: 28,
-            icon: Icon(Icons.photo_camera_outlined, color: context.colors.primary),
-            onPressed: () => openCamera(context, 'photo'),
+          const SizedBox(height: 14),
+          IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(
+                child: _ActionTile(
+                  dark: true,
+                  icon: Icons.photo_camera_outlined,
+                  badge: const Tag('PRO', tone: TagTone.gold),
+                  title: l.snapPhoto,
+                  body: l.snapPhotoBody,
+                  onTap: () => openCamera(context, 'photo'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ActionTile(
+                  icon: Icons.add,
+                  title: l.quickAdd,
+                  body: l.quickAddBody,
+                  onTap: () => showDialog<void>(context: context, builder: (_) => _QuickAddDialog(data: data, meal: _meal)),
+                ),
+              ),
+            ]),
           ),
-          IconButton(
-            tooltip: l.quickAdd,
-            iconSize: 28,
-            icon: Icon(Icons.bolt, color: context.colors.primary),
-            onPressed: () => showDialog<void>(context: context, builder: (_) => _QuickAddDialog(data: data)),
-          ),
-        ]),
-      ),
-      if (yesterday.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final type in ['breakfast', 'lunch', 'dinner', 'snack'])
-              if (yesterday[type] case final kcal?)
-                ActionChip(
-                  avatar: const Icon(Icons.replay, size: 18),
-                  label: Text(l.repeatYesterday(inSentence(context, meal(type)), kcal.round())),
+          if (!searching && yMeals.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Panel(
+              color: c.mint,
+              border: false,
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: Row(children: [
+                Icon(Icons.replay, color: c.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(l.yesterdaysMeal(inSentence(context, mealName(l, _meal))),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text('${yMeals.map((m) => m.label).join(', ')} · ${yMeals.fold(0.0, (s, m) => s + m.kcal).round()} ${l.kcal}',
+                        maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: c.ink2)),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
                   onPressed: () {
-                    final n = repeatMeal(data.user, now.subtract(const Duration(days: 1)), type, DateTime.now());
+                    final n = repeatMeal(data.user, yesterday, _meal, DateTime.now());
                     data.changed();
                     setState(() {});
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
                   },
+                  child: Text(l.logButton),
                 ),
-          ]),
-        ),
-      if (!searching && list.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(l.recentFoods, style: Theme.of(context).textTheme.titleSmall),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              for (final (k, label) in [(null, searching ? l.kindAll : l.kindRecent), ...kinds.entries.map((e) => (e.key, e.value))])
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: _KindTab(label: label, selected: _kind == k, onTap: () => setState(() => _kind = k)),
+                ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+        ]),
+      ),
+      if (list.isEmpty && searching)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
+                textAlign: TextAlign.center),
+          ),
+        )
+      else if (list.isNotEmpty)
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          sliver: SliverToBoxAdapter(
+            child: PanelList(children: [
+              for (final f in list)
+                InkWell(
+                  onTap: () => _pick(f),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(f.label, style: const TextStyle(fontSize: 16)),
+                          Text('${kinds[f.kind] ?? l.kindRecent} · ${f.estimated ? '≈' : ''}${_per(l, f)}',
+                              style: TextStyle(fontSize: 13, color: c.muted)),
+                        ]),
+                      ),
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: l.logButton,
+                        child: Material(
+                          shape: CircleBorder(side: BorderSide(color: c.outline)),
+                          color: c.surface,
+                          child: SizedBox.square(dimension: 48, child: Icon(Icons.add, color: c.primary)),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
+            ]),
           ),
         ),
-      Expanded(
-        child: list.isEmpty && searching
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
-                      textAlign: TextAlign.center),
-                ),
-              )
-            : ListView.builder(
-                itemCount: list.length,
-                itemBuilder: (_, i) {
-                  final f = list[i];
-                  final (kind, icon) = kinds[f.kind]!;
-                  final per = f.servingG == null
-                      ? l.per100g(f.per100['kcal']!.round())
-                      : l.perServing2((f.per100['kcal']! * f.servingG! / 100).round());
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: context.colors.cardGreen,
-                      child: Icon(icon, color: context.colors.primary),
-                    ),
-                    title: Text(f.label),
-                    subtitle: Text('$kind · ${f.estimated ? '≈' : ''}$per'),
-                    trailing: Icon(Icons.add_circle_outline, color: context.colors.primary),
-                    onTap: () => _pick(f),
-                  );
-                },
-              ),
-      ),
     ]);
+  }
+
+  static String _per(AppLocalizations l, FoodChoice f) => f.servingG == null
+      ? l.per100g(f.per100['kcal']!.round())
+      : l.perServing2((f.per100['kcal']! * f.servingG! / 100).round());
+}
+
+/// "Snap a photo" (dark) and "Quick add" (white).
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({required this.icon, required this.title, required this.body, required this.onTap, this.dark = false,
+      this.badge});
+  final IconData icon;
+  final String title, body;
+  final VoidCallback onTap;
+  final bool dark;
+  final Widget? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final fg = dark ? c.background : c.ink;
+    return Panel(
+      color: dark ? c.dark : c.surface,
+      border: !dark,
+      onTap: onTap,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Icon(icon, color: dark ? fg : c.primary, size: 28), const Spacer(), ?badge]),
+        const SizedBox(height: 18),
+        Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: fg)),
+        const SizedBox(height: 2),
+        Text(body, style: TextStyle(fontSize: 14, color: fg.withValues(alpha: .78))),
+      ]),
+    );
+  }
+}
+
+/// Recent · Food · Dish · Recipe · Product: the selected one in a mint pill.
+class _KindTab extends StatelessWidget {
+  const _KindTab({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? c.mint : Colors.transparent,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Text(label,
+                  style: TextStyle(fontSize: 15, fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? c.primary : c.muted)),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
 /// "Just 350 kcal" for a meal no search finds; macros optional.
 class _QuickAddDialog extends StatefulWidget {
-  const _QuickAddDialog({required this.data});
+  const _QuickAddDialog({required this.data, required this.meal});
   final ProfileData data;
+  final String meal;
 
   @override
   State<_QuickAddDialog> createState() => _QuickAddDialogState();
@@ -158,7 +294,7 @@ class _QuickAddDialog extends StatefulWidget {
 class _QuickAddDialogState extends State<_QuickAddDialog> {
   final _name = TextEditingController();
   final _values = {for (final k in ['kcal', 'protein_g', 'carbs_g', 'fat_g']) k: TextEditingController()};
-  late String _meal = widget.data.tools.mealTypeNow();
+  late String _meal = widget.meal;
 
   @override
   void dispose() {
@@ -189,16 +325,11 @@ class _QuickAddDialogState extends State<_QuickAddDialog> {
               onChanged: (_) => setState(() {}),
             ),
           const SizedBox(height: 12),
-          DropdownButton<String>(
-            value: _meal,
-            isExpanded: true,
-            items: [
-              DropdownMenuItem(value: 'breakfast', child: Text(l.mealBreakfast)),
-              DropdownMenuItem(value: 'lunch', child: Text(l.mealLunch)),
-              DropdownMenuItem(value: 'dinner', child: Text(l.mealDinner)),
-              DropdownMenuItem(value: 'snack', child: Text(l.mealSnack)),
-            ],
-            onChanged: (m) => setState(() => _meal = m!),
+          ChoicePills<String>(
+            values: const ['breakfast', 'lunch', 'dinner', 'snack'],
+            selected: _meal,
+            label: (t) => mealName(l, t),
+            onChanged: (t) => setState(() => _meal = t),
           ),
         ]),
       ),
@@ -222,8 +353,9 @@ class _QuickAddDialogState extends State<_QuickAddDialog> {
 }
 
 class _AmountSheet extends ConsumerStatefulWidget {
-  const _AmountSheet({required this.food});
+  const _AmountSheet({required this.food, required this.meal});
   final FoodChoice food;
+  final String meal;
 
   @override
   ConsumerState<_AmountSheet> createState() => _AmountSheetState();
@@ -231,7 +363,7 @@ class _AmountSheet extends ConsumerStatefulWidget {
 
 class _AmountSheetState extends ConsumerState<_AmountSheet> {
   late final _grams = TextEditingController(text: '${(widget.food.servingG ?? 100).round()}');
-  late String _meal = ref.read(profileDataProvider)?.tools.mealTypeNow() ?? 'snack';
+  late String _meal = widget.meal;
 
   @override
   void dispose() {
@@ -257,46 +389,40 @@ class _AmountSheetState extends ConsumerState<_AmountSheet> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(food.label, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 12),
-        Row(children: [
-          if (food.servingG != null) ...[
-            IconButton.filledTonal(
-                tooltip: '−', iconSize: 28, onPressed: () => _servings(-.5), icon: const Icon(Icons.remove)),
-            const SizedBox(width: 8),
-            Text('${(grams / food.servingG!).toStringAsFixed(1)} × ${l.servings.toLowerCase()}'),
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-                tooltip: '+', iconSize: 28, onPressed: () => _servings(.5), icon: const Icon(Icons.add)),
-            const SizedBox(width: 16),
-          ],
-          Expanded(
-            child: TextField(
-              controller: _grams,
-              decoration: InputDecoration(labelText: l.grams, suffixText: 'g'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (_) => setState(() {}),
-            ),
+        if (food.servingG != null) ...[
+          Panel(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+            child: Row(children: [
+              Expanded(
+                child: Text(l.servingsAmount((grams / food.servingG!).toStringAsFixed(1)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+              _Step(icon: Icons.remove, tooltip: l.lessServing, onPressed: () => _servings(-.5)),
+              const SizedBox(width: 8),
+              _Step(icon: Icons.add, tooltip: l.moreServing, onPressed: () => _servings(.5)),
+            ]),
           ),
-        ]),
+          const SizedBox(height: 12),
+        ],
+        TextField(
+          controller: _grams,
+          decoration: InputDecoration(labelText: l.grams, suffixText: 'g'),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => setState(() {}),
+        ),
         const SizedBox(height: 12),
-        SegmentedButton<String>(
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment(value: 'breakfast', label: Text(l.mealBreakfast)),
-            ButtonSegment(value: 'lunch', label: Text(l.mealLunch)),
-            ButtonSegment(value: 'dinner', label: Text(l.mealDinner)),
-            ButtonSegment(value: 'snack', label: Text(l.mealSnack)),
-          ],
-          selected: {_meal},
-          onSelectionChanged: (s) => setState(() => _meal = s.single),
+        ChoicePills<String>(
+          values: const ['breakfast', 'lunch', 'dinner', 'snack'],
+          selected: _meal,
+          label: (t) => mealName(l, t),
+          onChanged: (t) => setState(() => _meal = t),
         ),
         const SizedBox(height: 12),
         NutrientTiles(values: values, estimated: food.estimated),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.check),
-            label: Text(l.logButton),
+          child: FilledButton(
             onPressed: grams <= 0
                 ? null
                 : () {
@@ -306,9 +432,27 @@ class _AmountSheetState extends ConsumerState<_AmountSheet> {
                     data.changed();
                     Navigator.of(context).pop(true);
                   },
+            child: Text(l.logButton),
           ),
         ),
       ]),
     );
   }
+}
+
+/// A round outlined − or + (servings).
+class _Step extends StatelessWidget {
+  const _Step({required this.icon, required this.tooltip, required this.onPressed});
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: tooltip,
+        style: IconButton.styleFrom(
+            minimumSize: const Size(52, 52), side: BorderSide(color: context.colors.outline), shape: const CircleBorder()),
+        onPressed: onPressed,
+        icon: Icon(icon),
+      );
 }

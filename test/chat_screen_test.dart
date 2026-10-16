@@ -17,6 +17,7 @@ import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/chat_screen.dart';
+import 'package:myfoodmind/ui/recipe_screen.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'agent_test.dart' show FakeModel;
@@ -60,13 +61,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Breakfast was 2 eggs'), findsOneWidget);
-    expect(find.text('Log breakfast'), findsOneWidget);
-    // Editable before Save: the amount is a field, kcal follows it.
+    expect(find.text('Breakfast'), findsOneWidget, reason: 'the meal pill, selected');
+    // Editable before Save: the amount is a field, kcal (the row's and the total) follows it.
     expect(find.text('egg'), findsOneWidget);
-    expect(find.text('143 kcal'), findsOneWidget);
+    expect(find.text('143 kcal'), findsNWidgets(2));
     await tester.enterText(find.widgetWithText(TextFormField, '100'), '150');
     await tester.pump();
-    expect(find.text('215 kcal'), findsOneWidget);
+    expect(find.text('215 kcal'), findsNWidgets(2));
     // No second model pass: the app's own line instead of a generated one.
     expect(find.text('Check it and tap Save.'), findsOneWidget);
     expect(user.select('SELECT 1 FROM meal_log'), isEmpty);
@@ -145,20 +146,20 @@ void main() {
     ));
     // The list builds lazily: scroll through so every card is laid out, and
     // check each step (off-screen cards are disposed again).
-    const titles = ['Recipe ideas', 'INGREDIENTS', 'avocado / 100 g', 'Today', 'Health information',
-        'Camera', 'Log lunch', "You don't have to go through this alone"];
+    const titles = ['Chicken broccoli stir-fry', 'Open recipe', 'avocado / 100 g', 'Today', 'Health information',
+        'Camera', 'Lunch', "You don't have to go through this alone"];
     final seen = <String>{};
     for (var i = 0; i < 16; i++) {
       expect(tester.takeException(), isNull, reason: 'after scroll step $i');
       seen.addAll(titles.where((t) => find.text(t).evaluate().isNotEmpty));
-      await tester.drag(find.byType(ListView), const Offset(0, 300));
+      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
       await tester.pump();
     }
     expect(seen, containsAll(titles));
 
     // "I ate this" on the recipe card → a log card appears at the bottom.
     // (Pressed directly: tapping inside the reversed, lazily built list is flaky in tests.)
-    await tester.dragUntilVisible(find.text('I ate this'), find.byType(ListView), const Offset(0, 300));
+    await tester.dragUntilVisible(find.text('I ate this'), find.byType(ListView).first, const Offset(0, 300));
     tester.widget<ButtonStyleButton>(
         find.ancestor(of: find.text('I ate this'), matching: find.bySubtype<ButtonStyleButton>())).onPressed!();
     await tester.pumpAndSettle();
@@ -195,12 +196,13 @@ void main() {
         locale: const Locale('uk'),
         localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: SingleChildScrollView(child: RecipeView(card: card, tools: tools, onAte: () {}))),
+        home: RecipeScreen(tools: tools, recipeId: card.id, onLogged: () {}),
       ),
     ));
     await tester.pumpAndSettle();
     expect(find.text(card.instructions), findsOneWidget);
     await tester.ensureVisible(find.text('Перекласти кроки'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Перекласти кроки'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();

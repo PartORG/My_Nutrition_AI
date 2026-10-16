@@ -1,22 +1,19 @@
-import 'dart:async';
-
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
-import '../agent/recipe_translation.dart' show savedTranslation;
-import '../app_state.dart' show agentProvider;
-import '../billing/billing.dart' show Tier;
 import '../data/diary.dart';
-import '../data/plan.dart' show addRecipeToShopping;
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
+import 'kit.dart';
+import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
+import 'recipe_screen.dart';
 import 'theme.dart';
+import 'today_screen.dart' show mealName;
+import 'voice.dart';
 
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
 // TODO(ievgen): real support address before release.
@@ -25,8 +22,9 @@ const supportEmail = 'peredereev.ievgen@gmail.com';
 /// Recipe ideas for what the camera saw, or a note that there are none.
 void cookOrSay(BuildContext context, Agent agent, List<String> names) {
   if (!agent.cookWith(names)) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.cookNone)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.cookNone)),
+    );
   }
 }
 
@@ -40,73 +38,15 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _input = TextEditingController();
-  final _speech = SpeechToText();
-  bool _listening = false; // from the mic tap until the user taps again or stays quiet for _pause
-  DateTime _heard = DateTime.now();
-  // Android's recognizer ends a session after ~1-2 s of silence and often ignores pauseFor,
-  // so we restart it and keep appending until the user has been quiet this long.
-  static const _pause = Duration(seconds: 5);
+  late final _voice = Dictation(_input, () {
+    if (mounted) setState(() {});
+  });
 
   @override
   void dispose() {
-    _listening = false;
-    _speech.cancel();
+    _voice.dispose();
     _input.dispose();
     super.dispose();
-  }
-
-  /// Big mic for users who can't type easily. On-device recognition only:
-  /// falling back to online recognition would send their voice to a server.
-  Future<void> _toggleVoice() async {
-    if (_listening) {
-      setState(() => _listening = false);
-      await _speech.stop();
-      return;
-    }
-    final l = AppLocalizations.of(context)!;
-    void unavailable() {
-      if (!mounted) return;
-      setState(() => _listening = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.voiceUnavailable)));
-    }
-
-    final ok = await _speech.initialize(
-      onError: (e) {
-        // A pause or nothing said is not "voice unavailable"; the done status handles it.
-        if (e.errorMsg != 'error_no_match' && e.errorMsg != 'error_speech_timeout') unavailable();
-      },
-      onStatus: (s) {
-        if (s == SpeechToText.doneStatus) _sessionEnded();
-      },
-    );
-    if (!ok) return unavailable();
-    setState(() => _listening = true);
-    _heard = DateTime.now();
-    await _listen();
-  }
-
-  void _sessionEnded() {
-    if (!mounted || !_listening) return;
-    if (DateTime.now().difference(_heard) < _pause) {
-      _listen();
-    } else {
-      setState(() => _listening = false);
-    }
-  }
-
-  Future<void> _listen() async {
-    // Keep what is already in the field (typed or said before the pause) and append to it.
-    final before = _input.text.trim();
-    await _speech.listen(
-      // The text lands in the field for the user to check, then they tap Send.
-      onResult: (r) {
-        if (!_listening || r.recognizedWords.isEmpty) return;
-        _heard = DateTime.now();
-        setState(() => _input.text = '$before ${r.recognizedWords}'.trim());
-      },
-      listenOptions: SpeechListenOptions(
-          onDevice: true, listenMode: ListenMode.dictation, partialResults: true, pauseFor: _pause),
-    );
   }
 
   void _send([String? text]) {
@@ -119,110 +59,233 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     return ListenableBuilder(
       listenable: widget.agent,
       builder: (context, _) {
-        final items = widget.agent.items;
-        return Column(children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: true, // newest at the bottom, list sticks to it
-              padding: const EdgeInsets.all(12),
-              itemCount: items.length,
-              itemBuilder: (_, i) => _item(context, items[items.length - 1 - i]),
-            ),
-          ),
-          if (widget.agent.busy) const LinearProgressIndicator(minHeight: 2),
-          if (!widget.agent.busy) _Suggestions(agent: widget.agent, onTap: _send),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _input,
-                    decoration: InputDecoration(hintText: l.chatHint),
-                    textCapitalization: TextCapitalization.sentences,
-                    minLines: 1,
-                    maxLines: 4,
-                    onSubmitted: (_) => _send(),
+        final agent = widget.agent;
+        final items = agent.items;
+        final left = agent.unlimited()
+            ? null
+            : (agent.limit.dailyFree - agent.limit.usedToday).clamp(
+                0,
+                agent.limit.dailyFree,
+              );
+        // Large text: the header and the disclaimer scroll with the conversation instead of
+        // staying fixed, else at 200 % they leave it a few lines. Chrome is at most 1.5× text.
+        final big = MediaQuery.textScalerOf(context).scale(10) > 13;
+        final header = MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: Column(
+            children: [
+              ScreenHeader(
+                title: l.assistantTitle,
+                size: 28,
+                trailing: RoundIconButton(
+                  icon: Icons.lightbulb_outline,
+                  tooltip: l.aiKnowsTitle,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => MemoryScreen(agent: agent),
+                    ),
                   ),
                 ),
-                IconButton.filledTonal(
-                  tooltip: l.cameraOpen,
-                  iconSize: 28,
-                  onPressed: widget.agent.busy
-                      ? null
-                      : () => openCamera(context, 'photo', onCook: (names) => cookOrSay(context, widget.agent, names)),
-                  icon: const Icon(Icons.photo_camera_outlined),
-                ),
-                IconButton.filledTonal(
-                  tooltip: _listening ? l.voiceStop : l.voiceInput,
-                  iconSize: 28,
-                  onPressed: widget.agent.busy ? null : _toggleVoice,
-                  icon: Icon(_listening ? Icons.stop : Icons.mic),
-                ),
-                IconButton.filled(
-                  tooltip: l.send,
-                  iconSize: 28, // large target: some users have limited hand movement (ALS, MS)
-                  onPressed: widget.agent.busy ? null : _send,
-                  icon: const Icon(Icons.send),
-                ),
-              ]),
-              Padding(
-                padding: const EdgeInsets.only(top: 4, right: 4),
-                child: Text(l.chatDisclaimer,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colors.textSecondary)),
               ),
-              ]),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_outline, size: 16, color: c.primary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        l.runsOnPhone,
+                        style: TextStyle(fontSize: 14, color: c.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+        final disclaimer = MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    l.chatDisclaimer,
+                    style: TextStyle(fontSize: 12, color: c.muted),
+                  ),
+                ),
+                if (left != null) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    l.messagesLeft(left, agent.limit.dailyFree),
+                    style: TextStyle(fontSize: 12, color: c.muted),
+                  ),
+                ],
+              ],
             ),
           ),
-        ]);
+        );
+        return Column(
+          children: [
+            if (!big) ...[header, Divider(color: c.border)],
+            Expanded(
+              child: ListView.builder(
+                reverse: true, // newest at the bottom, list sticks to it
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                // Large text: the header and the disclaimer scroll with the conversation (last = top).
+                itemCount: items.length + (big ? 2 : 0),
+                itemBuilder: (_, i) => big && i == 0
+                    ? disclaimer
+                    : big && i == items.length + 1
+                    ? header
+                    : _item(
+                        context,
+                        items[items.length - 1 - (big ? i - 1 : i)],
+                      ),
+              ),
+            ),
+            // The input area too: at 200 % with the header it left the conversation nothing.
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.5,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (agent.busy) const LinearProgressIndicator(minHeight: 2),
+                  if (!agent.busy) _Suggestions(agent: agent, onTap: _send),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: c.outline),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _input,
+                              decoration: InputDecoration(
+                                hintText: l.chatHint,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              style: const TextStyle(fontSize: 16),
+                              textCapitalization: TextCapitalization.sentences,
+                              minLines: 1,
+                              maxLines: 4,
+                              onSubmitted: (_) => _send(),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: _voice.listening
+                                ? l.voiceStop
+                                : l.voiceInput,
+                            iconSize: 26,
+                            onPressed: agent.busy
+                                ? null
+                                : () => _voice.toggle(context),
+                            icon: Icon(
+                              _voice.listening
+                                  ? Icons.stop_circle_outlined
+                                  : Icons.mic_none,
+                              color: c.ink2,
+                            ),
+                          ),
+                          IconButton.filled(
+                            tooltip: l.send,
+                            iconSize:
+                                26, // large target: some users have limited hand movement (ALS, MS)
+                            style: IconButton.styleFrom(
+                              backgroundColor: c.primary,
+                              minimumSize: const Size(56, 56),
+                            ),
+                            onPressed: agent.busy ? null : _send,
+                            icon: Icon(Icons.arrow_forward, color: c.onPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!big) disclaimer,
+                ],
+              ),
+            ),
+          ],
+        );
       },
     );
   }
 
   Widget _item(BuildContext context, ChatItem item) {
     final l = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final c = context.colors;
     return switch (item) {
       UserItem(:final text) => _Bubble(text: text, mine: true),
       ModelItem(:final text) => _Bubble(
-          text: text,
-          mine: false,
-          onReport: () => launchUrl(Uri(
+        text: text,
+        mine: false,
+        onReport: () => launchUrl(
+          Uri(
             scheme: 'mailto',
             path: supportEmail,
-            query: 'subject=${Uri.encodeComponent('MyFoodMind: reported AI response')}'
+            query:
+                'subject=${Uri.encodeComponent('MyFoodMind: reported AI response')}'
                 '&body=${Uri.encodeComponent('Response:\n$text\n\nWhat was wrong:\n')}',
-          )),
+          ),
         ),
-      CardItem(:final card, caption: false) => _CardView(card: card, agent: widget.agent),
-      CardItem(:final card) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (_caption(l, card) case final text?) _Bubble(text: text, mine: false),
+      ),
+      CardItem(:final card, caption: false) => _CardView(
+        card: card,
+        agent: widget.agent,
+      ),
+      CardItem(:final card) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_caption(l, card) case final text?)
+            _Bubble(text: text, mine: false),
           _CardView(card: card, agent: widget.agent),
-        ]),
+        ],
+      ),
       CrisisItem() => _Notice(
-          color: scheme.errorContainer,
-          title: l.crisisTitle,
-          body: l.crisisBody,
-          action: (l.crisisButton, () => launchUrl(Uri.parse('https://findahelpline.com'))),
+        color: c.dangerBg,
+        title: l.crisisTitle,
+        body: l.crisisBody,
+        action: (
+          l.crisisButton,
+          () => launchUrl(Uri.parse('https://findahelpline.com')),
         ),
+      ),
       LimitItem(:final dailyFree) => _Notice(
-          color: scheme.secondaryContainer,
-          body: l.limitReached(dailyFree),
-          action: (l.seePlans, () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen()))),
+        color: c.warm,
+        body: l.limitReached(dailyFree),
+        action: (
+          l.seePlans,
+          () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+          ),
         ),
-      ErrorItem() => _Notice(color: scheme.errorContainer, body: l.agentError),
+      ),
+      ErrorItem() => _Notice(color: c.dangerBg, body: l.agentError),
     };
   }
 }
 
-/// Chat bubble with NutriAI's avatars: the mascot for the AI on the left,
-/// a person icon for the user on the right, a sharp corner on the speaker's side.
+/// The user's words in a dark bubble on the right; the assistant's as plain text on the left.
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.text, required this.mine, this.onReport});
   final String text;
@@ -231,49 +294,47 @@ class _Bubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatar = mine
-        ? Container(
-            margin: const EdgeInsets.only(left: 8, top: 4),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: context.colors.primary, shape: BoxShape.circle),
-            child: Icon(Icons.person, size: 18, color: Theme.of(context).colorScheme.onPrimary),
-          )
-        : Container(
-            margin: const EdgeInsets.only(right: 8, top: 4),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: context.colors.cardGreen, shape: BoxShape.circle),
-            child: Image.asset('assets/icons/icon_chat.png', width: 40, height: 40),
-          );
-    final bubble = Flexible(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-        decoration: BoxDecoration(
-          color: mine ? context.colors.primary : context.colors.surface,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(mine ? 16 : 4),
-            bottomRight: Radius.circular(mine ? 4 : 16),
-          ),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Text(text, style: TextStyle(color: mine ? Theme.of(context).colorScheme.onPrimary : context.colors.textPrimary)),
-      ),
-    );
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       // One TalkBack node per message: "You said: …" / "MyFoodMind said: …".
       child: Semantics(
+        container: true,
         label: mine ? l.youSaid(text) : l.aiSaid(text),
         excludeSemantics: true,
-        child: Row(
-          mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: mine ? [bubble, avatar] : [avatar, bubble],
-        ),
+        child: mine
+            ? Align(
+                alignment: Alignment.centerRight,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width * .82,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                    decoration: BoxDecoration(
+                      color: c.dark,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(22),
+                        topRight: Radius.circular(22),
+                        bottomLeft: Radius.circular(22),
+                        bottomRight: Radius.circular(6),
+                      ),
+                    ),
+                    child: Text(
+                      text,
+                      style: TextStyle(fontSize: 16, color: c.background),
+                    ),
+                  ),
+                ),
+              )
+            : Padding(
+                padding: const EdgeInsets.only(right: 24),
+                child: Text(
+                  text,
+                  style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4),
+                ),
+              ),
       ),
     ).withReport(context, onReport);
   }
@@ -282,7 +343,8 @@ class _Bubble extends StatelessWidget {
 extension on Widget {
   /// Long-press → "Report this response" (Play's AI-generated content policy),
   /// without an icon on every message.
-  Widget withReport(BuildContext context, VoidCallback? onReport) => onReport == null
+  Widget withReport(BuildContext context, VoidCallback? onReport) =>
+      onReport == null
       ? this
       : GestureDetector(
           onLongPress: () => showModalBottomSheet<void>(
@@ -303,29 +365,40 @@ extension on Widget {
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice({required this.color, required this.body, this.title, this.action});
+  const _Notice({
+    required this.color,
+    required this.body,
+    this.title,
+    this.action,
+  });
   final Color color;
   final String body;
   final String? title;
   final (String, VoidCallback)? action;
 
   @override
-  Widget build(BuildContext context) => Card(
-        color: color,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (title != null) Text(title!, style: Theme.of(context).textTheme.titleMedium),
-            if (title != null) const SizedBox(height: 6),
-            Text(body),
-            if (action != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(onPressed: action!.$2, child: Text(action!.$1)),
-              ),
-          ]),
-        ),
-      );
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Panel(
+      color: color,
+      border: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
+            Text(title!, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+          ],
+          Text(body),
+          if (action != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: action!.$2, child: Text(action!.$1)),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Cards carry the numbers: they come from the database, not the model's text.
@@ -339,114 +412,121 @@ class _CardView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final text = Theme.of(context).textTheme;
     return switch (card) {
-      RecipeListCard(:final recipes) => _Framed(
-          icon: Icons.restaurant_menu,
-          title: l.recipeIdeas,
-          child: Column(children: [
-            for (final (i, r) in recipes.indexed)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: context.colors.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  child: Text('${i + 1}'),
-                ),
-                title: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Wrap(spacing: 6, children: [
-                  _Chip(icon: Icons.local_fire_department, color: nutrientColors['kcal']!,
-                      label: '${r.kcal.round()} ${l.kcal}'),
-                  if (r.minutes != null) _Chip(icon: Icons.schedule, color: context.colors.textSecondary,
-                      label: '${r.minutes} min'),
-                ]),
-                trailing: Icon(Icons.chevron_right, color: context.colors.primary),
-                onTap: () => agent.showRecipe(r.id),
-              ),
-          ]),
+      RecipeListCard(:final recipes) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: SizedBox(
+          height: 190 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2), // room for wrapped tags at 200 %
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: recipes.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (context, i) => _IdeaCard(
+              recipe: recipes[i],
+              onTap: () => agent.showRecipe(recipes[i].id),
+            ),
+          ),
         ),
-      RecipeCard c => RecipeView(card: c, tools: agent.tools, onAte: () => agent.ateRecipe(c.id)),
+      ),
+      RecipeCard c => _RecipeTeaser(card: c, agent: agent),
       NutritionCard c => _Framed(
-          icon: Icons.pie_chart_outline,
-          title: _nutritionTitle(l, c.title),
-          child: NutrientTiles(values: c.values, estimated: c.estimated),
-        ),
+        icon: Icons.pie_chart_outline,
+        title: _nutritionTitle(l, c.title),
+        child: NutrientTiles(values: c.values, estimated: c.estimated),
+      ),
       InfoCard(:final passages) => _Framed(
-          icon: Icons.info_outline,
-          title: l.healthInfo,
-          color: nutrientColors['kcal']!,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        icon: Icons.info_outline,
+        title: l.healthInfo,
+        color: nutrientColors['kcal']!,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             for (final p in passages) ...[
               Text(p.text),
               Text('— ${p.source}', style: text.bodySmall),
               const SizedBox(height: 8),
             ],
-            Text(l.notMedicalAdvice, style: text.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
-          ]),
+            Text(
+              l.notMedicalAdvice,
+              style: text.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+            ),
+          ],
         ),
+      ),
       CameraCard c => _Framed(
-          icon: Icons.photo_camera_outlined,
-          title: l.cameraTitle,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.photo_camera),
-              label: Text(l.cameraOpen),
-              onPressed: () => openCamera(context, c.mode, onCook: (names) => cookOrSay(context, agent, names)),
+        icon: Icons.photo_camera_outlined,
+        title: l.cameraTitle,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.photo_camera),
+            label: Text(l.cameraOpen),
+            onPressed: () => openCamera(
+              context,
+              c.mode,
+              onCook: (names) => cookOrSay(context, agent, names),
             ),
           ),
         ),
+      ),
+      ConfirmCard c when c.items.isNotEmpty && c.accepted == null =>
+        _MealConfirm(card: c, agent: agent),
       ConfirmCard c => _Framed(
-          icon: switch (c.accepted) {
-            null => Icons.pending_actions,
-            true => Icons.check_circle,
-            false => Icons.cancel_outlined,
-          },
-          title: _confirmTitle(l, c),
-          color: c.accepted == false ? context.colors.textSecondary : context.colors.primary,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (c.accepted == null && c.items.isNotEmpty) ...[
-              // Chat guesses amounts: each one is editable before Save (0 = leave it out).
-              for (final i in c.items) _MealItemRow(item: i, onGrams: (g) => agent.setGrams(c, i, g)),
-              for (final line in c.lines.skip(c.items.length)) Text(line),
-            ] else
-              for (final line in c.lines) Text(line),
-            if (c.mealType != null && c.accepted == null) ...[
-              const SizedBox(height: 8),
-              _MealTypePicker(card: c, agent: agent),
-            ],
-            const SizedBox(height: 8),
+        icon: switch (c.accepted) {
+          null => Icons.pending_actions,
+          true => Icons.check_circle,
+          false => Icons.cancel_outlined,
+        },
+        title: _confirmTitle(l, c),
+        color: c.accepted == false
+            ? context.colors.muted
+            : context.colors.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final line in c.lines)
+              Text(line, style: const TextStyle(fontSize: 15)),
+            const SizedBox(height: 10),
             switch (c.accepted) {
               // Wrap: at large text sizes the two buttons don't fit on one line.
-              null => Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.close),
-                    label: Text(l.confirmDiscard),
+              null => Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
                     onPressed: () => agent.decide(c, false),
+                    child: Text(l.confirmDiscard),
                   ),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.check),
-                    label: Text(l.confirmSave),
+                  FilledButton(
                     onPressed: () => agent.decide(c, true),
+                    child: Text(l.confirmSave),
                   ),
-                ]),
-              true => Text('✓ ${l.confirmSaved}', style: text.labelLarge?.copyWith(color: context.colors.primary)),
+                ],
+              ),
+              true => Text(
+                '✓ ${l.confirmSaved}',
+                style: text.labelLarge?.copyWith(color: context.colors.primary),
+              ),
               false => Text('✕ ${l.confirmDiscarded}', style: text.labelLarge),
             },
-          ]),
+          ],
         ),
+      ),
     };
   }
 }
 
 /// The line above a card shown without a model reply.
 String? _caption(AppLocalizations l, AgentCard card) => switch (card) {
-      ConfirmCard() => l.captionConfirm,
-      RecipeListCard(:final avoided) when avoided.isNotEmpty => l.captionIdeasAvoiding(avoided.join(', ')),
-      RecipeListCard() => l.captionIdeas,
-      RecipeCard() => l.captionRecipe,
-      NutritionCard() => l.captionNumbers,
-      CameraCard() => l.captionCamera,
-      InfoCard() => null,
-    };
+  ConfirmCard() => l.captionConfirm,
+  RecipeListCard(:final avoided) when avoided.isNotEmpty =>
+    l.captionIdeasAvoiding(avoided.join(', ')),
+  RecipeListCard() => l.captionIdeas,
+  RecipeCard() => l.captionRecipe,
+  NutritionCard() => l.captionNumbers,
+  CameraCard() => l.captionCamera,
+  InfoCard() => null,
+};
 
 /// The tools write card titles in English (the model reads them too); shown in the app's language.
 String _confirmTitle(AppLocalizations l, ConfirmCard c) {
@@ -457,283 +537,43 @@ String _confirmTitle(AppLocalizations l, ConfirmCard c) {
       'dinner' => l.mealDinner,
       _ => l.mealSnack,
     };
-    return l.cardLogMeal(l.localeName == 'de' ? meal : meal.toLowerCase()); // German nouns keep the capital
+    return l.cardLogMeal(
+      l.localeName == 'de' ? meal : meal.toLowerCase(),
+    ); // German nouns keep the capital
   }
   return switch (c.title) {
-        'Save recipe' => l.cardSaveRecipe,
-        'Rate recipe' => l.cardRateRecipe,
-        'Remember' => l.cardRemember,
-        'Add allergy' => l.cardAddAllergy,
-        'Remove allergy' => l.cardRemoveAllergy,
-        'Add diet' => l.cardAddDiet,
-        'Remove diet' => l.cardRemoveDiet,
-        'Log symptom' => l.cardLogSymptom,
-        'Log glucose' => l.cardLogGlucose,
-        'Log blood pressure' => l.cardLogBloodPressure,
-        'Log weight' => l.logWeight,
-        'Log water' => l.cardLogWater,
-        _ => c.title,
-      };
+    'Save recipe' => l.cardSaveRecipe,
+    'Rate recipe' => l.cardRateRecipe,
+    'Remember' => l.cardRemember,
+    'Add allergy' => l.cardAddAllergy,
+    'Remove allergy' => l.cardRemoveAllergy,
+    'Add diet' => l.cardAddDiet,
+    'Remove diet' => l.cardRemoveDiet,
+    'Log symptom' => l.cardLogSymptom,
+    'Log glucose' => l.cardLogGlucose,
+    'Log blood pressure' => l.cardLogBloodPressure,
+    'Log weight' => l.logWeight,
+    'Log water' => l.cardLogWater,
+    _ => c.title,
+  };
 }
 
 String _nutritionTitle(AppLocalizations l, String title) => switch (title) {
-      'Today' => l.tabToday,
-      'Last 7 days' => l.last7Days,
-      _ when title.endsWith(' · per 100 g') => '${title.substring(0, title.length - 12)}${l.per100Suffix}',
-      _ => title,
-    };
+  'Today' => l.tabToday,
+  'Last 7 days' => l.last7Days,
+  _ when title.endsWith(' · per 100 g') =>
+    '${title.substring(0, title.length - 12)}${l.per100Suffix}',
+  _ => title,
+};
 
-/// A recipe with its 1-5 stars (a tap saves them; search uses them) and "I ate this".
-/// In chat and on the recipe screen opened from Today.
-/// The steps as stored (English); in another app language, a tap translates them with the
-/// on-phone model, saved for next time and labelled, with the original one tap away.
-class _Steps extends ConsumerStatefulWidget {
-  const _Steps({required this.recipeId, required this.instructions, required this.tools});
-  final int recipeId;
-  final String instructions;
-  final AgentTools tools;
-
-  @override
-  ConsumerState<_Steps> createState() => _StepsState();
-}
-
-class _StepsState extends ConsumerState<_Steps> {
-  late String? _translated = widget.tools.language == 'en'
-      ? null
-      : savedTranslation(widget.tools.user, widget.recipeId, widget.tools.language);
-  var _original = false;
-  StreamSubscription<String>? _run;
-
-  @override
-  void dispose() {
-    _run?.cancel(); // a half translation is not saved
-    super.dispose();
-  }
-
-  void _translate(Agent agent, AppLocalizations l) {
-    void say(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-    if (agent.busy) return say(l.translateBusy);
-    setState(() => _translated = '');
-    _run = agent.translateRecipe(widget.recipeId, widget.instructions).listen(
-      (t) => setState(() => _translated = t),
-      onError: (Object e) {
-        debugPrint('translate error: $e');
-        setState(() {
-          _translated = null;
-          _run = null;
-        });
-        say(l.translateFailed);
-      },
-      onDone: () => setState(() {
-        _run = null;
-        if (_translated?.isEmpty ?? false) _translated = null; // the chat took the model first
-      }),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final muted = TextStyle(fontSize: 12, color: context.colors.textSecondary);
-    final agent = ref.watch(agentProvider).value;
-    final translated = _translated;
-    final running = _run != null;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(translated == null || _original ? widget.instructions : (translated.isEmpty ? '…' : translated)),
-      if (running) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
-      if (widget.tools.language != 'en' && !running)
-        if (translated == null) ...[
-          TextButton.icon(
-            icon: const Icon(Icons.translate),
-            label: Text(l.translateSteps),
-            onPressed: agent == null ? null : () => _translate(agent, l),
-          ),
-          if (agent == null) Text(l.translateNeedsAi, style: muted),
-        ] else
-          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
-            Text(l.machineTranslatedSteps, style: muted),
-            TextButton(
-              onPressed: () => setState(() => _original = !_original),
-              child: Text(_original ? l.showTranslation : l.showOriginal),
-            ),
-          ]),
-    ]);
-  }
-}
-
-class RecipeView extends StatefulWidget {
-  const RecipeView({super.key, required this.card, required this.tools, required this.onAte});
-  final RecipeCard card;
-  final AgentTools tools;
-  final VoidCallback onAte;
-
-  @override
-  State<RecipeView> createState() => _RecipeViewState();
-}
-
-class _RecipeViewState extends State<RecipeView> {
-  late int? _stars = widget.tools.rating(widget.card.id);
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final text = Theme.of(context).textTheme;
-    final c = widget.card;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [context.colors.primaryDark, context.colors.primaryLight]),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(c.title, style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 6, children: [
-              if (c.minutes != null) _Chip(icon: Icons.schedule, label: '${c.minutes} min', onDark: true),
-              _Chip(icon: Icons.people_outline, label: l.servingsCount(c.servings), onDark: true),
-            ]),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (final w in c.cautions)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(children: [
-                  Icon(Icons.warning_amber_rounded, size: 20, color: Theme.of(context).colorScheme.error),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      w.allergen != null
-                          ? l.cautionAllergy(w.food, w.allergen!)
-                          : l.cautionCondition(w.food, conditionLabel(w.condition!, l)),
-                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ]),
-              ),
-            _Stars(stars: _stars, onRate: (n) {
-              widget.tools.rate(c.id, n);
-              setState(() => _stars = n);
-            }),
-            const SizedBox(height: 10),
-            _Section(l.perServing),
-            NutrientTiles(values: c.perServing),
-            if (microLabels(l).entries.where((e) => c.perServing[e.key] != null).toList() case final micros
-                when micros.isNotEmpty)
-              TierBuilder( // micronutrients are Basic
-                builder: (context, tier) => !tier.includes(Tier.basic)
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                            micros.map((e) => '${e.value.$1} ${formatMicro(c.perServing[e.key]!, e.value.$2)}').join(' · '),
-                            style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
-                      ),
-              ),
-            const SizedBox(height: 14),
-            _Section(l.ingredients),
-            for (final i in c.ingredients)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(children: [
-                  Icon(Icons.check_circle, size: 18, color: context.colors.primaryLight),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(i.name)),
-                  Text('${i.grams.round()} g', style: TextStyle(color: context.colors.textSecondary)),
-                ]),
-              ),
-            if (c.translatedNames)
-              Text(l.machineTranslated, style: TextStyle(fontSize: 12, color: context.colors.textSecondary)),
-            const SizedBox(height: 14),
-            _Section(l.steps),
-            _Steps(recipeId: c.id, instructions: c.instructions, tools: widget.tools),
-            const SizedBox(height: 12),
-            Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
-              // The shopping list belongs to the meal plan (Basic).
-              TierBuilder(
-                builder: (context, tier) => !tier.includes(Tier.basic)
-                    ? const SizedBox.shrink()
-                    : OutlinedButton.icon(
-                        icon: const Icon(Icons.shopping_cart_outlined),
-                        label: Text(l.addToShopping),
-                        onPressed: () {
-                          addRecipeToShopping(widget.tools, c.id);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.addedToShopping)));
-                        },
-                      ),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.restaurant),
-                label: Text(l.iAteThis),
-                onPressed: widget.onAte,
-              ),
-            ]),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
-
-class _Stars extends StatelessWidget {
-  const _Stars({required this.stars, required this.onRate});
-  final int? stars;
-  final ValueChanged<int> onRate;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    // Wrap: at 200% text the label and five stars don't fit one line.
-    return Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
-      Text(l.yourRating, style: TextStyle(color: context.colors.textSecondary)),
-      for (var n = 1; n <= 5; n++)
-        IconButton(
-          tooltip: l.rateStars(n),
-          visualDensity: VisualDensity.compact,
-          icon: Icon(n <= (stars ?? 0) ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber.shade700),
-          onPressed: () => onRate(n),
-        ),
-    ]);
-  }
-}
-
-/// A recipe opened again from Today (a meal logged from it, or "Recipes you ate").
-class RecipeScreen extends StatelessWidget {
-  const RecipeScreen({super.key, required this.tools, required this.recipeId, required this.onLogged});
-  final AgentTools tools;
-  final int recipeId;
-  final VoidCallback onLogged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final card = tools.showRecipeById(recipeId).card! as RecipeCard;
-    return Scaffold(
-      appBar: AppBar(title: Text(card.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
-      body: ListView(padding: const EdgeInsets.all(12), children: [
-        RecipeView(
-          card: card,
-          tools: tools,
-          // The button is the confirmation here, as on the Log tab.
-          onAte: () {
-            (tools.logRecipe(recipeId).card! as ConfirmCard).apply();
-            onLogged();
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(1))));
-          },
-        ),
-      ]),
-    );
-  }
-}
-
-/// A card with a tinted header strip: icon + title in the card's accent colour.
+/// A white card with an icon and title in the card's accent colour.
 class _Framed extends StatelessWidget {
-  const _Framed({required this.icon, required this.title, required this.child, this.color});
+  const _Framed({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.color,
+  });
   final IconData icon;
   final String title;
   final Widget child;
@@ -742,63 +582,245 @@ class _Framed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = this.color ?? context.colors.primary;
-    return Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: double.infinity,
-            color: color.withValues(alpha: .12),
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-            child: Row(children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: context.colors.textPrimary, fontWeight: FontWeight.w600)),
-              ),
-            ]),
-          ),
-          Padding(padding: const EdgeInsets.fromLTRB(14, 10, 14, 12), child: child),
-        ]),
-      );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Panel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
+      ),
+    );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section(this.label);
-  final String label;
+/// A recipe idea in the side-scrolling row: title, kcal and protein pills, minutes.
+class _IdeaCard extends StatelessWidget {
+  const _IdeaCard({required this.recipe, required this.onTap});
+  final RecipeSummary recipe;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: context.colors.textSecondary, letterSpacing: .8, fontWeight: FontWeight.w700)),
-      );
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    return SizedBox(
+      width: 236,
+      child: Panel(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              recipe.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                Tag('${recipe.kcal.round()} ${l.kcal}', tone: TagTone.water),
+                Tag(
+                  l.gramsProtein(recipe.protein.round()),
+                  tone: TagTone.danger,
+                ),
+              ],
+            ),
+            const Spacer(),
+            if (recipe.minutes != null)
+              Text(
+                l.minutesShort(recipe.minutes!),
+                style: TextStyle(color: c.muted),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.icon, required this.label, this.color, this.onDark = false});
-  final IconData icon;
-  final String label;
-  final Color? color;
-  final bool onDark;
+/// A recipe the assistant showed: its numbers and the way into the full recipe.
+class _RecipeTeaser extends StatelessWidget {
+  const _RecipeTeaser({required this.card, required this.agent});
+  final RecipeCard card;
+  final Agent agent;
 
   @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(top: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: onDark ? Colors.white.withValues(alpha: .2) : (color ?? context.colors.primary).withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(20),
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    void open() => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => RecipeScreen(
+          tools: agent.tools,
+          recipeId: card.id,
+          onLogged: () {},
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 14, color: onDark ? Colors.white : color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: onDark ? Colors.white : context.colors.textPrimary)),
-        ]),
-      );
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Panel(
+        padding: EdgeInsets.zero,
+        onTap: open,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RecipeArt(title: card.title, height: 96),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      Tag(
+                        '${card.perServing['kcal']!.round()} ${l.kcal}',
+                        tone: TagTone.water,
+                      ),
+                      Tag(
+                        l.gramsProtein(card.perServing['protein_g']!.round()),
+                        tone: TagTone.danger,
+                      ),
+                      if (card.minutes != null)
+                        Tag(
+                          l.minutesShort(card.minutes!),
+                          tone: TagTone.neutral,
+                        ),
+                    ],
+                  ),
+                  for (final w in card.cautions)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        w.allergen != null
+                            ? l.cautionAllergy(w.food, w.allergen!)
+                            : l.cautionCondition(
+                                w.food,
+                                conditionLabel(w.condition!, l),
+                              ),
+                        style: TextStyle(
+                          color: c.danger,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => agent.ateRecipe(card.id),
+                        child: Text(l.iAteThis),
+                      ),
+                      FilledButton(onPressed: open, child: Text(l.openRecipe)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "I had 2 eggs and toast": the meal to log, every amount editable, the total, Discard or Save.
+class _MealConfirm extends StatelessWidget {
+  const _MealConfirm({required this.card, required this.agent});
+  final ConfirmCard card;
+  final Agent agent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final total = card.items.fold(0.0, (s, i) => s + i.values['kcal']!);
+    final estimated = card.items.any((i) => i.estimated);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Panel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (card.mealType != null) ...[
+              ChoicePills<String>(
+                values: const ['breakfast', 'lunch', 'dinner', 'snack'],
+                selected: card.mealType,
+                label: (t) => mealName(l, t),
+                scroll: true,
+                onChanged: (t) => agent.setMealType(card, t),
+              ),
+              const SizedBox(height: 8),
+            ],
+            // Chat guesses amounts: each one is editable before Save (0 = leave it out).
+            for (final i in card.items)
+              _MealItemRow(item: i, onGrams: (g) => agent.setGrams(card, i, g)),
+            for (final line in card.lines.skip(card.items.length)) Text(line),
+            const SizedBox(height: 6),
+            Divider(color: c.divider, thickness: 2),
+            const SizedBox(height: 10),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Text(
+                  '${estimated ? '≈ ' : ''}${total.round()} ${l.kcal}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => agent.decide(card, false),
+                      child: Text(l.confirmDiscard),
+                    ),
+                    FilledButton(
+                      onPressed: () => agent.decide(card, true),
+                      child: Text(l.confirmSave),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// One-tap messages above the input: the food logged most ("I ate…" goes straight to a
@@ -820,17 +842,25 @@ class _Suggestions extends StatelessWidget {
     };
     final texts = [
       // Before the comma: "Bananas, raw" would split into two foods.
-      if (usual != null) l.suggestAte('${usual.servingG!.round()} g ${usual.label.split(',').first}'),
+      if (usual != null)
+        l.suggestAte(
+          '${usual.servingG!.round()} g ${usual.label.split(',').first}',
+        ),
       l.suggestIdea(inSentence(context, meal)),
       l.suggestLeft,
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      child: Row(children: [
-        for (final t in texts)
-          Padding(padding: const EdgeInsets.only(right: 8), child: ActionChip(label: Text(t), onPressed: () => onTap(t))),
-      ]),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+      child: Row(
+        children: [
+          for (final t in texts)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Pill(label: t, onTap: () => onTap(t)),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -844,48 +874,43 @@ class _MealItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(children: [
-        Expanded(child: Text(item.label)),
-        SizedBox(
-          width: 84,
-          child: TextFormField(
-            initialValue: '${item.grams.round()}',
-            decoration: InputDecoration(isDense: true, suffixText: 'g', labelText: l.grams),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (t) => onGrams(double.tryParse(t.replaceAll(',', '.')) ?? 0),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(item.label, style: const TextStyle(fontSize: 16)),
           ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 72,
-          child: Text('${item.estimated ? '≈' : ''}${item.values['kcal']!.round()} ${l.kcal}', textAlign: TextAlign.end),
-        ),
-      ]),
-    );
-  }
-}
-
-/// Breakfast · Lunch · Dinner · Snack on a meal card, before Save.
-class _MealTypePicker extends StatelessWidget {
-  const _MealTypePicker({required this.card, required this.agent});
-  final ConfirmCard card;
-  final Agent agent;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return SegmentedButton<String>(
-      showSelectedIcon: false,
-      segments: [
-        ButtonSegment(value: 'breakfast', label: Text(l.mealBreakfast)),
-        ButtonSegment(value: 'lunch', label: Text(l.mealLunch)),
-        ButtonSegment(value: 'dinner', label: Text(l.mealDinner)),
-        ButtonSegment(value: 'snack', label: Text(l.mealSnack)),
-      ],
-      selected: {card.mealType!},
-      onSelectionChanged: (s) => agent.setMealType(card, s.single),
+          SizedBox(
+            width: 76,
+            child: TextFormField(
+              initialValue: '${item.grams.round()}',
+              textAlign: TextAlign.end,
+              decoration: InputDecoration(
+                isDense: true,
+                suffixText: 'g',
+                contentPadding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+                hintText: l.grams,
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onChanged: (t) =>
+                  onGrams(double.tryParse(t.replaceAll(',', '.')) ?? 0),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 76,
+            child: Text(
+              '${item.estimated ? '≈' : ''}${item.values['kcal']!.round()} ${l.kcal}',
+              textAlign: TextAlign.end,
+              style: TextStyle(fontSize: 15, color: c.muted),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

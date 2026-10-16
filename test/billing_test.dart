@@ -123,28 +123,25 @@ void main() {
       await tester.scrollUntilVisible(find.text('See plans'), 300);
       expect(find.text('More with Basic'), findsOneWidget);
       expect(find.text('Weight'), findsOneWidget, reason: 'the weight trend is free');
-      expect(find.textContaining('-day logging streak'), findsNothing);
+      expect(find.textContaining('-day streak'), findsNothing);
       await tester.ensureVisible(find.text('See plans'));
       await settle(tester);
       await tester.tap(find.text('See plans'));
       await settle(tester);
 
       expect(find.text('Developer mode: no real payment. Pick any plan to try it.'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('7 days free, then €69.99 / year'), 300);
+      // Pro (the trial) is picked first; its terms sit next to the button.
       expect(find.text('7 days free, then €69.99 / year'), findsOneWidget, reason: 'trial terms next to the price');
-      await tester.scrollUntilVisible(find.text('Monthly'), -300);
-      await tester.ensureVisible(find.text('Monthly'));
-      await settle(tester);
       await tester.tap(find.text('Monthly'));
       await settle(tester);
-      await tester.scrollUntilVisible(find.text('€3.99 / month'), -300);
-      expect(find.text('€3.99 / month'), findsOneWidget);
-      await tester.tap(find.text('Subscribe').first); // Basic monthly
+      expect(find.text('€3.99 / month'), findsWidgets);
+      await tester.tap(find.text('€3.99 / month').first); // pick Basic monthly
+      await settle(tester);
+      await tester.tap(find.text('Subscribe'));
       await settle(tester);
 
-      await tester.scrollUntilVisible(find.textContaining('logging streak'), 300);
-      expect(find.textContaining('logging streak'), findsOneWidget);
-      expect(tester.widget<Text>(find.textContaining('logging streak')).data, '4-day logging streak');
+      await tester.scrollUntilVisible(find.text('4-day streak'), -300, scrollable: find.byType(Scrollable).last);
+      expect(find.text('4-day streak'), findsOneWidget, reason: 'the weekly review shows the streak now');
       await tester.scrollUntilVisible(find.text('Weight'), 300);
       expect(find.text('Log your weight at least twice to see the trend.'), findsNothing);
     });
@@ -185,26 +182,30 @@ void main() {
       await settle(tester);
       await tester.tap(find.text('Year'));
       await settle(tester);
-      expect(find.text('Calories per day, monthly average'), findsOneWidget);
+      expect(find.text('days logged'), findsOneWidget);
+      expect(find.text('8'), findsWidgets);
       final seen = <String>{};
       for (var i = 0; i < 12; i++) {
         expect(tester.takeException(), isNull, reason: 'Year, scroll step $i');
-        for (final t in ['Logging calendar', '8 days logged · best streak 4 days', 'Eaten most']) {
+        for (final t in ['Logging calendar', 'best streak', 'Eaten most', 'Calories per day, monthly average']) {
           if (find.text(t).evaluate().isNotEmpty) seen.add(t);
         }
         await tester.drag(find.byType(Scrollable).last, const Offset(0, -400), warnIfMissed: false);
         await tester.pump();
       }
-      expect(seen, {'Logging calendar', '8 days logged · best streak 4 days', 'Eaten most'});
+      expect(seen, {'Logging calendar', 'best streak', 'Eaten most', 'Calories per day, monthly average'});
     });
 
     testWidgets('History: meals per day within the Free window; recipes-only filter; plan is locked', (tester) async {
       phone(tester);
       await tester.pumpWidget(app());
       await settle(tester);
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.tap(find.text('Me'));
       await settle(tester);
-      await tester.tap(find.text('History'));
+      await tester.scrollUntilVisible(find.text('History and Year view'), 200);
+      await tester.ensureVisible(find.text('History and Year view'));
+      await settle(tester);
+      await tester.tap(find.text('History and Year view'));
       await settle(tester);
       expect(find.text('Last 7 days'), findsOneWidget);
       expect(find.text('Last 30 days'), findsOneWidget);
@@ -218,9 +219,7 @@ void main() {
 
       await tester.pageBack();
       await settle(tester);
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
-      await settle(tester);
-      await tester.tap(find.text('Meal plan'));
+      await tester.tap(find.text('Plan')); // the tab
       await settle(tester);
       expect(find.text('The meal plan is in Basic'), findsOneWidget);
     });

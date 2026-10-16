@@ -1037,5 +1037,482 @@
   "showTranslation": "Show translation",
   "translateBusy": "The assistant is busy. Try again in a moment.",
   "translateFailed": "Couldn't translate the steps. Please try again.",
-  "translateNeedsAi": "Translating needs the AI model (see the Chat tab)."
+  "translateNeedsAi": "Translating needs the AI model (see the Chat tab).",
+  "tabPlan": "Plan",
+  "trendWeight": "Trend weight",
+  "weightChangeIn": "{change} in {days} days",
+  "@weightChangeIn": {
+    "placeholders": {
+      "change": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "rangeMonths": "{n}M",
+  "@rangeMonths": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rangeYear": "1Y",
+  "legendScale": "Scale",
+  "legendTrend": "Trend",
+  "perWeek": "{unit} per week",
+  "@perWeek": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "latestScale": "Latest on the scale",
+  "weightTrendNote": "The trend smooths out daily water swings, so one heavy morning is not mistaken for a real change.",
+  "weightChartLabel": "Weight, {n} readings, trend from {from} to {to}",
+  "@weightChartLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "addShort": "+ Add",
+  "calories": "Calories",
+  "cook": "Cook",
+  "eatenWord": "Eaten",
+  "leftWord": "Left",
+  "kcalLeftShort": "kcal left",
+  "kcalOverShort": "kcal over",
+  "fastNotRunning": "Not fasting",
+  "fromYourPlan": "from your plan",
+  "glassAdded": "Glass of water added",
+  "undo": "Undo",
+  "water": "Water",
+  "litreUnit": "L",
+  "showFewer": "Show fewer",
+  "showAllCount": "Show all {n} ›",
+  "@showAllCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "yourWeek": "Your week",
+  "yourMonth": "Your month",
+  "yourYear": "Your year",
+  "addToMeal": "Add to {meal}",
+  "@addToMeal": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "fastGoalHours": "{hours} h goal",
+  "@fastGoalHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "fitsLeft": "fits your {amount} left",
+  "@fitsLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursMinutes": "{h} h {m} min",
+  "@hoursMinutes": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} min",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "kindAll": "All",
+  "lessServing": "Half a serving less",
+  "moreServing": "Half a serving more",
+  "logFoodTitle": "Log food",
+  "quickAddBody": "Just calories and macros",
+  "snapPhoto": "Snap a photo",
+  "snapPhotoBody": "Names foods and estimates portions",
+  "servingsAmount": "{amount} × serving",
+  "@servingsAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "yesterdaysMeal": "Yesterday's {meal}",
+  "@yesterdaysMeal": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantTitle": "Assistant",
+  "openRecipe": "Open recipe",
+  "runsOnPhone": "Runs on this phone · nothing leaves it",
+  "gramsProtein": "{n} g protein",
+  "@gramsProtein": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "messagesLeft": "{n} of {total} left today",
+  "@messagesLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToPlan": "Added to your plan",
+  "addToPlan": "Add to plan",
+  "addToShoppingShort": "+ Add to shopping",
+  "aisleProduce": "Fruit and vegetables",
+  "aisleMeatFish": "Meat and fish",
+  "aisleDairyEggs": "Dairy and eggs",
+  "aisleBakery": "Bakery",
+  "aislePantry": "Pantry",
+  "aisleSpices": "Spices",
+  "aisleFrozen": "Frozen",
+  "aisleDrinks": "Drinks",
+  "aisleOther": "Other",
+  "back": "Back",
+  "badgeMorning": "AM",
+  "badgeNoon": "NOON",
+  "badgeEvening": "PM",
+  "boxEmpty": "Nothing here yet. Save a recipe with its bookmark, or search above.",
+  "boxFootnote": "Recipes with your allergens never appear here. Ideas follow your stars.",
+  "close": "Close",
+  "doneCooking": "Done",
+  "fewerServings": "Fewer servings",
+  "moreServings": "More servings",
+  "findRecipes": "Find recipes",
+  "forThisStep": "For this step",
+  "fridgeHint": "e.g. eggs, spinach, feta",
+  "logServing": "Log a serving",
+  "nextStep": "Next step",
+  "noSteps": "This recipe has no steps.",
+  "recipesTitle": "Recipes",
+  "removeSaved": "Remove from saved",
+  "savedLabel": "Saved",
+  "searchRecipes": "Search 166,000 recipes…",
+  "servingsLabel": "Servings",
+  "servingsHint": "Amounts and nutrition update",
+  "shelfCooked": "Cooked",
+  "shelfLoved": "4★ and up",
+  "shelfQuick": "≤ 30 min",
+  "startCooking": "Start cooking",
+  "thisWeek": "This week",
+  "timerDone": "Time's up",
+  "whatCanICook": "What can I cook?",
+  "whatCanICookBody": "Say or snap what's in your fridge",
+  "allergensLeftOut": "{list} are left out: they're on your allergy list.",
+  "@allergensLeftOut": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "clearTickedN": "Clear ticked ({n})",
+  "@clearTickedN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cookedTimes": "cooked {n}×",
+  "@cookedTimes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cookSubtitle": "Screen stays on · {servings} servings",
+  "@cookSubtitle": {
+    "placeholders": {
+      "servings": {
+        "type": "int"
+      }
+    }
+  },
+  "forRecipe": "For: {title}",
+  "@forRecipe": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "ideasFor": "Ideas for: {list}",
+  "@ideasFor": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "itemsLeft": "{n} of {total} left",
+  "@itemsLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedFor": "Planned for {day}",
+  "@plannedFor": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "planOfKcal": "{n} of {total} kcal",
+  "@planOfKcal": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "roomForSnack": "Room for a {kcal} kcal snack.",
+  "@roomForSnack": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "shelfSaved": "Saved · {n}",
+  "@shelfSaved": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "shoppingTabCount": "Shopping · {n}",
+  "@shoppingTabCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "startTimer": "Start {time} timer",
+  "@startTimer": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "stepOf": "Step {step} of {steps}",
+  "@stepOf": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "steps": {
+        "type": "int"
+      }
+    }
+  },
+  "timerRunning": "{time} · tap to stop",
+  "@timerRunning": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "youRated": "you rated {stars}",
+  "@youRated": {
+    "placeholders": {
+      "stars": {
+        "type": "int"
+      }
+    }
+  },
+  "changePin": "Change PIN",
+  "currentPin": "Current PIN",
+  "pinChanged": "PIN changed",
+  "dailyTargets": "Daily targets",
+  "tapToOverride": "Tap to override",
+  "googleAccount": "Google account",
+  "googleNotLinked": "Not linked: PIN and fingerprint only",
+  "googleLinked": "{email} · name only",
+  "@googleLinked": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "historyAndYear": "History and Year view",
+  "limitShort": "max",
+  "link": "Link",
+  "unlink": "Unlink",
+  "lookAndLanguage": "Look and language",
+  "onDeviceAiAndData": "On-device AI and data",
+  "savedRecipesTitle": "Saved recipes",
+  "bornIn": "born {year}",
+  "@bornIn": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "planChip": "{tier} plan · See plans",
+  "@planChip": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "addAllergyTitle": "Add an allergy or diet",
+  "addAllergyHint": "e.g. peanuts, gluten, vegetarian",
+  "allergyUnknown": "\"{text}\" isn't an allergen or diet the app can filter. Try peanuts, tree nuts, milk, egg, gluten, shellfish, fish, soy, sesame, vegetarian, vegan or pescatarian.",
+  "@allergyUnknown": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "continueButton": "Continue",
+  "dataLocked": "Your data is locked on this phone.",
+  "firstRunNext": "Next: a PIN or fingerprint, then your goals.",
+  "googleOnlyName": "Google only fills in your name.",
+  "lockItTitle": "Lock it to you",
+  "nameExample": "e.g. Sam",
+  "recordsNotInterprets": "The app records what you enter and never interprets it. General information from published guidelines, not medical advice.",
+  "recordTitle": "Record",
+  "reportHintShort": "PDF and CSV of what you logged",
+  "startTrial": "Start 7-day free trial",
+  "touchSensor": "Touch the sensor to unlock",
+  "trialBadge": "7 DAYS FREE",
+  "usePin": "Use PIN",
+  "welcomeHeadline": "Eat well, privately",
+  "welcomeIntro": "An AI nutrition assistant that runs on this phone. No cloud AI, no analytics.",
+  "welcomePointPrivate": "Your meals and chats never leave the phone",
+  "welcomePointData": "55,000 foods and 166,000 recipes built in",
+  "welcomePointAllergens": "Allergens filtered out of every recipe",
+  "yourName": "Your name",
+  "currentTier": "Current: {tier}",
+  "@currentTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "severityN": "severity {n}",
+  "@severityN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeBack": "Welcome back, {name}",
+  "@welcomeBack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bestStreak": "best streak",
+  "daysLogged": "days logged",
+  "avgValue": "avg {value}",
+  "@avgValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dayLine": "{amount} kcal · {n} meals",
+  "@dayLine": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "sinceMonth": "since {month}",
+  "@sinceMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "streakShort": "{n}-day streak",
+  "@streakShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "estimatedTotal": "Estimated total",
+  "logThisMeal": "Log this {meal}",
+  "@logThisMeal": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  }
 }
