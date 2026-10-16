@@ -48,6 +48,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Caches the Gradle wrapper, dependencies and build cache (org.gradle.caching): ~1.5 min of
+      # downloads per run otherwise. Not the NDK: Gradle fetches it in ~15 s, a cache restore is no faster.
+      - if: steps.version.outputs.exists != 'true'
+        uses: gradle/actions/setup-gradle@v6
+
       - if: steps.version.outputs.exists != 'true'
         uses: subosito/flutter-action@v2
         with:
