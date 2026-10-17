@@ -42,7 +42,7 @@ class YearView extends StatelessWidget {
         String kg(double v) => (imperial ? kgToLb(v) : v).toStringAsFixed(1);
 
         final change = weights.length < 2 ? null : weights.last.kg - weights.first.kg;
-        return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
+        return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: [
           IntrinsicHeight(
             child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Expanded(child: StatTile(value: '${loggedDays.length}', label: l.daysLogged)),

@@ -83,7 +83,6 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               ScreenHeader(
                 title: l.assistantTitle,
-                size: 28,
                 trailing: RoundIconButton(
                   icon: Icons.lightbulb_outline,
                   tooltip: l.aiKnowsTitle,
@@ -95,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Row(
                   children: [
                     Icon(Icons.lock_outline, size: 16, color: c.primary),
@@ -448,7 +447,7 @@ class _CardView extends StatelessWidget {
       InfoCard(:final passages) => _Framed(
         icon: Icons.info_outline,
         title: l.healthInfo,
-        color: nutrientColors['kcal']!,
+        color: context.nutrientColor('kcal'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

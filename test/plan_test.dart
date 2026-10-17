@@ -43,6 +43,15 @@ void main() {
     expect(after.map((p) => p.recipeId).toSet().length, after.length);
   });
 
+  test('meal ideas: different recipes tagged for the meal, rated-out ones never', () {
+    tools.rate(4, 1); // overnight oats: never again
+    final dinners = mealIdeas(tools, 'dinner', 700, random: Random(1));
+    expect(dinners, hasLength(2));
+    expect(dinners.map((r) => r.id).toSet(), hasLength(2));
+    expect(mealIdeas(tools, 'breakfast', 500, random: Random(1)).map((r) => r.title), ['Shakshuka']);
+    expect(mealShare('snack'), isNull);
+  });
+
   test('shopping list: plan per serving, whole recipe adds up, ticks and typed items stay', () {
     tools.rate(4, 1); // so breakfast is Shakshuka
     planWeek(tools, day, days: 1, random: Random(1));

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,7 +71,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final header = ScreenHeader(
       overline: overline,
       title: title,
-      size: _days == 1 ? 28 : 34,
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
         if (_days == 365) const Tag('PRO', tone: TagTone.gold, big: true),
         if (_days == 1 && streak > 0)
@@ -88,7 +88,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       ]),
     );
     final tabs = Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: PillTabs<int>(
         values: const [1, 7, 30, 365],
         selected: _days,
@@ -107,7 +107,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     ? PeriodView(data: data, days: _days, basic: tier.includes(Tier.basic))
                     : tier.includes(Tier.pro)
                         ? YearView(data: data)
-                        : ListView(padding: const EdgeInsets.all(20), children: [
+                        : ListView(padding: const EdgeInsets.all(16), children: [
                             LockedCard(icon: Icons.calendar_month, title: l.yearLockedTitle, body: l.yearLockedBody),
                           ]),
               ),
@@ -131,6 +131,7 @@ class _DayView extends ConsumerWidget {
       valueListenable: data.changes,
       builder: (context, _, _) {
         final l = AppLocalizations.of(context)!;
+        final c = context.colors;
         final now = DateTime.now();
         final t = currentTargets(data.user, nutri: data.nutri, now: now);
         final targets = t.values;
@@ -160,7 +161,8 @@ class _DayView extends ConsumerWidget {
           AsyncError(error: LlmNotDownloaded()) => false,
           _ => true,
         };
-        return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
+        final logged = {for (final m in meals) m.type ?? 'snack'}.length;
+        return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: [
           if (firstDay) ...[
             // Only the ways that work now: Chat once the AI is downloaded, photos with Pro.
             TierBuilder(
@@ -195,81 +197,79 @@ class _DayView extends ConsumerWidget {
               burned: healthSyncOn(data.user) ? activeKcalOn(data.user, now) : null,
             ),
           if (otherBars.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Panel(
-              child: Column(children: [
-                for (final key in otherBars)
-                  NutrientBar(nutrient: key, eaten: eaten[key]!, goal: targets[key]!, limited: t.limited.containsKey(key)),
-              ]),
-            ),
+            const SizedBox(height: 10),
+            _TileRow(per: 3, children: [
+              for (final key in otherBars)
+                _NutrientTile(nutrient: key, eaten: eaten[key]!, goal: targets[key]!, limited: t.limited.containsKey(key)),
+            ]),
           ],
-          const SizedBox(height: 16),
+          SectionTitle(l.mealsTitle,
+              padding: const EdgeInsets.fromLTRB(2, 20, 2, 10),
+              trailing: Text(l.mealsLogged(logged), textAlign: TextAlign.end, style: AppText.caption.copyWith(color: c.muted))),
           for (final type in ['breakfast', 'lunch', 'dinner', 'snack']) ...[
             _MealCard(
               type: type,
               meals: [for (final m in meals) if ((m.type ?? 'snack') == type) m],
               planned: planned[type],
               left: left,
+              goal: targets['kcal'],
               data: data,
               onOpen: open,
               onEdit: edit,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
           ],
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(data: data)))
-                  .then((_) => data.changed()),
-              child: Text('${l.historyTitle} ›'),
-            ),
-          ),
-          const SizedBox(height: 6),
-          // The small daily numbers in one block: water, fasting, steps, weight.
+          const SizedBox(height: 8),
+          // The small daily numbers: water, steps, fasting side by side, weight across.
           _TileRow(children: [
             _WaterTile(data: data),
-            if (fasting) _FastTile(data: data),
             if (healthSyncOn(data.user)) _StepsTile(data: data),
-            WeightTile(data: data),
+            if (fasting) _FastTile(data: data),
           ]),
-          if (meals.isNotEmpty)
-            TierBuilder(
-                builder: (_, tier) => tier.includes(Tier.basic)
-                    ? Padding(padding: const EdgeInsets.only(top: 12), child: _MicrosRow(data: data))
-                    : const SizedBox.shrink()),
-          if (recipes.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _RecipesYouAte(recipes: recipes, onOpen: open),
-          ],
+          const SizedBox(height: 10),
+          WeightTile(data: data),
+          const SizedBox(height: 10),
+          TierBuilder(
+              builder: (_, tier) => tier.includes(Tier.basic) ? _MicrosCard(data: data) : const _MicrosLocked()),
+          if (recipes.isNotEmpty)
+            _RecipesYouAte(
+              recipes: recipes,
+              onOpen: open,
+              onHistory: () => Navigator.of(context)
+                  .push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(data: data)))
+                  .then((_) => data.changed()),
+            ),
         ]);
       },
     );
   }
 }
 
-/// Two small cards side by side (water, fasting, steps); one alone fills the row.
+/// Small cards side by side, [per] to a row (water and steps; fiber, sugar, sodium); one alone fills the row.
 class _TileRow extends StatelessWidget {
-  const _TileRow({required this.children});
+  const _TileRow({required this.children, this.per = 2});
   final List<Widget> children;
+  final int per;
 
   @override
   Widget build(BuildContext context) {
-    // 200 % text: the tiles stack instead of squeezing.
-    final stacked = MediaQuery.textScalerOf(context).scale(10) > 15;
-    if (children.length == 1 || stacked) {
+    // Large text: the tiles stack instead of squeezing.
+    final scale = MediaQuery.textScalerOf(context).scale(10);
+    final per = scale > 15 ? 1 : scale > 12 ? math.min(2, this.per) : this.per;
+    if (children.length == 1 || per == 1) {
       return Column(children: [
         for (final (i, w) in children.indexed) ...[if (i > 0) const SizedBox(height: 10), w],
       ]);
     }
     return Column(children: [
-      for (var i = 0; i < children.length; i += 2) ...[
+      for (var i = 0; i < children.length; i += per) ...[
         if (i > 0) const SizedBox(height: 10),
         IntrinsicHeight(
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(child: children[i]),
-            const SizedBox(width: 10),
-            Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox.shrink()),
+            for (var j = i; j < i + per; j++) ...[
+              if (j > i) SizedBox(width: per > 2 ? 8 : 10),
+              Expanded(child: j < children.length ? children[j] : const SizedBox.shrink()),
+            ],
           ]),
         ),
       ],
@@ -277,11 +277,8 @@ class _TileRow extends StatelessWidget {
   }
 }
 
-/// On the green hero: over the goal (not the gold of Pro), and the burnt ring (blue, apart from white in lightness too).
-const _overColor = Color(0xFFFFA28A);
-const _burntColor = Color(0xFF8FD3FF);
-
-/// The green hero: a ring of calories left, the macro bars, and Goal − Eaten = Left.
+/// Calories left in a ring split by macro (protein, carbs, fat as shares of what was eaten), the macro bars,
+/// and Goal · Eaten · Burnt · Left.
 class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.eaten, required this.targets, required this.limited, this.estimated = false, this.burned});
   final Map<String, double> eaten;
@@ -303,50 +300,57 @@ class _HeroCard extends StatelessWidget {
     final over = left < 0;
     final approx = estimated ? '≈ ' : '';
     final burned = this.burned;
-    const white = Colors.white;
-    final soft = white.withValues(alpha: .18);
+    final water = context.nutrientColor('water');
     final ring = SizedBox.square(
-      dimension: 128,
+      dimension: 140,
       child: Stack(alignment: Alignment.center, children: [
-        SizedBox.expand(
-          child: CircularProgressIndicator(
-            value: (ate / goal).clamp(0, 1),
-            strokeWidth: 12,
-            strokeCap: StrokeCap.round,
-            color: over ? _overColor : white,
-            backgroundColor: soft,
-            // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
-            semanticsLabel: '${l.kcal}: ${ate.round()} ${l.eatenOfGoal(goal.round())}',
+        Semantics(
+          // TalkBack: words in the label, the share as the value.
+          label: '${l.kcal}: ${ate.round()} ${l.eatenOfGoal(goal.round())}',
+          value: '${(ate / goal * 100).clamp(0, 999).round()}%',
+          child: SizedBox.expand(
+            child: CustomPaint(
+              painter: _MacroRing(
+                share: (ate / goal).clamp(0, 1),
+                parts: over
+                    ? [(1, c.danger)]
+                    : [
+                        for (final (k, perG) in [('protein_g', 4.0), ('carbs_g', 4.0), ('fat_g', 9.0)])
+                          (eaten[k]! * perG, context.nutrientColor(k)),
+                      ],
+                fallback: context.nutrientColor('kcal'),
+                track: c.track,
+              ),
+            ),
           ),
         ),
         // Inside, in its own colour: what the health app says was burnt, against a daily activity target.
         if (burned != null)
           SizedBox.square(
-            dimension: 98,
+            dimension: 104,
             child: CircularProgressIndicator(
               value: (burned / activeKcalTarget).clamp(0, 1),
-              strokeWidth: 7,
+              strokeWidth: 5,
               strokeCap: StrokeCap.round,
-              color: _burntColor,
-              backgroundColor: soft,
+              color: water,
+              backgroundColor: c.track,
               semanticsLabel: l.activeKcalBurned('${burned.round()}'),
             ),
           ),
         Padding(
-          padding: EdgeInsets.all(burned == null ? 16 : 24),
+          padding: EdgeInsets.all(burned == null ? 22 : 30),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-          FittedBox(
-            child: Text('$approx${_n(context, left.abs())}',
-                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.6, color: white,
-                    fontFeatures: [FontFeature.tabularFigures()])),
-          ),
-          FittedBox(
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (over) ...[const Icon(Icons.warning_amber_rounded, size: 14, color: _overColor), const SizedBox(width: 3)],
-              Text(over ? l.kcalOverShort : l.kcalLeftShort, style: TextStyle(fontSize: 12, color: white.withValues(alpha: .85))),
-            ]),
-          ),
-        ]),
+            FittedBox(
+              child: Text('$approx${_n(context, left.abs())}',
+                  style: AppText.display.copyWith(color: over ? c.danger : c.ink, fontFeatures: AppText.tabular)),
+            ),
+            FittedBox(
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (over) ...[Icon(Icons.warning_amber_rounded, size: 14, color: c.danger), const SizedBox(width: 3)],
+                Text(over ? l.kcalOverShort : l.kcalLeftShort, style: AppText.caption.copyWith(color: c.muted)),
+              ]),
+            ),
+          ]),
         ),
       ]),
     );
@@ -354,24 +358,23 @@ class _HeroCard extends StatelessWidget {
       for (final k in _heroMacros)
         if (targets[k] != null) _HeroBar(nutrient: k, eaten: eaten[k]!, goal: targets[k]!, limited: limited.contains(k)),
     ];
-    Widget sum(String value, String label) => Expanded(
+    Widget sum(String value, String label, Color color) => Expanded(
           child: Column(children: [
             FittedBox(
-              child: Text(value,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: white,
-                      fontFeatures: [FontFeature.tabularFigures()])),
+              child: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color,
+                  fontFeatures: AppText.tabular)),
             ),
-            Text(label, style: TextStyle(fontSize: 12, color: white.withValues(alpha: .85))),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.caption.copyWith(color: c.muted)),
           ]),
         );
     return Semantics(
       container: true,
       label: l.calories,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(gradient: heroGradient(c), borderRadius: BorderRadius.circular(24)),
+      child: Panel(
+        radius: Radii.hero,
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 14),
         child: Column(children: [
-          // Wrap, not Row: at large text sizes the bars move under the ring.
+          // At large text sizes (or narrow) the bars move under the ring.
           LayoutBuilder(
             builder: (context, box) => box.maxWidth < 300 || MediaQuery.textScalerOf(context).scale(10) > 15
                 ? Column(children: [ring, if (bars.isNotEmpty) ...[const SizedBox(height: 16), ...bars]])
@@ -382,34 +385,56 @@ class _HeroCard extends StatelessWidget {
                   ]),
           ),
           const SizedBox(height: 16),
-          Divider(color: soft, height: 1),
+          Divider(color: c.divider, height: 1),
           const SizedBox(height: 12),
           Row(children: [
-            sum(_n(context, goal), l.goal),
-            sum('− $approx${_n(context, ate)}', l.eatenWord),
-            sum('= $approx${over ? '−' : ''}${_n(context, left.abs())}', l.leftWord),
-            if (burned != null) ...[
-              Container(width: 1, height: 32, color: soft),
-              Expanded(
-                child: Column(children: [
-                  FittedBox(
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: _burntColor, shape: BoxShape.circle)),
-                      const SizedBox(width: 5),
-                      Text(_n(context, burned),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: white,
-                              fontFeatures: [FontFeature.tabularFigures()])),
-                    ]),
-                  ),
-                  Text(l.burntWord, style: TextStyle(fontSize: 12, color: white.withValues(alpha: .85))),
-                ]),
-              ),
-            ],
+            sum(_n(context, goal), l.goal, c.ink),
+            sum('−$approx${_n(context, ate)}', l.eatenWord, c.ink),
+            if (burned != null) sum('+${_n(context, burned)}', l.burntWord, water),
+            sum('$approx${over ? '−' : ''}${_n(context, left.abs())}', l.leftWord, over ? c.danger : c.primary),
           ]),
         ]),
       ),
     );
   }
+}
+
+/// The calories ring: [share] of the circle filled, split into [parts] by weight (each a macro's kcal),
+/// with a small gap between them; [fallback] when nothing has macros (a quick add of only kcal).
+class _MacroRing extends CustomPainter {
+  _MacroRing({required this.share, required this.parts, required this.fallback, required this.track});
+  final double share;
+  final List<(double, Color)> parts;
+  final Color fallback, track;
+
+  static const _stroke = 14.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(_stroke / 2);
+    final pen = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, 0, 2 * math.pi, false, pen..color = track);
+    if (share <= 0) return;
+    final total = parts.fold(0.0, (s, p) => s + p.$1);
+    final shown = total > 0 ? [for (final p in parts) if (p.$1 > 0) p] : [(1.0, fallback)];
+    final sum = total > 0 ? total : 1.0;
+    final sweep = 2 * math.pi * share;
+    // Round caps reach past the arc's ends: leave room for them (and a hairline gap) between parts.
+    final gap = shown.length > 1 ? (_stroke + 4) / (rect.width / 2) : 0.0;
+    var at = -math.pi / 2;
+    for (final (w, color) in shown) {
+      final part = sweep * w / sum;
+      canvas.drawArc(rect, at + gap / 2, math.max(part - gap, 0.001), false, pen..color = color);
+      at += part;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MacroRing old) =>
+      old.share != share || old.track != track || old.fallback != fallback || old.parts.toString() != parts.toString();
 }
 
 class _HeroBar extends StatelessWidget {
@@ -421,24 +446,29 @@ class _HeroBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final c = context.colors;
     final name = nutrientLabels(l)[nutrient]!.$1;
+    final color = context.nutrientColor(nutrient);
     final over = limited && eaten > goal;
-    const white = Colors.white;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Expanded(child: Text(name, style: const TextStyle(fontSize: 13, color: white))),
-          if (over) ...[Icon(Icons.warning_amber_rounded, size: 14, color: context.colors.gold), const SizedBox(width: 4)],
-          Text('${eaten.round()} / ${limited ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
-              style: const TextStyle(fontSize: 13, color: white, fontFeatures: [FontFeature.tabularFigures()])),
+          Expanded(child: Text(name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color))),
+          if (over) ...[Icon(Icons.warning_amber_rounded, size: 14, color: c.danger), const SizedBox(width: 4)],
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: '${eaten.round()}', style: TextStyle(fontWeight: FontWeight.w800, color: c.ink)),
+              TextSpan(text: ' / ${limited ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}'),
+            ]),
+            style: TextStyle(fontSize: 13, color: c.muted, fontFeatures: AppText.tabular),
+          ),
         ]),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         Bar(
           value: eaten / goal,
           height: 6,
-          color: heroMacroColors[nutrient],
-          track: white.withValues(alpha: .18),
+          color: over ? c.danger : color,
           label: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
         ),
       ]),
@@ -446,7 +476,65 @@ class _HeroBar extends StatelessWidget {
   }
 }
 
-/// A nutrient against its goal (or ceiling) on the plain cards: dot, name, values, bar.
+/// Fiber, sugar, sodium on Today: a small card each, the name in its colour ("Sugar · max" for a ceiling).
+class _NutrientTile extends StatelessWidget {
+  const _NutrientTile({required this.nutrient, required this.eaten, required this.goal, this.limited = false});
+  final String nutrient;
+  final double eaten, goal;
+  final bool limited;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final limit = limited || limitNutrients.contains(nutrient);
+    final over = limit && eaten > goal;
+    final color = context.nutrientColor(nutrient);
+    final name = nutrientLabels(l)[nutrient]!.$1;
+    final (n, unit) = formatNutrientParts(nutrient, goal, l);
+    return Panel(
+      radius: Radii.tile,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text(limit ? '$name · ${l.limitSuffix}' : name,
+            maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text.rich(
+            TextSpan(children: [
+              TextSpan(text: '${eaten.round()}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: c.ink)),
+              TextSpan(text: ' / $n $unit'),
+            ]),
+            style: TextStyle(fontSize: 12, color: c.muted, fontFeatures: AppText.tabular),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Bar(
+          value: eaten / goal,
+          height: 4,
+          color: over ? c.danger : color,
+          label: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
+        ),
+        // Never colour alone: the warning says it in words too.
+        if (over)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.warning_amber_rounded, size: 14, color: c.danger),
+              const SizedBox(width: 3),
+              Flexible(
+                  child: Text(l.overBy(formatNutrient(nutrient, eaten - goal, l)),
+                      style: AppText.caption.copyWith(color: c.danger))),
+            ]),
+          ),
+      ]),
+    );
+  }
+}
+
+/// A nutrient against its goal (or ceiling) on the period cards: dot, name, values, bar.
 class NutrientBar extends StatelessWidget {
   const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal, this.limited = false});
   final String nutrient;
@@ -460,7 +548,7 @@ class NutrientBar extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final limit = limited || limitNutrients.contains(nutrient);
     final over = limit && eaten > goal;
-    final color = nutrientColors[nutrient]!;
+    final color = context.nutrientColor(nutrient);
     final name = nutrientLabels(l)[nutrient]!.$1;
     final danger = context.colors.danger;
     return Padding(
@@ -469,7 +557,7 @@ class NutrientBar extends StatelessWidget {
         Row(children: [
           Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
           Flexible(
             child: Text(
               '${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
@@ -483,7 +571,6 @@ class NutrientBar extends StatelessWidget {
           value: eaten / goal,
           height: 6,
           color: over ? danger : color,
-          track: color.withValues(alpha: .15),
           label: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
         ),
         // Own line: next to the values it overflows narrow phones.
@@ -501,138 +588,220 @@ class NutrientBar extends StatelessWidget {
   }
 }
 
-/// One meal: its items with kcal, a + that opens Log on this meal, and today's planned recipe for it.
-/// An empty snack (or any empty meal without a plan) is a dashed "+ Add".
-class _MealCard extends ConsumerWidget {
+/// One meal in one row: its icon, what was eaten (or what's suggested), kcal and a + that opens Log on it.
+/// A logged meal opens to its items (tap one to fix it); an empty one gets "+ Add" in the meal's colour,
+/// or today's planned recipe for it.
+class _MealCard extends ConsumerStatefulWidget {
   const _MealCard({required this.type, required this.meals, required this.planned, required this.left,
-      required this.data, required this.onOpen, required this.onEdit});
+      required this.goal, required this.data, required this.onOpen, required this.onEdit});
   final String type;
   final List<MealEntry> meals;
   final Planned? planned;
-  final double? left;
+  final double? left, goal;
   final ProfileData data;
   final ValueChanged<int> onOpen;
   final ValueChanged<MealEntry> onEdit;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MealCard> createState() => _MealCardState();
+}
+
+class _MealCardState extends ConsumerState<_MealCard> {
+  var _open = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    final name = mealName(l, type);
-    void add() => ref.read(homeTabProvider.notifier).logMeal(type);
-    final plan = meals.isEmpty ? planned : null;
-    final (color, icon) = mealStyles[type]!;
-    final badge = ExcludeSemantics(
-      child: Container(
-        width: 32,
-        height: 32,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Icon(icon, size: 18, color: Colors.white),
-      ),
-    );
-    if (meals.isEmpty && plan == null) {
-      return DashedAdd(
-        onTap: add,
-        child: Row(children: [
-          badge,
-          Expanded(child: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
-          Flexible(child: Text(l.addShort, style: TextStyle(fontSize: 15, color: c.primary, fontWeight: FontWeight.w600))),
-        ]),
-      );
-    }
+    final w = widget;
+    final meals = w.meals;
+    final name = mealName(l, w.type);
+    final color = context.mealColor(w.type);
+    void add() => ref.read(homeTabProvider.notifier).logMeal(w.type);
+    final plan = meals.isEmpty ? w.planned : null;
     final kcal = meals.fold(0.0, (s, m) => s + m.kcal);
-    return Panel(
-      padding: EdgeInsets.zero,
-      color: tint(context, color),
-      border: false,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
-          child: Row(children: [
-            badge,
-            Expanded(child: Semantics(header: true, child: Text(name, style: Theme.of(context).textTheme.titleMedium))),
+    // Snacks get what the planned meals leave (10 %).
+    final suggested = w.goal == null ? null : w.goal! * (mealShare(w.type) ?? .10);
+    final subtitle = meals.isNotEmpty
+        ? meals.map((m) => m.label).join(', ')
+        : plan != null
+            ? '${plan.title} · ${l.fromYourPlan}'
+            : suggested == null
+                ? null
+                : l.suggestedAmount('${_n(context, suggested)} ${l.kcal}');
+    final trailing = meals.isNotEmpty
+        ? Row(mainAxisSize: MainAxisSize.min, children: [
             Flexible(
-              child: Text(plan != null ? l.fromYourPlan : '${_n(context, kcal)} ${l.kcal}',
-                  textAlign: TextAlign.end, style: TextStyle(fontSize: 14, color: plan != null ? c.muted : c.ink2)),
-            ),
-            IconButton(
-              tooltip: l.addToMeal(name),
-              icon: Icon(Icons.add_circle_outline, color: c.primary),
-              onPressed: add,
-            ),
-          ]),
-        ),
-        for (final (i, m) in meals.indexed) ...[
-          if (i > 0) Divider(color: c.divider),
-          InkWell(
-            // A recipe opens (to see and rate it); anything else edits. Long press always edits.
-            onTap: m.recipeId == null ? () => onEdit(m) : () => onOpen(m.recipeId!),
-            onLongPress: () => onEdit(m),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 52),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                child: Row(children: [
-                  if (m.recipeId != null) ...[
-                    Icon(Icons.menu_book_outlined, size: 18, color: c.primary),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(m.label, style: const TextStyle(fontSize: 15)),
-                      Text(
-                          [DateFormat.Hm().format(m.at), if (m.grams != null) '${m.estimated ? '≈ ' : ''}${m.grams!.round()} g']
-                              .join(' · '),
-                          style: TextStyle(fontSize: 12, color: c.muted)),
-                    ]),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('${m.estimated ? '≈' : ''}${_n(context, m.kcal)}',
-                      style: TextStyle(fontSize: 14, color: c.muted, fontFeatures: const [FontFeature.tabularFigures()])),
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                      text: '${meals.any((m) => m.estimated) ? '≈' : ''}${_n(context, kcal)}',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: c.ink)),
+                  TextSpan(text: ' ${l.kcal}', style: AppText.caption.copyWith(color: c.muted)),
                 ]),
+                style: const TextStyle(fontFeatures: AppText.tabular),
               ),
             ),
+            const SizedBox(width: 8),
+            RoundIconButton(
+              icon: Icons.add,
+              tooltip: l.addToMeal(name),
+              size: 40,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.chip)),
+              background: c.surfaceHigh,
+              onPressed: add,
+            ),
+          ])
+        : Tooltip(
+            message: l.addToMeal(name),
+            child: Material(
+              color: color,
+              borderRadius: BorderRadius.circular(Radii.chip),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(Radii.chip),
+                onTap: add,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44, minWidth: 48),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Center(
+                      widthFactor: 1,
+                      child: Text(l.addShort, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: c.onPrimary)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13;
+    return Panel(
+      padding: EdgeInsets.zero,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        InkWell(
+          // Logged: open or close the items; planned: the recipe; empty: Log on this meal.
+          onTap: meals.isNotEmpty
+              ? () => setState(() => _open = !_open)
+              : plan != null
+                  ? () => w.onOpen(plan.recipeId)
+                  : add,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(children: [
+              MealIcon(type: w.type),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Semantics(header: true, child: Text(name, style: AppText.item.copyWith(fontSize: 16, color: c.ink))),
+                  if (subtitle != null)
+                    Text(subtitle,
+                        maxLines: _open ? 3 : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: c.muted)),
+                  // Large text: kcal and the button go under the name instead of squeezing it.
+                  if (stacked) ...[const SizedBox(height: 8), trailing],
+                ]),
+              ),
+              if (!stacked) ...[const SizedBox(width: 8), trailing],
+            ]),
           ),
-        ],
+        ),
+        AnimatedSize(
+          duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Durations.medium1,
+          alignment: Alignment.topCenter,
+          child: !_open || meals.isEmpty
+              ? const SizedBox(width: double.infinity)
+              : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  for (final m in meals) ...[
+                    Divider(indent: 12, endIndent: 12, color: c.divider),
+                    InkWell(
+                      // A recipe opens (to see and rate it); anything else edits. Long press always edits.
+                      onTap: m.recipeId == null ? () => w.onEdit(m) : () => w.onOpen(m.recipeId!),
+                      onLongPress: () => w.onEdit(m),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 52),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(68, 6, 16, 6),
+                          child: Row(children: [
+                            if (m.recipeId != null) ...[
+                              Icon(Icons.menu_book_outlined, size: 18, color: color),
+                              const SizedBox(width: 8),
+                            ],
+                            Expanded(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(m.label, style: AppText.body.copyWith(color: c.ink)),
+                                Text(
+                                    [DateFormat.Hm().format(m.at), if (m.grams != null) '${m.estimated ? '≈ ' : ''}${m.grams!.round()} g']
+                                        .join(' · '),
+                                    style: AppText.caption.copyWith(color: c.muted)),
+                              ]),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('${m.estimated ? '≈' : ''}${_n(context, m.kcal)}',
+                                style: TextStyle(fontSize: 14, color: c.muted, fontFeatures: AppText.tabular)),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                ]),
+        ),
         if (plan != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Material(
-              color: c.warm,
-              borderRadius: BorderRadius.circular(14),
+              color: tint(context, color),
+              borderRadius: BorderRadius.circular(Radii.tile),
               child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => onOpen(plan.recipeId),
+                borderRadius: BorderRadius.circular(Radii.tile),
+                onTap: () => w.onOpen(plan.recipeId),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Row(children: [
                     Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(plan.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: c.ink)),
-                        Text(_planLine(context, l, plan), style: TextStyle(fontSize: 12, color: c.onWarm)),
-                      ]),
+                      child: Text(_planLine(context, l, plan), style: AppText.caption.copyWith(fontSize: 13, color: c.ink2)),
                     ),
                     const SizedBox(width: 8),
-                    Text(l.cook, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: c.onWarm)),
+                    Text(l.cook, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: color)),
                   ]),
                 ),
               ),
             ),
           ),
-        if (meals.isNotEmpty) const SizedBox(height: 6),
       ]),
     );
   }
 
   String _planLine(BuildContext context, AppLocalizations l, Planned p) {
-    final minutes = data.nutri.select('SELECT minutes FROM recipes WHERE id = ?', [p.recipeId]).firstOrNull?['minutes'] as int?;
+    final minutes = widget.data.nutri.select('SELECT minutes FROM recipes WHERE id = ?', [p.recipeId]).firstOrNull?['minutes'] as int?;
+    final left = widget.left;
     return [
       '${_n(context, p.kcal)} ${l.kcal}',
       if (minutes != null && minutes > 0) l.minutesShort(minutes),
-      if (left != null && left! >= p.kcal) l.fitsLeft(_n(context, left!)),
+      if (left != null && left >= p.kcal) l.fitsLeft(_n(context, left)),
     ].join(' · ');
   }
+}
+
+/// The coloured header of Today's small cards: icon and name, and an optional action at the end.
+Widget _tileHead(BuildContext context, IconData icon, String label, Color color, [Widget? action]) => Row(children: [
+      Icon(icon, size: 18, color: color),
+      const SizedBox(width: 6),
+      Expanded(child: Text(label, style: AppText.body.copyWith(color: context.colors.ink))),
+      ?action,
+    ]);
+
+/// A big number with its unit after it, smaller ("1.25 / 2.75 L", "54").
+Widget _bigNumber(BuildContext context, String value, [String? unit]) {
+  final c = context.colors;
+  return FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: AlignmentDirectional.centerStart,
+    child: Text.rich(TextSpan(children: [
+      TextSpan(text: value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: c.ink, letterSpacing: -0.4)),
+      if (unit != null) TextSpan(text: ' $unit', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.muted)),
+    ]), style: const TextStyle(fontFeatures: AppText.tabular)),
+  );
 }
 
 /// Today's water: litres against the goal as glasses; + adds a glass (with Undo on the snackbar).
@@ -644,21 +813,25 @@ class _WaterTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
+    final blue = context.nutrientColor('water');
     final ml = waterOn(data.user, DateTime.now()), goal = waterGoal(data.user);
     final glasses = (goal / glassMl).round().clamp(1, 16), had = (ml / glassMl).floor();
     String litres(double v) => (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 2).replaceFirst(RegExp(r'0$'), '');
     return Panel(
-      radius: Radii.tile,
-      padding: const EdgeInsets.all(12),
+      radius: Radii.card,
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 14),
       color: c.waterBg,
       border: false,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(child: Text(l.water, style: TextStyle(fontSize: 13, color: c.muted))),
+        _tileHead(
+          context,
+          Icons.water_drop_outlined,
+          l.water,
+          blue,
           Tooltip(
             message: l.waterAddGlass,
             child: Material(
-              color: c.surface,
+              color: blue,
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
@@ -680,36 +853,35 @@ class _WaterTile extends StatelessWidget {
                 },
                 child: SizedBox.square(
                     dimension: 48,
-                    child: Semantics(label: l.waterAddGlass, button: true, child: Icon(Icons.add, color: c.water))),
+                    child: Semantics(label: l.waterAddGlass, button: true, child: Icon(Icons.add, color: c.onPrimary))),
               ),
             ),
           ),
-        ]),
+        ),
+        const SizedBox(height: 6),
         Semantics(
           container: true, // its own node, not merged into the tile's other text
           label: l.waterLine(ml.round(), goal.round()),
           excludeSemantics: true,
-          child: Text.rich(TextSpan(children: [
-            TextSpan(
-                text: litres(ml),
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink,
-                    fontFeatures: const [FontFeature.tabularFigures()])),
-            TextSpan(text: ' / ${litres(goal)} ${l.litreUnit}', style: TextStyle(fontSize: 13, color: c.muted)),
-          ])),
+          child: _bigNumber(context, litres(ml), '/ ${litres(goal)} ${l.litreUnit}'),
         ),
-        const SizedBox(height: 8),
-        ExcludeSemantics(
-          child: Row(children: [
-            for (var i = 0; i < glasses; i++) ...[
-              if (i > 0) const SizedBox(width: 3),
-              Expanded(
-                child: Container(
-                  height: 8,
-                  decoration: BoxDecoration(color: i < had ? c.water : c.water.withValues(alpha: .2), borderRadius: BorderRadius.circular(2)),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 4),
+          child: ExcludeSemantics(
+            child: Row(children: [
+              for (var i = 0; i < glasses; i++) ...[
+                if (i > 0) const SizedBox(width: 3),
+                Expanded(
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                        color: i < had ? blue : blue.withValues(alpha: .22), borderRadius: BorderRadius.circular(3)),
+                  ),
                 ),
-              ),
-            ],
-          ]),
+              ],
+            ]),
+          ),
         ),
       ]),
     );
@@ -748,23 +920,23 @@ class _FastTileState extends State<_FastTile> {
     final fast = currentFast(user);
     final hours = fast?.targetHours ?? int.tryParse(pref(user, 'fast_hours') ?? '') ?? 16;
     final gone = fast == null ? null : DateTime.now().difference(fast.start);
+    final amber = context.nutrientColor('carbs_g');
     return Panel(
-      radius: Radii.tile,
-      padding: const EdgeInsets.all(12),
-      color: c.warm,
+      radius: Radii.card,
+      padding: const EdgeInsets.all(14),
+      color: tint(context, amber, alpha: .18),
       border: false,
       onTap: () => showModalBottomSheet<void>(context: context, builder: (_) => _FastSheet(data: widget.data)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(child: Text(l.fasting, style: TextStyle(fontSize: 13, color: c.muted))),
-          Text(l.fastGoalHours(hours), style: TextStyle(fontSize: 12, color: c.primary, fontWeight: FontWeight.w600)),
-        ]),
+        _tileHead(context, Icons.timer_outlined, l.fasting, amber,
+            Text(l.fastGoalHours(hours), style: TextStyle(fontSize: 12, color: amber, fontWeight: FontWeight.w700))),
         const SizedBox(height: 14),
         Text(gone == null ? l.fastNotRunning : l.hoursMinutes(gone.inHours, gone.inMinutes % 60),
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink,
-                fontFeatures: const [FontFeature.tabularFigures()])),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: c.ink, fontFeatures: AppText.tabular)),
         const SizedBox(height: 8),
         Bar(
+          color: amber,
+          track: amber.withValues(alpha: .22),
           value: gone == null ? 0 : gone.inMinutes / (hours * 60),
           label: gone == null ? l.fasting : l.fastingLine(gone.inHours, gone.inMinutes % 60, hours),
         ),
@@ -889,10 +1061,11 @@ class _StepsTileState extends State<_StepsTile> {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
     final burned = activeKcalOn(widget.data.user, DateTime.now());
+    final violet = context.nutrientColor('fat_g');
     return Panel(
-      radius: Radii.tile,
-      padding: const EdgeInsets.all(12),
-      color: c.mint,
+      radius: Radii.card,
+      padding: const EdgeInsets.all(14),
+      color: tint(context, violet, alpha: .2),
       border: false,
       onTap: () => showModalBottomSheet<void>(
         context: context,
@@ -900,22 +1073,21 @@ class _StepsTileState extends State<_StepsTile> {
         builder: (_) => _HealthSheet(data: widget.data, synced: _synced, onSync: () => _refresh(weights: true)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(child: Text(l.steps, style: TextStyle(fontSize: 13, color: c.muted))),
-          Icon(Icons.directions_walk, size: 20, color: c.primary),
-        ]),
-        const SizedBox(height: 14),
-        Text(_steps == null ? '–' : NumberFormat.decimalPattern().format(_steps),
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink)),
-        if (burned > 0)
-          Text(l.activeKcalBurned(NumberFormat.decimalPattern().format(burned.round())),
-              style: TextStyle(fontSize: 13, color: c.muted)),
+        // Same height as the water card's header (its + button).
+        SizedBox(height: 48, child: _tileHead(context, Icons.monitor_heart_outlined, l.steps, violet)),
+        const SizedBox(height: 6),
+        _bigNumber(context, _steps == null ? '–' : NumberFormat.decimalPattern().format(_steps)),
+        const SizedBox(height: 4),
+        Text(
+            '${l.activeKcalBurned(NumberFormat.decimalPattern().format(burned.round()))} · '
+            '${Platform.isIOS ? l.appleHealth : l.healthConnect}',
+            style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
       ]),
     );
   }
 }
 
-/// Basic: today's micronutrients against EU reference intakes, lowest first (in a sheet from [_MicrosRow]).
+/// Basic: today's vitamins and minerals against EU reference intakes, lowest first, two to a row.
 class _MicrosCard extends StatelessWidget {
   const _MicrosCard({required this.data});
   final ProfileData data;
@@ -928,31 +1100,68 @@ class _MicrosCard extends StatelessWidget {
     final labels = microLabels(l);
     final share = {for (final k in labels.keys) k: m.totals[k]! / microReference[k]!};
     final keys = labels.keys.toList()..sort((a, b) => share[a]!.compareTo(share[b]!));
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text(l.microsTitle, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        for (final k in keys)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            // Amounts, not "%": "4.2 mg / 14 mg" says how much more to eat.
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Row(children: [
-                Expanded(child: Text(labels[k]!.$1, style: const TextStyle(fontSize: 14))),
-                Text('${formatMicro(m.totals[k]!, labels[k]!.$2)} / ${formatMicro(microReference[k]!, labels[k]!.$2)}',
-                    style: TextStyle(fontSize: 13, color: c.muted, fontFeatures: const [FontFeature.tabularFigures()])),
-              ]),
-              const SizedBox(height: 4),
-              Bar(
-                value: share[k]!,
-                height: 6,
-                label: '${labels[k]!.$1} ${formatMicro(m.totals[k]!, labels[k]!.$2)} / ${formatMicro(microReference[k]!, labels[k]!.$2)}',
-              ),
-            ]),
-          ),
+    final lime = context.nutrientColor('sugar_g');
+    Widget item(String k) {
+      final (name, unit) = labels[k]!;
+      final amounts = '${formatMicro(m.totals[k]!, unit)} / ${formatMicro(microReference[k]!, unit)}';
+      // Amounts, not "%": "4.2 mg / 14 mg" says how much more to eat.
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.body.copyWith(fontSize: 13, color: c.ink)),
+        Text(amounts, style: AppText.caption.copyWith(color: c.muted, fontFeatures: AppText.tabular)),
         const SizedBox(height: 4),
-        Text(l.microsCoverage(m.known, m.meals), style: TextStyle(fontSize: 12, color: c.muted)),
+        Bar(value: share[k]!, height: 5, color: share[k]! >= 1 ? c.primary : lime, label: '$name $amounts'),
+      ]);
+    }
+
+    final per = MediaQuery.textScalerOf(context).scale(10) > 15 ? 1 : 2;
+    return Panel(
+      radius: Radii.card,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          IconTile(icon: Icons.eco_outlined, color: lime, size: 32),
+          const SizedBox(width: 10),
+          Expanded(child: Semantics(header: true, child: Text(l.microsTitle, style: AppText.section.copyWith(color: c.ink)))),
+        ]),
+        const SizedBox(height: 12),
+        for (var i = 0; i < keys.length; i += per) ...[
+          if (i > 0) const SizedBox(height: 12),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (var j = i; j < i + per; j++) ...[
+              if (j > i) const SizedBox(width: 16),
+              Expanded(child: j < keys.length ? item(keys[j]) : const SizedBox.shrink()),
+            ],
+          ]),
+        ],
+        const SizedBox(height: 12),
+        Text(l.microsCoverage(m.known, m.meals), style: AppText.caption.copyWith(color: c.muted)),
+      ]),
+    );
+  }
+}
+
+/// Free: what the vitamins and minerals card shows, and the way to Basic.
+class _MicrosLocked extends StatelessWidget {
+  const _MicrosLocked();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    return Panel(
+      radius: Radii.card,
+      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
+      child: Row(children: [
+        IconTile(icon: Icons.eco_outlined, color: context.nutrientColor('sugar_g'), size: 32),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.microsTitle, style: AppText.section.copyWith(color: c.ink)),
+            const SizedBox(height: 2),
+            Text(l.microsLocked, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        Icon(Icons.lock_outline, size: 20, color: c.muted),
       ]),
     );
   }
@@ -1001,41 +1210,6 @@ class _HealthSheet extends StatelessWidget {
           ),
         ]),
       ),
-    );
-  }
-}
-
-/// Basic: one row for the vitamins and minerals (the lowest one named); the full list opens in a sheet.
-class _MicrosRow extends StatelessWidget {
-  const _MicrosRow({required this.data});
-  final ProfileData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final c = context.colors;
-    final m = microTotalsOn(data.user, DateTime.now());
-    final labels = microLabels(l);
-    final low = labels.keys.reduce((a, b) => m.totals[a]! / microReference[a]! <= m.totals[b]! / microReference[b]! ? a : b);
-    return Panel(
-      onTap: () => showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => SafeArea(child: SingleChildScrollView(child: _MicrosCard(data: data))),
-      ),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l.microsTitle, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 2),
-            Text(l.microsLowest(labels[low]!.$1,
-                    '${formatMicro(m.totals[low]!, labels[low]!.$2)} / ${formatMicro(microReference[low]!, labels[low]!.$2)}'),
-                style: TextStyle(fontSize: 14, color: c.muted)),
-          ]),
-        ),
-        Icon(Icons.chevron_right, color: c.muted),
-      ]),
     );
   }
 }
@@ -1303,36 +1477,75 @@ class _ChangeFoodSheetState extends State<_ChangeFoodSheet> {
   }
 }
 
-/// The newest recipes logged as eaten, with their stars; a tap opens one to rate it.
+/// The newest recipes logged as eaten, with their stars or a "Rate" button; a tap opens one to rate it.
 class _RecipesYouAte extends StatelessWidget {
-  const _RecipesYouAte({required this.recipes, required this.onOpen});
+  const _RecipesYouAte({required this.recipes, required this.onOpen, required this.onHistory});
   final List<({int id, String title, DateTime at, int? stars})> recipes;
   final ValueChanged<int> onOpen;
+  final VoidCallback onHistory;
+
+  static const _hues = ['protein_g', 'kcal', 'fat_g', 'carbs_g', 'sodium_mg', 'fiber_g'];
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    return PanelList(
-      header: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.recipesYouAte, style: Theme.of(context).textTheme.titleMedium),
-          Text(l.recipesYouAteHint, style: TextStyle(fontSize: 13, color: c.muted)),
-        ]),
-      ),
-      children: [
+    final gold = context.nutrientColor('carbs_g');
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SectionTitle(l.rateWhatYouAte,
+          padding: const EdgeInsets.fromLTRB(2, 16, 0, 4),
+          trailing: Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton(onPressed: onHistory, child: Text(l.historyTitle)),
+          )),
+      PanelList(children: [
         for (final r in recipes)
-          ListTile(
-            title: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(DateFormat('EEE d MMM').format(r.at)),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(r.stars == null ? '☆' : '★' * r.stars!, style: const TextStyle(color: Color(0xFFB8860B))),
-              const Icon(Icons.chevron_right),
-            ]),
+          InkWell(
             onTap: () => onOpen(r.id),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 64),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Row(children: [
+                  () {
+                    final hue = context.nutrientColor(_hues[r.title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0xffff) % _hues.length]);
+                    final initials = [for (final w in r.title.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).take(2)) w.characters.first]
+                        .join()
+                        .toUpperCase();
+                    return ExcludeSemantics(
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: tint(context, hue, alpha: .2), borderRadius: BorderRadius.circular(Radii.tile)),
+                        child: Text(initials, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: hue)),
+                      ),
+                    );
+                  }(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.item.copyWith(color: c.ink)),
+                      Text(DateFormat('EEE d MMM').format(r.at), style: AppText.caption.copyWith(color: c.muted)),
+                    ]),
+                  ),
+                  const SizedBox(width: 8),
+                  if (r.stars case final stars?)
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('★' * stars, style: TextStyle(fontSize: 15, color: gold)),
+                      if (stars < 5) Text('★' * (5 - stars), style: TextStyle(fontSize: 15, color: c.outline)),
+                    ])
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(color: c.warm, borderRadius: BorderRadius.circular(Radii.chip)),
+                      child: Text(l.rateButton, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: c.onWarm)),
+                    ),
+                ]),
+              ),
+            ),
           ),
-      ],
-    );
+      ]),
+    ]);
   }
 }

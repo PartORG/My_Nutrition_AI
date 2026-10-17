@@ -500,9 +500,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get editDetails => 'Modifier mes informations';
 
   @override
-  String get aiKnowsLoading => 'Disponible quand l’IA est chargée.';
-
-  @override
   String get switchProfile => 'Verrouiller et changer de profil';
 
   @override
@@ -1203,10 +1200,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get planTab => 'Plan';
 
   @override
-  String get planEmpty =>
-      'Planifiez votre semaine : petit-déjeuner, déjeuner et dîner tirés de la base de recettes, adaptés à votre objectif calorique, sans vos allergènes, et d’abord les recettes que vous avez bien notées.';
-
-  @override
   String get planWeek => 'Planifier ma semaine';
 
   @override
@@ -1831,15 +1824,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get back => 'Retour';
 
   @override
-  String get badgeMorning => 'MATIN';
-
-  @override
-  String get badgeNoon => 'MIDI';
-
-  @override
-  String get badgeEvening => 'SOIR';
-
-  @override
   String get boxEmpty =>
       'Rien ici pour l’instant. Enregistrez une recette avec son signet, ou cherchez ci-dessus.';
 
@@ -2293,4 +2277,84 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get cameraGalleryNeedsAi =>
       'Une photo de la galerie nécessite l’assistant IA. Téléchargez-le dans le Chat.';
+
+  @override
+  String get mealsTitle => 'Repas';
+
+  @override
+  String mealsLogged(int n) {
+    return '$n sur 4 notés';
+  }
+
+  @override
+  String suggestedAmount(String amount) {
+    return 'Suggéré ~$amount';
+  }
+
+  @override
+  String get rateWhatYouAte => 'Notez ce que vous avez mangé';
+
+  @override
+  String get rateButton => 'Noter';
+
+  @override
+  String get leftToday => 'Reste aujourd’hui';
+
+  @override
+  String get drawerTrack => 'Suivi';
+
+  @override
+  String get meOverline => 'Profil et objectifs';
+
+  @override
+  String goalIs(String goal) {
+    return 'Objectif : $goal';
+  }
+
+  @override
+  String get energy => 'Énergie';
+
+  @override
+  String get bornLabel => 'Naissance';
+
+  @override
+  String get planHeroTitle => 'Toute votre semaine, planifiée en un geste';
+
+  @override
+  String get planHeroBody =>
+      'Petit-déjeuner, déjeuner et dîner parmi 166 000 recettes.';
+
+  @override
+  String planSized(String amount) {
+    return 'Adapté à votre objectif de $amount';
+  }
+
+  @override
+  String get planNoAllergens => 'Sans vos allergènes';
+
+  @override
+  String get planStarsFirst => 'Vos recettes 4★+ d’abord';
+
+  @override
+  String get fillsAfterPlanning => 'Se remplit après la planification';
+
+  @override
+  String get allergenFreeForYou => 'Sans allergènes pour vous';
+
+  @override
+  String ideasForMeal(String meal) {
+    return 'Des idées pour le $meal';
+  }
+
+  @override
+  String amountLeftApprox(String amount) {
+    return '~$amount restantes';
+  }
+
+  @override
+  String get microsLocked =>
+      'Vitamines et minéraux du jour face aux apports de référence de l’UE, avec Basic.';
+
+  @override
+  String get highProtein => 'Riche en protéines';
 }

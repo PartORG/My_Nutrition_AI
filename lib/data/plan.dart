@@ -66,6 +66,17 @@ void swapPlanned(AgentTools tools, DateTime day, String mealType, {Random? rando
   if (id != null) _set(tools, day, mealType, id);
 }
 
+/// [count] recipes for [mealType] near [kcal] (the same picking as the plan), for "Ideas for your dinner".
+List<RecipeSummary> mealIdeas(AgentTools tools, String mealType, double kcal, {int count = 2, Random? random}) {
+  final rnd = random ?? Random();
+  final pool = _pool(tools, mealType), used = <int>{};
+  final ids = [for (var i = 0; i < count; i++) _pick(pool, kcal, used, tools.ratings(), rnd)];
+  return [for (final id in ids) if (id != null) tools.recipeSummary(id)];
+}
+
+/// The share of the day's calories a planned meal is sized to; null for snacks.
+double? mealShare(String mealType) => _share[mealType];
+
 /// "Add to plan" on a recipe: that recipe for [mealType] on [day], replacing what was planned.
 void planRecipe(AgentTools tools, DateTime day, String mealType, int id) => _set(tools, day, mealType, id);
 

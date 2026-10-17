@@ -134,19 +134,21 @@ void main() {
     data.changed();
     await tester.pump();
 
-    // Hero: kcal left in the ring, then Goal − Eaten = Left (2759 − 26.5 = 2732.5 → 2,733).
-    expect(find.text('2,733'), findsOneWidget);
+    // Hero: kcal left in the ring, then Goal · Eaten · Left (2759 − 26.5 = 2732.5 → 2,733).
+    expect(find.text('2,733'), findsNWidgets(2), reason: 'in the ring and under Left');
     expect(find.text('kcal left'), findsOneWidget);
     expect(find.text('2,759'), findsOneWidget);
-    expect(find.text('− 27'), findsOneWidget);
-    expect(find.text('= 2,733'), findsOneWidget);
+    expect(find.text('−27'), findsOneWidget);
     expect(find.text('over by 747 mg'), findsOneWidget);
     expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget, reason: 'never colour alone');
 
-    // Delete is in the meal's edit sheet.
-    await tester.ensureVisible(find.text('soy sauce'));
+    // Delete is in the meal's edit sheet: open the meal, then its item.
+    expect(find.text('soy sauce'), findsOneWidget, reason: 'the closed meal lists what was eaten');
+    await tester.ensureVisible(find.text('Lunch'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('soy sauce'));
+    await tester.tap(find.text('Lunch'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('soy sauce').last);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
     await tester.pumpAndSettle();
@@ -163,8 +165,11 @@ void main() {
     data.changed();
     await tester.pump();
 
-    await toEnd(tester);
-    await tester.tap(find.text('brown rice, cooked'));
+    await tester.ensureVisible(find.text('Lunch'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lunch'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('brown rice, cooked').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Change food'));
     await tester.pumpAndSettle();
@@ -228,8 +233,11 @@ void main() {
     (data.tools.logRecipe(2).card! as ConfirmCard).apply(); // Shakshuka
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
     await toEnd(tester);
-    expect(find.text('Recipes you ate'), findsOneWidget);
-    await tester.tap(find.text('Shakshuka').last); // in "Recipes you ate", at the end
+    expect(find.text('Rate what you ate'), findsOneWidget);
+    expect(find.text('Rate'), findsOneWidget, reason: 'not rated yet');
+    await tester.ensureVisible(find.text('Shakshuka').last); // in "Rate what you ate", at the end
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Shakshuka').last);
     await tester.pumpAndSettle();
     expect(find.text('Your rating'), findsOneWidget);
     await tester.tap(find.byTooltip('Rate 4 stars'));
@@ -265,21 +273,22 @@ void main() {
     expect(find.text('158 kcal'), findsWidgets);
   });
 
-  testWidgets('Me: About me shows the details; the daily goal is edited in Your daily goals', (tester) async {
+  testWidgets('Me: the hero shows the details; the goal is changed from its row', (tester) async {
     saveBody(data.user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
         activity: Activity.light, goal: Goal.lose, imperial: false), now: DateTime.now());
     data.user.execute("INSERT INTO user_allergens (allergen, added_at) VALUES ('peanuts', 0)");
     await pumpApp(tester, const Scaffold(body: MeScreen()));
-    for (final t in ['About me', 'Anna', '165 cm', '62.0 kg', 'Light: exercise 1–3 days a week · born 1980', 'Daily targets']) {
+    for (final t in ['Anna', '165 cm', '62.0 kg', '1980', 'Goal: lose weight', 'Light: exercise 1–3 days a week',
+        'Daily targets', 'Energy']) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
-    await tester.ensureVisible(find.text('Lose weight'));
+    await tester.ensureVisible(find.text('Goal: lose weight'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Lose weight'));
+    await tester.tap(find.text('Goal: lose weight'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maintain').last);
     await tester.pumpAndSettle();
     expect(loadBody(data.user)!.goal, Goal.maintain);
-    expect(find.text('Maintain'), findsOneWidget);
+    expect(find.text('Goal: maintain'), findsOneWidget);
   });
 }

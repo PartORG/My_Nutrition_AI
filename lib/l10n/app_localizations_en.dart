@@ -500,9 +500,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editDetails => 'Edit my details';
 
   @override
-  String get aiKnowsLoading => 'Available when the AI has loaded.';
-
-  @override
   String get switchProfile => 'Lock and switch profile';
 
   @override
@@ -1198,10 +1195,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planTab => 'Plan';
 
   @override
-  String get planEmpty =>
-      'Plan your week: breakfast, lunch and dinner from the recipe database, sized to your calorie goal, without your allergens, and with recipes you rated highly first.';
-
-  @override
   String get planWeek => 'Plan my week';
 
   @override
@@ -1821,15 +1814,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
-  String get badgeMorning => 'AM';
-
-  @override
-  String get badgeNoon => 'NOON';
-
-  @override
-  String get badgeEvening => 'PM';
-
-  @override
   String get boxEmpty =>
       'Nothing here yet. Save a recipe with its bookmark, or search above.';
 
@@ -2280,4 +2264,84 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cameraGalleryNeedsAi =>
       'A photo from the gallery needs the AI assistant. Download it in Chat.';
+
+  @override
+  String get mealsTitle => 'Meals';
+
+  @override
+  String mealsLogged(int n) {
+    return '$n of 4 logged';
+  }
+
+  @override
+  String suggestedAmount(String amount) {
+    return 'Suggested ~$amount';
+  }
+
+  @override
+  String get rateWhatYouAte => 'Rate what you ate';
+
+  @override
+  String get rateButton => 'Rate';
+
+  @override
+  String get leftToday => 'Left today';
+
+  @override
+  String get drawerTrack => 'Track';
+
+  @override
+  String get meOverline => 'Profile & targets';
+
+  @override
+  String goalIs(String goal) {
+    return 'Goal: $goal';
+  }
+
+  @override
+  String get energy => 'Energy';
+
+  @override
+  String get bornLabel => 'Born';
+
+  @override
+  String get planHeroTitle => 'Your whole week, planned in one tap';
+
+  @override
+  String get planHeroBody =>
+      'Breakfast, lunch and dinner from 166,000 recipes.';
+
+  @override
+  String planSized(String amount) {
+    return 'Sized to your $amount goal';
+  }
+
+  @override
+  String get planNoAllergens => 'Without your allergens';
+
+  @override
+  String get planStarsFirst => 'Your 4★+ recipes first';
+
+  @override
+  String get fillsAfterPlanning => 'Fills in after planning';
+
+  @override
+  String get allergenFreeForYou => 'Allergen-free for you';
+
+  @override
+  String ideasForMeal(String meal) {
+    return 'Ideas for your $meal';
+  }
+
+  @override
+  String amountLeftApprox(String amount) {
+    return '~$amount left';
+  }
+
+  @override
+  String get microsLocked =>
+      'Today\'s vitamins and minerals against EU reference intakes, with Basic.';
+
+  @override
+  String get highProtein => 'High protein';
 }

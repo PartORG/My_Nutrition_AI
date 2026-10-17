@@ -21,31 +21,49 @@ class WeightTile extends StatelessWidget {
     final c = context.colors;
     final imperial = loadBody(data.user)?.imperial ?? false;
     final points = weightTrend(weightsSince(data.user, DateTime.now().subtract(const Duration(days: 30))));
+    final value = points.isEmpty ? '–' : weightText(points.last.trend, imperial);
+    final unit = value.endsWith(' kg') || value.endsWith(' lb') ? value.substring(value.length - 2) : null;
     return Panel(
-      radius: Radii.tile,
-      padding: const EdgeInsets.all(12),
+      radius: Radii.card,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       onTap: points.isEmpty
           ? () => logWeightDialog(context, data)
           : () => Navigator.of(context)
               .push(MaterialPageRoute<void>(builder: (_) => WeightScreen(data: data)))
               .then((_) => data.changed()),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(child: Text(l.weight, style: TextStyle(fontSize: 13, color: c.muted))),
-          Icon(Icons.monitor_weight_outlined, size: 20, color: c.primary),
-        ]),
-        const SizedBox(height: 14),
-        Text(points.isEmpty ? '–' : weightText(points.last.trend, imperial),
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink,
-                fontFeatures: const [FontFeature.tabularFigures()])),
-        Text(
-          points.isEmpty
-              ? l.logWeight
-              : points.length > 1
-                  ? '${signedWeight(points.last.trend - points.first.trend, imperial)} · ${l.days(30)}'
-                  : l.legendTrend,
-          style: TextStyle(fontSize: 13, color: points.isEmpty ? c.primary : c.muted),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Expanded(
+          flex: 5,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              Icon(Icons.monitor_weight_outlined, size: 18, color: c.muted),
+              const SizedBox(width: 6),
+              Flexible(child: Text(l.weight, style: AppText.body.copyWith(color: c.ink2))),
+            ]),
+            const SizedBox(height: 4),
+            // One text: "93.7 kg" stays findable as a whole, the unit set smaller.
+            Text.rich(
+              TextSpan(children: [
+                TextSpan(text: unit == null ? value : value.substring(0, value.length - 3)),
+                if (unit != null) TextSpan(text: ' $unit', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.muted)),
+              ]),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: c.ink, letterSpacing: -0.4,
+                  fontFeatures: AppText.tabular),
+            ),
+            Text(
+              points.isEmpty
+                  ? l.logWeight
+                  : points.length > 1
+                      ? '${signedWeight(points.last.trend - points.first.trend, imperial)} · ${l.days(30)}'
+                      : l.legendTrend,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.primary),
+            ),
+          ]),
         ),
+        if (points.length > 1) ...[
+          const SizedBox(width: 12),
+          Expanded(flex: 6, child: SizedBox(height: 60, child: WeightChart(points: points, compact: true))),
+        ],
       ]),
     );
   }
@@ -216,7 +234,7 @@ class _WeightScreenState extends State<WeightScreen> {
                     : null,
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   const SizedBox(height: 8),
                   Text(l.trendWeight, style: TextStyle(color: c.muted, fontSize: 15)),

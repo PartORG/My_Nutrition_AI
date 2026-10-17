@@ -117,7 +117,6 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         child: Column(children: [
           ScreenHeader(
             title: l.goalsTitle,
-            size: 28,
             back: !widget.onboarding,
             // Beside the title, not under the form: skipping must be visible without scrolling.
             trailing: widget.onboarding
@@ -127,7 +126,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
           Expanded(
             child: Form(
         key: _form,
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 16), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), children: [
           Text(l.goalsIntro, style: TextStyle(color: context.colors.textSecondary)),
           gap,
           SegmentedButton<bool>(

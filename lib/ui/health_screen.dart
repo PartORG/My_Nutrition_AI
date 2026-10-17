@@ -116,7 +116,7 @@ class _HealthState extends State<_Health> {
       ),
     );
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         Panel(
           child: Column(

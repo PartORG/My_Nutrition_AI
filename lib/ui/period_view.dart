@@ -104,7 +104,7 @@ class PeriodView extends StatelessWidget {
         final streak = loggingStreak(data.user, now);
         final body = loadBody(data.user);
         final locale = Localizations.localeOf(context).toString();
-        return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
+        return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: [
           ChartSection(
             title: l.caloriesPerDay,
             trailing: logged.isEmpty ? null : l.avgValue(NumberFormat.decimalPattern(locale).format(avg('kcal').round())),
@@ -201,7 +201,7 @@ class DailyBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final color = nutrientColors[nutrient]!;
+    final color = context.nutrientColor(nutrient);
     final month = !monthly && series.length > 7;
     final quarter = month && series.length > 31;
     final maxY = [goal ?? 0, ...series.map((d) => d.totals[nutrient]!)].reduce((a, b) => a > b ? a : b) * 1.15;

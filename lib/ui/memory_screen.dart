@@ -67,7 +67,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
     const diets = {'vegetarian', 'vegan', 'pescatarian'};
     return Scaffold(
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
           Align(
             alignment: Alignment.centerLeft,
             child: IconButton(

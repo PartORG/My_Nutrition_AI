@@ -120,7 +120,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   trailing: Text(l.currentTier(tierName(current, l)), style: TextStyle(fontSize: 15, color: c.muted)),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     if (billing.isDev)
                       Padding(

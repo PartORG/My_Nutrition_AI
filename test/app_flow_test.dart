@@ -35,7 +35,7 @@ void main() {
     await settle(tester);
     // No profile yet: first run, step 1 your name, step 2 the PIN.
     expect(find.text('Eat well, privately'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Continue'), 200);
+    await tester.scrollUntilVisible(find.text('Continue'), 200, scrollable: find.byType(Scrollable).first);
     await tester.enterText(find.byType(TextField), 'Anna');
     await tester.pump();
     await tester.tap(find.text('Continue'));
@@ -68,11 +68,12 @@ void main() {
     await settle(tester);
     expect(find.text('Hello, Anna'), findsOneWidget);
 
-    // The drawer: menu button → tabs and deeper screens → a tab closes it.
+    // The drawer: menu button → the deeper screens → × closes it.
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
     expect(find.text('Health'), findsOneWidget);
-    await tester.tap(find.text('Today').last);
+    expect(find.text('Left today'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(find.text('Health'), findsNothing);
 

@@ -91,7 +91,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     return CustomScrollView(slivers: [
       SliverToBoxAdapter(child: ScreenHeader(title: l.logFoodTitle)),
       SliverPadding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
         sliver: SliverList.list(children: [
           TextField(
             controller: _search,
@@ -170,7 +170,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
         )
       else if (list.isNotEmpty)
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           sliver: SliverToBoxAdapter(
             child: PanelList(children: [
               for (final f in list)

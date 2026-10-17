@@ -4,14 +4,17 @@ import 'package:intl/intl.dart';
 import '../agent/agent_tools.dart' show RecipeListCard, RecipeSummary;
 import '../app_state.dart';
 import '../billing/billing.dart';
+import '../data/diary.dart' show totalsOn;
 import '../data/goals.dart';
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
 import 'kit.dart';
 import 'paywall_screen.dart' show LockedCard, TierBuilder;
+import 'nutrients.dart' show inSentence;
 import 'recipe_screen.dart';
 import 'theme.dart';
+import 'today_screen.dart' show mealName;
 import 'voice.dart';
 
 enum PlanTab { plan, recipes, shopping }
@@ -22,9 +25,13 @@ class PlanScreen extends StatefulWidget {
     super.key,
     required this.data,
     this.initialTab = PlanTab.plan,
+    this.back = false,
   });
   final ProfileData data;
   final PlanTab initialTab;
+
+  /// Opened from the drawer or Me (not the tab): a back arrow instead of the ☰.
+  final bool back;
 
   @override
   State<PlanScreen> createState() => _PlanScreenState();
@@ -36,7 +43,6 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final c = context.colors;
     final data = widget.data;
     return ValueListenableBuilder(
       valueListenable: data.changes,
@@ -49,7 +55,7 @@ class _PlanScreenState extends State<PlanScreen> {
             '${DateFormat.MMMd(locale).format(today)} – ${DateFormat.MMMd(locale).format(today.add(const Duration(days: 6)))}';
         final (title, aside) = switch (_tab) {
           PlanTab.plan => (l.thisWeek, week),
-          PlanTab.recipes => (l.recipesTitle, null),
+          PlanTab.recipes => (l.recipesTitle, data.tools.myAllergens().isEmpty ? null : l.allergenFreeForYou),
           PlanTab.shopping => (
             l.shoppingList,
             list.isEmpty ? null : l.itemsLeft(open, list.length),
@@ -62,17 +68,9 @@ class _PlanScreenState extends State<PlanScreen> {
               maxScaleFactor: 1.5,
               child: Column(
                 children: [
-                  ScreenHeader(
-                    title: title,
-                    trailing: aside == null
-                        ? null
-                        : Text(
-                            aside,
-                            style: TextStyle(fontSize: 15, color: c.muted),
-                          ),
-                  ),
+                  ScreenHeader(title: title, overline: aside, back: widget.back),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: PillTabs<PlanTab>(
                       values: PlanTab.values,
                       selected: _tab,
@@ -116,7 +114,7 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Widget _locked(AppLocalizations l) => ListView(
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(16),
     children: [
       LockedCard(
         icon: Icons.event_note_outlined,
@@ -154,17 +152,55 @@ class _WeekPlanState extends State<_WeekPlan> {
       widget.data.changed();
     }
 
+    final goal = currentTargets(
+      widget.data.user,
+      nutri: widget.data.nutri,
+      now: _day,
+    ).values['kcal'];
+    final days = SizedBox(
+      height: 64 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.6),
+      child: Row(
+        children: [
+          for (var i = 0; i < 7; i++)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: _DayChip(
+                  day: today.add(Duration(days: i)),
+                  selected: DateUtils.isSameDay(_day, today.add(Duration(days: i))),
+                  locale: locale,
+                  onTap: () => setState(() => _day = today.add(Duration(days: i))),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
     if (plan.isEmpty) {
       return ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(13, 4, 13, 24),
         children: [
-          Panel(child: Text(l.planEmpty, style: const TextStyle(fontSize: 16))),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(Icons.auto_awesome),
-            label: Text(l.planWeek),
-            onPressed: () => update(() => planWeek(tools, today)),
+          days,
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: _PlanHero(goal: goal, onPlan: () => update(() => planWeek(tools, today))),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: SectionTitle(
+              DateFormat.EEEE(locale).format(_day),
+              padding: const EdgeInsets.fromLTRB(2, 20, 2, 10),
+              trailing: Text(l.fillsAfterPlanning, textAlign: TextAlign.end, style: AppText.caption.copyWith(color: c.muted)),
+            ),
+          ),
+          for (final t in plannedMeals) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: _MealPlaceholder(type: t, kcal: goal == null ? null : goal * mealShare(t)!),
+            ),
+            const SizedBox(height: 8),
+          ],
         ],
       );
     }
@@ -173,11 +209,6 @@ class _WeekPlanState extends State<_WeekPlan> {
         if (DateUtils.isSameDay(p.day, _day)) p,
     ];
     final planned = dayMeals.fold(0.0, (s, p) => s + p.kcal);
-    final goal = currentTargets(
-      widget.data.user,
-      nutri: widget.data.nutri,
-      now: _day,
-    ).values['kcal'];
     final allergens = tools.myAllergens();
     void open(int id) => Navigator.of(context)
         .push(
@@ -193,152 +224,227 @@ class _WeekPlanState extends State<_WeekPlan> {
           (_) => widget.data.changed(),
         ); // stars may have changed what is planned next
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.fromLTRB(13, 4, 13, 24),
       children: [
-        SizedBox(
-          height: 72 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.6),
-          child: Row(
-            children: [
-              for (var i = 0; i < 7; i++)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: _DayChip(
-                      day: today.add(Duration(days: i)),
-                      selected: DateUtils.isSameDay(
-                        _day,
-                        today.add(Duration(days: i)),
-                      ),
-                      locale: locale,
-                      onTap: () =>
-                          setState(() => _day = today.add(Duration(days: i))),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
+        days,
         const SizedBox(height: 14),
         for (final p in dayMeals) ...[
-          Panel(
-            onTap: () => open(p.recipeId),
-            padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
-            child: Row(
-              children: [
-                _MealBadge(type: p.mealType),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _mealCaps(l, p.mealType),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: .6,
-                          color: c.muted,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Panel(
+              onTap: () => open(p.recipeId),
+              padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+              child: Row(
+                children: [
+                  MealIcon(type: p.mealType, size: 48),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _mealName(l, p.mealType),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: context.mealColor(p.mealType),
+                          ),
                         ),
-                      ),
-                      Text(
-                        p.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
+                        Text(
+                          p.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.item.copyWith(color: c.ink),
                         ),
-                      ),
-                      Text(
-                        _recipeLine(context, tools.recipeSummary(p.recipeId)),
-                        style: TextStyle(fontSize: 14, color: c.muted),
-                      ),
-                    ],
+                        Text(
+                          _recipeLine(context, tools.recipeSummary(p.recipeId)),
+                          style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
+                        ),
+                      ],
+                    ),
                   ),
+                  IconButton(
+                    tooltip: l.planSwap,
+                    icon: Icon(Icons.swap_horiz, color: c.muted),
+                    onPressed: () =>
+                        update(() => swapPlanned(tools, p.day, p.mealType)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.plannedFor(DateFormat.EEEE(locale).format(_day)),
+                      style: AppText.section.copyWith(color: c.ink),
+                    ),
+                  ),
+                  Text(
+                    goal == null
+                        ? '${planned.round()} ${l.kcal}'
+                        : l.planOfKcal(planned.round(), goal.round()),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: c.ink2,
+                      fontFeatures: AppText.tabular,
+                    ),
+                  ),
+                ],
+              ),
+              if (goal != null) ...[
+                const SizedBox(height: 8),
+                Bar(
+                  value: planned / goal,
+                  color: context.nutrientColor('kcal'),
+                  label: l.planOfKcal(planned.round(), goal.round()),
                 ),
-                IconButton(
-                  tooltip: l.planSwap,
-                  icon: const Icon(Icons.swap_horiz),
-                  onPressed: () =>
-                      update(() => swapPlanned(tools, p.day, p.mealType)),
+                const SizedBox(height: 8),
+                Text(
+                  [
+                    if (goal - planned > 100)
+                      l.roomForSnack((goal - planned).round()),
+                    if (allergens.isNotEmpty)
+                      l.allergensLeftOut(allergens.join(', ')),
+                  ].join(' '),
+                  style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
                 ),
               ],
-            ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => update(() => planWeek(tools, today)),
+                      child: Text(l.planAgain, textAlign: TextAlign.center),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        update(() => shoppingFromPlan(tools, today));
+                        widget.onShopping();
+                      },
+                      child: Text(l.makeShoppingList, textAlign: TextAlign.center),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-        ],
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l.plannedFor(DateFormat.EEEE(locale).format(_day)),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Text(
-              goal == null
-                  ? '${planned.round()} ${l.kcal}'
-                  : l.planOfKcal(planned.round(), goal.round()),
-              style: TextStyle(
-                fontSize: 15,
-                color: c.ink2,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-        if (goal != null) ...[
-          const SizedBox(height: 8),
-          Bar(
-            value: planned / goal,
-            color: nutrientColors['kcal'],
-            label: l.planOfKcal(planned.round(), goal.round()),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            [
-              if (goal - planned > 100)
-                l.roomForSnack((goal - planned).round()),
-              if (allergens.isNotEmpty)
-                l.allergensLeftOut(allergens.join(', ')),
-            ].join(' '),
-            style: TextStyle(fontSize: 14, color: c.muted),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => update(() => planWeek(tools, today)),
-                child: Text(l.planAgain, textAlign: TextAlign.center),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton(
-                onPressed: () {
-                  update(() => shoppingFromPlan(tools, today));
-                  widget.onShopping();
-                },
-                child: Text(l.makeShoppingList, textAlign: TextAlign.center),
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
 
-  static String _mealCaps(AppLocalizations l, String t) => switch (t) {
+  static String _mealName(AppLocalizations l, String t) => switch (t) {
     'breakfast' => l.mealBreakfast,
     'lunch' => l.mealLunch,
     _ => l.mealDinner,
-  }.toUpperCase();
+  };
+}
+
+/// Before the first plan: what planning does, on the green hero, and the one button.
+class _PlanHero extends StatelessWidget {
+  const _PlanHero({required this.goal, required this.onPlan});
+  final double? goal;
+  final VoidCallback onPlan;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    Widget point(IconData icon, Color color, String text) => Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Row(children: [
+            IconTile(icon: icon, color: color, size: 30),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text, style: AppText.body.copyWith(color: c.ink))),
+          ]),
+        );
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.hero)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        ExcludeSemantics(
+          child: Row(children: [
+            for (final t in ['breakfast', 'lunch', 'dinner', 'snack'])
+              Container(
+                width: 38,
+                height: 38,
+                margin: const EdgeInsetsDirectional.only(end: 6),
+                decoration: BoxDecoration(color: context.mealColor(t), borderRadius: BorderRadius.circular(Radii.tile)),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        Semantics(header: true, child: Text(l.planHeroTitle, style: AppText.title.copyWith(fontSize: 22, color: c.ink))),
+        const SizedBox(height: 6),
+        Text(l.planHeroBody, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: c.ink2)),
+        const SizedBox(height: 4),
+        if (goal != null)
+          point(Icons.check, context.nutrientColor('kcal'),
+              l.planSized('${NumberFormat.decimalPattern(Localizations.localeOf(context).toString()).format(goal!.round())} ${l.kcal}')),
+        point(Icons.shield_outlined, context.nutrientColor('protein_g'), l.planNoAllergens),
+        point(Icons.star, context.nutrientColor('carbs_g'), l.planStarsFirst),
+        const SizedBox(height: 18),
+        FilledButton.icon(icon: const Icon(Icons.auto_awesome, size: 20), label: Text(l.planWeek), onPressed: onPlan),
+      ]),
+    );
+  }
+}
+
+/// A meal of the day before planning: its colour, a grey line where the recipe goes, its share of the goal.
+class _MealPlaceholder extends StatelessWidget {
+  const _MealPlaceholder({required this.type, required this.kcal});
+  final String type;
+  final double? kcal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final color = context.mealColor(type);
+    return Panel(
+      padding: const EdgeInsets.all(12),
+      child: Row(children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(color: tint(context, color, alpha: .16), borderRadius: BorderRadius.circular(Radii.tile)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_WeekPlanState._mealName(l, type), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(height: 8),
+            FractionallySizedBox(
+              widthFactor: .7,
+              child: Container(height: 8, decoration: BoxDecoration(color: c.track, borderRadius: BorderRadius.circular(4))),
+            ),
+          ]),
+        ),
+        if (kcal != null) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text('~${kcal!.round()} ${l.kcal}',
+                textAlign: TextAlign.end, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+          ),
+        ],
+      ]),
+    );
+  }
 }
 
 String _recipeLine(BuildContext context, RecipeSummary r) {
@@ -370,13 +476,10 @@ class _DayChip extends StatelessWidget {
       label: DateFormat.MMMMEEEEd(locale).format(day),
       excludeSemantics: true,
       child: Material(
-        color: selected ? c.dark : c.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: selected ? c.dark : c.border),
-        ),
+        color: selected ? c.primary : c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile)),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(Radii.tile),
           onTap: onTap,
           child: Center(
             child: FittedBox(
@@ -386,60 +489,20 @@ class _DayChip extends StatelessWidget {
                   Text(
                     DateFormat.E(locale).format(day),
                     style: TextStyle(
-                      fontSize: 13,
-                      color: selected ? c.background : c.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? c.onPrimary : c.muted,
                     ),
                   ),
                   Text(
                     '${day.day}',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? c.background : c.ink,
+                      fontWeight: FontWeight.w800,
+                      color: selected ? c.onPrimary : c.ink,
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// AM / NOON / PM in the meal's tint.
-class _MealBadge extends StatelessWidget {
-  const _MealBadge({required this.type});
-  final String type;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final c = context.colors;
-    final (bg, fg, label) = switch (type) {
-      'breakfast' => (c.warm, c.onWarm, l.badgeMorning),
-      'lunch' => (c.mint, c.onMint, l.badgeNoon),
-      _ => (c.waterBg, c.water, l.badgeEvening),
-    };
-    return ExcludeSemantics(
-      child: Container(
-        width: 56,
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: FittedBox(
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: fg,
               ),
             ),
           ),
@@ -465,6 +528,17 @@ class _RecipeBoxState extends State<_RecipeBox> {
     if (mounted) setState(() {});
   });
   var _shelf = RecipeShelf.saved;
+
+  /// "Ideas for your dinner": the next planned meal, sized to what's left today; picked once per visit.
+  late final _ideas = () {
+    final tools = widget.data.tools, now = DateTime.now();
+    final meal = tools.mealTypeNow(), share = mealShare(meal);
+    if (share == null) return null; // snacks aren't planned
+    final goal = currentTargets(widget.data.user, nutri: widget.data.nutri, now: now).values['kcal'];
+    final left = goal == null ? null : goal - totalsOn(widget.data.user, now)['kcal']!;
+    final target = (goal ?? 2000) * share;
+    return (meal: meal, left: left, recipes: mealIdeas(tools, meal, left != null && left > 0 && left < target ? left : target));
+  }();
   List<RecipeSummary>?
   _cook; // "What can I cook?" ideas, shown instead of the shelf
   String _cookFor = '';
@@ -522,10 +596,32 @@ class _RecipeBoxState extends State<_RecipeBox> {
           shelf: searching && _shelf == RecipeShelf.saved ? null : _shelf,
         );
     final columns = MediaQuery.textScalerOf(context).scale(10) > 15 ? 1 : 2;
+    void open(int id) => Navigator.of(context)
+        .push(
+          MaterialPageRoute<void>(
+            builder: (_) => RecipeScreen(tools: tools, recipeId: id, onLogged: widget.data.changed),
+          ),
+        )
+        .then((_) => setState(() {}));
+    final grid = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: columns,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      mainAxisExtent: 236 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
+    );
+    Widget tile(RecipeSummary r) => _RecipeTile(
+          recipe: r,
+          saved: saved.contains(r.id),
+          stars: tools.rating(r.id),
+          onSave: (on) => setState(() => setRecipeSaved(tools, r.id, on)),
+          onOpen: () => open(r.id),
+        );
+    final ideas = _ideas;
+    final amber = context.nutrientColor('carbs_g');
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
           sliver: SliverList.list(
             children: [
               TextField(
@@ -546,36 +642,30 @@ class _RecipeBoxState extends State<_RecipeBox> {
               ),
               const SizedBox(height: 12),
               Panel(
-                color: c.dark,
+                color: tint(context, amber, alpha: .16),
                 border: false,
                 onTap: _whatCanICook,
                 child: Row(
                   children: [
-                    Icon(Icons.soup_kitchen_outlined, color: c.gold, size: 32),
+                    ExcludeSemantics(
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(color: amber, borderRadius: BorderRadius.circular(Radii.tile)),
+                        child: Icon(Icons.photo_camera_outlined, color: c.onPrimary),
+                      ),
+                    ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            l.whatCanICook,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: c.background,
-                            ),
-                          ),
-                          Text(
-                            l.whatCanICookBody,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: c.background.withValues(alpha: .78),
-                            ),
-                          ),
+                          Text(l.whatCanICook, style: AppText.section.copyWith(color: amber)),
+                          Text(l.whatCanICookBody, style: AppText.caption.copyWith(fontSize: 13, color: c.ink2)),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: c.background),
+                    Icon(Icons.chevron_right, color: amber),
                   ],
                 ),
               ),
@@ -620,42 +710,42 @@ class _RecipeBoxState extends State<_RecipeBox> {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           sliver: SliverGrid.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              mainAxisExtent:
-                  220 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
-            ),
+            gridDelegate: grid,
             itemCount: list.length,
-            itemBuilder: (context, i) => _RecipeTile(
-              recipe: list[i],
-              saved: saved.contains(list[i].id),
-              stars: tools.rating(list[i].id),
-              onSave: (on) =>
-                  setState(() => setRecipeSaved(tools, list[i].id, on)),
-              onOpen: () => Navigator.of(context)
-                  .push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => RecipeScreen(
-                        tools: tools,
-                        recipeId: list[i].id,
-                        onLogged: widget.data.changed,
-                      ),
-                    ),
-                  )
-                  .then((_) => setState(() {})),
-            ),
+            itemBuilder: (context, i) => tile(list[i]),
           ),
         ),
+        if (ideas != null && ideas.recipes.isNotEmpty && _cook == null && !searching) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: SectionTitle(
+                l.ideasForMeal(inSentence(context, mealName(l, ideas.meal))),
+                padding: const EdgeInsets.fromLTRB(2, 8, 2, 10),
+                trailing: ideas.left == null || ideas.left! <= 0
+                    ? null
+                    : Text(l.amountLeftApprox('${ideas.left!.round()} ${l.kcal}'),
+                        textAlign: TextAlign.end, style: AppText.caption.copyWith(color: c.muted)),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            sliver: SliverGrid.builder(
+              gridDelegate: grid,
+              itemCount: ideas.recipes.length,
+              itemBuilder: (context, i) => tile(ideas.recipes[i]),
+            ),
+          ),
+        ],
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           sliver: SliverToBoxAdapter(
             child: Text(
               l.boxFootnote,
-              style: TextStyle(fontSize: 14, color: c.muted),
+              style: AppText.caption.copyWith(fontSize: 13, color: c.muted),
             ),
           ),
         ),
@@ -682,6 +772,15 @@ class _RecipeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
+    Widget chip(String text, Color fg, Color bg) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+          child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg, fontFeatures: AppText.tabular)),
+        );
+    final green = context.nutrientColor('kcal'), coral = context.nutrientColor('protein_g');
+    final amber = context.nutrientColor('carbs_g');
+    // Protein gives at least a quarter of the calories.
+    final highProtein = recipe.kcal > 0 && recipe.protein * 4 / recipe.kcal >= .25;
     return Panel(
       padding: EdgeInsets.zero,
       onTap: onOpen,
@@ -690,14 +789,15 @@ class _RecipeTile extends StatelessWidget {
         children: [
           Stack(
             children: [
-              RecipeArt(title: recipe.title, height: 100),
+              RecipeArt(title: recipe.title, height: 108),
               Positioned(
-                top: 6,
-                right: 6,
+                top: 4,
+                right: 4,
                 child: RoundIconButton(
                   icon: saved ? Icons.bookmark : Icons.bookmark_border,
                   tooltip: saved ? l.removeSaved : l.cardSaveRecipe,
-                  foreground: c.primary,
+                  background: c.background.withValues(alpha: .85),
+                  foreground: saved ? c.primary : c.ink,
                   onPressed: () => onSave(!saved),
                 ),
               ),
@@ -712,21 +812,21 @@ class _RecipeTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       recipe.title,
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppText.item.copyWith(color: c.ink),
                     ),
                   ),
-                  Text(
-                    [
-                      _recipeLine(context, recipe),
-                      if (stars != null) '★ $stars',
-                    ].join(' · '),
-                    maxLines: 2,
-                    style: TextStyle(fontSize: 13, color: c.muted),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      chip('${recipe.kcal.round()} ${l.kcal}', green, tint(context, green)),
+                      if (recipe.minutes != null && recipe.minutes! > 0)
+                        chip(l.minutesShort(recipe.minutes!), c.ink2, c.surfaceHigh),
+                      if (highProtein) chip(l.highProtein, coral, tint(context, coral)),
+                      if (stars != null) chip('★ $stars', amber, tint(context, amber)),
+                    ],
                   ),
                 ],
               ),
@@ -861,7 +961,7 @@ class _ShoppingState extends State<_Shopping> {
       (byAisle[i.aisle] ??= []).add(i);
     }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         Row(
           children: [

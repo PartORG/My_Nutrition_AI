@@ -1,7 +1,7 @@
 name: myfoodmind
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.9.0+12
+version: 0.10.0+13
 
 environment:
   sdk: ^3.12.2
@@ -51,6 +51,17 @@ flutter:
   generate: true
   uses-material-design: true
   fonts:
+    - family: PlusJakartaSans  # OFL 1.1 (assets/fonts/OFL-PlusJakartaSans.txt); no Cyrillic, so Onest is its fallback
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
     - family: Onest  # OFL 1.1 (assets/fonts/OFL-Onest.txt); static instances of the variable font
       fonts:
         - asset: assets/fonts/Onest-Regular.ttf

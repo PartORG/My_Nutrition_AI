@@ -57,7 +57,7 @@ class NutrientTiles extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: nutrientColors[e.key]!.withValues(alpha: .10),
+              color: context.nutrientColor(e.key).withValues(alpha: .10),
               borderRadius: BorderRadius.circular(12),
             ),
             // One text, not a Row: at 200% text size it wraps instead of overflowing.
@@ -68,7 +68,7 @@ class NutrientTiles extends StatelessWidget {
                   width: 7,
                   height: 7,
                   margin: const EdgeInsets.only(right: 5),
-                  decoration: BoxDecoration(color: nutrientColors[e.key], shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: context.nutrientColor(e.key), shape: BoxShape.circle),
                 ),
               ),
               TextSpan(

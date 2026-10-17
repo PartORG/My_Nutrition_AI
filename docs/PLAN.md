@@ -426,6 +426,28 @@ columns for them at all.
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
 
+## v0.10.0 (2026-10-17): new design (docs/New_Design), light and dark
+
+- **Tokens** (`theme.dart`): the design's dark palette (background, surface, surfaceHigh, heroSurface) and one
+  colour per nutrient and per meal (breakfast amber, lunch green, dinner violet, snack coral), read with
+  `context.nutrientColor` / `context.mealColor`. Light keeps the roles with darker hues (each ≥ 4.5:1 on
+  white). Type: Plus Jakarta Sans (OFL), Onest as its fallback for Cyrillic; scale `AppText` (display 30/800 …
+  caption 12/500). Radii cards 20, hero 24, tiles 14, chips 12; gutter 16; app bar 64, nav 76.
+- **Kit:** `IconTile` / `MealIcon` (tinted squares), raised-tab `PillTabs`, smaller `ScreenHeader`.
+- **Today:** ring split by macro share, coloured macro bars, Goal · Eaten · Burnt · Left; fiber/sugar/sodium
+  tiles; "Meals · n of 4 logged" with one-row meal cards (tap to open the items, "+ Add" in the meal's colour,
+  "Suggested ~kcal"); water and steps cards; weight card with the 30-day line; **Vitamins and minerals** card
+  always shown (Basic: all seven, lowest first; Free: a teaser to the plans); "Rate what you ate" + History.
+- **Drawer:** profile hero with plan, Left today · Water · Weight, Track and Food sections, Settings and Lock.
+- **Me:** profile hero (height, weight, born, goal row), Energy with the macro split, macro tiles, target list,
+  links with coloured icons. The water goal is edited here only (500–6000 ml).
+- **Plan:** green day chips, "Your whole week, planned in one tap" hero, placeholder meals before planning.
+  **Recipes:** amber "What can I cook?", recipe tiles with kcal / time / high-protein / stars chips,
+  "Ideas for your dinner" (`mealIdeas`, the plan's picker sized to what's left today).
+- **Settings:** icon tiles per row, language picker dialog, meal-coloured reminder times; water goal and
+  "What the AI knows" moved out (Me, drawer).
+- Not done: the search (Settings) and filter (Plan, Recipes) header buttons, no feature behind them yet.
+
 ## v0.9.0 (2026-10-17): fix what the AI got wrong, Undo, burnt ring, Health Connect, History
 
 From the UI/UX audit (canvas "MyFoodMind UI/UX Audit") and phone testing.

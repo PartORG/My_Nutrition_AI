@@ -16,8 +16,6 @@ import '../data/profiles.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
-import 'me_screen.dart' show TargetDialog;
-import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'kit.dart';
 import 'paywall_screen.dart';
@@ -32,7 +30,6 @@ class SettingsScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final data = ref.watch(profileDataProvider);
     if (data == null) return const SizedBox.shrink();
-    final agent = ref.watch(agentProvider);
     final profiles = ref.watch(profilesProvider);
     return Scaffold(
       body: SafeArea(
@@ -47,39 +44,42 @@ class SettingsScreen extends ConsumerWidget {
               ScreenHeader(title: l.settingsTitle, back: true),
               _Group(title: l.lookAndLanguage, children: [
                 ListTile(
+                  leading: _icon(context, Icons.language, 'water'),
                   title: Text(l.language),
-                  // Under the title, not trailing: at 200 % text it wouldn't fit beside it.
-                  subtitle: DropdownButton<String>(
-                    isExpanded: true,
-                    value: ref.watch(languageProvider),
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(16),
-                    items: [
-                      for (final MapEntry(:key, :value) in languageOptions(l).entries)
-                        DropdownMenuItem(value: key, child: Text(value)),
-                    ],
-                    onChanged: (code) => ref.read(languageProvider.notifier).set(code ?? ''),
-                  ),
+                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                    // At 200 % text the name would squeeze the title: only the chevron then.
+                    if (MediaQuery.textScalerOf(context).scale(10) <= 15)
+                      Text(languageOptions(l)[ref.watch(languageProvider)] ?? '', style: TextStyle(fontSize: 14, color: c.muted)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right, color: c.muted),
+                  ]),
+                  onTap: () async {
+                    final current = ref.read(languageProvider);
+                    final code = await showDialog<String>(
+                      context: context,
+                      builder: (context) => SimpleDialog(
+                        title: Text(l.language),
+                        children: [
+                          for (final MapEntry(:key, :value) in languageOptions(l).entries)
+                            ListTile(
+                              title: Text(value),
+                              trailing: key == current ? const Icon(Icons.check) : null,
+                              onTap: () => Navigator.pop(context, key),
+                            ),
+                        ],
+                      ),
+                    );
+                    if (code != null) ref.read(languageProvider.notifier).set(code);
+                  },
                 ),
                 const _Appearance(),
               ]),
-              _Group(title: l.remindersTitle, children: [
+              _Group(title: l.remindersTitle, hint: l.remindersHint, children: [
                 _Reminders(data: data),
-                ListTile(
-                  title: Text(l.waterGoal),
-                  trailing: Text('${waterGoal(data.user).round()} ml', style: TextStyle(fontSize: 15, color: c.muted)),
-                  onTap: () async {
-                    // null = cancelled, -1 = back to the computed goal.
-                    final ml = await showDialog<double>(
-                        context: context, builder: (_) => TargetDialog(title: l.waterGoal, initial: waterGoal(data.user)));
-                    if (ml == null) return;
-                    setPref(data.user, 'water_goal_ml', ml < 0 ? '' : '${ml.clamp(500, 6000)}');
-                    data.changed();
-                  },
-                ),
                 // Not offered under 18; the caution stays visible next to the switch.
                 if (adult)
                   SwitchListTile(
+                    secondary: _icon(context, Icons.timer_outlined, 'carbs_g'),
                     title: Text(l.fastingSwitch),
                     subtitle: Text(l.fastingCaution),
                     value: pref(data.user, 'fasting') == '1',
@@ -94,6 +94,7 @@ class SettingsScreen extends ConsumerWidget {
                 if (llmChoices().length > 1) const AiModelCard(),
                 if (healthSupported)
                   SwitchListTile(
+                    secondary: _icon(context, Icons.favorite_border, 'fiber_g'),
                     title: Text(Platform.isIOS ? l.appleHealth : l.healthConnect),
                     subtitle: Text(l.healthSyncHint),
                     value: healthSyncOn(data.user),
@@ -107,18 +108,11 @@ class SettingsScreen extends ConsumerWidget {
                     },
                   ),
                 _Products(data: data),
-                ListTile(
-                  title: Text(l.aiKnowsTitle),
-                  subtitle: agent.hasValue ? null : Text(l.aiKnowsLoading),
-                  trailing: const Icon(Icons.chevron_right),
-                  enabled: agent.hasValue,
-                  onTap: () => Navigator.of(context)
-                      .push(MaterialPageRoute<void>(builder: (_) => MemoryScreen(agent: agent.requireValue))),
-                ),
               ]),
               _Group(title: l.settingsPrivacy, children: [
                 if (ref.watch(biometricsAvailableProvider).value == true)
                   SwitchListTile(
+                    secondary: _icon(context, Icons.fingerprint, 'fat_g'),
                     title: Text(l.fingerprintTitle),
                     subtitle: Text(l.fingerprintHint),
                     value: profiles.biometricEnabled(data.profile.id),
@@ -130,12 +124,14 @@ class SettingsScreen extends ConsumerWidget {
                     },
                   ),
                 ListTile(
+                  leading: _icon(context, Icons.lock_outline, 'carbs_g'),
                   title: Text(l.changePin),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, color: c.muted),
                   onTap: () => showDialog<void>(context: context, builder: (_) => _ChangePinDialog(id: data.profile.id)),
                 ),
                 if (google != null || googleClientId.isNotEmpty)
                   ListTile(
+                    leading: _icon(context, Icons.account_circle_outlined, 'sodium_mg'),
                     title: Text(l.googleAccount),
                     subtitle: Text(google == null ? l.googleNotLinked : l.googleLinked(google)),
                     trailing: OutlinedButton(
@@ -154,6 +150,7 @@ class SettingsScreen extends ConsumerWidget {
                 // Visible without the PIN, so off until the owner says so.
                 if (Platform.isAndroid)
                   SwitchListTile(
+                    secondary: _icon(context, Icons.widgets_outlined, 'kcal'),
                     title: Text(l.widgetKcalTitle),
                     subtitle: Text(l.widgetKcalHint),
                     value: widgetShowsKcal(profiles),
@@ -165,8 +162,9 @@ class SettingsScreen extends ConsumerWidget {
               ]),
               _Group(title: l.settingsAbout, children: [
                 ListTile(
+                  leading: _icon(context, Icons.medical_information_outlined, 'protein_g'),
                   title: Text(l.medicalDisclaimerTitle),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, color: c.muted),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -181,23 +179,26 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 ListTile(
+                  leading: _icon(context, Icons.description_outlined, 'sodium_mg'),
                   title: Text(l.licenses),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, color: c.muted),
                   onTap: () => showLicensePage(context: context, applicationName: l.appTitle),
                 ),
                 ListTile(
+                  leading: _icon(context, Icons.privacy_tip_outlined, 'kcal'),
                   title: Text(l.privacyPolicy),
-                  trailing: const Icon(Icons.open_in_new),
+                  trailing: Icon(Icons.open_in_new, color: c.muted),
                   onTap: () => openLegal('privacy.html'),
                 ),
                 ListTile(
+                  leading: _icon(context, Icons.gavel_outlined, 'sugar_g'),
                   title: Text(l.termsOfUse),
-                  trailing: const Icon(Icons.open_in_new),
+                  trailing: Icon(Icons.open_in_new, color: c.muted),
                   onTap: () => openLegal('terms.html'),
                 ),
               ]),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 child: Panel(
                   color: c.dangerBg,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -270,21 +271,31 @@ class LanguageMenu extends ConsumerWidget {
   }
 }
 
-/// A caps label and its rows in one card.
+/// A caps label, an optional line under it, and its rows in one card.
 class _Group extends StatelessWidget {
-  const _Group({required this.title, required this.children});
+  const _Group({required this.title, required this.children, this.hint});
   final String title;
+  final String? hint;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SectionLabel(title),
+          SectionLabel(title, padding: EdgeInsets.fromLTRB(4, 20, 4, hint == null ? 8 : 4)),
+          if (hint != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+              child: Text(hint!, style: AppText.caption.copyWith(fontSize: 13, color: context.colors.muted)),
+            ),
           PanelList(children: children),
         ]),
       );
 }
+
+/// A setting's icon: the design's tinted square, in one of the palette's colours.
+Widget _icon(BuildContext context, IconData icon, String accent) =>
+    IconTile(icon: icon, color: context.nutrientColor(accent), size: 36);
 
 /// Settings → Change PIN: the current one, then the new one twice.
 class _ChangePinDialog extends ConsumerStatefulWidget {
@@ -376,12 +387,17 @@ class _Appearance extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final look = ref.watch(appearanceProvider);
     final set = ref.read(appearanceProvider.notifier).set;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Divider(indent: 16, endIndent: 16, color: context.colors.divider),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(l.appearance, style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 8),
+          Row(children: [
+            _icon(context, Icons.dark_mode_outlined, 'fat_g'),
+            const SizedBox(width: 16),
+            Expanded(child: Text(l.appearance, style: Theme.of(context).listTileTheme.titleTextStyle)),
+          ]),
+          const SizedBox(height: 10),
           PillTabs<ThemeMode>(
             values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
             selected: look.mode,
@@ -390,7 +406,9 @@ class _Appearance extends ConsumerWidget {
           ),
         ]),
       ),
+      Divider(indent: 16, endIndent: 16, color: context.colors.divider),
       SwitchListTile(
+        secondary: _icon(context, Icons.palette_outlined, 'fiber_g'),
         title: Text(l.wallpaperColors),
         subtitle: Text(l.wallpaperColorsHint),
         value: look.wallpaper,
@@ -428,36 +446,63 @@ class _Reminders extends ConsumerWidget {
       await service.apply(data.profile.id, loadReminders(data.user, now: DateTime.now()), text);
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Text(l.remindersHint, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      ),
-      for (final r in reminders)
+    final divider = Divider(indent: 16, endIndent: 16, color: context.colors.divider);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (final (i, r) in reminders.indexed) ...[
+        if (i > 0) divider,
         SwitchListTile(
           title: Text(labels[r.slot]!),
-          secondary: TextButton(
-            onPressed: () async {
-              final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: r.hour, minute: r.minute));
-              if (t != null) await update((slot: r.slot, enabled: r.enabled, hour: t.hour, minute: t.minute));
-            },
-            child: Text(TimeOfDay(hour: r.hour, minute: r.minute).format(context)),
-          ),
+          // The time in its meal's colour; tap to change it.
+          secondary: () {
+            final color = context.mealColor(r.slot == 'evening' ? 'snack' : r.slot);
+            // Centered: the list tile would stretch it to the row's height.
+            return Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Material(
+              color: tint(context, color, alpha: .18),
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () async {
+                  final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: r.hour, minute: r.minute));
+                  if (t != null) await update((slot: r.slot, enabled: r.enabled, hour: t.hour, minute: t.minute));
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 36, minWidth: 60),
+                  child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Text(TimeOfDay(hour: r.hour, minute: r.minute).format(context),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: color, fontFeatures: AppText.tabular)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            );
+          }(),
           value: r.enabled,
           onChanged: (on) => update((slot: r.slot, enabled: on, hour: r.hour, minute: r.minute)),
         ),
+      ],
+      divider,
       TierBuilder(builder: (context, tier) {
         final times = waterTimes(waterGoal(data.user));
         String at((int, int) t) => TimeOfDay(hour: t.$1, minute: t.$2).format(context);
         if (!tier.includes(Tier.basic)) {
           return ListTile(
+            leading: _icon(context, Icons.water_drop_outlined, 'water'),
             title: Text(l.reminderWater),
             subtitle: Text(l.reminderWaterLocked),
-            trailing: const Icon(Icons.lock_outline),
+            trailing: Icon(Icons.lock_outline, color: context.colors.muted),
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen())),
           );
         }
         return SwitchListTile(
+          secondary: _icon(context, Icons.water_drop_outlined, 'water'),
           title: Text(l.reminderWater),
           subtitle: Text(l.reminderWaterHint(times.length, at(times.first), at(times.last))),
           value: pref(data.user, waterReminderPref) == '1',
@@ -495,28 +540,38 @@ class _ProductsState extends ConsumerState<_Products> {
     final progress = ref.watch(productsDownloadProvider);
     final info = productsInfo(widget.data.tools.products);
     final download = ref.read(productsDownloadProvider.notifier);
+    final c = context.colors;
+    final green = context.nutrientColor('kcal');
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(l.productsTitle, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(info == null ? l.productsNone : l.productsHave(NumberFormat.decimalPattern().format(info.rows), info.builtAt)),
-        const SizedBox(height: 8),
-        DownloadBar(productsDownloadProvider),
-        Align(
-          alignment: Alignment.centerRight,
-          child: progress != null
-              ? const SizedBox.shrink()
-              : info == null
-                  ? TextButton.icon(
-                      icon: const Icon(Icons.download),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _icon(context, Icons.inventory_2_outlined, 'kcal'),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.productsTitle, style: Theme.of(context).listTileTheme.titleTextStyle),
+            const SizedBox(height: 2),
+            Text(info == null ? l.productsNone : l.productsHave(NumberFormat.decimalPattern().format(info.rows), info.builtAt),
+                style: Theme.of(context).listTileTheme.subtitleTextStyle),
+            const SizedBox(height: 8),
+            DownloadBar(productsDownloadProvider),
+            if (progress == null)
+              info == null
+                  ? FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: tint(context, green, alpha: .18), foregroundColor: green, minimumSize: const Size(48, 44)),
+                      icon: const Icon(Icons.download, size: 18),
                       label: Text(l.productsDownload(productsDownloadMb)),
                       onPressed: () async {
                         final wifiOnly = await askNetwork(context, productsDownloadMb);
                         if (wifiOnly != null) await download.start(wifiOnly: wifiOnly, title: l.productsTitle);
                       },
                     )
-                  : TextButton(onPressed: () => setState(download.remove), child: Text(l.productsRemove)),
+                  : TextButton(
+                      style: TextButton.styleFrom(foregroundColor: c.danger),
+                      onPressed: () => setState(download.remove),
+                      child: Text(l.productsRemove)),
+          ]),
         ),
       ]),
     );

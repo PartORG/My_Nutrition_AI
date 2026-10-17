@@ -506,9 +506,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get editDetails => 'Змінити мої дані';
 
   @override
-  String get aiKnowsLoading => 'Доступно, коли ШІ завантажиться.';
-
-  @override
   String get switchProfile => 'Заблокувати й змінити профіль';
 
   @override
@@ -1209,10 +1206,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get planTab => 'План';
 
   @override
-  String get planEmpty =>
-      'Сплануйте тиждень: сніданок, обід і вечеря з бази рецептів, під вашу ціль калорій, без ваших алергенів і спершу з рецептами, які ви високо оцінили.';
-
-  @override
   String get planWeek => 'Спланувати тиждень';
 
   @override
@@ -1850,15 +1843,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get back => 'Назад';
 
   @override
-  String get badgeMorning => 'РАНОК';
-
-  @override
-  String get badgeNoon => 'ОБІД';
-
-  @override
-  String get badgeEvening => 'ВЕЧІР';
-
-  @override
   String get boxEmpty =>
       'Тут поки порожньо. Збережіть рецепт закладкою або скористайтеся пошуком.';
 
@@ -2314,4 +2298,83 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get cameraGalleryNeedsAi =>
       'Для фото з галереї потрібен ШІ-помічник. Завантажте його в Чаті.';
+
+  @override
+  String get mealsTitle => 'Прийоми їжі';
+
+  @override
+  String mealsLogged(int n) {
+    return '$n з 4 записано';
+  }
+
+  @override
+  String suggestedAmount(String amount) {
+    return 'Рекомендовано ~$amount';
+  }
+
+  @override
+  String get rateWhatYouAte => 'Оцініть, що ви їли';
+
+  @override
+  String get rateButton => 'Оцінити';
+
+  @override
+  String get leftToday => 'Залишилось';
+
+  @override
+  String get drawerTrack => 'Відстеження';
+
+  @override
+  String get meOverline => 'Профіль і цілі';
+
+  @override
+  String goalIs(String goal) {
+    return 'Мета: $goal';
+  }
+
+  @override
+  String get energy => 'Енергія';
+
+  @override
+  String get bornLabel => 'Рік народження';
+
+  @override
+  String get planHeroTitle => 'Увесь тиждень, спланований одним дотиком';
+
+  @override
+  String get planHeroBody => 'Сніданок, обід і вечеря зі 166 000 рецептів.';
+
+  @override
+  String planSized(String amount) {
+    return 'Під вашу ціль $amount';
+  }
+
+  @override
+  String get planNoAllergens => 'Без ваших алергенів';
+
+  @override
+  String get planStarsFirst => 'Спершу ваші рецепти на 4★+';
+
+  @override
+  String get fillsAfterPlanning => 'Заповниться після планування';
+
+  @override
+  String get allergenFreeForYou => 'Без алергенів для вас';
+
+  @override
+  String ideasForMeal(String meal) {
+    return 'Ідеї: $meal';
+  }
+
+  @override
+  String amountLeftApprox(String amount) {
+    return '~$amount залишилось';
+  }
+
+  @override
+  String get microsLocked =>
+      'Вітаміни й мінерали за день порівняно з референтними нормами ЄС — у тарифі Basic.';
+
+  @override
+  String get highProtein => 'Багато білка';
 }

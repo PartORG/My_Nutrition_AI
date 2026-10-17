@@ -1,14 +1,14 @@
 import 'package:material_ui/material_ui.dart';
 
-/// The design's light palette (docs/MyFoodMind redesign.html): warm paper, deep green, near-black ink.
+/// The design's tokens (docs/New_Design/Colour & type tokens): one colour per nutrient and per meal,
+/// used the same way on every screen. Dark is the design's; light keeps the roles with darker hues.
 class AppColors {
-  static const Color primary = Color(0xFF1F6B3A);
-  static const Color background = Color(0xFFF6F5EF);
+  static const Color primary = Color(0xFF0B7D4C);
+  static const Color background = Color(0xFFF3F6F4);
 }
 
 /// The app's colours for the current theme: `context.colors.muted`.
-/// Light is the redesign's palette; dark is derived from it (and from its dark Cook mode);
-/// "wallpaper colours" (Android 12+) derive both from the system scheme.
+/// "Wallpaper colours" (Android 12+) derive the surfaces from the system scheme.
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   const AppPalette({
@@ -17,6 +17,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.onPrimary,
     required this.background,
     required this.surface,
+    required this.surfaceHigh,
+    required this.heroSurface,
     required this.ink,
     required this.ink2,
     required this.muted,
@@ -36,21 +38,22 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.dangerBg,
     required this.gold,
     required this.dark,
+    required this.accents,
   });
 
-  /// Brand green (links, primary buttons), its pressed shade and what sits on it.
+  /// Brand green (links, primary buttons), its pressed shade and what sits on it (and on any accent fill).
   final Color primary, primaryDark, onPrimary;
 
-  /// Screen background and cards.
-  final Color background, surface;
+  /// Screen background, cards, a raised control on a card (selected tab, icon button), the green hero cards.
+  final Color background, surface, surfaceHigh, heroSurface;
 
   /// Text: headings, secondary body, captions.
   final Color ink, ink2, muted;
 
-  /// Card border, row divider, segmented-control track, outlined-button border.
+  /// Card border, row divider, progress track, outlined-button border.
   final Color border, divider, track, outline;
 
-  /// The calories hero card.
+  /// Strong green fill under white text (avatars, the set-goals card).
   final Color hero;
 
   /// Soft green chip (good news, "custom"), warm amber chip (plan, streak, Pro), water blue.
@@ -62,8 +65,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Pro badge, cook timer.
   final Color gold;
 
-  /// Near-black: the + button, user chat bubbles, dark promo cards.
+  /// Highest contrast to the background: selected chips, user chat bubbles.
   final Color dark;
+
+  /// Nutrient key ('kcal', 'protein_g', …, 'water') → its colour; see [nutrientColor].
+  final Map<String, Color> accents;
 
   // Names the screens used before the redesign.
   Color get textPrimary => ink;
@@ -73,58 +79,87 @@ class AppPalette extends ThemeExtension<AppPalette> {
   Color get primaryLight => primary;
   Color get error => danger;
 
+  static const _nightAccents = {
+    'kcal': Color(0xFF6EE7A8),
+    'protein_g': Color(0xFFFF8A6B),
+    'carbs_g': Color(0xFFFFC24D),
+    'fat_g': Color(0xFFA99BFF),
+    'fiber_g': Color(0xFFF59AC4),
+    'sugar_g': Color(0xFFC4E36B),
+    'sodium_mg': Color(0xFF8FB2FF),
+    'water': Color(0xFF5CC2FF),
+  };
+
+  // The same hues, dark enough for text on white (each ≥ 4.5:1).
+  static const _lightAccents = {
+    'kcal': Color(0xFF0B7D4C),
+    'protein_g': Color(0xFFC9471F),
+    'carbs_g': Color(0xFF9A6500),
+    'fat_g': Color(0xFF6650DB),
+    'fiber_g': Color(0xFFBF3A7A),
+    'sugar_g': Color(0xFF587600),
+    'sodium_mg': Color(0xFF3460D0),
+    'water': Color(0xFF0072AD),
+  };
+
   static const light = AppPalette(
-    primary: Color(0xFF1F6B3A),
-    primaryDark: Color(0xFF164F2B),
+    primary: Color(0xFF0B7D4C),
+    primaryDark: Color(0xFF07603A),
     onPrimary: Colors.white,
-    background: Color(0xFFF6F5EF),
+    background: Color(0xFFF3F6F4),
     surface: Colors.white,
-    ink: Color(0xFF16201A),
-    ink2: Color(0xFF3D4A41),
-    muted: Color(0xFF5A675E),
-    border: Color(0xFFE3E4DC),
-    divider: Color(0xFFEFEFE9),
-    track: Color(0xFFECEDE5),
-    outline: Color(0xFFD5D8CD),
-    hero: Color(0xFF1F6B3A),
-    mint: Color(0xFFE1EEE2),
-    onMint: Color(0xFF1F4D2E),
-    warm: Color(0xFFFFF4E5),
-    onWarm: Color(0xFF6B4A12),
-    water: Color(0xFF2A78D6),
-    waterBg: Color(0xFFE3EEFB),
-    waterTint: Color(0xFFDCE6F2),
-    danger: Color(0xFFA3321C),
-    dangerBg: Color(0xFFFDF3F1),
-    gold: Color(0xFFF7C74F),
-    dark: Color(0xFF16201A),
+    surfaceHigh: Color(0xFFE7EEEA),
+    heroSurface: Color(0xFFDCF2E6),
+    ink: Color(0xFF0F1A15),
+    ink2: Color(0xFF33433B),
+    muted: Color(0xFF56665E),
+    border: Color(0xFFE1E7E3),
+    divider: Color(0xFFECF0ED),
+    track: Color(0xFFE7EEEA),
+    outline: Color(0xFFCDD6D1),
+    hero: Color(0xFF0B7D4C),
+    mint: Color(0xFFE2F1EB),
+    onMint: Color(0xFF07603A),
+    warm: Color(0xFFF6EFE0),
+    onWarm: Color(0xFF7A5000),
+    water: Color(0xFF0072AD),
+    waterBg: Color(0xFFE0EEF5),
+    waterTint: Color(0xFFD5E6EF),
+    danger: Color(0xFFB3261E),
+    dangerBg: Color(0xFFFCEDEB),
+    gold: Color(0xFFFFC24D),
+    dark: Color(0xFF0F1A15),
+    accents: _lightAccents,
   );
 
   static const night = AppPalette(
-    primary: Color(0xFF8CD4A6),
-    primaryDark: Color(0xFFA8EBCF),
-    onPrimary: Color(0xFF0F2A1E),
-    background: Color(0xFF121A15),
-    surface: Color(0xFF1B231E),
-    ink: Color(0xFFE8EDE6),
-    ink2: Color(0xFFC9D3CB),
-    muted: Color(0xFFA9B8AD),
-    border: Color(0xFF2E3A32),
-    divider: Color(0xFF25302A),
-    track: Color(0xFF1E3326),
-    outline: Color(0xFF3A473E),
-    hero: Color(0xFF1E5A33),
-    mint: Color(0xFF1E3326),
-    onMint: Color(0xFFCFE3D2),
-    warm: Color(0xFF3A2A05),
-    onWarm: Color(0xFFF3D9B1),
-    water: Color(0xFF9BC1EE),
-    waterBg: Color(0xFF1D3F6B),
-    waterTint: Color(0xFF2E4A3B),
-    danger: Color(0xFFF0C4BA),
-    dangerBg: Color(0xFF5C2A1F),
-    gold: Color(0xFFF7C74F),
-    dark: Color(0xFFE8EDE6),
+    primary: Color(0xFF6EE7A8),
+    primaryDark: Color(0xFF9FF0C6),
+    onPrimary: Color(0xFF0D1311),
+    background: Color(0xFF0D1311),
+    surface: Color(0xFF151D1A),
+    surfaceHigh: Color(0xFF26332D),
+    heroSurface: Color(0xFF17332A),
+    ink: Color(0xFFECF3EE),
+    ink2: Color(0xFFC9D6CF),
+    muted: Color(0xFFA3B5AC),
+    border: Color(0xFF1E2824),
+    divider: Color(0xFF222C27),
+    track: Color(0xFF26332D),
+    outline: Color(0xFF34433C),
+    hero: Color(0xFF1E5A3C),
+    mint: Color(0xFF233D31),
+    onMint: Color(0xFF6EE7A8),
+    warm: Color(0xFF3A3722),
+    onWarm: Color(0xFFFFC24D),
+    water: Color(0xFF5CC2FF),
+    waterBg: Color(0xFF173A5A),
+    waterTint: Color(0xFF20373F),
+    danger: Color(0xFFFF8F80),
+    dangerBg: Color(0xFF3D211D),
+    gold: Color(0xFFFFC24D),
+    dark: Color(0xFFECF3EE),
+    accents: _nightAccents,
   );
 
   /// From a system (wallpaper) scheme: the same roles, the wallpaper's colours.
@@ -135,7 +170,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
       primaryDark: s.onPrimaryContainer,
       onPrimary: s.onPrimary,
       background: s.surface,
-      surface: s.surfaceContainerLowest,
+      surface: s.surfaceContainerLow,
+      surfaceHigh: s.surfaceContainerHighest,
+      heroSurface: s.primaryContainer,
       ink: s.onSurface,
       ink2: s.onSurfaceVariant,
       muted: s.onSurfaceVariant,
@@ -159,6 +196,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? onPrimary,
     Color? background,
     Color? surface,
+    Color? surfaceHigh,
+    Color? heroSurface,
     Color? ink,
     Color? ink2,
     Color? muted,
@@ -179,6 +218,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
         onPrimary: onPrimary ?? this.onPrimary,
         background: background ?? this.background,
         surface: surface ?? this.surface,
+        surfaceHigh: surfaceHigh ?? this.surfaceHigh,
+        heroSurface: heroSurface ?? this.heroSurface,
         ink: ink ?? this.ink,
         ink2: ink2 ?? this.ink2,
         muted: muted ?? this.muted,
@@ -198,6 +239,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
         dangerBg: dangerBg,
         gold: gold,
         dark: dark ?? this.dark,
+        accents: accents,
       );
 
   @override
@@ -210,6 +252,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       onPrimary: m(onPrimary, other.onPrimary),
       background: m(background, other.background),
       surface: m(surface, other.surface),
+      surfaceHigh: m(surfaceHigh, other.surfaceHigh),
+      heroSurface: m(heroSurface, other.heroSurface),
       ink: m(ink, other.ink),
       ink2: m(ink2, other.ink2),
       muted: m(muted, other.muted),
@@ -229,6 +273,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       dangerBg: m(dangerBg, other.dangerBg),
       gold: m(gold, other.gold),
       dark: m(dark, other.dark),
+      accents: {for (final e in accents.entries) e.key: m(e.value, other.accents[e.key] ?? e.value)},
     );
   }
 }
@@ -240,30 +285,48 @@ extension AppPaletteX on BuildContext {
       (Theme.of(this).brightness == Brightness.dark ? AppPalette.night : AppPalette.light);
 }
 
-/// The calories card and drawer header: the hero green running into teal.
-LinearGradient heroGradient(AppPalette c) => LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [c.hero, Color.lerp(c.hero, const Color(0xFF13A08A), .55)!]);
+extension AccentX on BuildContext {
+  /// A nutrient's colour ('protein_g', 'kcal', 'water'…) in this theme.
+  Color nutrientColor(String key) => colors.accents[key] ?? colors.primary;
 
-/// Each meal's colour and icon on Today: white icon on the colour, the card a wash of it.
-const mealStyles = {
-  'breakfast': (Color(0xFFE8961E), Icons.free_breakfast_outlined),
-  'lunch': (Color(0xFF2E9E5B), Icons.lunch_dining_outlined),
-  'dinner': (Color(0xFF5B6CD6), Icons.dinner_dining_outlined),
-  'snack': (Color(0xFFE5674F), Icons.cookie_outlined),
+  /// A meal's colour, the same on every screen: breakfast amber, lunch green, dinner violet, snack coral.
+  Color mealColor(String type) => nutrientColor(_mealAccent[type] ?? 'protein_g');
+}
+
+const _mealAccent = {'breakfast': 'carbs_g', 'lunch': 'kcal', 'dinner': 'fat_g', 'snack': 'protein_g'};
+
+/// Each meal's icon, drawn in its colour on a [tint] of it.
+const mealIcons = {
+  'breakfast': Icons.coffee_outlined,
+  'lunch': Icons.rice_bowl_outlined,
+  'dinner': Icons.bedtime_outlined,
+  'snack': Icons.cookie_outlined,
 };
 
-/// [color] washed over the card surface, a little stronger at night to show on the dark.
-Color tint(BuildContext context, Color color) => Color.alphaBlend(
-    color.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .16 : .10), context.colors.surface);
+/// [color] washed over [base] (the card surface): the design's 16 % tint, 10 % on light for contrast.
+Color tint(BuildContext context, Color color, {Color? base, double? alpha}) => Color.alphaBlend(
+    color.withValues(alpha: alpha ?? (Theme.of(context).brightness == Brightness.dark ? .16 : .10)),
+    base ?? context.colors.surface);
 
-/// Corner radii of the design: cards 20, small cards 18, inputs and tiles 14-16, pills full.
+/// Corner radii of the design: cards 20, hero cards 24, tiles and inputs 14, chips 12, pills full.
 abstract final class Radii {
   static const card = 20.0;
-  static const tile = 18.0;
-  static const input = 16.0;
+  static const hero = 24.0;
+  static const tile = 14.0;
+  static const input = 14.0;
+  static const chip = 12.0;
   static const pill = 999.0;
+}
+
+/// Type scale of the design (Plus Jakarta Sans): display 30/800 … caption 12/500.
+abstract final class AppText {
+  static const display = TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -0.6, height: 1.15);
+  static const title = TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3, height: 1.2);
+  static const section = TextStyle(fontSize: 16, fontWeight: FontWeight.w800, height: 1.25);
+  static const item = TextStyle(fontSize: 15, fontWeight: FontWeight.w700, height: 1.25);
+  static const body = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, height: 1.3);
+  static const caption = TextStyle(fontSize: 12, fontWeight: FontWeight.w500, height: 1.3);
+  static const tabular = [FontFeature.tabularFigures()];
 }
 
 class AppTheme {
@@ -297,24 +360,24 @@ class AppTheme {
           error: p.danger,
           inverseSurface: p.dark,
         );
-    const font = 'Onest';
-    final base = ThemeData(useMaterial3: true, brightness: brightness, fontFamily: font);
-    TextStyle? tight(TextStyle? s, double size, FontWeight w) =>
-        s?.copyWith(fontSize: size, fontWeight: w, letterSpacing: -0.02 * size, color: p.ink, height: 1.15);
+    const font = 'PlusJakartaSans';
+    const fallback = ['Onest']; // Cyrillic (Ukrainian): Plus Jakarta Sans has none
+    final base = ThemeData(useMaterial3: true, brightness: brightness, fontFamily: font, fontFamilyFallback: fallback);
+    TextStyle? as(TextStyle? s, TextStyle t, [Color? color]) => s?.merge(t).copyWith(color: color ?? p.ink);
     final text = base.textTheme.copyWith(
-      displaySmall: tight(base.textTheme.displaySmall, 34, FontWeight.w700),
-      headlineLarge: tight(base.textTheme.headlineLarge, 34, FontWeight.w700),
-      headlineMedium: tight(base.textTheme.headlineMedium, 28, FontWeight.w700),
-      headlineSmall: tight(base.textTheme.headlineSmall, 24, FontWeight.w700),
-      titleLarge: base.textTheme.titleLarge?.copyWith(fontSize: 20, fontWeight: FontWeight.w700, color: p.ink),
-      titleMedium: base.textTheme.titleMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w700, color: p.ink),
-      titleSmall: base.textTheme.titleSmall?.copyWith(fontSize: 15, fontWeight: FontWeight.w600, color: p.ink),
+      displaySmall: as(base.textTheme.displaySmall, AppText.display),
+      headlineLarge: as(base.textTheme.headlineLarge, AppText.display),
+      headlineMedium: as(base.textTheme.headlineMedium, AppText.display.copyWith(fontSize: 26)),
+      headlineSmall: as(base.textTheme.headlineSmall, AppText.title),
+      titleLarge: as(base.textTheme.titleLarge, AppText.title),
+      titleMedium: as(base.textTheme.titleMedium, AppText.section),
+      titleSmall: as(base.textTheme.titleSmall, AppText.item),
       bodyLarge: base.textTheme.bodyLarge?.copyWith(fontSize: 15, color: p.ink),
       bodyMedium: base.textTheme.bodyMedium?.copyWith(fontSize: 14, color: p.ink2),
-      bodySmall: base.textTheme.bodySmall?.copyWith(fontSize: 12, color: p.muted),
-      labelLarge: base.textTheme.labelLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+      bodySmall: as(base.textTheme.bodySmall, AppText.caption, p.muted),
+      labelLarge: base.textTheme.labelLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
     );
-    final pill = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.pill));
+    final pill = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile));
     const tall = Size(64, 52);
     final inputBorder = OutlineInputBorder(
         borderRadius: BorderRadius.circular(Radii.input), borderSide: BorderSide(color: p.border));
@@ -336,23 +399,23 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
             backgroundColor: p.primary, foregroundColor: p.onPrimary, minimumSize: tall, shape: pill,
-            textStyle: const TextStyle(fontFamily: font, fontSize: 16, fontWeight: FontWeight.w600)),
+            textStyle: const TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 16, fontWeight: FontWeight.w700)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
             backgroundColor: p.primary, foregroundColor: p.onPrimary, elevation: 0, minimumSize: tall, shape: pill,
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            textStyle: const TextStyle(fontFamily: font, fontSize: 16, fontWeight: FontWeight.w600)),
+            textStyle: const TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 16, fontWeight: FontWeight.w700)),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
             backgroundColor: p.surface, foregroundColor: p.ink, side: BorderSide(color: p.outline),
             minimumSize: tall, shape: pill, padding: const EdgeInsets.symmetric(horizontal: 24),
-            textStyle: const TextStyle(fontFamily: font, fontSize: 16, fontWeight: FontWeight.w600)),
+            textStyle: const TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 16, fontWeight: FontWeight.w700)),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: p.primary, minimumSize: const Size(48, 48),
-            textStyle: const TextStyle(fontFamily: font, fontSize: 15, fontWeight: FontWeight.w600)),
+            textStyle: const TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 15, fontWeight: FontWeight.w700)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -376,8 +439,8 @@ class AppTheme {
         selectedColor: p.dark,
         side: BorderSide(color: p.outline),
         shape: pill,
-        labelStyle: TextStyle(fontFamily: font, fontSize: 15, color: p.ink),
-        secondaryLabelStyle: TextStyle(fontFamily: font, fontSize: 15, color: p.background),
+        labelStyle: TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 15, color: p.ink),
+        secondaryLabelStyle: TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 15, color: p.background),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         showCheckmark: false,
       ),
@@ -389,7 +452,7 @@ class AppTheme {
           foregroundColor: p.muted,
           side: BorderSide.none,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: const TextStyle(fontFamily: font, fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
       checkboxTheme: CheckboxThemeData(
@@ -404,8 +467,10 @@ class AppTheme {
       ),
       listTileTheme: ListTileThemeData(
         iconColor: p.primary,
-        titleTextStyle: TextStyle(fontFamily: font, fontSize: 16, color: p.ink),
-        subtitleTextStyle: TextStyle(fontFamily: font, fontSize: 13, color: p.muted),
+        titleTextStyle:
+            TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 15, fontWeight: FontWeight.w600, color: p.ink),
+        subtitleTextStyle:
+            TextStyle(fontFamily: font, fontFamilyFallback: fallback, fontSize: 13, fontWeight: FontWeight.w500, color: p.muted),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: p.background,
@@ -420,7 +485,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: p.dark,
-        contentTextStyle: TextStyle(fontFamily: font, color: p.background, fontSize: 14),
+        contentTextStyle: TextStyle(fontFamily: font, fontFamilyFallback: fallback, color: p.background, fontSize: 14),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
@@ -435,24 +500,3 @@ class AppTheme {
     );
   }
 }
-
-/// One fixed colour per nutrient, everywhere in the app (categorical slots
-/// 1–7 of the dataviz reference palette, in order; validated for colour-blind
-/// separation on white). Text stays in text colours; the colour marks identity.
-/// Yellow, aqua and pink are under 3:1 on white, so every value keeps a visible label.
-const nutrientColors = <String, Color>{
-  'kcal': Color(0xFF2A78D6),
-  'protein_g': Color(0xFFEB6834),
-  'fat_g': Color(0xFF1BAF7A),
-  'carbs_g': Color(0xFFEDA100),
-  'fiber_g': Color(0xFFE87BA4),
-  'sugar_g': Color(0xFF008300),
-  'sodium_mg': Color(0xFF4A3AA7),
-};
-
-/// The macro bars on the green hero card: lighter tints of the nutrient colours, readable on green.
-const heroMacroColors = <String, Color>{
-  'protein_g': Color(0xFFF6A27F),
-  'carbs_g': Color(0xFFF7C74F),
-  'fat_g': Color(0xFF7FDDB6),
-};

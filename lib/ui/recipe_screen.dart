@@ -498,7 +498,7 @@ class _MacroTiles extends StatelessWidget {
               ? '${values[k]!.round()}'
               : '${values[k]!.round()} g',
           label: k == 'kcal' ? l.kcal : labels[k]!.$1,
-          dot: nutrientColors[k],
+          dot: context.nutrientColor(k),
         ),
     ];
     // Four across, two by two at large text.

@@ -22,6 +22,8 @@ Future<void> main() async {
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(['Noto Sans'], await rootBundle.loadString('assets/fonts/OFL.txt'));
     yield LicenseEntryWithLineBreaks(['Onest'], await rootBundle.loadString('assets/fonts/OFL-Onest.txt'));
+    yield LicenseEntryWithLineBreaks(
+        ['Plus Jakarta Sans'], await rootBundle.loadString('assets/fonts/OFL-PlusJakartaSans.txt'));
     // Apache 2.0 (Gemma 4, EfficientDet) and the Gemma Terms notice EmbeddingGemma requires.
     yield LicenseEntryWithLineBreaks(
         ['Gemma 4 E2B', 'EmbeddingGemma', 'EfficientDet-Lite0'], await rootBundle.loadString('assets/licenses/models.txt'));

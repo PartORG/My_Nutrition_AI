@@ -6,18 +6,24 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../billing/billing.dart';
-import '../data/diary.dart' show pref, setPref, waterGoal;
+import '../data/diary.dart' show pref, setPref, totalsOn, waterGoal, waterOn, weightTrend, weightsSince;
+import '../data/goals.dart';
+import '../data/plan.dart' show savedRecipeIds;
 import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
 import 'chat_screen.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
 import 'history_screen.dart';
+import 'kit.dart';
 import 'log_screen.dart';
 import 'me_screen.dart';
+import 'memory_screen.dart';
+import 'paywall_screen.dart' show PaywallScreen, tierName;
 import 'plan_screen.dart';
 import 'settings_screen.dart' show SettingsScreen;
 import 'theme.dart';
@@ -148,8 +154,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Today · Chat · + · Plan · Me. The selected tab sits in a mint pill; the + (log food) is raised,
-/// near-black, and green while Log is open.
+/// Today · Chat · + · Plan · Me. The selected tab sits in a mint pill; the + (log food) is a raised
+/// green square.
 class _BottomBar extends StatelessWidget {
   const _BottomBar({required this.tab, required this.onTab});
   final int tab;
@@ -177,13 +183,13 @@ class _BottomBar extends StatelessWidget {
                   duration: Durations.short4,
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                   decoration: BoxDecoration(color: on ? c.mint : Colors.transparent, borderRadius: BorderRadius.circular(16)),
-                  child: Icon(on ? selectedIcon : icon, color: on ? c.primary : c.muted, size: 24),
+                  child: Icon(on ? selectedIcon : icon, color: on ? c.primary : c.muted, size: 22),
                 ),
                 const SizedBox(height: 4),
                 Text(label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                    style: TextStyle(fontSize: 12, fontWeight: on ? FontWeight.w800 : FontWeight.w600,
                         color: on ? c.primary : c.muted)),
               ]),
             ),
@@ -194,48 +200,55 @@ class _BottomBar extends StatelessWidget {
 
     final logOn = tab == HomeTab.log;
     return DecoratedBox(
-      decoration: BoxDecoration(color: c.surface, border: Border(top: BorderSide(color: c.border))),
+      decoration: BoxDecoration(color: c.background, border: Border(top: BorderSide(color: c.border))),
       child: SafeArea(
         top: false,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          item(HomeTab.today, Icons.calendar_today_outlined, Icons.calendar_today, l.tabToday),
-          item(HomeTab.chat, Icons.chat_bubble_outline, Icons.chat_bubble, l.tabChat),
-          Expanded(
-            // heightFactor 1: a plain Center grows to the bar's max height, i.e. the whole screen.
-            child: Center(
-              heightFactor: 1,
-              child: Tooltip(
-                message: l.tabLog,
-                child: Semantics(
-                  selected: logOn,
-                  button: true,
-                  label: l.tabLog,
-                  excludeSemantics: true,
-                  child: Material(
-                    color: logOn ? c.primary : c.dark,
-                    elevation: 6,
-                    shadowColor: c.ink.withValues(alpha: .35),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: () => onTab(HomeTab.log),
-                      child: SizedBox.square(
-                          dimension: 60, child: Icon(Icons.add, size: 30, color: logOn ? c.onPrimary : c.background)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 76),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            item(HomeTab.today, Icons.calendar_today_outlined, Icons.calendar_today, l.tabToday),
+            item(HomeTab.chat, Icons.chat_bubble_outline, Icons.chat_bubble, l.tabChat),
+            Expanded(
+              // heightFactor 1: a plain Center grows to the bar's max height, i.e. the whole screen.
+              child: Center(
+                heightFactor: 1,
+                child: Tooltip(
+                  message: l.tabLog,
+                  child: Semantics(
+                    selected: logOn,
+                    button: true,
+                    label: l.tabLog,
+                    excludeSemantics: true,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [BoxShadow(color: c.primary.withValues(alpha: .35), blurRadius: 18, offset: const Offset(0, 4))],
+                      ),
+                      child: Material(
+                        color: logOn ? c.primaryDark : c.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => onTab(HomeTab.log),
+                          child: SizedBox.square(dimension: 56, child: Icon(Icons.add, size: 30, color: c.onPrimary)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          item(HomeTab.plan, Icons.article_outlined, Icons.article, l.tabPlan),
-          item(HomeTab.me, Icons.person_outline, Icons.person, l.tabMe),
-        ]),
+            item(HomeTab.plan, Icons.article_outlined, Icons.article, l.tabPlan),
+            item(HomeTab.me, Icons.person_outline, Icons.person, l.tabMe),
+          ]),
+        ),
       ),
     );
   }
 }
 
-/// Every tab and the screens otherwise a few taps deep in Me, one swipe from the left edge.
+/// The screens a few taps deep in Me, one swipe from the left edge: who is signed in and today's numbers
+/// on top, then Track and Food, Settings and Lock at the foot.
 class _Drawer extends ConsumerWidget {
   const _Drawer({required this.name, required this.data});
   final String name;
@@ -245,75 +258,182 @@ class _Drawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    final tab = ref.watch(homeTabProvider);
     final data = this.data;
     final nav = Navigator.of(context);
-    void go(int t) {
-      nav.pop();
-      ref.read(homeTabProvider.notifier).go(t);
-    }
-
+    final agent = ref.watch(agentProvider);
     void open(Widget screen) {
       nav.pop();
       nav.push(MaterialPageRoute<void>(builder: (_) => screen)).then((_) => data?.changed());
     }
 
-    Widget item(IconData icon, String label, VoidCallback onTap, {bool selected = false}) => ListTile(
-          leading: Icon(icon, color: selected ? c.primary : c.ink2),
-          title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-          selected: selected,
-          selectedTileColor: c.mint,
-          selectedColor: c.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.pill)),
+    Widget plan(ProfileData data, PlanTab tab) =>
+        Scaffold(body: SafeArea(child: PlanScreen(data: data, initialTab: tab, back: true)));
+
+    Widget item(IconData icon, String accent, String label, VoidCallback? onTap, {String? trailing}) => ListTile(
+          leading: IconTile(icon: icon, color: context.nutrientColor(accent), size: 32),
+          title: Text(label, style: AppText.body.copyWith(fontSize: 15, color: c.ink)),
+          trailing: trailing == null ? null : Text(trailing, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+          minLeadingWidth: 32,
+          horizontalTitleGap: 14,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile)),
           onTap: onTap,
+          enabled: onTap != null,
+        );
+
+    Widget footButton(IconData icon, String label, VoidCallback onTap) => Expanded(
+          child: Material(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(Radii.tile),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Radii.tile),
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(icon, size: 18, color: c.ink),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: AppText.item.copyWith(color: c.ink))),
+                ]),
+              ),
+            ),
+          ),
         );
 
     return Drawer(
       backgroundColor: c.background,
-      child: ListView(padding: EdgeInsets.zero, children: [
-        Container(
-          padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 24, 20, 20),
-          decoration: BoxDecoration(gradient: heroGradient(c)),
-          child: Row(children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.white,
-              child: Text(name.characters.first.toUpperCase(),
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: c.hero)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(name,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
-                  overflow: TextOverflow.ellipsis),
-            ),
+      child: SafeArea(
+        child: data == null
+            ? const SizedBox.shrink()
+            : ValueListenableBuilder(
+                valueListenable: data.changes,
+                builder: (context, _, _) => Column(children: [
+                  Expanded(
+                    child: ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 8), children: [
+                      _DrawerHeader(name: name, onPlans: () => open(const PaywallScreen())),
+                      const SizedBox(height: 10),
+                      _DrawerNumbers(data: data),
+                      SectionLabel(l.drawerTrack, padding: const EdgeInsets.fromLTRB(12, 18, 12, 6)),
+                      item(Icons.monitor_weight_outlined, 'kcal', l.weight, () => open(WeightScreen(data: data))),
+                      item(Icons.history, 'water', l.historyAndYear, () => open(HistoryScreen(data: data))),
+                      item(Icons.flag_outlined, 'carbs_g', l.goalsTitle, () => open(const GoalsScreen())),
+                      item(Icons.favorite_border, 'fiber_g', l.healthTitle, () => open(const HealthScreen())),
+                      SectionLabel(l.drawerFood, padding: const EdgeInsets.fromLTRB(12, 18, 12, 6)),
+                      item(Icons.bookmark_border, 'protein_g', l.savedRecipesTitle, () => open(plan(data, PlanTab.recipes)),
+                          trailing: switch (savedRecipeIds(data.tools).length) { 0 => null, final n => '$n' }),
+                      item(Icons.shopping_cart_outlined, 'fat_g', l.shoppingList, () => open(plan(data, PlanTab.shopping))),
+                      item(Icons.lightbulb_outline, 'sugar_g', l.aiKnowsTitle,
+                          agent.hasValue ? () => open(MemoryScreen(agent: agent.requireValue)) : null),
+                    ]),
+                  ),
+                  Divider(indent: 16, endIndent: 16, color: c.divider),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                    child: Row(children: [
+                      footButton(Icons.tune, l.settingsTitle, () => open(const SettingsScreen())),
+                      const SizedBox(width: 10),
+                      footButton(Icons.lock_outline, l.lock, () {
+                        nav.pop();
+                        ref.read(unlockedProvider.notifier).lock();
+                      }),
+                    ]),
+                  ),
+                ]),
+              ),
+      ),
+    );
+  }
+}
+
+/// Avatar, name and plan on the green hero; × closes the drawer.
+class _DrawerHeader extends ConsumerWidget {
+  const _DrawerHeader({required this.name, required this.onPlans});
+  final String name;
+  final VoidCallback onPlans;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final billing = ref.watch(billingProvider).value;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
+      decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.card)),
+      child: Row(children: [
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: c.primary,
+          child: Text(name.characters.first.toUpperCase(),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c.onPrimary)),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: AppText.title.copyWith(color: c.ink), overflow: TextOverflow.ellipsis),
+            if (billing != null)
+              ValueListenableBuilder(
+                valueListenable: billing.tier,
+                builder: (context, tier, _) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: InkWell(
+                    onTap: onPlans,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    child: Tag(tierName(tier, l).toUpperCase(), tone: tier == Tier.free ? TagTone.neutral : TagTone.gold),
+                  ),
+                ),
+              ),
           ]),
         ),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(children: [
-            item(Icons.calendar_today, l.tabToday, () => go(HomeTab.today), selected: tab == HomeTab.today),
-            item(Icons.chat_bubble_outline, l.tabChat, () => go(HomeTab.chat), selected: tab == HomeTab.chat),
-            item(Icons.add_circle_outline, l.tabLog, () => go(HomeTab.log), selected: tab == HomeTab.log),
-            item(Icons.article_outlined, l.tabPlan, () => go(HomeTab.plan), selected: tab == HomeTab.plan),
-            item(Icons.person_outline, l.tabMe, () => go(HomeTab.me), selected: tab == HomeTab.me),
-            const Divider(height: 24),
-            if (data != null) ...[
-              item(Icons.monitor_weight_outlined, l.weight, () => open(WeightScreen(data: data))),
-              item(Icons.history, l.historyTitle, () => open(HistoryScreen(data: data))),
-            ],
-            item(Icons.flag_outlined, l.goalsTitle, () => open(const GoalsScreen())),
-            item(Icons.monitor_heart_outlined, l.healthTitle, () => open(const HealthScreen())),
-            item(Icons.settings_outlined, l.settingsTitle, () => open(const SettingsScreen())),
-            const Divider(height: 24),
-            item(Icons.lock_outline, l.lock, () {
-              nav.pop();
-              ref.read(unlockedProvider.notifier).lock();
-            }),
-          ]),
+        IconButton(
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          icon: Icon(Icons.close, color: c.muted),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ]),
     );
+  }
+}
+
+/// Left today · Water · Weight, three small tiles under the header.
+class _DrawerNumbers extends StatelessWidget {
+  const _DrawerNumbers({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final now = DateTime.now();
+    final goal = currentTargets(data.user, nutri: data.nutri, now: now).values['kcal'];
+    final left = goal == null ? null : goal - totalsOn(data.user, now)['kcal']!;
+    final body = loadBody(data.user);
+    final points = weightTrend(weightsSince(data.user, now.subtract(const Duration(days: 30))));
+    final kg = points.isNotEmpty ? points.last.trend : body?.weightKg;
+    final imperial = body?.imperial ?? false;
+    final locale = Localizations.localeOf(context).toString();
+    Widget tile(String label, String value, Color color) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+            decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(Radii.tile)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.caption.copyWith(color: c.muted)),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(value,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color, fontFeatures: AppText.tabular)),
+              ),
+            ]),
+          ),
+        );
+    return Row(children: [
+      tile(l.leftToday, left == null ? '–' : NumberFormat.decimalPattern(locale).format(left.round()), c.primary),
+      const SizedBox(width: 6),
+      tile(l.water, '${(waterOn(data.user, now) / 1000).toStringAsFixed(2)} ${l.litreUnit}', context.nutrientColor('water')),
+      const SizedBox(width: 6),
+      tile(l.weight, kg == null ? '–' : (imperial ? kgToLb(kg) : kg).toStringAsFixed(1), c.ink),
+    ]);
   }
 }
 

@@ -4,12 +4,12 @@ import 'package:material_ui/material_ui.dart';
 
 import 'theme.dart';
 
-/// Building blocks of the redesign (docs/MyFoodMind redesign.html), shared by every screen.
+/// Building blocks of the design (docs/New_Design), shared by every screen.
 
 /// A screen's big title, with an optional line above it ("Thursday, 15 October") and a trailing action.
 class ScreenHeader extends StatelessWidget {
   const ScreenHeader(
-      {super.key, required this.title, this.overline, this.leading, this.trailing, this.back = false, this.size = 34});
+      {super.key, required this.title, this.overline, this.leading, this.trailing, this.back = false, this.size = 20});
   final String title;
   final String? overline;
   final Widget? leading, trailing;
@@ -25,11 +25,13 @@ class ScreenHeader extends StatelessWidget {
     if (trailing != null && MediaQuery.textScalerOf(context).scale(10) > 13) {
       return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         ScreenHeader(title: title, overline: overline, leading: leading, back: back, size: size),
-        Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 4), child: trailing),
+        Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 4), child: trailing),
       ]);
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 64), // the design's app bar
+      child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         if (back) ...[
           IconButton(
@@ -42,18 +44,18 @@ class ScreenHeader extends StatelessWidget {
         if (leading != null) ...[leading, const SizedBox(width: 12)],
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            if (overline != null)
-              Text(overline!, style: TextStyle(fontSize: 14, color: c.muted, fontWeight: FontWeight.w500)),
+            if (overline != null) Text(overline!, style: AppText.caption.copyWith(color: c.muted)),
             Semantics(
               header: true,
               child: Text(title,
                   style: TextStyle(
-                      fontSize: size, fontWeight: FontWeight.w700, letterSpacing: -0.02 * size, color: c.ink, height: 1.15)),
+                      fontSize: size, fontWeight: FontWeight.w800, letterSpacing: -0.015 * size, color: c.ink, height: 1.2)),
             ),
           ]),
         ),
         ?trailing,
       ]),
+      ),
     );
   }
 }
@@ -115,7 +117,7 @@ class SectionLabel extends StatelessWidget {
         child: Semantics(
           header: true,
           child: Text(text.toUpperCase(),
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.8, color: color ?? context.colors.muted)),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1, color: color ?? context.colors.muted)),
         ),
       );
 }
@@ -131,13 +133,13 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: padding,
         child: Row(children: [
-          Expanded(child: Semantics(header: true, child: Text(text, style: Theme.of(context).textTheme.titleLarge))),
-          if (trailing != null) Flexible(child: trailing!),
+          Expanded(child: Semantics(header: true, child: Text(text, style: AppText.section.copyWith(color: context.colors.ink)))),
+          if (trailing != null) Flexible(child: Align(alignment: AlignmentDirectional.centerEnd, child: trailing)),
         ]),
       );
 }
 
-/// The design's segmented control: a grey track, the selected tab a white pill ("Day Week Month Year").
+/// The design's segmented control: a card-coloured track, the selected tab raised ("Day Week Month Year").
 class PillTabs<T> extends StatelessWidget {
   const PillTabs({super.key, required this.values, required this.selected, required this.label, required this.onChanged,
       this.semanticsLabel});
@@ -155,7 +157,8 @@ class PillTabs<T> extends StatelessWidget {
       container: true,
       child: Container(
         padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(color: c.track, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(Radii.tile),
+            border: Border.all(color: c.border)),
         child: Row(children: [
           for (final v in values)
             Expanded(
@@ -163,9 +166,7 @@ class PillTabs<T> extends StatelessWidget {
                 selected: v == selected,
                 button: true,
                 child: Material(
-                  color: v == selected ? c.surface : Colors.transparent,
-                  elevation: v == selected ? 1 : 0,
-                  shadowColor: c.ink.withValues(alpha: .2),
+                  color: v == selected ? c.surfaceHigh : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(10),
@@ -179,7 +180,7 @@ class PillTabs<T> extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 15,
-                                  fontWeight: v == selected ? FontWeight.w600 : FontWeight.w500,
+                                  fontWeight: v == selected ? FontWeight.w700 : FontWeight.w600,
                                   color: v == selected ? c.ink : c.muted)),
                         ),
                       ),
@@ -249,8 +250,8 @@ class Pill extends StatelessWidget {
                 Flexible(
                   child: Text(label,
                       style: TextStyle(
-                          fontSize: compact ? 15 : 16,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: compact ? 14 : 15,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                           color: selected ? c.background : c.ink)),
                 ),
               ]),
@@ -318,7 +319,7 @@ class StatTile extends StatelessWidget {
       fit: BoxFit.scaleDown,
       alignment: AlignmentDirectional.centerStart,
       child: Text(value,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: c.ink, letterSpacing: -0.3,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: c.ink, letterSpacing: -0.3,
               fontFeatures: const [FontFeature.tabularFigures()])),
     );
     final labelText = Row(mainAxisSize: MainAxisSize.min, children: [
@@ -326,7 +327,7 @@ class StatTile extends StatelessWidget {
         Container(width: 9, height: 9, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
         const SizedBox(width: 6),
       ],
-      Flexible(child: Text(label, style: TextStyle(fontSize: 14, color: c.muted))),
+      Flexible(child: Text(label, style: AppText.caption.copyWith(fontSize: 13, color: c.muted))),
     ]);
     return Panel(
       radius: Radii.tile,
@@ -338,6 +339,38 @@ class StatTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The design's icon in a rounded square, on a tint of its colour (drawer, settings, Me's links).
+class IconTile extends StatelessWidget {
+  const IconTile({super.key, required this.icon, required this.color, this.size = 36});
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+              color: tint(context, color, alpha: Theme.of(context).brightness == Brightness.dark ? .18 : .12),
+              borderRadius: BorderRadius.circular(size * .3)),
+          child: Icon(icon, size: size * .52, color: color),
+        ),
+      );
+}
+
+/// A meal's [IconTile] in its colour; [icon] replaces the meal's own (a recipe's book).
+class MealIcon extends StatelessWidget {
+  const MealIcon({super.key, required this.type, this.icon, this.size = 44});
+  final String type;
+  final IconData? icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      IconTile(icon: icon ?? mealIcons[type] ?? Icons.cookie_outlined, color: context.mealColor(type), size: size);
 }
 
 /// ☰: opens the home screen's side drawer.
@@ -352,15 +385,18 @@ class MenuButton extends StatelessWidget {
       );
 }
 
-/// 44 dp round white button with a border: lock, settings, back on a photo.
+/// 48 dp round button on the card colour: lock, settings, back on a photo.
 class RoundIconButton extends StatelessWidget {
   const RoundIconButton({super.key, required this.icon, required this.tooltip, required this.onPressed, this.size = 44,
-      this.background, this.foreground});
+      this.background, this.foreground, this.shape = const CircleBorder()});
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
   final double size;
   final Color? background, foreground;
+
+  /// A rounded square instead of the circle (the + on a meal).
+  final ShapeBorder shape;
 
   @override
   Widget build(BuildContext context) {
@@ -369,9 +405,9 @@ class RoundIconButton extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: background ?? c.surface,
-        shape: CircleBorder(side: BorderSide(color: background == null ? c.border : Colors.transparent)),
+        shape: shape,
         child: InkWell(
-          customBorder: const CircleBorder(),
+          customBorder: shape,
           onTap: onPressed,
           child: SizedBox.square(
             dimension: math.max(size, 48),
@@ -473,29 +509,27 @@ class BottomActions extends StatelessWidget {
       );
 }
 
-/// Recipe photo stand-in: nutri.db has no pictures, so a soft colour from the title and a food icon.
+/// Recipe photo stand-in: nutri.db has no pictures, so a tint of a nutrient colour (from the title) and a food icon.
 class RecipeArt extends StatelessWidget {
   const RecipeArt({super.key, required this.title, this.height = 120, this.radius = 0});
   final String title;
   final double height;
   final double radius;
 
-  static const _tints = [Color(0xFFF3D9B1), Color(0xFFD7E8D9), Color(0xFFD6E3F3), Color(0xFFEADCF0), Color(0xFFFCE7DD)];
+  static const _hues = ['protein_g', 'kcal', 'fat_g', 'carbs_g', 'sodium_mg', 'fiber_g'];
   static const _icons = [Icons.ramen_dining, Icons.rice_bowl, Icons.lunch_dining, Icons.bakery_dining, Icons.set_meal,
       Icons.soup_kitchen, Icons.egg_alt, Icons.local_pizza];
 
   @override
   Widget build(BuildContext context) {
     final h = title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0x7fffffff);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final tint = _tints[h % _tints.length];
+    final hue = context.nutrientColor(_hues[h % _hues.length]);
     return Container(
       height: height,
-      decoration: BoxDecoration(
-          color: dark ? Color.lerp(tint, Colors.black, .65) : tint, borderRadius: BorderRadius.circular(radius)),
+      decoration: BoxDecoration(color: tint(context, hue, alpha: .22), borderRadius: BorderRadius.circular(radius)),
       alignment: Alignment.center,
       child: ExcludeSemantics(
-        child: Icon(_icons[h % _icons.length], size: height * .38, color: (dark ? Colors.white : Colors.black).withValues(alpha: .28)),
+        child: Icon(_icons[h % _icons.length], size: height * .38, color: hue.withValues(alpha: .55)),
       ),
     );
   }

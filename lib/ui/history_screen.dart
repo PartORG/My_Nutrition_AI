@@ -69,7 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           return ListView(padding: const EdgeInsets.fromLTRB(0, 0, 0, 24), children: [
             ScreenHeader(title: l.historyTitle, back: true),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 PillTabs<bool>(
                   values: const [false, true],
@@ -181,15 +181,7 @@ class _DayCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(children: [
-                () {
-                  final (color, icon) = mealStyles[m.type ?? 'snack'] ?? mealStyles['snack']!;
-                  return Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                    child: Icon(m.recipeId == null ? icon : Icons.menu_book, size: 18, color: Colors.white),
-                  );
-                }(),
+                MealIcon(type: m.type ?? 'snack', icon: m.recipeId == null ? null : Icons.menu_book, size: 34),
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 3,

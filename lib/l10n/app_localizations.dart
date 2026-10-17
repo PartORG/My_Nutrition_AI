@@ -942,12 +942,6 @@ abstract class AppLocalizations {
   /// **'Edit my details'**
   String get editDetails;
 
-  /// No description provided for @aiKnowsLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Available when the AI has loaded.'**
-  String get aiKnowsLoading;
-
   /// No description provided for @switchProfile.
   ///
   /// In en, this message translates to:
@@ -2100,12 +2094,6 @@ abstract class AppLocalizations {
   /// **'Plan'**
   String get planTab;
 
-  /// No description provided for @planEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan your week: breakfast, lunch and dinner from the recipe database, sized to your calorie goal, without your allergens, and with recipes you rated highly first.'**
-  String get planEmpty;
-
   /// No description provided for @planWeek.
   ///
   /// In en, this message translates to:
@@ -3174,24 +3162,6 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
-  /// No description provided for @badgeMorning.
-  ///
-  /// In en, this message translates to:
-  /// **'AM'**
-  String get badgeMorning;
-
-  /// No description provided for @badgeNoon.
-  ///
-  /// In en, this message translates to:
-  /// **'NOON'**
-  String get badgeNoon;
-
-  /// No description provided for @badgeEvening.
-  ///
-  /// In en, this message translates to:
-  /// **'PM'**
-  String get badgeEvening;
-
   /// No description provided for @boxEmpty.
   ///
   /// In en, this message translates to:
@@ -3923,6 +3893,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A photo from the gallery needs the AI assistant. Download it in Chat.'**
   String get cameraGalleryNeedsAi;
+
+  /// No description provided for @mealsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals'**
+  String get mealsTitle;
+
+  /// No description provided for @mealsLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of 4 logged'**
+  String mealsLogged(int n);
+
+  /// No description provided for @suggestedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested ~{amount}'**
+  String suggestedAmount(String amount);
+
+  /// No description provided for @rateWhatYouAte.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate what you ate'**
+  String get rateWhatYouAte;
+
+  /// No description provided for @rateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rateButton;
+
+  /// No description provided for @leftToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Left today'**
+  String get leftToday;
+
+  /// No description provided for @drawerTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get drawerTrack;
+
+  /// No description provided for @meOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile & targets'**
+  String get meOverline;
+
+  /// No description provided for @goalIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal: {goal}'**
+  String goalIs(String goal);
+
+  /// No description provided for @energy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get energy;
+
+  /// No description provided for @bornLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Born'**
+  String get bornLabel;
+
+  /// No description provided for @planHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your whole week, planned in one tap'**
+  String get planHeroTitle;
+
+  /// No description provided for @planHeroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakfast, lunch and dinner from 166,000 recipes.'**
+  String get planHeroBody;
+
+  /// No description provided for @planSized.
+  ///
+  /// In en, this message translates to:
+  /// **'Sized to your {amount} goal'**
+  String planSized(String amount);
+
+  /// No description provided for @planNoAllergens.
+  ///
+  /// In en, this message translates to:
+  /// **'Without your allergens'**
+  String get planNoAllergens;
+
+  /// No description provided for @planStarsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Your 4★+ recipes first'**
+  String get planStarsFirst;
+
+  /// No description provided for @fillsAfterPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills in after planning'**
+  String get fillsAfterPlanning;
+
+  /// No description provided for @allergenFreeForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Allergen-free for you'**
+  String get allergenFreeForYou;
+
+  /// No description provided for @ideasForMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas for your {meal}'**
+  String ideasForMeal(String meal);
+
+  /// No description provided for @amountLeftApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'~{amount} left'**
+  String amountLeftApprox(String amount);
+
+  /// No description provided for @microsLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s vitamins and minerals against EU reference intakes, with Basic.'**
+  String get microsLocked;
+
+  /// No description provided for @highProtein.
+  ///
+  /// In en, this message translates to:
+  /// **'High protein'**
+  String get highProtein;
 }
 
 class _AppLocalizationsDelegate
