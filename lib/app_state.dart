@@ -431,7 +431,8 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
     final now = DateTime.now();
     final goal = currentTargets(data.user, nutri: data.nutri, now: now).values['kcal'];
     await HomeWidget.saveWidgetData('day', DateFormat('yyyy-MM-dd').format(now));
-    await HomeWidget.saveWidgetData('kcal', show ? '${totalsOn(data.user, now)['kcal']!.round()}' : '');
+    final approx = mealsOn(data.user, now).any((m) => m.estimated) ? '≈' : ''; // as on Today
+    await HomeWidget.saveWidgetData('kcal', show ? '$approx${totalsOn(data.user, now)['kcal']!.round()}' : '');
     await HomeWidget.saveWidgetData('goal', show && goal != null ? '${goal.round()}' : '');
     await HomeWidget.updateWidget(qualifiedAndroidName: 'io.github.partorg.myfoodmind.TodayWidget');
   } on Object catch (e) {

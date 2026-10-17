@@ -1,19 +1,25 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart' show MethodChannel;
+import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart' show InferenceModel;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
+import '../data/diary.dart' show lastMealId;
 import '../billing/billing.dart';
 import '../l10n/app_localizations.dart';
 import '../vision/detector.dart';
 import '../vision/scan.dart';
 import 'kit.dart';
+import 'meal_editor.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
 import 'theme.dart';
@@ -62,7 +68,8 @@ final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
 
 /// Preview with food boxes. Live: EfficientDet's boxes twice a second; on the
 /// button, in both modes, Gemma 4 names the foods (EfficientDet until the chat
-/// model is downloaded). Frames stay in memory only — no picture is ever written.
+/// model is downloaded). A photo can also come from the gallery (Gemma only).
+/// Frames stay in memory only — no picture is ever written.
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key, required this.live});
   final bool live;
@@ -71,12 +78,27 @@ class CameraScreen extends ConsumerStatefulWidget {
   ConsumerState<CameraScreen> createState() => _CameraScreenState();
 }
 
+const _system = MethodChannel('myfoodmind/system');
+
+/// The app's page in the phone's settings, where a denied permission is turned back on.
+Future<void> openAppSettings() async {
+  try {
+    if (Platform.isIOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+    } else {
+      await _system.invokeMethod<void>('appSettings');
+    }
+  } on Object catch (e) {
+    debugPrint('app settings: $e');
+  }
+}
+
 class _CameraScreenState extends ConsumerState<CameraScreen> {
   CameraController? _cam;
   CameraImage? _frame;
   List<Detection> _found = [];
   late bool _live = widget.live;
-  bool _busy = false, _naming = false;
+  bool _busy = false, _naming = false, _cancelled = false, _fromGallery = false;
   Timer? _timer;
   Object? _error;
 
@@ -102,6 +124,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     } on Object catch (e) {
       if (mounted) setState(() => _error = e); // permission denied, no camera
     }
+  }
+
+  void _retry() {
+    setState(() => _error = null);
+    _start();
   }
 
   /// [frame] → upright RGB, [inputSize]² by default.
@@ -136,12 +163,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     }
   }
 
-  /// Photo: the frame at its own resolution, upright, to Gemma. Null when the
-  /// chat model isn't downloaded (the caller falls back to EfficientDet).
-  Future<List<SeenFood>?> _nameFoods() async {
-    final frame = _frame, cam = _cam;
-    if (frame == null || cam == null) return const [];
-    setState(() => _naming = true);
+  /// Gemma names the foods on [png]. Null when the chat model isn't downloaded.
+  Future<List<SeenFood>?> _name(Future<Uint8List> Function() png) async {
+    setState(() {
+      _naming = true;
+      _cancelled = false;
+    });
     try {
       final InferenceModel llm;
       try {
@@ -149,12 +176,75 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       } on LlmNotDownloaded {
         return null;
       }
-      final rotation = cam.description.sensorOrientation;
-      final (w, h) = rotation % 180 == 0 ? (frame.width, frame.height) : (frame.height, frame.width);
-      return await nameFoods(llm, await _png(_rgb(frame, rotation, outW: w, outH: h), w, h));
+      return await nameFoods(llm, await png());
     } finally {
       if (mounted) setState(() => _naming = false);
     }
+  }
+
+  /// Photo: the frame at its own resolution, upright.
+  Future<Uint8List> _framePng() async {
+    final frame = _frame!, cam = _cam!;
+    final rotation = cam.description.sensorOrientation;
+    final (w, h) = rotation % 180 == 0 ? (frame.width, frame.height) : (frame.height, frame.width);
+    return _png(_rgb(frame, rotation, outW: w, outH: h), w, h);
+  }
+
+  Future<void> _shoot(AppLocalizations l) async {
+    if (_frame == null || _cam == null) return;
+    // Both modes: Gemma names the foods. EfficientDet knows only 10 COCO foods (phone test:
+    // "only apples and pizzas"), so its boxes are a live preview and the fallback when Gemma
+    // isn't downloaded, sees nothing, or the user stops waiting.
+    try {
+      final seen = await _name(_framePng);
+      if (_cancelled || !mounted) return;
+      if (seen != null && (seen.isNotEmpty || _found.isEmpty)) return Navigator.pop(context, seen);
+    } on Object catch (e, st) {
+      debugPrint('photo naming failed: $e\n$st');
+      if (_cancelled || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+    }
+    if (!_live) await _detect();
+    if (mounted) Navigator.pop(context, (_found, _live));
+  }
+
+  /// "Choose photo": a picture from the gallery, read into memory; the picker's temporary copy is deleted.
+  Future<void> _gallery(AppLocalizations l) async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1280, maxHeight: 1280);
+    if (file == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    try {
+      await File(file.path).delete(); // the picker's copy in the app cache: the photo stays in memory only
+    } on FileSystemException catch (e) {
+      debugPrint('picked photo not deleted: $e');
+    }
+    _fromGallery = true;
+    try {
+      final seen = await _name(() => _encodePng(bytes));
+      if (_cancelled || !mounted) return;
+      if (seen == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraGalleryNeedsAi)));
+        return;
+      }
+      Navigator.pop(context, seen);
+    } on Object catch (e, st) {
+      debugPrint('gallery naming failed: $e\n$st');
+      if (mounted && !_cancelled) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+    } finally {
+      _fromGallery = false;
+    }
+  }
+
+  /// Stop waiting for Gemma (it finishes in the background, its answer unused): a camera shot
+  /// goes on with the detector's boxes, a gallery photo just returns to the camera.
+  Future<void> _cancel() async {
+    setState(() {
+      _cancelled = true;
+      _naming = false;
+    });
+    if (_fromGallery || _frame == null) return;
+    if (!_live) await _detect();
+    if (mounted) Navigator.pop(context, (_found, _live));
   }
 
   @override
@@ -169,104 +259,147 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     final l = AppLocalizations.of(context)!;
     final cam = _cam;
     final detector = ref.watch(detectorProvider);
+    const white = Colors.white;
+    final glass = white.withValues(alpha: .14);
+    final denied = _error is CameraException &&
+        (_error as CameraException).code.startsWith('CameraAccess'); // Denied, DeniedWithoutPrompt, Restricted
+    final Widget body = _error != null
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.no_photography_outlined, color: white, size: 48),
+                const SizedBox(height: 12),
+                Text(denied ? l.cameraPermissionOff : l.cameraUnavailable,
+                    textAlign: TextAlign.center, style: const TextStyle(color: white, fontSize: 16)),
+                const SizedBox(height: 20),
+                Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.center, children: [
+                  if (denied)
+                    FilledButton(onPressed: openAppSettings, child: Text(l.openSettings)),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(foregroundColor: white, side: const BorderSide(color: white)),
+                    onPressed: _retry,
+                    child: Text(l.tryAgain),
+                  ),
+                ]),
+              ]),
+            ),
+          )
+        : cam == null || detector.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Center(
+                child: AspectRatio(
+                  // The sensor is landscape; the phone is held upright.
+                  aspectRatio: 1 / cam.value.aspectRatio,
+                  child: Stack(fit: StackFit.expand, children: [
+                    CameraPreview(cam),
+                    LayoutBuilder(builder: (context, box) => Stack(children: [
+                          for (final d in _found)
+                            Positioned(
+                              left: d.box.left * box.maxWidth,
+                              top: d.box.top * box.maxHeight,
+                              width: d.box.width * box.maxWidth,
+                              height: d.box.height * box.maxHeight,
+                              child: Container(
+                                alignment: Alignment.topLeft,
+                                decoration: BoxDecoration(border: Border.all(color: context.colors.accent, width: 3)),
+                                // The label only: a detector score looks more certain than it is.
+                                child: Container(
+                                  color: context.colors.accent,
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  child: Text(d.label,
+                                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 15)),
+                                ),
+                              ),
+                            ),
+                        ])),
+                  ]),
+                ),
+              );
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(l.cameraTitle),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: SegmentedButton<bool>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(value: false, label: Text(l.cameraPhoto)),
-                ButtonSegment(value: true, label: Text(l.cameraLive)),
-              ],
-              selected: {_live},
-              onSelectionChanged: (s) => setState(() {
-                _live = s.single;
-                _found = [];
-              }),
-            ),
-          ),
-        ],
-      ),
-      body: _error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(l.cameraUnavailable, style: const TextStyle(color: Colors.white))))
-          : cam == null || detector.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(children: [
-                  Expanded(
-                    child: Center(
-                      child: AspectRatio(
-                        // The sensor is landscape; the phone is held upright.
-                        aspectRatio: 1 / cam.value.aspectRatio,
-                        child: Stack(fit: StackFit.expand, children: [
-                          CameraPreview(cam),
-                          LayoutBuilder(builder: (context, box) => Stack(children: [
-                                for (final d in _found)
-                                  Positioned(
-                                    left: d.box.left * box.maxWidth,
-                                    top: d.box.top * box.maxHeight,
-                                    width: d.box.width * box.maxWidth,
-                                    height: d.box.height * box.maxHeight,
-                                    child: Container(
-                                      alignment: Alignment.topLeft,
-                                      decoration: BoxDecoration(border: Border.all(color: context.colors.accent, width: 3)),
-                                      child: Container(
-                                        color: context.colors.accent,
-                                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                                        child: Text('${d.label} ${(d.score * 100).round()}%',
-                                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
-                                      ),
-                                    ),
-                                  ),
-                              ])),
-                        ]),
-                      ),
+      body: SafeArea(
+        child: Stack(children: [
+          Positioned.fill(child: body),
+          if (_naming)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: .6),
+                child: Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const CircularProgressIndicator(color: white),
+                    const SizedBox(height: 16),
+                    Text(l.cameraNaming, style: const TextStyle(color: white, fontSize: 18, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(foregroundColor: white, side: const BorderSide(color: white)),
+                      onPressed: _cancel,
+                      child: Text(l.cancel),
                     ),
+                  ]),
+                ),
+              ),
+            ),
+          Positioned(
+            left: 16,
+            top: 12,
+            right: 16,
+            child: Row(children: [
+              RoundIconButton(
+                icon: Icons.arrow_back_ios_new,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                background: glass,
+                foreground: white,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(l.cameraTitle,
+                    style: const TextStyle(color: white, fontSize: 20, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+              ),
+            ]),
+          ),
+          if (_error == null && cam != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                PillTabs<bool>(
+                  values: const [false, true],
+                  selected: _live,
+                  label: (live) => live ? l.cameraLive : l.cameraPhoto,
+                  onChanged: _naming
+                      ? (_) {}
+                      : (live) => setState(() {
+                            _live = live;
+                            _found = [];
+                          }),
+                ),
+                const SizedBox(height: 12),
+                Row(children: [
+                  RoundIconButton(
+                    icon: Icons.photo_library_outlined,
+                    tooltip: l.cameraChoosePhoto,
+                    size: 56,
+                    background: glass,
+                    foreground: white,
+                    onPressed: _naming ? null : () => _gallery(l),
                   ),
-                  SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: Icon(_live ? Icons.check : Icons.camera),
-                          label: Text(_naming
-                              ? l.cameraNaming
-                              : _live
-                                  ? l.cameraUseFound(_found.length)
-                                  : l.cameraShoot),
-                          onPressed: _naming
-                              ? null
-                              : () async {
-                                  // Both modes: Gemma names the foods. EfficientDet knows only 10 COCO
-                                  // foods (phone test: "only apples and pizzas"), so its boxes are a live
-                                  // preview and the fallback when Gemma isn't downloaded or sees nothing.
-                                  try {
-                                    final seen = await _nameFoods();
-                                    if (seen != null && (seen.isNotEmpty || _found.isEmpty)) {
-                                      if (context.mounted) Navigator.pop(context, seen);
-                                      return;
-                                    }
-                                  } on Object catch (e, st) {
-                                    // Gemma failed: fall through to EfficientDet's items rather than doing nothing.
-                                    debugPrint('photo naming failed: $e\n$st');
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
-                                    }
-                                  }
-                                  if (!_live) await _detect();
-                                  if (context.mounted) Navigator.pop(context, (_found, _live));
-                                },
-                        ),
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+                      icon: Icon(_live ? Icons.check : Icons.camera),
+                      label: Text(_live ? l.cameraUseFound(_found.length) : l.cameraShoot),
+                      onPressed: _naming ? null : () => _shoot(l),
                     ),
                   ),
                 ]),
+              ]),
+            ),
+        ]),
+      ),
     );
   }
 }
@@ -285,19 +418,20 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
-  late final _items = [...widget.items];
+  // The ones with no match first: they need the user before anything can be logged.
+  late final _items = [...widget.items.where((i) => i.food == null), ...widget.items.where((i) => i.food != null)];
   late String _meal = widget.data.tools.mealTypeNow();
 
   Future<void> _pick(ScanItem? item) async {
     final food = await showDialog<FoodChoice>(
-        context: context, builder: (_) => _PickFoodDialog(tools: widget.data.tools, initial: item?.name ?? ''));
+        context: context, builder: (_) => PickFoodDialog(tools: widget.data.tools, initial: item?.name ?? ''));
     if (food == null) return;
     setState(() {
       if (item == null) {
         _items.add(ScanItem(name: food.label, food: food, grams: food.servingG ?? 100));
       } else {
+        // name stays what was seen: the row shows "seen: …" under the new food.
         item
-          ..name = food.label
           ..food = food
           ..grams = food.servingG ?? item.grams;
       }
@@ -314,10 +448,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final approx = loggable.any((i) => i.food!.estimated) ? '≈ ' : '';
     const tints = [Color(0xFF7FDDB6), Color(0xFFF7C74F), Color(0xFF9BC1EE), Color(0xFFF6A27F)];
     void log() {
+      final mark = lastMealId(data.user);
       final n = logScan(data.tools, _items, _meal);
       recordScan(data.user, widget.mode, loggable, at: DateTime.now());
       data.changed();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
+      showLoggedSnack(context, data, l.reviewLogged(n), mark);
       Navigator.pop(context);
     }
 
@@ -362,55 +497,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 if (_items.isNotEmpty)
                   PanelList(children: [
                     for (final i in _items)
-                      i.food == null
-                          ? Container(
-                              color: c.warm,
-                              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-                              child: Row(children: [
-                                Expanded(child: Text(l.notInDatabase(i.name), style: TextStyle(fontSize: 15, color: c.onWarm))),
-                                const SizedBox(width: 8),
-                                FilledButton(
-                                  style: FilledButton.styleFrom(backgroundColor: c.dark, foregroundColor: c.background,
-                                      minimumSize: const Size(64, 48)),
-                                  onPressed: () => _pick(i),
-                                  child: Text(l.reviewChange),
-                                ),
-                              ]),
-                            )
-                          : Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
-                              child: Row(children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => _pick(i),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      child: Text(i.food!.label, style: const TextStyle(fontSize: 16)),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 104,
-                                  child: TextFormField(
-                                    initialValue: '${i.grams.round()}',
-                                    textAlign: TextAlign.end,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      prefixText: '≈ ',
-                                      suffixText: 'g',
-                                      hintText: l.grams,
-                                      contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.pill)),
-                                      enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(Radii.pill), borderSide: BorderSide(color: c.outline)),
-                                    ),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    onChanged: (t) => setState(() => i.grams = double.tryParse(t.replaceAll(',', '.')) ?? 0),
-                                  ),
-                                ),
-                                IconButton(tooltip: l.delete, icon: const Icon(Icons.close), onPressed: () => setState(() => _items.remove(i))),
-                              ]),
-                            ),
+                      MealItemEditor(
+                        key: ObjectKey(i),
+                        label: i.food?.label,
+                        seen: i.name,
+                        grams: i.grams,
+                        servingG: i.food?.servingG,
+                        kcal: i.food == null ? null : i.food!.per100['kcal']! * i.grams / 100,
+                        onChange: () => _pick(i),
+                        onGrams: (g) => setState(() => i.grams = g),
+                        onRemove: () => setState(() => _items.remove(i)),
+                      ),
                   ]),
                 const SizedBox(height: 12),
                 Align(
@@ -475,50 +572,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 }
 
-/// Search nutri.db and pick a food (owns its controller, see memory_screen.dart).
-class _PickFoodDialog extends StatefulWidget {
-  const _PickFoodDialog({required this.tools, required this.initial});
-  final AgentTools tools;
-  final String initial;
-
-  @override
-  State<_PickFoodDialog> createState() => _PickFoodDialogState();
-}
-
-class _PickFoodDialogState extends State<_PickFoodDialog> {
-  late final _text = TextEditingController(text: widget.initial);
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final results = _text.text.trim().length < 2 ? const <FoodChoice>[] : widget.tools.searchFood(_text.text, limit: 8);
-    return AlertDialog(
-      title: Text(l.searchFood),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: _text, autofocus: true, onChanged: (_) => setState(() {})),
-          Flexible(
-            child: ListView(shrinkWrap: true, children: [
-              if (results.isEmpty && _text.text.trim().length >= 2) ListTile(title: Text(l.noResults)),
-              for (final f in results)
-                ListTile(
-                  title: Text(f.label),
-                  subtitle: Text(formatNutrient('kcal', f.per100['kcal']!, l) + l.per100Suffix),
-                  onTap: () => Navigator.pop(context, f),
-                ),
-            ]),
-          ),
-        ]),
-      ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel))],
-    );
+/// A gallery picture (JPEG, HEIC…) → PNG, as the camera frames are.
+Future<Uint8List> _encodePng(Uint8List bytes) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  final image = (await codec.getNextFrame()).image;
+  try {
+    return (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+  } finally {
+    image.dispose();
+    codec.dispose();
   }
 }
 

@@ -334,6 +334,8 @@ class _ChatTab extends ConsumerWidget {
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
               Text(l.preparingAi, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              const _SearchInstead(),
             ]),
           ),
         ),
@@ -506,6 +508,20 @@ class _DownloadAiState extends ConsumerState<_DownloadAi> {
           ElevatedButton.icon(
               icon: const Icon(Icons.download), label: Text(l.aiDownloadButton), onPressed: () => _start(e2b)),
       ],
+      const SizedBox(height: 12),
+      const Center(child: _SearchInstead()),
     ]);
   }
+}
+
+/// Without the AI (downloading, starting): the Log tab logs a meal too, no AI needed.
+class _SearchInstead extends ConsumerWidget {
+  const _SearchInstead();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => TextButton.icon(
+        icon: const Icon(Icons.search),
+        label: Text(AppLocalizations.of(context)!.searchInsteadInLog),
+        onPressed: () => ref.read(homeTabProvider.notifier).go(HomeTab.log),
+      );
 }

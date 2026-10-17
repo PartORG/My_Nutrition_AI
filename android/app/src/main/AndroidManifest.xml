@@ -14,9 +14,10 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Fingerprint unlock (M3): only while the phone has one profile. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <!-- Health Connect: read weight and steps only (Me tab, off until the user connects). -->
+    <!-- Health Connect: read weight, steps and active calories only (Settings, off until the user connects). -->
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
     <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
         <intent>

@@ -409,7 +409,7 @@
     }
   },
   "weightTrend": "Weight",
-  "weightTrendEmpty": "Log your weight at least twice to see the trend.",
+  "weightTrendEmpty": "Log your weight on two different days to see the trend.",
   "logWeight": "Log weight",
   "weightLogged": "Weight saved",
   "plansUnavailable": "Plans aren't available in this build.",
@@ -550,7 +550,7 @@
   "cameraOpen": "Open camera",
   "cameraPhoto": "Photo",
   "cameraLive": "Live",
-  "cameraUnavailable": "The camera isn't available. Allow camera access for MyFoodMind in Android settings.",
+  "cameraUnavailable": "The camera isn't available right now. Close other apps that use it and try again.",
   "cameraShoot": "Take photo",
   "cameraNaming": "Recognizing food…",
   "cameraNamingFailed": "AI recognition failed: showing quick detection instead. Check the items.",
@@ -565,7 +565,7 @@
   "reviewTitle": "Check what was found",
   "reviewHint": "Amounts from a photo are estimates (≈). Change or remove anything; nothing is saved until you tap Log.",
   "reviewEmpty": "No food found. Add items by name.",
-  "notInDatabase": "{name}: not in the database, tap edit to pick a food",
+  "notInDatabase": "{name}: not in the database. Tap Change to pick a food.",
   "@notInDatabase": {
     "placeholders": {
       "name": {
@@ -759,8 +759,8 @@
   "productsHint": "Missing a packaged product? Download all products in Me.",
   "healthConnect": "Health Connect",
   "appleHealth": "Apple Health",
-  "healthSyncHint": "Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.",
-  "healthSyncDenied": "No access. Allow weight and steps in the health app's settings, then try again.",
+  "healthSyncHint": "Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.",
+  "healthSyncDenied": "No access. Allow weight, steps and active calories in the health app's settings, then try again.",
   "stepsToday": "{steps} steps today",
   "@stepsToday": {
     "placeholders": {
@@ -828,7 +828,6 @@
   "widgetKcalTitle": "Calories on the home-screen widget",
   "widgetKcalHint": "Add the MyFoodMind widget to your home screen. Today's calories are then visible there without your PIN.",
   "welcomeTitle": "Log your first meal",
-  "welcomeBody": "Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.",
   "nextMealTitle": "No {meal} logged yet",
   "@nextMealTitle": {
     "placeholders": {
@@ -993,7 +992,6 @@
     }
   },
   "pickDates": "Pick dates",
-  "recipesOnly": "Recipes only",
   "historyEmpty": "Nothing logged on these days.",
   "historyLockedTitle": "History shows the last {days} days",
   "@historyLockedTitle": {
@@ -1099,15 +1097,6 @@
   "undo": "Undo",
   "water": "Water",
   "litreUnit": "L",
-  "showFewer": "Show fewer",
-  "showAllCount": "Show all {n} ›",
-  "@showAllCount": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "yourWeek": "Your week",
   "yourMonth": "Your month",
   "yourYear": "Your year",
@@ -1158,9 +1147,7 @@
   "lessServing": "Half a serving less",
   "moreServing": "Half a serving more",
   "logFoodTitle": "Log food",
-  "quickAddBody": "Just calories and macros",
   "snapPhoto": "Snap a photo",
-  "snapPhotoBody": "Names foods and estimates portions",
   "servingsAmount": "{amount} × serving",
   "@servingsAmount": {
     "placeholders": {
@@ -1514,5 +1501,80 @@
         "type": "String"
       }
     }
-  }
+  },
+  "activeKcalBurned": "{kcal} kcal burnt",
+  "@activeKcalBurned": {
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "weightUpdatedToday": "Today's weight updated.",
+  "historyMeals": "Meals",
+  "historyRecipes": "Recipes cooked",
+  "historyRecipesEmpty": "No recipes on these days. When you log a recipe (“I ate this”), it shows up here.",
+  "lastCooked": "last {date}",
+  "@lastCooked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "removeItem": "Remove",
+  "seenAs": "seen: {name}",
+  "@seenAs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmUndone": "Undone",
+  "editOnToday": "Edit on Today",
+  "thinking": "Thinking…",
+  "searchInsteadInLog": "Search foods in Log instead",
+  "burntWord": "Burnt",
+  "aiCardTitle": "Get the AI assistant",
+  "aiCardBody": "Describe meals in your own words and ask about food. It runs on this phone: one download (a few GB, Wi-Fi recommended). Search and quick add work without it.",
+  "welcomeLog": "Search it in Log, or quick-add the calories.",
+  "welcomeChat": "Or type or say it in Chat (\"I had 2 eggs and toast\").",
+  "welcomePhoto": "Or take a photo of your plate.",
+  "welcomeEnd": "Your day fills in here.",
+  "microsLowest": "Lowest: {name} · {amount}",
+  "@microsLowest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "healthSheetReads": "Reads your weight, steps and active calories. Nothing is written there and nothing leaves your phone.",
+  "lastSynced": "Last synced at {time}",
+  "@lastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncNow": "Sync now",
+  "disconnect": "Disconnect",
+  "healthSyncedWeights": "{count, plural, =0{Weights are up to date} =1{1 new weight} other{{count} new weights}}",
+  "@healthSyncedWeights": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraPermissionOff": "Camera access is off. Allow it in the app's settings to photograph your meal.",
+  "openSettings": "Open settings",
+  "tryAgain": "Try again",
+  "cameraChoosePhoto": "Choose photo",
+  "cameraGalleryNeedsAi": "A photo from the gallery needs the AI assistant. Download it in Chat."
 }

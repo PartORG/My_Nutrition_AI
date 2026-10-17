@@ -726,7 +726,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get weightTrendEmpty =>
-      'Запишіть вагу хоча б двічі, щоб побачити динаміку.';
+      'Запишіть вагу у два різні дні, щоб побачити тенденцію.';
 
   @override
   String get logWeight => 'Записати вагу';
@@ -928,7 +928,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get cameraUnavailable =>
-      'Камера недоступна. Дозвольте MyFoodMind доступ до камери в налаштуваннях Android.';
+      'Камера зараз недоступна. Закрийте інші застосунки, що її використовують, і спробуйте ще раз.';
 
   @override
   String get cameraShoot => 'Зробити фото';
@@ -966,7 +966,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String notInDatabase(String name) {
-    return '$name: немає в базі, натисніть «змінити», щоб обрати продукт';
+    return '$name: немає в базі. Натисніть «Змінити», щоб обрати продукт.';
   }
 
   @override
@@ -1191,11 +1191,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Читати вагу (для ваших цілей) і кроки. Туди нічого не записується, і ніщо не залишає телефон.';
+      'Читає вагу (для ваших цілей), кроки й активні калорії (на екрані «Сьогодні»). Туди нічого не записується, і ніщо не залишає телефон. Вимкніть, щоб від’єднати.';
 
   @override
   String get healthSyncDenied =>
-      'Немає доступу. Дозвольте вагу й кроки в налаштуваннях застосунку здоров’я та спробуйте ще раз.';
+      'Немає доступу. Дозвольте вагу, кроки й активні калорії в налаштуваннях застосунку здоров’я та спробуйте ще раз.';
 
   @override
   String stepsToday(String steps) {
@@ -1298,10 +1298,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get welcomeTitle => 'Запишіть першу страву';
-
-  @override
-  String get welcomeBody =>
-      'Напишіть або скажіть у чаті («Я з’їв 2 яйця й тост»), знайдіть у «Записі» або сфотографуйте. Тут з’явиться ваш день.';
 
   @override
   String nextMealTitle(String meal) {
@@ -1586,9 +1582,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get pickDates => 'Вибрати дати';
 
   @override
-  String get recipesOnly => 'Лише рецепти';
-
-  @override
   String get historyEmpty => 'За ці дні нічого не записано.';
 
   @override
@@ -1739,14 +1732,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get litreUnit => 'л';
 
   @override
-  String get showFewer => 'Менше';
-
-  @override
-  String showAllCount(int n) {
-    return 'Усі $n ›';
-  }
-
-  @override
   String get yourWeek => 'Ваш тиждень';
 
   @override
@@ -1793,13 +1778,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get logFoodTitle => 'Записати їжу';
 
   @override
-  String get quickAddBody => 'Лише калорії та БЖВ';
-
-  @override
   String get snapPhoto => 'Сфотографувати';
-
-  @override
-  String get snapPhotoBody => 'Називає страви й оцінює порції';
 
   @override
   String servingsAmount(String amount) {
@@ -2217,4 +2196,122 @@ class AppLocalizationsUk extends AppLocalizations {
   String logThisMeal(String meal) {
     return 'Записати: $meal';
   }
+
+  @override
+  String activeKcalBurned(String kcal) {
+    return '$kcal ккал спалено';
+  }
+
+  @override
+  String get weightUpdatedToday => 'Сьогоднішню вагу оновлено.';
+
+  @override
+  String get historyMeals => 'Їжа';
+
+  @override
+  String get historyRecipes => 'Приготовані рецепти';
+
+  @override
+  String get historyRecipesEmpty =>
+      'У ці дні рецептів немає. Коли ви запишете рецепт («Я це з’їв(ла)»), він з’явиться тут.';
+
+  @override
+  String lastCooked(String date) {
+    return 'востаннє $date';
+  }
+
+  @override
+  String get removeItem => 'Прибрати';
+
+  @override
+  String seenAs(String name) {
+    return 'розпізнано: $name';
+  }
+
+  @override
+  String get confirmUndone => 'Скасовано';
+
+  @override
+  String get editOnToday => 'Змінити в «Сьогодні»';
+
+  @override
+  String get thinking => 'Думаю…';
+
+  @override
+  String get searchInsteadInLog => 'Натомість шукати в «Запис»';
+
+  @override
+  String get burntWord => 'Спалено';
+
+  @override
+  String get aiCardTitle => 'Отримати ШІ-помічника';
+
+  @override
+  String get aiCardBody =>
+      'Описуйте страви своїми словами й питайте про їжу. Працює на цьому телефоні: одне завантаження (кілька ГБ, краще через Wi-Fi). Пошук і швидке додавання працюють і без нього.';
+
+  @override
+  String get welcomeLog =>
+      'Знайдіть страву в «Запис» або швидко додайте калорії.';
+
+  @override
+  String get welcomeChat =>
+      'Або напишіть чи скажіть у Чаті («Я з’їв 2 яйця й тост»).';
+
+  @override
+  String get welcomePhoto => 'Або сфотографуйте тарілку.';
+
+  @override
+  String get welcomeEnd => 'Ваш день заповнюється тут.';
+
+  @override
+  String microsLowest(String name, String amount) {
+    return 'Найменше: $name · $amount';
+  }
+
+  @override
+  String get healthSheetReads =>
+      'Читає вагу, кроки й активні калорії. Туди нічого не записується, і ніщо не залишає телефон.';
+
+  @override
+  String lastSynced(String time) {
+    return 'Остання синхронізація о $time';
+  }
+
+  @override
+  String get syncNow => 'Синхронізувати';
+
+  @override
+  String get disconnect => 'Від’єднати';
+
+  @override
+  String healthSyncedWeights(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count нового запису ваги',
+      many: '$count нових записів ваги',
+      few: '$count нові записи ваги',
+      one: '$count новий запис ваги',
+      zero: 'Вага актуальна',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cameraPermissionOff =>
+      'Доступ до камери вимкнено. Дозвольте його в налаштуваннях застосунку, щоб сфотографувати страву.';
+
+  @override
+  String get openSettings => 'Відкрити налаштування';
+
+  @override
+  String get tryAgain => 'Спробувати ще';
+
+  @override
+  String get cameraChoosePhoto => 'Вибрати фото';
+
+  @override
+  String get cameraGalleryNeedsAi =>
+      'Для фото з галереї потрібен ШІ-помічник. Завантажте його в Чаті.';
 }

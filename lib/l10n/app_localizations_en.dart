@@ -718,7 +718,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightTrendEmpty =>
-      'Log your weight at least twice to see the trend.';
+      'Log your weight on two different days to see the trend.';
 
   @override
   String get logWeight => 'Log weight';
@@ -921,7 +921,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cameraUnavailable =>
-      'The camera isn\'t available. Allow camera access for MyFoodMind in Android settings.';
+      'The camera isn\'t available right now. Close other apps that use it and try again.';
 
   @override
   String get cameraShoot => 'Take photo';
@@ -957,7 +957,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String notInDatabase(String name) {
-    return '$name: not in the database, tap edit to pick a food';
+    return '$name: not in the database. Tap Change to pick a food.';
   }
 
   @override
@@ -1180,11 +1180,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.';
+      'Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.';
 
   @override
   String get healthSyncDenied =>
-      'No access. Allow weight and steps in the health app\'s settings, then try again.';
+      'No access. Allow weight, steps and active calories in the health app\'s settings, then try again.';
 
   @override
   String stepsToday(String steps) {
@@ -1287,10 +1287,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeTitle => 'Log your first meal';
-
-  @override
-  String get welcomeBody =>
-      'Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.';
 
   @override
   String nextMealTitle(String meal) {
@@ -1566,9 +1562,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickDates => 'Pick dates';
 
   @override
-  String get recipesOnly => 'Recipes only';
-
-  @override
   String get historyEmpty => 'Nothing logged on these days.';
 
   @override
@@ -1711,14 +1704,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get litreUnit => 'L';
 
   @override
-  String get showFewer => 'Show fewer';
-
-  @override
-  String showAllCount(int n) {
-    return 'Show all $n ›';
-  }
-
-  @override
   String get yourWeek => 'Your week';
 
   @override
@@ -1765,13 +1750,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logFoodTitle => 'Log food';
 
   @override
-  String get quickAddBody => 'Just calories and macros';
-
-  @override
   String get snapPhoto => 'Snap a photo';
-
-  @override
-  String get snapPhotoBody => 'Names foods and estimates portions';
 
   @override
   String servingsAmount(String amount) {
@@ -2186,4 +2165,119 @@ class AppLocalizationsEn extends AppLocalizations {
   String logThisMeal(String meal) {
     return 'Log this $meal';
   }
+
+  @override
+  String activeKcalBurned(String kcal) {
+    return '$kcal kcal burnt';
+  }
+
+  @override
+  String get weightUpdatedToday => 'Today\'s weight updated.';
+
+  @override
+  String get historyMeals => 'Meals';
+
+  @override
+  String get historyRecipes => 'Recipes cooked';
+
+  @override
+  String get historyRecipesEmpty =>
+      'No recipes on these days. When you log a recipe (“I ate this”), it shows up here.';
+
+  @override
+  String lastCooked(String date) {
+    return 'last $date';
+  }
+
+  @override
+  String get removeItem => 'Remove';
+
+  @override
+  String seenAs(String name) {
+    return 'seen: $name';
+  }
+
+  @override
+  String get confirmUndone => 'Undone';
+
+  @override
+  String get editOnToday => 'Edit on Today';
+
+  @override
+  String get thinking => 'Thinking…';
+
+  @override
+  String get searchInsteadInLog => 'Search foods in Log instead';
+
+  @override
+  String get burntWord => 'Burnt';
+
+  @override
+  String get aiCardTitle => 'Get the AI assistant';
+
+  @override
+  String get aiCardBody =>
+      'Describe meals in your own words and ask about food. It runs on this phone: one download (a few GB, Wi-Fi recommended). Search and quick add work without it.';
+
+  @override
+  String get welcomeLog => 'Search it in Log, or quick-add the calories.';
+
+  @override
+  String get welcomeChat =>
+      'Or type or say it in Chat (\"I had 2 eggs and toast\").';
+
+  @override
+  String get welcomePhoto => 'Or take a photo of your plate.';
+
+  @override
+  String get welcomeEnd => 'Your day fills in here.';
+
+  @override
+  String microsLowest(String name, String amount) {
+    return 'Lowest: $name · $amount';
+  }
+
+  @override
+  String get healthSheetReads =>
+      'Reads your weight, steps and active calories. Nothing is written there and nothing leaves your phone.';
+
+  @override
+  String lastSynced(String time) {
+    return 'Last synced at $time';
+  }
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String get disconnect => 'Disconnect';
+
+  @override
+  String healthSyncedWeights(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new weights',
+      one: '1 new weight',
+      zero: 'Weights are up to date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cameraPermissionOff =>
+      'Camera access is off. Allow it in the app\'s settings to photograph your meal.';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get cameraChoosePhoto => 'Choose photo';
+
+  @override
+  String get cameraGalleryNeedsAi =>
+      'A photo from the gallery needs the AI assistant. Download it in Chat.';
 }

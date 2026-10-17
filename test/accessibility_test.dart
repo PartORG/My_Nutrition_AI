@@ -22,11 +22,14 @@ import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/vision/scan.dart';
 import 'package:myfoodmind/ui/camera_screen.dart';
+import 'package:myfoodmind/data/diary.dart' show logWeight, setPref, storeActiveKcal;
 import 'package:myfoodmind/ui/chat_screen.dart';
 import 'package:myfoodmind/ui/health_screen.dart';
+import 'package:myfoodmind/ui/history_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
 import 'package:myfoodmind/ui/profile_screens.dart';
 import 'package:myfoodmind/ui/settings_screen.dart';
+import 'package:myfoodmind/ui/weight_screen.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'agent_test.dart' show FakeModel;
@@ -165,6 +168,38 @@ void main() {
       await tester.tap(find.byIcon(Icons.person_outline));
       await tester.pumpAndSettle();
       await scrollAll(tester, 'Me ($lang)');
+    });
+  }
+
+  for (final lang in ['en', 'uk', 'de', 'fr']) {
+    testWidgets('$lang: History (both tabs), Weight and Today with the burnt ring at 200 % text', (tester) async {
+      smallPhone(tester);
+      final l = lookupAppLocalizations(Locale(lang));
+      (data.tools.logRecipe(2).card! as ConfirmCard).apply();
+      final now = DateTime.now();
+      for (final (i, kg) in [62.0, 61.6, 61.2].indexed) {
+        logWeight(data.user, kg, imperial: false, at: now.subtract(Duration(days: 2 - i)));
+      }
+      setPref(data.user, 'health_sync', '1');
+      storeActiveKcal(data.user, now, 240);
+      await tester.pumpWidget(app(const HomeScreen(name: 'Anna'), locale: Locale(lang)));
+      await tester.pump();
+      expect(find.text(l.burntWord), findsOneWidget);
+      await scrollAll(tester, 'Today with health ($lang)');
+
+      await tester.pumpWidget(app(HistoryScreen(data: data), locale: Locale(lang)));
+      await tester.pump();
+      await scrollAll(tester, 'History meals ($lang)');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 4000)); // back up to the tabs
+      await tester.pump();
+      await tester.tap(find.text(l.historyRecipes));
+      await tester.pump();
+      expect(find.textContaining(l.cookedTimes(1)), findsWidgets); // lasagna (setUp) and recipe 2
+      await scrollAll(tester, 'History recipes ($lang)');
+
+      await tester.pumpWidget(app(WeightScreen(data: data), locale: Locale(lang)));
+      await tester.pump();
+      await scrollAll(tester, 'Weight ($lang)');
     });
   }
 

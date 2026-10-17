@@ -2,8 +2,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_state.dart';
+import '../data/diary.dart' show logWeight;
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'kit.dart';
 import 'theme.dart';
 
 /// Body details → computed targets. [onboarding] adds a "Later" button.
@@ -77,11 +79,15 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     final data = ref.read(profileDataProvider);
     if (data == null) return;
     final w = _num(_weight)!;
+    final kg = _imperial ? w * lbToKg : w;
+    // A new weight here is a reading too, or the weight trend never sees it.
+    final before = loadBody(data.user)?.weightKg;
+    if (before == null || (before - kg).abs() >= .05) logWeight(data.user, w, imperial: _imperial, at: DateTime.now());
     saveBody(data.user, (
       sex: _sex,
       birthYear: int.parse(_year.text),
       heightCm: _heightCm!,
-      weightKg: _imperial ? w * lbToKg : w,
+      weightKg: kg,
       activity: _activity,
       goal: _goal,
       imperial: _imperial,
@@ -107,22 +113,21 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       Activity.veryActive: l.activityVeryActive,
     };
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.goalsTitle),
-        automaticallyImplyLeading: !widget.onboarding,
-        // In the bar, not under the form: skipping must be visible without scrolling.
-        actions: [
-          if (widget.onboarding)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text(l.later),
-            ),
-        ],
-      ),
-      body: Form(
+      body: SafeArea(
+        child: Column(children: [
+          ScreenHeader(
+            title: l.goalsTitle,
+            size: 28,
+            back: !widget.onboarding,
+            // Beside the title, not under the form: skipping must be visible without scrolling.
+            trailing: widget.onboarding
+                ? TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l.later))
+                : null,
+          ),
+          Expanded(
+            child: Form(
         key: _form,
-        child: ListView(padding: const EdgeInsets.all(16), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 16), children: [
           Text(l.goalsIntro, style: TextStyle(color: context.colors.textSecondary)),
           gap,
           SegmentedButton<bool>(
@@ -195,6 +200,9 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _save, child: Text(l.confirmSave)),
+        ]),
+            ),
+          ),
         ]),
       ),
     );

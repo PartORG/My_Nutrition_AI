@@ -426,6 +426,34 @@ columns for them at all.
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
 
+## v0.9.0 (2026-10-17): fix what the AI got wrong, Undo, burnt ring, Health Connect, History
+
+From the UI/UX audit (canvas "MyFoodMind UI/UX Audit") and phone testing.
+- **Meal editor** (`lib/ui/meal_editor.dart`), shared by the chat meal card and the photo review: tap a food
+  to swap it, × removes it, "+ Add item", ± half servings. Each row owns its grams field (keyed per item):
+  the review used to show a stale amount after a remove or a changed food and log a different one. Rows
+  show "seen: …" (what the AI read), unmatched items come first.
+- **Undo** on every log (Log, quick add, yesterday's meal, photo review) and on a saved chat card
+  (`lastMealId` / `undoMealsAfter`); a saved card also links to Today to edit.
+- **Weight:** a weight saved in the Goals form is also a reading, so the trend sees it (it only updated
+  the profile before: "log at least twice" after three days). The hint says "on two different days".
+- **Health Connect / Apple Health:** also reads active calories. Shown as an inner "Burnt" ring in the hero
+  (target 300 kcal), never added to the goal (the activity level already counts a typical day). Steps
+  refresh every minute and when the app returns; the steps tile opens a sheet (what's read, last sync,
+  Sync now, Disconnect); disconnect revokes access on Android.
+- **Today:** ≈ on the totals (and the home widget) when a meal is estimated; over the goal in coral, not
+  Pro gold; water · fasting · steps · weight in one tile block; vitamins as amounts behind one row; a History
+  link; a card offering the AI download; the welcome text names only what works now (Chat with the AI,
+  photos with Pro). "Get an idea" waits for the AI instead of dropping the message.
+- **Log:** search first, photo and quick add as compact buttons; quick add is a bottom sheet, kcal first.
+- **Camera:** "Choose photo" from the gallery (`image_picker`; the picker's cache copy is deleted, the photo
+  stays in memory); a Cancel overlay while Gemma names foods; Open settings / Try again when the camera is
+  denied (`myfoodmind/system` channel); live labels without detector percentages; kit buttons.
+- **Chat:** a "Thinking…" row; "Search foods in Log instead" while the AI downloads or starts.
+- **History** redesigned: Meals (day cards) and Recipes cooked (count, last date, opens the recipe).
+- ☰ on every tab; Goals and Timeline use `ScreenHeader`; Weight's sync shows progress and the result.
+- Not done: the type/spacing scale (needs device screenshots first).
+
 ## v0.8.2 (2026-10-16): phone-test fixes, colour, drawer, year view
 
 - **Crashes:** leaving the camera (back, or after Continue) freed the EfficientDet interpreter while a live

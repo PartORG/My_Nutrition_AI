@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../data/diary.dart' show lastMealId, undoMealsAfter;
 import 'agent_tools.dart';
 import 'chat_limit.dart';
 import 'chat_model.dart';
@@ -337,16 +338,52 @@ class Agent extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The user swapped a food on a meal card for one they picked; null [food] removes the item.
+  void setFood(ConfirmCard card, MealItem item, FoodChoice? food) {
+    if (card.accepted != null) return;
+    if (food == null) {
+      card.items.remove(item);
+    } else {
+      final f = MealItem.of(food, grams: food.servingG ?? item.grams);
+      item
+        ..label = f.label
+        ..grams = f.grams
+        ..per100 = f.per100
+        ..estimated = f.estimated
+        ..recipeId = f.recipeId
+        ..servingG = f.servingG;
+    }
+    notifyListeners();
+  }
+
+  /// "+ Add food" on a meal card.
+  void addFood(ConfirmCard card, FoodChoice food) {
+    if (card.accepted != null) return;
+    card.items.add(MealItem.of(food));
+    notifyListeners();
+  }
+
   /// The user tapped ✓ or ✕ on a card. Only ✓ writes.
   Future<void> decide(ConfirmCard card, bool accept) async {
     if (card.accepted != null) return;
     card.accepted = accept;
     if (accept) {
+      if (card.items.isNotEmpty) card.undoFrom = lastMealId(user);
       card.apply();
       onWrite?.call();
     }
     notifyListeners();
     if (accept) unawaited(memory.backfill()); // index a logged meal for episodic memory
+  }
+
+  /// Undo on a saved meal card: the meals its Save added are deleted.
+  void undo(ConfirmCard card) {
+    final from = card.undoFrom;
+    if (from == null || card.undone) return;
+    undoMealsAfter(user, from);
+    card.undone = true;
+    onWrite?.call();
+    notifyListeners();
   }
 
   Future<ChatSession> _open({int? before}) async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +10,12 @@ import '../app_state.dart';
 import '../billing/billing.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
-import '../data/health_sync.dart' show healthSyncOn, stepsToday;
+import '../data/health_sync.dart' show disconnectHealth, healthSyncOn, stepsToday, syncActiveKcal, syncHealthWeights;
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'recipe_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
+import 'history_screen.dart';
 import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'kit.dart';
 import 'nutrients.dart';
@@ -69,11 +71,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       overline: overline,
       title: title,
       size: _days == 1 ? 28 : 34,
-      leading: RoundIconButton(
-        icon: Icons.menu,
-        tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
-        onPressed: () => Scaffold.of(context).openDrawer(),
-      ),
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
         if (_days == 365) const Tag('PRO', tone: TagTone.gold, big: true),
         if (_days == 1 && streak > 0)
@@ -159,15 +156,44 @@ class _DayView extends ConsumerWidget {
             if (targets[key] != null && !_heroMacros.contains(key)) key,
         ];
         final fasting = pref(data.user, 'fasting') == '1';
+        final aiReady = switch (ref.watch(agentProvider)) {
+          AsyncError(error: LlmNotDownloaded()) => false,
+          _ => true,
+        };
         return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
           if (firstDay) ...[
-            _NextStep(title: l.welcomeTitle, body: l.welcomeBody, meal: data.tools.mealTypeNow()),
+            // Only the ways that work now: Chat once the AI is downloaded, photos with Pro.
+            TierBuilder(
+              builder: (context, tier) => _NextStep(
+                title: l.welcomeTitle,
+                body: [
+                  l.welcomeLog,
+                  if (aiReady) l.welcomeChat,
+                  if (tier.includes(Tier.pro)) l.welcomePhoto,
+                  l.welcomeEnd,
+                ].join(' '),
+                meal: data.tools.mealTypeNow(),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (!aiReady && ref.watch(llmDownloadProvider) == null && pref(data.user, _aiCardHidden) != '1') ...[
+            _AiCard(onLater: () {
+              setPref(data.user, _aiCardHidden, '1');
+              data.changed();
+            }),
             const SizedBox(height: 12),
           ],
           if (targets['kcal'] == null)
             _SetGoalsCard(eaten: eaten)
           else
-            _HeroCard(eaten: eaten, targets: targets, limited: t.limited.keys.toSet()),
+            _HeroCard(
+              eaten: eaten,
+              targets: targets,
+              limited: t.limited.keys.toSet(),
+              estimated: meals.any((m) => m.estimated),
+              burned: healthSyncOn(data.user) ? activeKcalOn(data.user, now) : null,
+            ),
           if (otherBars.isNotEmpty) ...[
             const SizedBox(height: 12),
             Panel(
@@ -190,18 +216,27 @@ class _DayView extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
           ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(data: data)))
+                  .then((_) => data.changed()),
+              child: Text('${l.historyTitle} ›'),
+            ),
+          ),
           const SizedBox(height: 6),
+          // The small daily numbers in one block: water, fasting, steps, weight.
           _TileRow(children: [
             _WaterTile(data: data),
             if (fasting) _FastTile(data: data),
             if (healthSyncOn(data.user)) _StepsTile(data: data),
+            WeightTile(data: data),
           ]),
-          const SizedBox(height: 12),
-          WeightSummaryCard(data: data),
           if (meals.isNotEmpty)
             TierBuilder(
                 builder: (_, tier) => tier.includes(Tier.basic)
-                    ? Padding(padding: const EdgeInsets.only(top: 12), child: _MicrosCard(data: data))
+                    ? Padding(padding: const EdgeInsets.only(top: 12), child: _MicrosRow(data: data))
                     : const SizedBox.shrink()),
           if (recipes.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -242,12 +277,22 @@ class _TileRow extends StatelessWidget {
   }
 }
 
+/// On the green hero: over the goal (not the gold of Pro), and the burnt ring (blue, apart from white in lightness too).
+const _overColor = Color(0xFFFFA28A);
+const _burntColor = Color(0xFF8FD3FF);
+
 /// The green hero: a ring of calories left, the macro bars, and Goal − Eaten = Left.
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.eaten, required this.targets, required this.limited});
+  const _HeroCard({required this.eaten, required this.targets, required this.limited, this.estimated = false, this.burned});
   final Map<String, double> eaten;
   final Map<String, double?> targets;
   final Set<String> limited;
+
+  /// Some of today's meals are estimates (chat, photo, dishes): the totals get "≈".
+  final bool estimated;
+
+  /// Active calories from the health app, the inner ring; null = not connected. Never in the goal.
+  final double? burned;
 
   @override
   Widget build(BuildContext context) {
@@ -256,6 +301,8 @@ class _HeroCard extends StatelessWidget {
     final goal = targets['kcal']!, ate = eaten['kcal']!;
     final left = goal - ate;
     final over = left < 0;
+    final approx = estimated ? '≈ ' : '';
+    final burned = this.burned;
     const white = Colors.white;
     final soft = white.withValues(alpha: .18);
     final ring = SizedBox.square(
@@ -266,25 +313,41 @@ class _HeroCard extends StatelessWidget {
             value: (ate / goal).clamp(0, 1),
             strokeWidth: 12,
             strokeCap: StrokeCap.round,
-            color: over ? c.gold : white,
+            color: over ? _overColor : white,
             backgroundColor: soft,
             // TalkBack: words in the label; the value must stay numeric (Flutter reads the %).
             semanticsLabel: '${l.kcal}: ${ate.round()} ${l.eatenOfGoal(goal.round())}',
           ),
         ),
-        Column(mainAxisSize: MainAxisSize.min, children: [
+        // Inside, in its own colour: what the health app says was burnt, against a daily activity target.
+        if (burned != null)
+          SizedBox.square(
+            dimension: 98,
+            child: CircularProgressIndicator(
+              value: (burned / activeKcalTarget).clamp(0, 1),
+              strokeWidth: 7,
+              strokeCap: StrokeCap.round,
+              color: _burntColor,
+              backgroundColor: soft,
+              semanticsLabel: l.activeKcalBurned('${burned.round()}'),
+            ),
+          ),
+        Padding(
+          padding: EdgeInsets.all(burned == null ? 16 : 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
           FittedBox(
-            child: Text(_n(context, left.abs()),
+            child: Text('$approx${_n(context, left.abs())}',
                 style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.6, color: white,
                     fontFeatures: [FontFeature.tabularFigures()])),
           ),
           FittedBox(
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (over) ...[Icon(Icons.warning_amber_rounded, size: 14, color: c.gold), const SizedBox(width: 3)],
+              if (over) ...[const Icon(Icons.warning_amber_rounded, size: 14, color: _overColor), const SizedBox(width: 3)],
               Text(over ? l.kcalOverShort : l.kcalLeftShort, style: TextStyle(fontSize: 12, color: white.withValues(alpha: .85))),
             ]),
           ),
         ]),
+        ),
       ]),
     );
     final bars = [
@@ -323,8 +386,25 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(children: [
             sum(_n(context, goal), l.goal),
-            sum('− ${_n(context, ate)}', l.eatenWord),
-            sum('= ${over ? '−' : ''}${_n(context, left.abs())}', l.leftWord),
+            sum('− $approx${_n(context, ate)}', l.eatenWord),
+            sum('= $approx${over ? '−' : ''}${_n(context, left.abs())}', l.leftWord),
+            if (burned != null) ...[
+              Container(width: 1, height: 32, color: soft),
+              Expanded(
+                child: Column(children: [
+                  FittedBox(
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: _burntColor, shape: BoxShape.circle)),
+                      const SizedBox(width: 5),
+                      Text(_n(context, burned),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: white,
+                              fontFeatures: [FontFeature.tabularFigures()])),
+                    ]),
+                  ),
+                  Text(l.burntWord, style: TextStyle(fontSize: 12, color: white.withValues(alpha: .85))),
+                ]),
+              ),
+            ],
           ]),
         ]),
       ),
@@ -759,86 +839,234 @@ class _FastSheetState extends State<_FastSheet> {
   }
 }
 
-class _StepsTile extends StatelessWidget {
+/// Steps and active calories from the health app. Health Connect can't tell an app about new
+/// data, so they are re-read every minute while shown and when the app comes back (weights too).
+class _StepsTile extends StatefulWidget {
   const _StepsTile({required this.data});
+  final ProfileData data;
+
+  @override
+  State<_StepsTile> createState() => _StepsTileState();
+}
+
+class _StepsTileState extends State<_StepsTile> {
+  int? _steps;
+  DateTime? _synced;
+  late final Timer _timer;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _refresh());
+    _lifecycle = AppLifecycleListener(onResume: () => _refresh(weights: true));
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh({bool weights = false}) async {
+    final user = widget.data.user;
+    final steps = await stepsToday(user);
+    if (!mounted) return; // locked meanwhile: the database is closed
+    final kcal = await syncActiveKcal(user);
+    final weighed = weights && mounted && await syncHealthWeights(user) > 0;
+    if (!mounted) return;
+    setState(() {
+      _steps = steps;
+      _synced = DateTime.now();
+    });
+    if (kcal || weighed) widget.data.changed(); // a new burnt ring or trend weight
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final burned = activeKcalOn(widget.data.user, DateTime.now());
+    return Panel(
+      radius: Radii.tile,
+      padding: const EdgeInsets.all(12),
+      color: c.mint,
+      border: false,
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => _HealthSheet(data: widget.data, synced: _synced, onSync: () => _refresh(weights: true)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          Expanded(child: Text(l.steps, style: TextStyle(fontSize: 13, color: c.muted))),
+          Icon(Icons.directions_walk, size: 20, color: c.primary),
+        ]),
+        const SizedBox(height: 14),
+        Text(_steps == null ? '–' : NumberFormat.decimalPattern().format(_steps),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink)),
+        if (burned > 0)
+          Text(l.activeKcalBurned(NumberFormat.decimalPattern().format(burned.round())),
+              style: TextStyle(fontSize: 13, color: c.muted)),
+      ]),
+    );
+  }
+}
+
+/// Basic: today's micronutrients against EU reference intakes, lowest first (in a sheet from [_MicrosRow]).
+class _MicrosCard extends StatelessWidget {
+  const _MicrosCard({required this.data});
   final ProfileData data;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    return FutureBuilder(
-      future: stepsToday(data.user),
-      builder: (context, snap) => Panel(
-        radius: Radii.tile,
-        padding: const EdgeInsets.all(12),
-        color: c.mint,
-        border: false,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            Expanded(child: Text(l.steps, style: TextStyle(fontSize: 13, color: c.muted))),
-            Icon(Icons.directions_walk, size: 20, color: c.primary),
-          ]),
-          const SizedBox(height: 14),
-          Text(snap.data == null ? '–' : NumberFormat.decimalPattern().format(snap.data),
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink)),
+    final m = microTotalsOn(data.user, DateTime.now());
+    final labels = microLabels(l);
+    final share = {for (final k in labels.keys) k: m.totals[k]! / microReference[k]!};
+    final keys = labels.keys.toList()..sort((a, b) => share[a]!.compareTo(share[b]!));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Text(l.microsTitle, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        for (final k in keys)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            // Amounts, not "%": "4.2 mg / 14 mg" says how much more to eat.
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                Expanded(child: Text(labels[k]!.$1, style: const TextStyle(fontSize: 14))),
+                Text('${formatMicro(m.totals[k]!, labels[k]!.$2)} / ${formatMicro(microReference[k]!, labels[k]!.$2)}',
+                    style: TextStyle(fontSize: 13, color: c.muted, fontFeatures: const [FontFeature.tabularFigures()])),
+              ]),
+              const SizedBox(height: 4),
+              Bar(
+                value: share[k]!,
+                height: 6,
+                label: '${labels[k]!.$1} ${formatMicro(m.totals[k]!, labels[k]!.$2)} / ${formatMicro(microReference[k]!, labels[k]!.$2)}',
+              ),
+            ]),
+          ),
+        const SizedBox(height: 4),
+        Text(l.microsCoverage(m.known, m.meals), style: TextStyle(fontSize: 12, color: c.muted)),
+      ]),
+    );
+  }
+}
+
+/// What the health app connection does, when it last synced, and the way out.
+class _HealthSheet extends StatelessWidget {
+  const _HealthSheet({required this.data, required this.synced, required this.onSync});
+  final ProfileData data;
+  final DateTime? synced;
+  final Future<void> Function() onSync;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final nav = Navigator.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(Platform.isIOS ? l.appleHealth : l.healthConnect, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(l.healthSheetReads),
+          if (synced != null) ...[
+            const SizedBox(height: 6),
+            Text(l.lastSynced(DateFormat.Hm().format(synced!)), style: TextStyle(color: c.muted)),
+          ],
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            icon: const Icon(Icons.sync),
+            label: Text(l.syncNow),
+            onPressed: () async {
+              await onSync();
+              nav.pop();
+            },
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () async {
+              await disconnectHealth(data.user);
+              data.changed();
+              nav.pop();
+            },
+            child: Text(l.disconnect),
+          ),
         ]),
       ),
     );
   }
 }
 
-/// Basic: today's micronutrients against EU reference intakes, lowest first; three, or all seven.
-class _MicrosCard extends StatefulWidget {
-  const _MicrosCard({required this.data});
+/// Basic: one row for the vitamins and minerals (the lowest one named); the full list opens in a sheet.
+class _MicrosRow extends StatelessWidget {
+  const _MicrosRow({required this.data});
   final ProfileData data;
-
-  @override
-  State<_MicrosCard> createState() => _MicrosCardState();
-}
-
-class _MicrosCardState extends State<_MicrosCard> {
-  var _all = false;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    final m = microTotalsOn(widget.data.user, DateTime.now());
+    final m = microTotalsOn(data.user, DateTime.now());
     final labels = microLabels(l);
-    final share = {for (final k in labels.keys) k: m.totals[k]! / microReference[k]!};
-    final keys = labels.keys.toList()..sort((a, b) => share[a]!.compareTo(share[b]!));
+    final low = labels.keys.reduce((a, b) => m.totals[a]! / microReference[a]! <= m.totals[b]! / microReference[b]! ? a : b);
     return Panel(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => SafeArea(child: SingleChildScrollView(child: _MicrosCard(data: data))),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.microsTitle, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 2),
+            Text(l.microsLowest(labels[low]!.$1,
+                    '${formatMicro(m.totals[low]!, labels[low]!.$2)} / ${formatMicro(microReference[low]!, labels[low]!.$2)}'),
+                style: TextStyle(fontSize: 14, color: c.muted)),
+          ]),
+        ),
+        Icon(Icons.chevron_right, color: c.muted),
+      ]),
+    );
+  }
+}
+
+/// Before the AI is downloaded: what it adds, and the way to get it (Chat shows the sizes and progress).
+const _aiCardHidden = 'ai_card_hidden';
+
+class _AiCard extends ConsumerWidget {
+  const _AiCard({required this.onLater});
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    return Panel(
+      color: c.mint,
+      border: false,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(l.microsTitle, style: Theme.of(context).textTheme.titleMedium)),
-          TextButton(
-            onPressed: () => setState(() => _all = !_all),
-            child: Text(_all ? l.showFewer : l.showAllCount(labels.length)),
-          ),
+          Icon(Icons.auto_awesome_outlined, color: c.primary),
+          const SizedBox(width: 10),
+          Expanded(child: Text(l.aiCardTitle, style: Theme.of(context).textTheme.titleMedium)),
         ]),
-        for (final k in keys.take(_all ? keys.length : 3))
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(children: [
-              SizedBox(width: 96, child: Text(labels[k]!.$1, style: const TextStyle(fontSize: 14))),
-              Expanded(
-                child: Bar(
-                  value: share[k]!,
-                  height: 6,
-                  label: '${labels[k]!.$1} ${formatMicro(m.totals[k]!, labels[k]!.$2)} / ${formatMicro(microReference[k]!, labels[k]!.$2)}',
-                ),
-              ),
-              SizedBox(
-                width: 52,
-                child: Text('${(share[k]! * 100).round()} %',
-                    textAlign: TextAlign.end,
-                    style: TextStyle(fontSize: 13, color: c.muted, fontFeatures: const [FontFeature.tabularFigures()])),
-              ),
-            ]),
-          ),
-        const SizedBox(height: 4),
-        Text(l.microsCoverage(m.known, m.meals), style: TextStyle(fontSize: 12, color: c.muted)),
+        const SizedBox(height: 6),
+        Text(l.aiCardBody),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          FilledButton(onPressed: () => ref.read(homeTabProvider.notifier).go(HomeTab.chat), child: Text(l.aiDownloadButton)),
+          TextButton(onPressed: onLater, child: Text(l.later)),
+        ]),
       ]),
     );
   }
@@ -869,7 +1097,8 @@ class _NextStep extends ConsumerWidget {
             onTap: () {
               tab.go(HomeTab.chat);
               // Sent once the assistant is loaded; before that the tab shows its progress.
-              ref.read(agentProvider).value?.send(l.suggestIdea(inSentence(context, mealName(l, meal))));
+              final text = l.suggestIdea(inSentence(context, mealName(l, meal)));
+              ref.read(agentProvider.future).then((a) => a.send(text), onError: (_) {}); // not downloaded: Chat says so
             },
           ),
           Pill(label: l.logIt, icon: Icons.add, compact: true, onTap: () => tab.go(HomeTab.log)),

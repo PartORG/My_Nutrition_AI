@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
@@ -6,7 +7,9 @@ import '../agent/agent_tools.dart';
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
+import 'home_screen.dart' show HomeTab, homeTabProvider;
 import 'kit.dart';
+import 'meal_editor.dart';
 import 'memory_screen.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -158,7 +161,16 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (agent.busy) const LinearProgressIndicator(minHeight: 2),
+                  // On-device answers take seconds: say so where the eye is, above the input.
+                  if (agent.busy)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 2),
+                      child: Row(children: [
+                        SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: c.primary)),
+                        const SizedBox(width: 10),
+                        Text(l.thinking, style: TextStyle(fontSize: 14, color: c.muted)),
+                      ]),
+                    ),
                   if (!agent.busy) _Suggestions(agent: agent, onTap: _send),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -503,9 +515,27 @@ class _CardView extends StatelessWidget {
                   ),
                 ],
               ),
-              true => Text(
-                '✓ ${l.confirmSaved}',
-                style: text.labelLarge?.copyWith(color: context.colors.primary),
+              true when c.undone => Text('↶ ${l.confirmUndone}', style: text.labelLarge),
+              true => Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    '✓ ${l.confirmSaved}',
+                    style: text.labelLarge?.copyWith(color: context.colors.primary),
+                  ),
+                  // A saved meal: undo it here, or fix it on Today (tap the meal there).
+                  if (c.undoFrom != null) ...[
+                    TextButton(onPressed: () => agent.undo(c), child: Text(l.undo)),
+                    TextButton(
+                      onPressed: () => ProviderScope.containerOf(context, listen: false)
+                          .read(homeTabProvider.notifier)
+                          .go(HomeTab.today),
+                      child: Text(l.editOnToday),
+                    ),
+                  ],
+                ],
               ),
               false => Text('✕ ${l.confirmDiscarded}', style: text.labelLarge),
             },
@@ -780,9 +810,35 @@ class _MealConfirm extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
-            // Chat guesses amounts: each one is editable before Save (0 = leave it out).
+            // Chat guesses foods and amounts: each can be changed, removed or added before Save.
             for (final i in card.items)
-              _MealItemRow(item: i, onGrams: (g) => agent.setGrams(card, i, g)),
+              MealItemEditor(
+                key: ObjectKey(i),
+                label: i.label,
+                grams: i.grams,
+                kcal: i.values['kcal'],
+                servingG: i.servingG,
+                estimated: i.estimated,
+                onChange: () async {
+                  final food = await showDialog<FoodChoice>(
+                      context: context, builder: (_) => PickFoodDialog(tools: agent.tools, initial: i.label.split(',').first));
+                  if (food != null) agent.setFood(card, i, food);
+                },
+                onGrams: (g) => agent.setGrams(card, i, g),
+                onRemove: () => agent.setFood(card, i, null),
+              ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: Text(l.reviewAdd),
+                onPressed: () async {
+                  final food = await showDialog<FoodChoice>(
+                      context: context, builder: (_) => PickFoodDialog(tools: agent.tools, initial: ''));
+                  if (food != null) agent.addFood(card, food);
+                },
+              ),
+            ),
             for (final line in card.lines.skip(card.items.length)) Text(line),
             const SizedBox(height: 6),
             Divider(color: c.divider, thickness: 2),
@@ -809,7 +865,7 @@ class _MealConfirm extends StatelessWidget {
                       child: Text(l.confirmDiscard),
                     ),
                     FilledButton(
-                      onPressed: () => agent.decide(card, true),
+                      onPressed: card.items.any((i) => i.grams > 0) ? () => agent.decide(card, true) : null,
                       child: Text(l.confirmSave),
                     ),
                   ],
@@ -865,52 +921,3 @@ class _Suggestions extends StatelessWidget {
   }
 }
 
-/// A food on a meal card: name, grams (editable), kcal for those grams.
-class _MealItemRow extends StatelessWidget {
-  const _MealItemRow({required this.item, required this.onGrams});
-  final MealItem item;
-  final ValueChanged<double> onGrams;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(item.label, style: const TextStyle(fontSize: 16)),
-          ),
-          SizedBox(
-            width: 76,
-            child: TextFormField(
-              initialValue: '${item.grams.round()}',
-              textAlign: TextAlign.end,
-              decoration: InputDecoration(
-                isDense: true,
-                suffixText: 'g',
-                contentPadding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-                hintText: l.grams,
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              onChanged: (t) =>
-                  onGrams(double.tryParse(t.replaceAll(',', '.')) ?? 0),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 76,
-            child: Text(
-              '${item.estimated ? '≈' : ''}${item.values['kcal']!.round()} ${l.kcal}',
-              textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 15, color: c.muted),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -73,14 +73,19 @@ class CameraCard extends AgentCard {
   final String mode;
 }
 
-/// One food on a meal card. [grams] can change on the card before Save.
+/// One food on a meal card. The user can change its amount or swap the food before Save.
 class MealItem {
-  MealItem({required this.label, required this.grams, required this.per100, this.estimated = false, this.recipeId});
-  final String label;
+  MealItem({required this.label, required this.grams, required this.per100, this.estimated = false, this.recipeId,
+      this.servingG});
+  MealItem.of(FoodChoice f, {double? grams})
+      : this(label: f.label, grams: grams ?? f.servingG ?? 100, per100: f.per100, estimated: f.estimated,
+            recipeId: f.kind == 'recipe' ? f.id as int : null, servingG: f.servingG);
+  String label;
   double grams;
-  final Nutrients per100;
-  final bool estimated;
-  final int? recipeId;
+  Nutrients per100;
+  bool estimated;
+  int? recipeId;
+  double? servingG;
   Nutrients get values => per100.map((k, v) => MapEntry(k, v * grams / 100));
 }
 
@@ -106,6 +111,10 @@ class ConfirmCard extends AgentCard {
       ];
   final void Function(ConfirmCard) _apply;
   bool? accepted; // null = not decided yet
+
+  /// Meal cards after Save: the meal_log id before the save, so Undo removes what it added.
+  int? undoFrom;
+  bool undone = false;
 
   /// Meal cards only: the meal it is logged under. The user can change it on
   /// the card before Save, so it never depends on the time of day alone.

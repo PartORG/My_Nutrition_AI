@@ -99,7 +99,7 @@ class SettingsScreen extends ConsumerWidget {
                     value: healthSyncOn(data.user),
                     onChanged: (on) async {
                       if (!on) {
-                        disconnectHealth(data.user);
+                        await disconnectHealth(data.user);
                       } else if (!await connectHealth(data.user) && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.healthSyncDenied)));
                       }

@@ -19,6 +19,8 @@ class ScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    // A tab (no back arrow) gets the ☰ of the home screen's drawer.
+    final leading = this.leading ?? (!back && Scaffold.maybeOf(context)?.hasDrawer == true ? const MenuButton() : null);
     // Large text: what sits beside the title goes under it instead of squeezing it.
     if (trailing != null && MediaQuery.textScalerOf(context).scale(10) > 13) {
       return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -37,7 +39,7 @@ class ScreenHeader extends StatelessWidget {
           ),
           const SizedBox(width: 4),
         ],
-        if (leading != null) ...[leading!, const SizedBox(width: 12)],
+        if (leading != null) ...[leading, const SizedBox(width: 12)],
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             if (overline != null)
@@ -336,6 +338,18 @@ class StatTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// ☰: opens the home screen's side drawer.
+class MenuButton extends StatelessWidget {
+  const MenuButton({super.key});
+
+  @override
+  Widget build(BuildContext context) => RoundIconButton(
+        icon: Icons.menu,
+        tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+        onPressed: () => Scaffold.of(context).openDrawer(),
+      );
 }
 
 /// 44 dp round white button with a border: lock, settings, back on a photo.

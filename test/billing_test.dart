@@ -196,7 +196,7 @@ void main() {
       expect(seen, {'Logging calendar', 'best streak', 'Eaten most', 'Calories per day, monthly average'});
     });
 
-    testWidgets('History: meals per day within the Free window; recipes-only filter; plan is locked', (tester) async {
+    testWidgets('History: meals per day within the Free window; recipes tab; plan is locked', (tester) async {
       phone(tester);
       await tester.pumpWidget(app());
       await settle(tester);
@@ -211,13 +211,13 @@ void main() {
       expect(find.text('Last 30 days'), findsOneWidget);
       expect(find.text('Last 90 days'), findsNothing, reason: 'Free reaches back 30 days');
       expect(find.textContaining('asagna'), findsWidgets);
-      await tester.tap(find.text('Recipes only'));
+      await tester.tap(find.text('Recipes cooked'));
       await settle(tester);
-      expect(find.text('Nothing logged on these days.'), findsOneWidget);
+      expect(find.textContaining('No recipes on these days.'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('History shows the last 30 days'), 300);
       expect(find.text('History shows the last 30 days'), findsOneWidget);
 
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       await tester.tap(find.text('Plan')); // the tab
       await settle(tester);

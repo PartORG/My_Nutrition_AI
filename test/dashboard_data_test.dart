@@ -65,6 +65,15 @@ void main() {
     expect(weightTrend(w).last.trend, closeTo(80 + .1 * (72.4 - 80), .01));
   });
 
+  test('undo removes exactly the meals logged after the mark', () {
+    meal(DateTime(2026, 10, 4, 8), 300);
+    final mark = lastMealId(user);
+    meal(DateTime(2026, 10, 4, 9), 200);
+    meal(DateTime(2026, 10, 4, 9), 100);
+    undoMealsAfter(user, mark);
+    expect([for (final m in mealsOn(user, DateTime(2026, 10, 4))) m.kcal], [300]);
+  });
+
   test('plausibleWeight rejects typos in kg and lb', () {
     expect(plausibleWeight(72.4, imperial: false), isTrue);
     expect(plausibleWeight(7.24, imperial: false), isFalse);

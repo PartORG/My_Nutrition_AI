@@ -123,6 +123,26 @@ void main() {
     expect(card.accepted, isTrue);
   });
 
+  test('meal card: a wrong food is swapped, an item removed, one added; Undo takes the save back', () async {
+    model.script.add([ToolCall('log_meal', {'items': '2 eggs and an apple', 'meal_type': 'breakfast'})]);
+    await agent.send('Breakfast was 2 eggs and an apple');
+    final card = (agent.items[1] as CardItem).card as ConfirmCard;
+    final banana = agent.tools.searchFood('banana').first;
+    agent.setFood(card, card.items.first, banana);
+    expect(card.items.first.label, banana.label);
+    expect(card.items.first.grams, banana.servingG ?? 100);
+    if (card.items.length > 1) agent.setFood(card, card.items.last, null);
+    agent.addFood(card, agent.tools.searchFood('broccoli').first);
+    expect(card.items.map((i) => i.label), [banana.label, contains('roccoli')]);
+    await agent.decide(card, true);
+    expect([for (final r in user.select('SELECT description FROM meal_log ORDER BY id')) r['description']],
+        [banana.label, contains('roccoli')]);
+    agent.undo(card);
+    agent.undo(card); // a second tap changes nothing
+    expect(meals(), 0);
+    expect(card.undone, isTrue);
+  });
+
   test('plain "I ate…" and "I\'m allergic to…" get their card without the model or the daily count', () async {
     await agent.send('I ate 2 eggs and a banana for breakfast');
     await agent.send("I'm allergic to peanuts");

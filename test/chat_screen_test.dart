@@ -48,6 +48,9 @@ void main() {
       unlimited: () => false,
     );
 
+    tester.view.physicalSize = const Size(1080, 2400); // the meal card is tall: the message stays in view
+    tester.view.devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(ProviderScope(
       child: MaterialApp(
         localizationsDelegates: appLocalizationsDelegates,
@@ -65,7 +68,7 @@ void main() {
     // Editable before Save: the amount is a field, kcal (the row's and the total) follows it.
     expect(find.text('egg'), findsOneWidget);
     expect(find.text('143 kcal'), findsNWidgets(2));
-    await tester.enterText(find.widgetWithText(TextFormField, '100'), '150');
+    await tester.enterText(find.widgetWithText(TextField, '100'), '150');
     await tester.pump();
     expect(find.text('215 kcal'), findsNWidgets(2));
     // No second model pass: the app's own line instead of a generated one.
@@ -78,6 +81,11 @@ void main() {
     expect(find.text('✓ Saved'), findsOneWidget);
     expect(find.text('Save'), findsNothing);
     expect(user.select('SELECT description, grams FROM meal_log').single.values, ['egg', 150.0]);
+    // Undo on the saved card removes what it logged.
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(find.text('↶ Undone'), findsOneWidget);
+    expect(user.select('SELECT 1 FROM meal_log'), isEmpty);
 
     // A model reply can be reported (long press; no flag icon).
     await tester.enterText(find.byType(TextField), 'Thanks');

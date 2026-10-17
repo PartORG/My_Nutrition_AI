@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../agent/agent_tools.dart';
 import '../app_state.dart';
 import '../data/diary.dart';
+import 'meal_editor.dart' show showLoggedSnack;
 import '../l10n/app_localizations.dart';
 import 'camera_screen.dart';
 import 'home_screen.dart' show logMealProvider;
@@ -41,15 +42,26 @@ class _LogScreenState extends ConsumerState<LogScreen> {
       t.trim().length < 2 ? [] : ref.read(profileDataProvider)?.tools.searchFood(t) ?? [];
 
   Future<void> _pick(FoodChoice food) async {
+    final data = ref.read(profileDataProvider);
+    if (data == null) return;
+    final mark = lastMealId(data.user);
     final logged = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _AmountSheet(food: food, meal: _meal),
     );
-    if (logged == true && mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loggedSnack(food.label))));
-    }
+    if (logged == true && mounted) showLoggedSnack(context, data, AppLocalizations.of(context)!.loggedSnack(food.label), mark);
+  }
+
+  Future<void> _quickAdd(ProfileData data) async {
+    final mark = lastMealId(data.user);
+    final label = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _QuickAddSheet(data: data, meal: _meal),
+    );
+    if (label != null && mounted) showLoggedSnack(context, data, AppLocalizations.of(context)!.loggedSnack(label), mark);
   }
 
   @override
@@ -69,22 +81,18 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     final list = _kind == null ? all : [for (final f in all) if (f.kind == _kind || (_kind == 'recipe' && f.kind == 'recipe')) f];
     final yesterday = now.subtract(const Duration(days: 1));
     final yMeals = [for (final m in mealsOn(data.user, yesterday)) if (m.type == _meal) m];
+    final photo = _ActionButton(
+      icon: Icons.photo_camera_outlined,
+      label: l.snapPhoto,
+      badge: const Tag('PRO', tone: TagTone.gold),
+      onTap: () => openCamera(context, 'photo'),
+    );
+    final quick = _ActionButton(icon: Icons.add, label: l.quickAdd, onTap: () => _quickAdd(data));
     return CustomScrollView(slivers: [
       SliverToBoxAdapter(child: ScreenHeader(title: l.logFoodTitle)),
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         sliver: SliverList.list(children: [
-          ChoicePills<String>(
-            values: const ['breakfast', 'lunch', 'dinner', 'snack'],
-            selected: _meal,
-            label: (t) => mealName(l, t),
-            scroll: true,
-            onChanged: (t) {
-              ref.read(logMealProvider.notifier).set(null);
-              setState(() => _meal = t);
-            },
-          ),
-          const SizedBox(height: 14),
           TextField(
             controller: _search,
             decoration: InputDecoration(
@@ -101,29 +109,11 @@ class _LogScreenState extends ConsumerState<LogScreen> {
             onChanged: (t) => setState(() => _results = _find(t)),
           ),
           const SizedBox(height: 14),
-          IntrinsicHeight(
-            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Expanded(
-                child: _ActionTile(
-                  dark: true,
-                  icon: Icons.photo_camera_outlined,
-                  badge: const Tag('PRO', tone: TagTone.gold),
-                  title: l.snapPhoto,
-                  body: l.snapPhotoBody,
-                  onTap: () => openCamera(context, 'photo'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ActionTile(
-                  icon: Icons.add,
-                  title: l.quickAdd,
-                  body: l.quickAddBody,
-                  onTap: () => showDialog<void>(context: context, builder: (_) => _QuickAddDialog(data: data, meal: _meal)),
-                ),
-              ),
-            ]),
-          ),
+          // Two other ways in, kept small: the search is the lead. Large text: one under the other.
+          if (MediaQuery.textScalerOf(context).scale(10) > 15)
+            Column(children: [photo, const SizedBox(height: 10), quick])
+          else
+            Row(children: [Expanded(child: photo), const SizedBox(width: 10), Expanded(child: quick)]),
           if (!searching && yMeals.isNotEmpty) ...[
             const SizedBox(height: 14),
             Panel(
@@ -145,10 +135,11 @@ class _LogScreenState extends ConsumerState<LogScreen> {
                 FilledButton(
                   style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
                   onPressed: () {
+                    final mark = lastMealId(data.user);
                     final n = repeatMeal(data.user, yesterday, _meal, DateTime.now());
                     data.changed();
                     setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.reviewLogged(n))));
+                    showLoggedSnack(context, data, l.reviewLogged(n), mark);
                   },
                   child: Text(l.logButton),
                 ),
@@ -218,30 +209,26 @@ class _LogScreenState extends ConsumerState<LogScreen> {
       : l.perServing2((f.per100['kcal']! * f.servingG! / 100).round());
 }
 
-/// "Snap a photo" (dark) and "Quick add" (white).
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.icon, required this.title, required this.body, required this.onTap, this.dark = false,
-      this.badge});
+/// "Snap a photo" and "Quick add": one line each, beside each other under the search.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.icon, required this.label, required this.onTap, this.badge});
   final IconData icon;
-  final String title, body;
+  final String label;
   final VoidCallback onTap;
-  final bool dark;
   final Widget? badge;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final fg = dark ? c.background : c.ink;
     return Panel(
-      color: dark ? c.dark : c.surface,
-      border: !dark,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      radius: Radii.tile,
       onTap: onTap,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Icon(icon, color: dark ? fg : c.primary, size: 28), const Spacer(), ?badge]),
-        const SizedBox(height: 18),
-        Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: fg)),
-        const SizedBox(height: 2),
-        Text(body, style: TextStyle(fontSize: 14, color: fg.withValues(alpha: .78))),
+      child: Row(children: [
+        Icon(icon, color: c.primary, size: 24),
+        const SizedBox(width: 10),
+        Expanded(child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: c.ink))),
+        if (badge != null) ...[const SizedBox(width: 6), badge!],
       ]),
     );
   }
@@ -281,17 +268,17 @@ class _KindTab extends StatelessWidget {
   }
 }
 
-/// "Just 350 kcal" for a meal no search finds; macros optional.
-class _QuickAddDialog extends StatefulWidget {
-  const _QuickAddDialog({required this.data, required this.meal});
+/// "Just 350 kcal" for a meal no search finds; macros optional. Pops with the label logged.
+class _QuickAddSheet extends StatefulWidget {
+  const _QuickAddSheet({required this.data, required this.meal});
   final ProfileData data;
   final String meal;
 
   @override
-  State<_QuickAddDialog> createState() => _QuickAddDialogState();
+  State<_QuickAddSheet> createState() => _QuickAddSheetState();
 }
 
-class _QuickAddDialogState extends State<_QuickAddDialog> {
+class _QuickAddSheetState extends State<_QuickAddSheet> {
   final _name = TextEditingController();
   final _values = {for (final k in ['kcal', 'protein_g', 'carbs_g', 'fat_g']) k: TextEditingController()};
   late String _meal = widget.meal;
@@ -312,42 +299,52 @@ class _QuickAddDialogState extends State<_QuickAddDialog> {
     final l = AppLocalizations.of(context)!;
     final labels = nutrientLabels(l);
     final kcal = _num('kcal');
-    return AlertDialog(
-      title: Text(l.quickAdd),
-      content: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+    TextField field(String k, {bool autofocus = false}) => TextField(
+          controller: _values[k],
+          autofocus: autofocus,
+          decoration: InputDecoration(labelText: labels[k]!.$1, suffixText: labels[k]!.$2.isEmpty ? l.kcal : labels[k]!.$2),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => setState(() {}),
+        );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(l.quickAdd, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          // Calories first: all a quick add needs. The rest is optional.
+          field('kcal', autofocus: true),
+          const SizedBox(height: 8),
           TextField(controller: _name, decoration: InputDecoration(labelText: l.quickAddName)),
-          for (final k in _values.keys)
-            TextField(
-              controller: _values[k],
-              decoration: InputDecoration(labelText: labels[k]!.$1, suffixText: labels[k]!.$2.isEmpty ? l.kcal : labels[k]!.$2),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (_) => setState(() {}),
-            ),
+          const SizedBox(height: 8),
+          Row(children: [
+            for (final (i, k) in const ['protein_g', 'carbs_g', 'fat_g'].indexed) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: field(k)),
+            ],
+          ]),
           const SizedBox(height: 12),
           ChoicePills<String>(
             values: const ['breakfast', 'lunch', 'dinner', 'snack'],
             selected: _meal,
             label: (t) => mealName(l, t),
+            scroll: true,
             onChanged: (t) => setState(() => _meal = t),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: kcal == null || kcal <= 0 || kcal > 5000
+                ? null
+                : () {
+                    final name = _name.text.trim().isEmpty ? l.quickAdd : _name.text.trim();
+                    widget.data.tools.quickAdd(name, {for (final k in _values.keys) k: _num(k) ?? 0}, _meal);
+                    widget.data.changed();
+                    Navigator.pop(context, name);
+                  },
+            child: Text(l.logButton),
           ),
         ]),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
-        TextButton(
-          onPressed: kcal == null || kcal <= 0 || kcal > 5000
-              ? null
-              : () {
-                  final name = _name.text.trim();
-                  widget.data.tools.quickAdd(name.isEmpty ? l.quickAdd : name,
-                      {for (final k in _values.keys) k: _num(k) ?? 0}, _meal);
-                  widget.data.changed();
-                  Navigator.pop(context);
-                },
-          child: Text(l.logButton),
-        ),
-      ],
     );
   }
 }

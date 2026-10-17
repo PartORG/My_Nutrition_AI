@@ -100,6 +100,8 @@ class MeScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
+                const MenuButton(),
+                const SizedBox(width: 12),
                 CircleAvatar(
                   radius: 34,
                   backgroundColor: c.hero,

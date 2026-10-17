@@ -64,6 +64,13 @@ Nutrients totalsOn(Database user, DateTime day) {
 
 void deleteMeal(Database user, int id) => user.execute('DELETE FROM meal_log WHERE id = ?', [id]);
 
+/// The newest meal_log id: taken before a log, it lets Undo remove exactly what that log added.
+int lastMealId(Database user) => user.select('SELECT MAX(id) AS id FROM meal_log').single['id'] as int? ?? 0;
+
+/// Undo: deletes the meals logged after [lastMealId] returned [id].
+// shortcut: assumes nothing else is logged between the log and its Undo (a snackbar's few seconds).
+void undoMealsAfter(Database user, int id) => user.execute('DELETE FROM meal_log WHERE id > ?', [id]);
+
 /// A new amount scales the logged nutrition (it is a per-gram snapshot); [type] moves it to another meal.
 void updateMeal(Database user, int id, {double? grams, String? type}) {
   final old = user.select('SELECT grams FROM meal_log WHERE id = ?', [id]).single['grams'] as num?;
@@ -311,6 +318,30 @@ String? pref(Database user, String key) =>
 
 void setPref(Database user, String key, String value) =>
     user.execute('INSERT OR REPLACE INTO prefs (key, value) VALUES (?, ?)', [key, value]);
+
+// ---- active calories (Health Connect / Apple Health) ---------------------------
+
+/// Today's active calories, as "2026-10-17|320": shown on Today next to the goal, never added to it
+/// (the activity level already counts a typical day's exercise).
+const activeKcalPref = 'active_kcal';
+
+/// A day's target for the "burnt" ring on Today.
+const activeKcalTarget = 300.0;
+
+String _dayKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
+
+/// The active calories burned on [day]; 0 for any day but the stored one.
+double activeKcalOn(Database user, DateTime day) {
+  final parts = pref(user, activeKcalPref)?.split('|');
+  return parts != null && parts.length == 2 && parts[0] == _dayKey(day) ? double.tryParse(parts[1]) ?? 0 : 0;
+}
+
+/// Stores [kcal] as [now]'s active calories (rounded); true when that changed the value.
+bool storeActiveKcal(Database user, DateTime now, double kcal) {
+  if (kcal.round() == activeKcalOn(user, now).round()) return false;
+  setPref(user, activeKcalPref, '${_dayKey(now)}|${kcal.round()}');
+  return true;
+}
 
 // ---- water ------------------------------------------------------------------------
 

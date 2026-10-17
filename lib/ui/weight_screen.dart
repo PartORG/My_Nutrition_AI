@@ -9,9 +9,10 @@ import 'me_screen.dart' show TargetDialog;
 import 'kit.dart';
 import 'theme.dart';
 
-/// Today's weight card: the trend weight, its change over 30 days and a small chart. Opens [WeightScreen].
-class WeightSummaryCard extends StatelessWidget {
-  const WeightSummaryCard({super.key, required this.data});
+/// Today's weight tile: the trend weight and its change over 30 days. Opens [WeightScreen];
+/// with no reading yet it asks for one.
+class WeightTile extends StatelessWidget {
+  const WeightTile({super.key, required this.data});
   final ProfileData data;
 
   @override
@@ -20,34 +21,31 @@ class WeightSummaryCard extends StatelessWidget {
     final c = context.colors;
     final imperial = loadBody(data.user)?.imperial ?? false;
     final points = weightTrend(weightsSince(data.user, DateTime.now().subtract(const Duration(days: 30))));
-    void open() => Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => WeightScreen(data: data)))
-        .then((_) => data.changed());
     return Panel(
-      onTap: open,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      radius: Radii.tile,
+      padding: const EdgeInsets.all(12),
+      onTap: points.isEmpty
+          ? () => logWeightDialog(context, data)
+          : () => Navigator.of(context)
+              .push(MaterialPageRoute<void>(builder: (_) => WeightScreen(data: data)))
+              .then((_) => data.changed()),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
-          Expanded(child: Text(l.weight, style: Theme.of(context).textTheme.titleMedium)),
-          Flexible(child: Text('${l.days(30)} ›', style: TextStyle(fontSize: 13, color: c.muted))),
+          Expanded(child: Text(l.weight, style: TextStyle(fontSize: 13, color: c.muted))),
+          Icon(Icons.monitor_weight_outlined, size: 20, color: c.primary),
         ]),
-        const SizedBox(height: 8),
-        if (points.isEmpty)
-          Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
-            Text(l.weightTrendEmpty, style: TextStyle(color: c.muted)),
-            TextButton(onPressed: () => logWeightDialog(context, data), child: Text(l.logWeight)),
-          ])
-        else ...[
-          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 10, runSpacing: 6, children: [
-            Text(weightText(points.last.trend, imperial),
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -0.5, color: c.ink,
-                    fontFeatures: const [FontFeature.tabularFigures()])),
-            if (points.length > 1) Tag(signedWeight(points.last.trend - points.first.trend, imperial)),
-          ]),
-          if (points.length > 1) ...[
-            const SizedBox(height: 8),
-            SizedBox(height: 72, child: WeightChart(points: points, compact: true)),
-          ],
-        ],
+        const SizedBox(height: 14),
+        Text(points.isEmpty ? '–' : weightText(points.last.trend, imperial),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.ink,
+                fontFeatures: const [FontFeature.tabularFigures()])),
+        Text(
+          points.isEmpty
+              ? l.logWeight
+              : points.length > 1
+                  ? '${signedWeight(points.last.trend - points.first.trend, imperial)} · ${l.days(30)}'
+                  : l.legendTrend,
+          style: TextStyle(fontSize: 13, color: points.isEmpty ? c.primary : c.muted),
+        ),
       ]),
     );
   }
@@ -72,9 +70,13 @@ Future<void> logWeightDialog(BuildContext context, ProfileData data) async {
         valid: (v) => plausibleWeight(v, imperial: imperial)),
   );
   if (v == null || !plausibleWeight(v, imperial: imperial)) return;
-  logWeight(data.user, v, imperial: imperial, at: DateTime.now());
+  final now = DateTime.now();
+  final sameDay = weightsSince(data.user, DateTime(now.year, now.month, now.day)).isNotEmpty;
+  logWeight(data.user, v, imperial: imperial, at: now);
   data.changed();
-  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.weightLogged)));
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(sameDay ? l.weightUpdatedToday : l.weightLogged)));
+  }
 }
 
 /// The scale readings as dots and the trend as a line; [compact] for the card (no grid).
@@ -168,6 +170,7 @@ class WeightScreen extends StatefulWidget {
 
 class _WeightScreenState extends State<WeightScreen> {
   var _months = 1;
+  var _syncing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -194,11 +197,21 @@ class _WeightScreenState extends State<WeightScreen> {
                 back: true,
                 trailing: healthSyncOn(data.user)
                     ? TextButton.icon(
-                        icon: const Icon(Icons.sync, size: 18),
+                        icon: _syncing
+                            ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.sync, size: 18),
                         label: Text(l.healthConnect),
-                        onPressed: () async {
-                          if (await syncHealthWeights(data.user) > 0) data.changed();
-                        },
+                        onPressed: _syncing
+                            ? null
+                            : () async {
+                                setState(() => _syncing = true);
+                                final n = await syncHealthWeights(data.user);
+                                if (!mounted) return;
+                                setState(() => _syncing = false);
+                                if (n > 0) data.changed();
+                                ScaffoldMessenger.of(this.context)
+                                    .showSnackBar(SnackBar(content: Text(l.healthSyncedWeights(n))));
+                              },
                       )
                     : null,
               ),

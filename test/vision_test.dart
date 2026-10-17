@@ -140,8 +140,8 @@ void main() {
       expect(find.text('banana'), findsNWidgets(2)); // the band above and its row
       expect(find.text('broccoli'), findsNWidgets(2));
       // The user corrects the amount and removes broccoli before logging.
-      await tester.enterText(find.widgetWithText(TextFormField, '236'), '200');
-      await tester.tap(find.byTooltip('Delete').last);
+      await tester.enterText(find.widgetWithText(TextField, '236'), '200');
+      await tester.tap(find.byTooltip('Remove').last);
       await tester.pump();
       expect(find.text('≈ 178 kcal'), findsOneWidget); // the total: 200 g × 89 kcal/100 g
       await tester.tap(find.text('Lunch'));
@@ -155,6 +155,10 @@ void main() {
       expect(find.text('1 item logged'), findsOneWidget);
       // Episodic memory picks the scan up like a meal.
       expect(await Memory(data.user, vectors, fakeEmbed).backfill(), 2); // the meal + the scan
+      // Undo on the snackbar takes the logged meal back out.
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      expect(meals(), isEmpty);
     });
 
     testWidgets('Gemma photo → review with its portions; an unknown food waits for a match', (tester) async {
@@ -163,13 +167,42 @@ void main() {
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(TextFormField, '150'), findsOneWidget); // Gemma's grams, not a serving
-      expect(find.widgetWithText(TextFormField, '90'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '150'), findsOneWidget); // Gemma's grams, not a serving
+      expect(find.widgetWithText(TextField, '90'), findsOneWidget);
       expect(find.textContaining('unicorn stew'), findsNWidgets(2)); // not in nutri.db: shown, not loggable
       await tester.tap(find.textContaining('Log this'));
       await tester.pumpAndSettle();
       expect(meals().map((r) => (r['description'], r['grams'])), [('banana', 150.0), ('broccoli', 90.0)]);
       expect(scans(), ['photo: banana, broccoli']);
+    });
+
+    testWidgets('review rows keep their own grams after a remove and follow a changed food', (tester) async {
+      capture = (_) => parseSeenFoods('150 | banana\n90 | broccoli\n200 | unicorn stew');
+      await pumpChat(tester);
+      await tester.tap(find.text('Open camera').last);
+      await tester.pumpAndSettle();
+      // Unmatched first: it needs the user before it can be logged.
+      expect(tester.getTopLeft(find.textContaining('unicorn stew').last).dy,
+          lessThan(tester.getTopLeft(find.widgetWithText(TextField, '150')).dy));
+      await tester.enterText(find.widgetWithText(TextField, '90'), '95');
+      await tester.tap(find.byTooltip('Remove').at(1)); // banana's row
+      await tester.pump();
+      expect(find.widgetWithText(TextField, '95'), findsOneWidget, reason: 'broccoli keeps what was typed');
+      expect(find.widgetWithText(TextField, '150'), findsNothing);
+      // The unknown food gets a match: its row shows the new food and its serving, and what was seen.
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'banana');
+      await tester.pump();
+      await tester.tap(find.text('banana').last);
+      await tester.pumpAndSettle();
+      expect(find.text('seen: unicorn stew'), findsOneWidget);
+      // What the fields show is what gets logged.
+      final shown = {for (final f in tester.widgetList<TextField>(find.byType(TextField))) f.controller!.text};
+      await tester.tap(find.textContaining('Log this'));
+      await tester.pumpAndSettle();
+      expect({for (final r in meals()) '${(r['grams'] as num).round()}'}, shown);
+      expect(meals().map((r) => r['description']), containsAll(['banana', 'broccoli']));
     });
 
     testWidgets('photo → What can I cook? shows recipes in the chat, logs nothing', (tester) async {

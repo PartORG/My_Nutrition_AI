@@ -24,9 +24,11 @@ accounts, no cloud inference and no analytics SDK.
   (lose, maintain or gain), with a manual override for every value. Micronutrients: calcium, iron,
   magnesium, potassium and vitamins C, D and B12.
 - **Dashboards:** Today, Week (with a weekly review), Month and Year views, water tracking, fasting,
-  streaks and an Android home-screen widget. A weight trend screen shows a smoothed trend line over
-  1, 3, 6 or 12 months, so a heavy morning isn't mistaken for a real change.
-- **History:** every logged meal and recipe, day by day, for a date range you pick.
+  streaks and an Android home-screen widget. Totals that include estimates are marked "≈". A weight
+  trend screen shows a smoothed trend line over 1, 3, 6 or 12 months, so a heavy morning isn't
+  mistaken for a real change.
+- **History:** meals day by day and the recipes you cooked (how often, when last), for a date range
+  you pick; tap a recipe to open it.
 - **Plan, recipes and shopping:** plan the week and swap any meal. The recipe box holds what you
   saved, cooked or rated 4★+, searches every recipe, and suggests recipes from what's in your
   fridge. The shopping list is grouped by aisle and shows which recipe each item is for.
@@ -40,12 +42,15 @@ accounts, no cloud inference and no analytics SDK.
   passages. See [Medical data](#medical-data).
 - **Health journal:** symptoms and readings on a timeline, plus a PDF/CSV export for your doctor.
   The app records data and never interprets it.
-- **Camera:** photo and live modes. Gemma 4 vision names the foods and estimates portions, and
-  EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything detected goes through a
-  review screen before it is logged. No photo is ever stored.
-- **Health Connect / Apple Health:** reads weight and steps.
-- **Fix what was logged:** tap a meal on Today to change the food, the amount or the meal. Change
-  food searches from the logged name, so near matches show at once.
+- **Camera:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods and
+  estimates portions, and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
+  detected goes through a review screen before it is logged. No photo is ever stored.
+- **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
+  remove it, add one, or change the amount (also by half servings) before saving. Every log can be
+  undone, and a meal on Today can be changed later (food, amount or meal).
+- **Health Connect / Apple Health:** reads weight, steps and active calories. Burnt calories show as
+  a second ring on Today, next to the calories left, and are never added to the goal. Steps refresh
+  while the app is open; disconnect from the steps tile or in Settings.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
   edit or delete everything it knows about you.
 - **One profile per phone:** unlocked by fingerprint, with a PIN as the fallback. You can change the

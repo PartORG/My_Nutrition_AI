@@ -16,8 +16,11 @@ import 'package:myfoodmind/data/profiles.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:myfoodmind/l10n/app_localizations.dart';
 import 'package:myfoodmind/ui/goals_screen.dart';
+import 'package:myfoodmind/ui/history_screen.dart';
 import 'package:myfoodmind/ui/home_screen.dart';
 import 'package:myfoodmind/ui/me_screen.dart';
+import 'package:myfoodmind/ui/recipe_screen.dart';
+import 'package:myfoodmind/ui/weight_screen.dart';
 
 void main() {
   late Directory tmp;
@@ -63,6 +66,31 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('weight: three days of readings draw the trend, not the empty hint', (tester) async {
+    final now = DateTime.now();
+    for (final (i, kg) in [80.0, 79.6, 79.1].indexed) {
+      logWeight(data.user, kg, imperial: false, at: now.subtract(Duration(days: 2 - i)));
+    }
+    await pumpApp(tester, Scaffold(body: ListView(children: [WeightTile(data: data)])));
+    expect(find.text('79.1 kg'), findsNothing, reason: 'the tile shows the trend, not the last reading');
+    await pumpApp(tester, WeightScreen(data: data));
+    expect(find.text('Log your weight on two different days to see the trend.'), findsNothing);
+  });
+
+  testWidgets('history: a logged recipe is listed under Recipes cooked and opens its page', (tester) async {
+    final r = data.nutri.select('SELECT id, title FROM recipes LIMIT 1').single;
+    data.user.execute('INSERT INTO meal_log (eaten_at, meal_type, description, kcal, protein_g, fat_g, carbs_g, recipe_id) '
+        'VALUES (?, ?, ?, 500, 1, 1, 1, ?)', [DateTime.now().millisecondsSinceEpoch, 'dinner', r['title'], r['id']]);
+    await pumpApp(tester, HistoryScreen(data: data));
+    expect(find.text(r['title'] as String), findsOneWidget);
+    await tester.tap(find.text('Recipes cooked'));
+    await tester.pump();
+    expect(find.textContaining('cooked 1×'), findsOneWidget);
+    await tester.tap(find.text(r['title'] as String));
+    await tester.pumpAndSettle();
+    expect(find.byType(RecipeScreen), findsOneWidget);
+  });
+
   testWidgets('goals form: imperial input is stored metric', (tester) async {
     await pumpApp(tester, const GoalsScreen(onboarding: true));
     expect(find.text('Later'), findsOneWidget);
@@ -78,6 +106,8 @@ void main() {
     await tester.pumpAndSettle();
     final b = loadBody(data.user)!;
     expect(b.heightCm, closeTo(180.34, .01)); // 71 in
+    expect(weightsSince(data.user, DateTime(2000)).single.kg, closeTo(79.83, .01),
+        reason: 'the form weight is a reading too, so the weight trend sees it');
     expect(b.weightKg, closeTo(79.83, .01)); // 176 lb
     expect((b.sex, b.imperial, b.activity, b.goal), (Sex.male, true, Activity.light, Goal.maintain));
   });

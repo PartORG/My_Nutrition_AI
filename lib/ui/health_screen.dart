@@ -704,10 +704,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final body = loadBody(user);
     final symptoms = symptomsBetween(user, from, to).reversed.toList();
     return Scaffold(
-      appBar: AppBar(title: Text(l.timelineTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
+          ScreenHeader(title: l.timelineTitle, back: true),
           SegmentedButton<int>(
             segments: [
               ButtonSegment(value: 30, label: Text(l.days(30))),
@@ -797,6 +798,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

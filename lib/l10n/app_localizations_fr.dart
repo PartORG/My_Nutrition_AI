@@ -720,7 +720,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get weightTrendEmpty =>
-      'Notez votre poids au moins deux fois pour voir l’évolution.';
+      'Notez votre poids sur deux jours différents pour voir la tendance.';
 
   @override
   String get logWeight => 'Noter le poids';
@@ -924,7 +924,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cameraUnavailable =>
-      'La caméra n’est pas disponible. Autorisez l’accès à la caméra pour MyFoodMind dans les paramètres Android.';
+      'La caméra n’est pas disponible. Fermez les autres applis qui l’utilisent et réessayez.';
 
   @override
   String get cameraShoot => 'Prendre une photo';
@@ -961,7 +961,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String notInDatabase(String name) {
-    return '$name : absent de la base, touchez Modifier pour choisir un aliment';
+    return '$name : absent de la base. Touchez Modifier pour choisir un aliment.';
   }
 
   @override
@@ -1185,11 +1185,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Lit votre poids (pour vos objectifs) et vos pas. Rien n’y est écrit et rien ne quitte votre téléphone.';
+      'Lit votre poids (pour vos objectifs), vos pas et vos calories actives (affichés dans Aujourd’hui). Rien n’y est écrit et rien ne quitte votre téléphone. Désactivez pour déconnecter.';
 
   @override
   String get healthSyncDenied =>
-      'Pas d’accès. Autorisez le poids et les pas dans les réglages de l’appli santé, puis réessayez.';
+      'Pas d’accès. Autorisez le poids, les pas et les calories actives dans les réglages de l’appli santé, puis réessayez.';
 
   @override
   String stepsToday(String steps) {
@@ -1294,10 +1294,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get welcomeTitle => 'Notez votre premier repas';
-
-  @override
-  String get welcomeBody =>
-      'Écrivez-le ou dites-le dans le chat (« J’ai mangé 2 œufs et un toast »), cherchez-le dans Noter ou prenez une photo. Votre journée se remplit ici.';
 
   @override
   String nextMealTitle(String meal) {
@@ -1573,9 +1569,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get pickDates => 'Choisir des dates';
 
   @override
-  String get recipesOnly => 'Recettes seulement';
-
-  @override
   String get historyEmpty => 'Rien de noté ces jours-là.';
 
   @override
@@ -1721,14 +1714,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get litreUnit => 'L';
 
   @override
-  String get showFewer => 'Moins';
-
-  @override
-  String showAllCount(int n) {
-    return 'Voir les $n ›';
-  }
-
-  @override
   String get yourWeek => 'Votre semaine';
 
   @override
@@ -1775,13 +1760,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get logFoodTitle => 'Noter un repas';
 
   @override
-  String get quickAddBody => 'Juste calories et macros';
-
-  @override
   String get snapPhoto => 'Prendre une photo';
-
-  @override
-  String get snapPhotoBody => 'Nomme les aliments et estime les portions';
 
   @override
   String servingsAmount(String amount) {
@@ -2198,4 +2177,120 @@ class AppLocalizationsFr extends AppLocalizations {
   String logThisMeal(String meal) {
     return 'Noter : $meal';
   }
+
+  @override
+  String activeKcalBurned(String kcal) {
+    return '$kcal kcal brûlées';
+  }
+
+  @override
+  String get weightUpdatedToday => 'Poids du jour mis à jour.';
+
+  @override
+  String get historyMeals => 'Repas';
+
+  @override
+  String get historyRecipes => 'Recettes cuisinées';
+
+  @override
+  String get historyRecipesEmpty =>
+      'Aucune recette ces jours-là. Quand vous notez une recette (« J’ai mangé ça »), elle apparaît ici.';
+
+  @override
+  String lastCooked(String date) {
+    return 'dernière fois $date';
+  }
+
+  @override
+  String get removeItem => 'Retirer';
+
+  @override
+  String seenAs(String name) {
+    return 'vu : $name';
+  }
+
+  @override
+  String get confirmUndone => 'Annulé';
+
+  @override
+  String get editOnToday => 'Modifier dans Aujourd’hui';
+
+  @override
+  String get thinking => 'Réflexion…';
+
+  @override
+  String get searchInsteadInLog => 'Chercher plutôt dans Noter';
+
+  @override
+  String get burntWord => 'Brûlées';
+
+  @override
+  String get aiCardTitle => 'Obtenir l’assistant IA';
+
+  @override
+  String get aiCardBody =>
+      'Décrivez vos repas avec vos mots et posez vos questions. Il tourne sur ce téléphone : un seul téléchargement (quelques Go, Wi-Fi conseillé). La recherche et l’ajout rapide marchent sans lui.';
+
+  @override
+  String get welcomeLog =>
+      'Cherchez-le dans Noter, ou ajoutez vite les calories.';
+
+  @override
+  String get welcomeChat =>
+      'Ou écrivez-le ou dites-le dans le Chat (« J’ai mangé 2 œufs et un toast »).';
+
+  @override
+  String get welcomePhoto => 'Ou prenez votre assiette en photo.';
+
+  @override
+  String get welcomeEnd => 'Votre journée se remplit ici.';
+
+  @override
+  String microsLowest(String name, String amount) {
+    return 'Le plus bas : $name · $amount';
+  }
+
+  @override
+  String get healthSheetReads =>
+      'Lit votre poids, vos pas et vos calories actives. Rien n’y est écrit et rien ne quitte votre téléphone.';
+
+  @override
+  String lastSynced(String time) {
+    return 'Dernière synchro à $time';
+  }
+
+  @override
+  String get syncNow => 'Synchroniser';
+
+  @override
+  String get disconnect => 'Déconnecter';
+
+  @override
+  String healthSyncedWeights(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nouveaux poids',
+      one: '1 nouveau poids',
+      zero: 'Les poids sont à jour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cameraPermissionOff =>
+      'L’accès à la caméra est désactivé. Autorisez-le dans les réglages de l’appli pour photographier votre repas.';
+
+  @override
+  String get openSettings => 'Ouvrir les réglages';
+
+  @override
+  String get tryAgain => 'Réessayer';
+
+  @override
+  String get cameraChoosePhoto => 'Choisir une photo';
+
+  @override
+  String get cameraGalleryNeedsAi =>
+      'Une photo de la galerie nécessite l’assistant IA. Téléchargez-le dans le Chat.';
 }

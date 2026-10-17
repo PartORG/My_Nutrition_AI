@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:myfoodmind/data/diary.dart' show trendPerWeek, weightTrend;
+import 'package:myfoodmind/data/diary.dart' show activeKcalOn, storeActiveKcal, trendPerWeek, weightTrend;
 import 'package:myfoodmind/data/goals.dart';
 import 'package:myfoodmind/data/user_db.dart';
 
@@ -53,6 +53,17 @@ void main() {
     late Directory tmp;
     setUp(() => tmp = Directory.systemTemp.createTempSync('myfoodmind_goals_'));
     tearDown(() => tmp.deleteSync(recursive: true));
+
+    test('active calories are shown, never added to the kcal goal', () {
+      final user = openUserDb('${tmp.path}/user.db');
+      saveBody(user, body(), now: now);
+      expect(storeActiveKcal(user, now.add(const Duration(hours: 9)), 320.4), isTrue);
+      expect(storeActiveKcal(user, now.add(const Duration(hours: 10)), 320.2), isFalse, reason: 'same rounded value');
+      expect(activeKcalOn(user, now), 320);
+      expect(activeKcalOn(user, now.add(const Duration(days: 1))), 0, reason: 'only the stored day');
+      expect(currentTargets(user, nutri: null, now: now).values['kcal'], closeTo(2759, .01));
+      user.close();
+    });
 
     test('overrides beat computed values and can be removed', () {
       final user = openUserDb('${tmp.path}/user.db');

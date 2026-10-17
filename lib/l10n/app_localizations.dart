@@ -1305,7 +1305,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightTrendEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Log your weight at least twice to see the trend.'**
+  /// **'Log your weight on two different days to see the trend.'**
   String get weightTrendEmpty;
 
   /// No description provided for @logWeight.
@@ -1659,7 +1659,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'The camera isn\'t available. Allow camera access for MyFoodMind in Android settings.'**
+  /// **'The camera isn\'t available right now. Close other apps that use it and try again.'**
   String get cameraUnavailable;
 
   /// No description provided for @cameraShoot.
@@ -1707,7 +1707,7 @@ abstract class AppLocalizations {
   /// No description provided for @notInDatabase.
   ///
   /// In en, this message translates to:
-  /// **'{name}: not in the database, tap edit to pick a food'**
+  /// **'{name}: not in the database. Tap Change to pick a food.'**
   String notInDatabase(String name);
 
   /// No description provided for @reviewChange.
@@ -2073,13 +2073,13 @@ abstract class AppLocalizations {
   /// No description provided for @healthSyncHint.
   ///
   /// In en, this message translates to:
-  /// **'Read your weight (for your goals) and steps. Nothing is written there and nothing leaves your phone.'**
+  /// **'Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.'**
   String get healthSyncHint;
 
   /// No description provided for @healthSyncDenied.
   ///
   /// In en, this message translates to:
-  /// **'No access. Allow weight and steps in the health app\'s settings, then try again.'**
+  /// **'No access. Allow weight, steps and active calories in the health app\'s settings, then try again.'**
   String get healthSyncDenied;
 
   /// No description provided for @stepsToday.
@@ -2261,12 +2261,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log your first meal'**
   String get welcomeTitle;
-
-  /// No description provided for @welcomeBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Type or say it in Chat (\"I had 2 eggs and toast\"), search it in Log, or take a photo. Your day fills in here.'**
-  String get welcomeBody;
 
   /// No description provided for @nextMealTitle.
   ///
@@ -2736,12 +2730,6 @@ abstract class AppLocalizations {
   /// **'Pick dates'**
   String get pickDates;
 
-  /// No description provided for @recipesOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Recipes only'**
-  String get recipesOnly;
-
   /// No description provided for @historyEmpty.
   ///
   /// In en, this message translates to:
@@ -2988,18 +2976,6 @@ abstract class AppLocalizations {
   /// **'L'**
   String get litreUnit;
 
-  /// No description provided for @showFewer.
-  ///
-  /// In en, this message translates to:
-  /// **'Show fewer'**
-  String get showFewer;
-
-  /// No description provided for @showAllCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Show all {n} ›'**
-  String showAllCount(int n);
-
   /// No description provided for @yourWeek.
   ///
   /// In en, this message translates to:
@@ -3072,23 +3048,11 @@ abstract class AppLocalizations {
   /// **'Log food'**
   String get logFoodTitle;
 
-  /// No description provided for @quickAddBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Just calories and macros'**
-  String get quickAddBody;
-
   /// No description provided for @snapPhoto.
   ///
   /// In en, this message translates to:
   /// **'Snap a photo'**
   String get snapPhoto;
-
-  /// No description provided for @snapPhotoBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Names foods and estimates portions'**
-  String get snapPhotoBody;
 
   /// No description provided for @servingsAmount.
   ///
@@ -3779,6 +3743,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log this {meal}'**
   String logThisMeal(String meal);
+
+  /// No description provided for @activeKcalBurned.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal burnt'**
+  String activeKcalBurned(String kcal);
+
+  /// No description provided for @weightUpdatedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s weight updated.'**
+  String get weightUpdatedToday;
+
+  /// No description provided for @historyMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals'**
+  String get historyMeals;
+
+  /// No description provided for @historyRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes cooked'**
+  String get historyRecipes;
+
+  /// No description provided for @historyRecipesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes on these days. When you log a recipe (“I ate this”), it shows up here.'**
+  String get historyRecipesEmpty;
+
+  /// No description provided for @lastCooked.
+  ///
+  /// In en, this message translates to:
+  /// **'last {date}'**
+  String lastCooked(String date);
+
+  /// No description provided for @removeItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeItem;
+
+  /// No description provided for @seenAs.
+  ///
+  /// In en, this message translates to:
+  /// **'seen: {name}'**
+  String seenAs(String name);
+
+  /// No description provided for @confirmUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone'**
+  String get confirmUndone;
+
+  /// No description provided for @editOnToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit on Today'**
+  String get editOnToday;
+
+  /// No description provided for @thinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get thinking;
+
+  /// No description provided for @searchInsteadInLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Search foods in Log instead'**
+  String get searchInsteadInLog;
+
+  /// No description provided for @burntWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Burnt'**
+  String get burntWord;
+
+  /// No description provided for @aiCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the AI assistant'**
+  String get aiCardTitle;
+
+  /// No description provided for @aiCardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe meals in your own words and ask about food. It runs on this phone: one download (a few GB, Wi-Fi recommended). Search and quick add work without it.'**
+  String get aiCardBody;
+
+  /// No description provided for @welcomeLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Search it in Log, or quick-add the calories.'**
+  String get welcomeLog;
+
+  /// No description provided for @welcomeChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Or type or say it in Chat (\"I had 2 eggs and toast\").'**
+  String get welcomeChat;
+
+  /// No description provided for @welcomePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Or take a photo of your plate.'**
+  String get welcomePhoto;
+
+  /// No description provided for @welcomeEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day fills in here.'**
+  String get welcomeEnd;
+
+  /// No description provided for @microsLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest: {name} · {amount}'**
+  String microsLowest(String name, String amount);
+
+  /// No description provided for @healthSheetReads.
+  ///
+  /// In en, this message translates to:
+  /// **'Reads your weight, steps and active calories. Nothing is written there and nothing leaves your phone.'**
+  String get healthSheetReads;
+
+  /// No description provided for @lastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced at {time}'**
+  String lastSynced(String time);
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @disconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get disconnect;
+
+  /// No description provided for @healthSyncedWeights.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Weights are up to date} =1{1 new weight} other{{count} new weights}}'**
+  String healthSyncedWeights(int count);
+
+  /// No description provided for @cameraPermissionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off. Allow it in the app\'s settings to photograph your meal.'**
+  String get cameraPermissionOff;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// No description provided for @cameraChoosePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get cameraChoosePhoto;
+
+  /// No description provided for @cameraGalleryNeedsAi.
+  ///
+  /// In en, this message translates to:
+  /// **'A photo from the gallery needs the AI assistant. Download it in Chat.'**
+  String get cameraGalleryNeedsAi;
 }
 
 class _AppLocalizationsDelegate
