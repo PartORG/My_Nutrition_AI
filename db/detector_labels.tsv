@@ -1,0 +1,167 @@
+# Live detector labels (docs/PLAN.md, step 7). label | nutri.db food or dish ("-" = logs nothing) | training boxes | MyFoodRepo classes.
+# Reviewed 2026-10-18. Regenerate the class draft with tool/detector_classes.py; this file is the decision.
+label	nutri_db	boxes	classes
+water	-	5880	water water-mineral water-with-lemon-juice ice-cubes
+white bread	Bread, white	3338	bread-white braided-white-loaf bread-french-white-flour bread-half-white roll-of-half-white-or-white-flour-with-large-void bread bread-ticino white-bread-with-butter-eggs-and-milk brioche hamburger-bun bagel-without-filling bread-olive breadcrumbs-unspiced croutons focaccia
+wholemeal bread	Bread, whole wheat	2924	bread-wholemeal bread-whole-wheat bread-grain bread-5-grain bread-black bread-rye bread-sourdough bread-nut bread-spelt gluten-free-bread
+coffee	Coffee, brewed	2870	coffee-with-caffeine espresso-with-caffeine ristretto-with-caffeine coffee-decaffeinated
+green salad	Lettuce, raw	2558	salad-leaf-salad-green salad-rocket salad-lambs-ear witloof-chicory
+hard cheese	Cheese, gruyere	2038	cheese hard-cheese gruyere semi-hard-cheese tomme emmental-cheese cheddar tete-de-moine cheese-for-raclette fondue
+tomato	Tomatoes, raw	1932	tomato-raw tomato-stewed-without-addition-of-fat-without-addition-of-salt
+pasta	Pasta, cooked	1887	pasta pasta-spaghetti pasta-penne pasta-twist pasta-wholemeal pasta-linguini-parpadelle-tagliatelle pasta-noodles pasta-hornli pasta-in-butterfly-form-farfalle pasta-in-conch-form high-protein-pasta-made-of-lentils-peas pasta-ravioli-stuffing pasta-tortelloni-stuffing spaetzle rice-noodles-vermicelli
+butter	Butter, salted	1727	butter butter-herb margarine
+carrot	Carrots, raw	1587	carrot-raw carrot-steamed-without-addition-of-salt
+tea	Tea, brewed, no added sugars	1577	tea tea-green tea-black herbal-tea tea-peppermint tea-verveine tea-ginger tea-spice tea-fruit tea-rooibos
+rice	Rice, white, cooked, no added fat	1337	rice rice-basmati rice-whole-grain rice-wild rice-jasmin cantonese-fried-rice
+egg	Egg, whole, cooked, hard-boiled	1069	egg
+mixed vegetables	Classic mixed vegetables, NS as to form, cooked	1067	mixed-vegetables vegetable-mix-peas-and-carrots vegetables
+nuts	Nuts, mixed	1012	mixed-nuts walnut cashew-nut hazelnut peanut pistachio pecan-nut brazil-nut chestnuts nuts pine-nuts
+apple	Apples, raw, with skin	972	apple
+chocolate	Chocolate, dark	890	dark-chocolate chocolate milk-chocolate white-chocolate chocolate-filled praline chocolate-egg-small milk-chocolate-with-hazelnuts m-m-s cocoa-powder
+red wine	Wine, red	868	wine-red
+jam	Jam	853	jam
+boiled potatoes	Potatoes, old, boiled in unsalted water, flesh only	845	potatoes-steamed baked-potato potato-salad-with-mayonnaise-yogurt-dressing
+coffee with milk	Coffee, Cappuccino	796	white-coffee-with-caffeine cappuccino latte-macchiato-with-caffeine
+chicken	Chicken, flesh, roasted	764	chicken chicken-breast chicken-cut-into-stripes-only-meat chicken-leg chicken-wing
+cucumber	Cucumber, with peel, raw	757	cucumber
+banana	Bananas, raw	736	banana
+white wine	Wine, white	660	wine-white wine-rose prosecco sekt champagne
+salad dressing	Dressing, vinaigrette	657	balsamic-salad-dressing french-salad-dressing salad-dressing oil-vinegar-salad-dressing italian-salad-dressing balsamic-vinegar oil
+muesli	Muesli (average)	642	muesli birchermuesli-prepared-no-sugar-added crunch-muesli flakes-oat porridge-prepared-with-partially-skimmed-milk corn-flakes
+bell pepper	Peppers, sweet, red, raw	622	bell-pepper-red-raw bell-pepper-red-stewed-without-addition-of-fat-without-addition-of-salt
+pizza	Pizza, cheese and tomato (Margherita), prepacked	589	pizza-margherita-baked pizza-with-vegetables-baked pizza-with-ham-baked pizza-with-ham-with-mushrooms-baked french-pizza-from-alsace-baked
+soft cheese	Cheese, brie	582	soft-cheese goat-cheese-soft brie blue-mould-cheese goat-average-raw faux-mage-cashew-vegan-chers processed-cheese
+mixed salad	Mixed salad greens, raw	576	mixed-salad-chopped-without-sauce greek-salad
+ham	Ham, sliced	560	ham-raw ham-cooked ham ham-turkey
+cream	Cream, light	528	cream sauce-cream thickened-cream-35 sour-cream sauce-carbonara
+soup	Soup, vegetable, homemade	527	soup-vegetable soup-pumpkin soup-of-lentils-dahl-dhal soup-tomato soup-cream-of-vegetables soup-potato soup-miso bouillon bouillon-vegetable
+cake	Cake, chocolate fudge	527	cake-chocolate brownie lemon-cake carrot-cake banana-cake cake-marble cake-oblong cheesecake black-forest-tart muffin
+olives	Olives, NFS	498	black-olives green-olives capers
+croissant	Croissant	497	croissant croissant-wholegrain croissant-with-chocolate-filling roll-with-pieces-of-chocolate ham-croissant
+orange	Oranges, raw, navels	496	orange mandarine grapefruit-pomelo
+avocado	Avocados, raw, all commercial varieties	491	avocado
+spinach	Spinach, cooked	477	leaf-spinach spinach-raw spinach-steamed-without-addition-of-salt cream-spinach swiss-chard
+tomato sauce	Tomato sauce, homemade	475	tomato-sauce
+honey	Honey	453	honey maple-syrup-concentrate sugar-glazing
+soft drink	Cola	443	coca-cola coca-cola-zero syrup-diluted-ready-to-drink glucose-drink-50g
+zucchini	Squash, summer, zucchini, includes skin, raw	439	zucchini zucchini-stewed-without-addition-of-fat-without-addition-of-salt
+cabbage	Green cabbage, cooked	438	red-cabbage white-cabbage chinese-cabbage savoy-cabbage-steamed-without-addition-of-salt brussel-sprouts sauerkraut coleslaw-chopped-without-sauce
+french fries	french fries	435	chips-french-fries country-fries
+broccoli	Broccoli, cooked (average)	431	broccoli
+strawberries	Strawberries, raw	430	strawberries
+cookies	Biscuits, semi-sweet	425	biscuits cookies chocolate-cookies biscuit-with-butter macaroon meringue
+juice	Orange juice, raw	415	juice-orange juice-apple juice-multifruit smoothie
+salami	Salami	415	salami chorizo processed-meat-charcuterie meat-terrine-pate
+onion	Onions, raw	412	onion spring-onion-scallion pearl-onions
+sausage	Frankfurter	409	sausage frying-sausage cervelat veal-sausage wienerli-swiss-sausage cooked-sausage smoked-cooked-sausage-of-pork-and-beef-meat-sausag
+mayonnaise	Mayonnaise, regular	401	mayonnaise sauce-cocktail tartar-sauce
+beef	Beef, rump steak, grilled/pan-fried	397	beef beef-filet beef-sirloin-steak beef-roast beef-cut-into-stripes-only-meat meat
+parmesan	Cheese, parmesan, grated	387	parmesan
+gravy	Gravy, NFS	382	sauce-roast sauce-mushroom sauce-savoury sauce-curry
+yogurt	Yogurt, whole milk, plain	366	yaourt-yahourt-yogourt-ou-yoghourt-natural greek-yaourt-yahourt-yogourt-ou-yoghourt soya-yaourt-yahourt-yogourt-ou-yoghourt
+mushrooms	Mushrooms, cooked, as ingredient	363	mushrooms mushroom mushroom-average-stewed-without-addition-of-fat-without-addition-of-salt
+fruit tart	Fruit tart (average)	363	apple-pie fruit-tart pie-plum-baked-with-cake-dough pie-apricot-baked-with-cake-dough pie-rhubarb-baked-with-cake-dough lemon-pie apple-crumble
+seeds	Mixed seeds	363	sesame-seeds mixed-seeds pumpkin-seeds sunflower-seeds seeds linseeds chia-grains
+quiche	Quiche, vegetable, retail	349	quiche-with-cheese-baked-with-puff-pastry quiche-with-spinach-baked-with-cake-dough salt-cake-vegetables-filled tart cake-salted
+cottage cheese	Cheese, cottage, NFS	346	fresh-cheese cottage-cheese curd curds-natural-with-at-most-10-fidm
+green beans	Beans, snap, green, cooked, boiled, drained, without salt	328	french-beans green-bean-steamed-without-addition-of-salt
+bacon	Pork, cured, bacon, pre-sliced, cooked, pan-fried	327	bacon bacon-frying bacon-cooking bacon-raw
+milk	Milk, whole	325	milk oat-milk soya-drink-soy-milk chocolate-milk-chocolate-drink kefir-drink
+couscous	Couscous, cooked	316	couscous bulgur ebly buckwheat-grain-peeled taboule-prepared-with-couscous
+almonds	Nuts, almonds	312	almonds
+curry	Vegetable curry	308	curry-vegetarian chicken-curry-cream-coconut-milk-curry-spices-paste coconut-milk
+corn	Corn, sweet, yellow, cooked, boiled, drained, without salt	305	corn sweet-corn-canned
+blueberries	Blueberries, raw	299	blueberries
+burger	Hamburger, NFS	287	hamburger-bread-meat-ketchup hamburger veggie-burger bread-meat-substitute-lettuce-sauce
+beer	Beer	285	beer light-beer
+radish	Radishes, raw	277	red-radish white-radish
+melon	Honeydew melon, raw	271	sugar-melon watermelon-fresh
+salmon	Salmon, cooked (average)	270	salmon
+ice cream	Ice cream, vanilla	267	dairy-ice-cream sorbet
+fruit salad	Fruit salad, homemade	263	fruit-salad figs kaki coconut
+crisps	Potato chips, plain	261	crisps paprika-chips corn-crisps popcorn-salted
+hummus	Hummus, plain	259	hummus
+asparagus	Asparagus, cooked, boiled, drained	256	green-asparagus white-asparagus
+beetroot	Beets, cooked, boiled, drained	252	beetroot-steamed-without-addition-of-salt beetroot-raw
+dried fruit	Raisins	251	apricot-dried fig-dried mango-dried dried-raisins dates mix-of-dried-fruits-and-nuts
+feta	Cheese, feta	250	feta halloumi
+omelette	Egg omelet or scrambled egg, NS as to fat	250	egg-scrambled-prepared omelette-plain
+pear	Pears, raw	250	pear
+pickles	Pickles, dill	250	cucumber-pickled
+fish	Cod, cooked (average)	248	fish cod perch-fillets-lake anchovies
+eggplant	Eggplant, cooked	244	eggplant eggplant-caviar
+tofu	Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)	241	tofu
+smoked salmon	Salmon, smoked	240	salmon-smoked
+toast	Bread, white, toasted	233	bread-toast bread-wholemeal-toast
+cauliflower	Cauliflower, cooked, as ingredient	233	cauliflower romanesco
+mozzarella	Cheese, Mozzarella, NFS	232	mozzarella
+herbs	Parsley, fresh	230	garlic basil parsley chives coriander bouquet-garni
+kiwi	Kiwifruit, green, raw	228	kiwi
+sweet potato	Sweet potato, cooked	225	sweet-potato
+peach	Peaches, yellow, raw	222	peach nectarine
+minced meat	Beef, ground, cooked (average)	216	beef-minced-only-meat minced-meat meat-balls meatloaf tartar-meat
+risotto	Risotto, plain, homemade	210	risotto-without-cheese-cooked risotto-with-mushrooms-cooked
+pork	Pork, roast, cooked	208	pork pork-chop pork-roast pork-escalope
+peanut butter	Peanut butter	207	peanut-butter butter-spread-puree-almond cenovis-yeast-spread
+flatbread	Bread, pita	206	bread-pita naan-indien-bread fajita-bread-only
+dried meat	Beef, cured, dried	200	dried-meat
+grapes	Grapes, raw	199	grapes
+quinoa	Quinoa, cooked	198	quinoa
+raspberries	Raspberries, raw	197	raspberries
+fennel	Fennel, bulb, raw	196	fennel
+chickpeas	Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt	191	chickpeas
+crispbread	Crackers, crispbread	186	crisp-bread-wasa rusk-wholemeal rice-waffels crackers grissini
+shrimp	Crustaceans, shrimp, cooked (not previously frozen)	179	shrimp-prawn-large shrimp-prawn-small shrimp-boiled
+lentils	Lentils, mature seeds, cooked, boiled, without salt	178	lentils lentils-green-du-puy-du-berry
+crepe	Crepe, plain	177	crepe-plain
+fruit compote	Applesauce, unsweetened	170	fruit-coulis fruit-compotes applesauce-unsweetened-canned
+pudding	Custard	169	vanille-cream-cooked-custard-creme-dessert panna-cotta mousse chocolate-mousse
+tuna	Fish, tuna, canned	162	tuna tuna-in-oil-drained
+berries	Berries, NFS	160	berries blackberry cherries
+pancake	Pancakes, plain	156	pancakes buckwheat-pancake waffle
+sprouts	Sprouts, NFS	153	alfa-sprouts mungbean-sprouts shoots bean-seeds
+breaded meat or fish	Wiener schnitzel, homemade	153	cordon-bleu-from-pork-schnitzel-fried fish-fingers-breaded chicken-nuggets fish-crunchies-battered
+apricot	Apricots, raw	151	apricots
+mashed potatoes	Mashed potatoes (average)	151	mashed-potatoes-prepared-with-full-fat-milk-with-butter
+ratatouille	Ratatouille	151	ratatouille
+guacamole	Guacamole, NFS	149	guacamole
+puff pastry	Pastry, puff	148	savoury-puff-pastry savoury-puff-pastry-stick pastry-flaky dough-puff-pastry-shortcrust-bread-pizza-dough
+ketchup	Ketchup	143	ketchup
+bolognese sauce	Bolognese sauce (with meat), homemade	139	bolognaise-sauce
+soy sauce	Soy sauce	135	sauce-soya sauce-sweet-sour sauce-sweet-salted-asian
+gratin	Potatoes, au gratin, home-prepared from recipe using butter	133	potatoes-au-gratin-dauphinois-prepared vegetable-au-gratin-baked
+lemon	Lemons, raw, without peel	131	lemon
+caprese salad	caprese salad	130	caprese-salad-tomato-mozzarella
+pesto	Pesto, green	129	sauce-pesto
+mustard	Mustard	129	mustard mustard-dijon
+leek	Leeks, (bulb and lower leaf-portion), cooked, boiled, drained, without salt	125	leek
+beans	Beans, kidney, all types, mature seeds, cooked, boiled, without salt	125	beans-kidney beans-white
+chocolate spread	Chocolate hazelnut spread	123	hazelnut-chocolate-spread-nutella-ovomaltine-caotina
+celeriac	Celeriac, cooked	117	celeriac celery
+pomegranate	Pomegranate, raw	114	pomegranate
+plum	Plums, raw	112	plums damson-plum
+kohlrabi	Kohlrabi, raw	112	kolhrabi
+sushi	Sushi, NFS	111	sushi
+cream cheese	Cheese, cream	109	cream-cheese philadelphia
+peas	Green peas, NS as to form, cooked	107	peas
+lasagne	Lasagna with meat	106	lasagne-meat-prepared lasagne-vegetable-prepared
+mango	Mangos, raw	105	mango
+polenta	Polenta or maize/corn semolina, cooked, no added salt	94	grits-polenta-maize-flour
+pumpkin	Pumpkin, cooked, boiled, drained, without salt	90	pumpkin
+dumplings	Wonton, dumpling or pot sticker, steamed	88	spring-roll-fried dumplings turnover-with-meat-small-meat-pie-empanadas
+pineapple	Pineapple, raw, all varieties	87	pineapple
+gnocchi	Gnocchi, potato	83	potato-gnocchi
+rosti	Rostis	82	rosti
+sandwich	Ham sandwich on white, with cheese	80	sandwich-ham-cheese-and-butter croque-monsieur kebab-in-pita-bread
+fruit bread	Bread, fruit	78	bread-fruit
+falafel	Falafel, home-prepared	75	falafel-balls
+tiramisu	Tiramisu	74	tiramisu
+dip	Tzatziki	73	tzatziki dips
+sun-dried tomatoes	Tomatoes, sun-dried	71	sun-dried-tomatoe
+iced tea	Tea, iced, bottled, black	69	ice-tea
+lamb	Lamb, domestic, leg, shank half, separable lean only, trimmed to 1/4" fat, choice, cooked, roasted	65	lamb lamb-chop
+pretzel	Pretzels, soft	60	lye-pretzel-soft
+cocktail	Cocktail, NFS	58	cocktail aperitif-with-alcohol-aperol-spritz
+artichoke	Artichokes, (globe or french), cooked, boiled, drained, without salt	57	artichoke
+chili con carne	Chili con carne, prepacked	56	chili-con-carne-prepared
+candy	Candy, gummy	50	sweets-candies gummi-bears-fruit-jellies-jelly-babies-with-fruit-essence

@@ -354,12 +354,7 @@ Decision (user, 2026-10-06): **good recognition in both photo and live mode**, i
    EfficientDet is the photo fallback until the chat model is downloaded. 108 host tests.
    Not verified on the phone: the `.litertlm` file's vision section loads, extra RAM, seconds per photo,
    name quality.
-2. **Live — own small detector** ⏳. YOLOX / RT-DETR / D-FINE (Apache; no Ultralytics/YOLO-World, GPL/AGPL)
-   → TFLite behind the `Detector` interface, ~100–200 coarse classes (pasta, rice, salad, soup, …); the
-   shutter's Gemma pass refines names. Data: FoodSeg103 (Apache 2.0, masks → boxes), Open Images V7 food
-   classes (CC BY boxes; check image licences), own meal photos; UEC FOOD-256 for experiments only until its
-   licence is checked; auto-labelling with OWLv2 / Grounding DINO (Apache 2.0) on the PC, distilled into the
-   small model. Open question: training GPU (local NVIDIA vs Colab/Kaggle).
+2. **Live — own small detector** ⏳. Superseded by the decisions of 2026-10-18 below (step 7).
 
 ## v0.7.0 (2026-10-15)
 
@@ -468,6 +463,34 @@ columns for them at all.
   that row the match for that seen name next time (no second question for it).
 - 12 GB phones: E4B is listed first as Recommended (better at photos). Its tool accuracy is still unmeasured.
 - Cost: a photo now takes two vision passes and a short text pass, so a few seconds more; Cancel still works.
+
+### Step 7: own live food detector — decisions (user, 2026-10-18), not built yet
+
+- **Model: YOLOX-Tiny** (Megvii, Apache 2.0; 5M params, 416 px), exported to TFLite (int8, calibrated) for the
+  `tflite_flutter` runtime the app already uses, behind the `Detector` interface; replaces EfficientDet-Lite0.
+  Not Ultralytics (AGPL-3.0, paid licence for closed apps). RF-DETR Nano (Apache, litert-community port) is the
+  fallback if accuracy is short, but it needs LiteRT's CompiledModel runtime through a new native bridge.
+- **Classes: fine ingredients + coarse foods + dishes** (e.g. tomato, bread white, rice, salad, pizza, soup).
+  Each class maps to one reviewed nutri.db row in a table (like `staples`), not to search: search ranks branded
+  products first ("Strawberry" → a gummy). Coverage check against the real nutri.db (crude matcher, lower
+  bounds): Open Images 58/76 clear, 15 fuzzy, 3 missing; Nutrition5k 411/555 clear, 131 fuzzy, 13 missing.
+- **Data, licence-clean only (paid app):**
+  - MyFoodRepo / AIcrowd Food Recognition (CC BY 4.0 per the authors' paper): real meal photos, polygons → boxes;
+    v2.0 has 39,962 training images, 498 classes. Download needs an AIcrowd login (the user).
+  - Open Images V7 food boxes (annotations CC BY 4.0; Flickr images CC BY 2.0, per-image licence to check).
+  - Nutrition5k (Google, CC BY 4.0): overhead plates with ingredient names and grams, no boxes → auto-labelled.
+  - Own meal photos, auto-labelled on the PC with OWLv2 / Grounding DINO (Apache 2.0), checked by hand.
+  - Not used: FoodSeg103 (its Apache 2.0 covers the code; the image licence is not stated), Food-101 (use beyond
+    fair use must be negotiated with the photo owners), UEC FOOD-256 (licence unconfirmed), Objects365
+    (listed as non-commercial). Attribution for CC BY data goes into Settings → Licenses.
+- **Labels (first review, 2026-10-18): `db/detector_labels.tsv`.** The 498 MyFoodRepo classes (Food Recognition
+  2022 v2.0 from the Kaggle mirror, COCO format, 39,962 training images) merged into 164 labels, each with ≥ 50
+  boxes and one nutri.db row (government tables; cooked forms where food is eaten cooked; water logs nothing).
+  Nothing dropped: an unlabelled object would teach "not food". `tool/detector_classes.py` drafts matches and
+  checks the file (every class once, every row present).
+- **Training: this PC's RTX 4070 Laptop (8 GB)**, run alone and memory-capped (the 14 GB box OOMs otherwise).
+- **Gates before it ships:** mAP on a held-out set of own meal photos above EfficientDet's; ≤ 150 ms per frame
+  on the Xiaomi 11T at 2 FPS; review-screen label quality checked on real meals.
 
 ## v0.10.0 (2026-10-17): new design (docs/New_Design), light and dark
 

@@ -1,0 +1,499 @@
+class	boxes	nutri_db	how	action
+water	5283	-	map	keep
+salad-leaf-salad-green	2034		none	none
+bread-white	1992	Bread, white	exact	keep
+coffee-with-caffeine	1991	Beverages, coffee, brewed, prepared with tap water	map	keep
+tomato-raw	1908	Tomatoes, red, ripe, raw, year round average	map	keep
+butter	1671	Butter, with salt	map	keep
+bread-wholemeal	1504	Bread rolls, wholemeal	rule	check
+carrot-raw	1504	Carrot, raw	exact	keep
+egg	1069	Egg, whole, raw, fresh	map	keep
+rice	1032	Rice, white, long-grain, regular, raw, enriched	map	keep
+apple	972	Apples, raw, with skin	map	keep
+mixed-vegetables	908	Mixed vegetables, beans, carrots, corn & peas, frozen, raw, composite	loose	check
+wine-red	868	Wine, red	exact	keep
+jam	853	Jam	exact	keep
+cucumber	757	Cucumber, with peel, raw	map	keep
+banana	736	Bananas, raw	map	keep
+espresso-with-caffeine	695	Beverages, coffee, brewed, prepared with tap water	map	keep
+potatoes-steamed	677	Potatoes, boiled, cooked in skin, skin, with salt	rule	check
+cheese	660	Cheese, cheddar	map	keep
+tea	602	Tea, iced, brewed, black, pre-sweetened with sugar	loose	check
+bell-pepper-red-raw	572	Peppers, bell, red, raw	rule	check
+hard-cheese	563	Hard cheese, from cow's milk	loose	check
+white-coffee-with-caffeine	533	Coffee beverage, flat white, double shot & milk trim 0.5% fat, regular cafe cup 190 mL, cafe variety	rule	check
+bread-whole-wheat	525	Bread, whole wheat	exact	keep
+mixed-salad-chopped-without-sauce	505		none	none
+wine-white	492	Wine, white	exact	keep
+avocado	491	Avocados, raw, all commercial varieties	map	keep
+tomato-sauce	475	Tomato products, canned, sauce	map	keep
+broccoli	431	Broccoli, raw	map	keep
+strawberries	430	Strawberries, raw	map	keep
+water-mineral	415	Water, mineral (average)	rule	check
+pasta-spaghetti	405	Pasta, wholewheat, spaghetti, dried, raw	rule	check
+honey	403	Honey	map	keep
+zucchini	393	Squash, summer, zucchini, includes skin, raw	map	keep
+dark-chocolate	389	Chocolate, dark, 70-85% cacao solids	map	keep
+parmesan	387	Eggplant parmesan casserole, regular	rule	check
+chicken	382	Chicken, broilers or fryers, meat and skin, raw	map	keep
+chips-french-fries	358	French fries or chips, frozen, deep-fried	rule	check
+braided-white-loaf	341		none	none
+pizza-margherita-baked	331		none	none
+mayonnaise	323	Salad dressing, mayonnaise, regular	map	keep
+almonds	312	Nuts, almonds	map	keep
+blueberries	299	Blueberries, raw	map	keep
+onion	296	Onions, raw	map	keep
+salami	294	Salami	exact	keep
+tea-green	289	Tea, green, infusion	rule	check
+glucose-drink-50g	286		none	none
+mixed-nuts	282	Mixed nuts, with peanuts, unsalted	loose	check
+leaf-spinach	278	Spinach, frozen, chopped or leaf, unprepared	rule	check
+soft-cheese	276	Cheese, goat, soft type	rule	check
+beer	271	Alcoholic beverage, beer, regular, all	map	keep
+juice-orange	271	Orange juice, raw	rule	check
+herbal-tea	270	Tea, hot, herbal	rule	check
+salmon	270	Fish, salmon, Atlantic, farmed, raw	map	keep
+gruyere	270	Cheese, gruyere	map	keep
+yaourt-yahourt-yogourt-ou-yoghourt-natural	264		none	none
+hummus	259	Hummus, flavored	loose	check
+pasta	254	Pasta, dry, enriched	map	keep
+black-olives	254	Olives, ripe, canned (small-extra large)	map	keep
+red-radish	253	Radish, red, flesh and skin, raw	rule	check
+pear	250	Pears, raw, bosc	loose	check
+cucumber-pickled	250		none	none
+french-beans	247	French bean, canned, drained	loose	check
+orange	243	Oranges, raw, all commercial varieties	map	keep
+ham-raw	241	Ham, sliced, regular (approximately 11% fat)	map	keep
+tofu	241	Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)	loose	check
+salmon-smoked	240	Salmon, smoked	exact	keep
+mozzarella	232	Mozzarella cheese, from cow's milk	rule	check
+dairy-ice-cream	230	Ice cream, dairy, vanilla, soft scoop	rule	check
+croissant	230	Croissants	exact	keep
+tea-black	229	Tea, hot, leaf, black	rule	check
+cappuccino	229	Coffee with milk or cappuccino, powder, instant	rule	check
+kiwi	228	Kiwifruit, green, raw	map	keep
+sweet-potato	225	Sweet potato, raw, unprepared	map	keep
+pasta-penne	222		none	none
+mandarine	220		none	none
+eggplant	217	Eggplant, raw	map	keep
+salad-rocket	215		none	none
+feta	214	Cheese, feta	map	keep
+bread-french-white-flour	210	Bread, French, stick or loaf, white wheat flour, plain, toasted, commercial, composite	rule	check
+ham-cooked	209	Cooked ham, smoked	rule	check
+sauce-cream	206	Cream, fluid, heavy whipping	map	keep
+cake-chocolate	206	Cake bars, chocolate	rule	check
+bread-grain	204	Bread, bran grain	rule	check
+bread-sourdough	201	Bread, french or vienna (includes sourdough)	rule	check
+biscuits	201	Biscuit, oat, plain	loose	check
+milk	201	Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D	map	keep
+dried-meat	200	Coconut meat, dried, creamed	rule	check
+balsamic-salad-dressing	199		none	none
+grapes	199	Grapes, red or green (European type, such as Thompson seedless), raw	loose	check
+quinoa	198	Quinoa, uncooked	map	keep
+raspberries	197	Raspberries, raw	map	keep
+fennel	196	Fennel, seed	loose	check
+chickpeas	191	Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids	map	keep
+french-salad-dressing	190	Salad, potato, with French dressing	rule	check
+cauliflower	190	Cauliflower, raw	map	keep
+beetroot-steamed-without-addition-of-salt	189		none	none
+corn	181	Corn, sweet, yellow, raw	map	keep
+green-olives	180	Olives, pickled, canned or bottled, green	map	keep
+green-asparagus	179	Asparagus, green, raw	rule	check
+crepe-plain	177	Crepe, plain	exact	keep
+semi-hard-cheese	177		none	none
+risotto-without-cheese-cooked	176		none	none
+pasta-twist	174	Pasta, white, twists, fusilli, dried, boiled in salted water	rule	check
+sugar-melon	174		none	none
+mushrooms	172	Mushrooms, white, raw	map	keep
+mushroom	168	Mushrooms, white, raw	map	keep
+salad-lambs-ear	168		none	none
+bread	168	Bread, white, commercially prepared (includes soft bread crumbs)	map	keep
+bacon-frying	166		none	none
+hamburger-bread-meat-ketchup	159		none	none
+water-with-lemon-juice	158		none	none
+fish	157	Fish, salmon, chinook, smoked, (lox), regular	loose	check
+egg-scrambled-prepared	156		none	none
+walnut	156	Walnuts, kernel only	loose	check
+flakes-oat	156	Oat flakes	rule	check
+birchermuesli-prepared-no-sugar-added	155		none	none
+ristretto-with-caffeine	153		none	none
+sauce-savoury	152	Savoury, bacon & egg, baked, composite	loose	check
+chicken-breast	152	Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw	map	keep
+cashew-nut	151	Cashew nut, grilled, no added salt	loose	check
+ratatouille	151	Ratatouille	exact	keep
+mashed-potatoes-prepared-with-full-fat-milk-with-butter	151		none	none
+apricots	151	Apricots, dried	loose	check
+curry-vegetarian	150		none	none
+guacamole	149	Guacamole, prepacked	loose	check
+cottage-cheese	148	Cheese, cottage, creamed, large or small curd	map	keep
+salad-dressing	148	Salad dressing, mayonnaise, imitation, milk cream	loose	check
+cheese-for-raclette	147		none	none
+soup-vegetable	146	Soup, vegetable	exact	keep
+muesli	145	Muesli, Swiss style, no added sugar or salt, unfortified	loose	check
+ketchup	143	Catsup	map	keep
+witloof-chicory	141	Chicory, witloof, raw	rule	check
+chocolate	141	Chocolate, dark, 45- 59% cacao solids	map	keep
+bolognaise-sauce	139		none	none
+apple-pie	139	apple pie	dish	keep
+fruit-salad	136	Fruit salad, excluding citrus fruits, with whipped cream	loose	check
+lentils	134	Lentils, raw	map	keep
+red-cabbage	134	Cabbage, red, raw	map	keep
+baked-potato	133	Potato, fries, straight cut, frozen, precooked in polyunsaturated oil, baked	loose	check
+pasta-wholemeal	132	Pasta, wholemeal wheat flour, assorted shapes, dry, composite	rule	check
+lemon	131	Lemons, raw, without peel	map	keep
+tart	130	Tart, salmon, prepacked	loose	check
+caprese-salad-tomato-mozzarella	130		none	none
+sauce-pesto	129	Pesto, green	loose	check
+soup-pumpkin	128	Soup, pumpkin	exact	keep
+bread-toast	128	Bread, mixed grain & seed, sliced, prepacked, Mixed Grain & Toasted Sesame Toast, Vogel's	rule	check
+beef	127	Beef, ground, 85% lean meat / 15% fat, raw	map	keep
+tuna	126	Fish, tuna, light, canned in water, drained solids	map	keep
+chicken-curry-cream-coconut-milk-curry-spices-paste	126		none	none
+leek	125	Leeks, (bulb and lower leaf-portion), raw	map	keep
+pizza-with-vegetables-baked	125	Pizza, meat and vegetable topping, rising crust, frozen, cooked	rule	check
+crisps	124	Crisp, cherry	loose	check
+sweet-corn-canned	124	Corn, sweet, canned, drained	rule	check
+hazelnut-chocolate-spread-nutella-ovomaltine-caotina	123		none	none
+pasta-linguini-parpadelle-tagliatelle	123		none	none
+nectarine	123	Nectarine, raw	loose	check
+sauce-roast	122	Roast beef spread	rule	check
+sausage	121	Sausage, Italian, pork, raw	map	keep
+couscous	120	Couscous, dry	map	keep
+bread-nut	120	Bread, nut	exact	keep
+praline	117	Candied almond or praline	rule	check
+crunch-muesli	114		none	none
+pomegranate	114	Pomegranate, flesh without skin, with seeds, raw	loose	check
+rice-basmati	113	Rice, basmati, raw	rule	check
+kolhrabi	112		none	none
+milk-chocolate	112	Milk chocolate, filled with praliné, bar	loose	check
+sushi	111	Sushi, topped with eel	loose	check
+fresh-cheese	111	Cheese, cheddar	map	keep
+chicken-cut-into-stripes-only-meat	110		none	none
+peanut-butter	109	Peanut butter, smooth style, with salt	map	keep
+roll-of-half-white-or-white-flour-with-large-void	108		none	none
+spaetzle	107	Beef with spaetzle or rice, vegetable, frozen meal	rule	check
+peas	107	Peas, green, raw	map	keep
+pancakes	105	Pancakes, whole-wheat, dry mix, incomplete, prepared	loose	check
+mango	105	Mangos, raw	map	keep
+bread-wholemeal-toast	105		none	none
+pasta-noodles	103		none	none
+pork	103	Pork, fresh, loin, whole, separable lean and fat, raw	map	keep
+wine-rose	103	Wine, rose	exact	keep
+cream	101	Cream, fluid, heavy whipping	map	keep
+peanut	100	Peanuts, virginia, raw	loose	check
+fajita-bread-only	99		none	none
+peach	99	Peaches, yellow, raw	map	keep
+croissant-with-chocolate-filling	98		none	none
+goat-cheese-soft	97	Cheese, goat, soft type	rule	check
+sour-cream	97	Cream, sour, cultured	map	keep
+berries	97	Berries, NFS	loose	check
+watermelon-fresh	97	Watermelon, flesh, raw, combined varieties	loose	check
+cookies	96	Cookie, sugar wafer, chocolate-covered	loose	check
+bread-half-white	95		none	none
+salt-cake-vegetables-filled	95		none	none
+omelette-plain	94	Omelette, plain, cooked	loose	check
+grits-polenta-maize-flour	94		none	none
+syrup-diluted-ready-to-drink	92		none	none
+gluten-free-bread	92	Bread, gluten free	rule	check
+pasta-hornli	91		none	none
+beans-kidney	91	Kidney beans, NFS	rule	check
+pumpkin	90	Pumpkin, canned, without salt	map	keep
+mustard	90	Mustard, prepared, yellow	map	keep
+brownie	89	Brownies, chocolate, homemade	loose	check
+pistachio	88	Nuts, pistachio nuts, raw	map	keep
+cream-cheese	88	Cheese, cream	map	keep
+plums	88	Plums, canned, purple, light syrup pack, solids and liquids	loose	check
+beef-minced-only-meat	88		none	none
+bread-black	87	Bread, black	exact	keep
+pineapple	87	Pineapple, raw, all varieties	map	keep
+thickened-cream-35	87		none	none
+chicken-leg	86	Chicken leg, drumstick and thigh, rotisserie, skin not eaten	loose	check
+soup-of-lentils-dahl-dhal	85		none	none
+taboule-prepared-with-couscous	85		none	none
+blue-mould-cheese	85		none	none
+ham	84	Ham, sliced, regular (approximately 11% fat)	map	keep
+applesauce-unsweetened-canned	84	Applesauce, canned, unsweetened, with added ascorbic acid	rule	check
+corn-crisps	84		none	none
+greek-yaourt-yahourt-yogourt-ou-yoghourt	83		none	none
+potato-gnocchi	83	Gnocchi, potato	rule	check
+sesame-seeds	83	Seeds, sesame seeds, whole, dried	map	keep
+dates	83	Dates, medjool	map	keep
+celeriac	83	Celeriac, cooked, boiled, drained, with salt	loose	check
+carrot-steamed-without-addition-of-salt	83		none	none
+rosti	82	Rostis	exact	keep
+rice-whole-grain	82	Puffed rice textured bread, whole grain	rule	check
+lasagne-meat-prepared	82		none	none
+green-bean-steamed-without-addition-of-salt	81		none	none
+vegetables	80	Vegetables, pickled	loose	check
+dried-raisins	79	Raisins, dried	rule	check
+bread-pita	79	Bread, pita	exact	keep
+vegetable-mix-peas-and-carrots	79		none	none
+rice-noodles-vermicelli	78		none	none
+tomme	78	Tomme cheese, reduced fat, around 13% fat	rule	check
+bread-fruit	78	Bread, fruit	exact	keep
+bread-5-grain	78	Bread, bran grain	rule	check
+brioche	78	Brioche	exact	keep
+beef-filet	77	Beef, ribeye filet, boneless, separable lean only, trimmed to 0" fat, select, cooked, grilled	rule	check
+country-fries	77		none	none
+white-asparagus	77	Asparagus, white or purple, peeled, raw	rule	check
+white-cabbage	75	White cabbage, raw	loose	check
+potatoes-au-gratin-dauphinois-prepared	75		none	none
+falafel-balls	75		none	none
+tiramisu	74	Tiramisu	exact	keep
+shrimp-prawn-large	73		none	none
+roll-with-pieces-of-chocolate	73		none	none
+bread-rye	72	Bread, rye	exact	keep
+greek-salad	71	Greek salad, with sauce, prepacked	loose	check
+sun-dried-tomatoe	71	Sun-dried tomatoes	exact	keep
+bacon-cooking	70		none	none
+ice-tea	69		none	none
+breadcrumbs-unspiced	69		none	none
+chocolate-mousse	69	Chocolate mousse, plant-based, refrigerated	loose	check
+veal-sausage	69		none	none
+shrimp-prawn-small	68		none	none
+swiss-chard	68	Swiss chard, stalk without leaves, cooked	loose	check
+tea-peppermint	68		none	none
+pizza-with-ham-baked	68		none	none
+chinese-cabbage	67	Chinese cabbage, pak choï ou pak choy, cooked	loose	check
+spring-onion-scallion	66	Onions, spring or scallions (includes tops and bulb), raw	rule	check
+hazelnut	66	Hazelnuts	exact	keep
+fruit-tart	66	Fruit tart (average)	rule	check
+juice-apple	65	Apple juice, 100%	rule	check
+mixed-seeds	65	Mixed seeds	exact	keep
+quiche-with-cheese-baked-with-puff-pastry	64		none	none
+sauce-soya	64	Soya flour, wholegrain	rule	check
+capers	64	Capers, canned	map	keep
+kefir-drink	64		none	none
+pumpkin-seeds	64	Pumpkin seeds	exact	keep
+beetroot-raw	63	Beetroot, raw	exact	keep
+oil-vinegar-salad-dressing	63	Salad dressing, home recipe, vinegar and oil	rule	check
+butter-spread-puree-almond	63		none	none
+beef-cut-into-stripes-only-meat	62		none	none
+ham-croissant	62	Egg sandwich on croissant, with ham	rule	check
+savoury-puff-pastry	61	Puff pastry, savoury (average)	rule	check
+lye-pretzel-soft	60		none	none
+focaccia	60	Focaccia, filled	loose	check
+fruit-coulis	59		none	none
+meat-terrine-pate	59		none	none
+cervelat	59	Saveloy or cervelat	rule	check
+vegetable-au-gratin-baked	58	Vegetables au gratin in bechamel sauce, prepacked, cooked	rule	check
+artichoke	57	Artichoke	exact	keep
+frying-sausage	57	Chitterling sausage, reheated in a frying pan	rule	check
+beef-sirloin-steak	56	Beef, sirloin steak, raw	rule	check
+chili-con-carne-prepared	56		none	none
+sauce-mushroom	56	Mushrooms, white, raw	map	keep
+sunflower-seeds	55	Seeds, sunflower seed kernels, dried	map	keep
+wienerli-swiss-sausage	55		none	none
+chocolate-cookies	54	Cookie, chocolate chip	rule	check
+tea-verveine	53		none	none
+veggie-burger	53	Veggie burger, on bun	loose	check
+alfa-sprouts	52		none	none
+sauce-curry	52	Spices, curry powder	map	keep
+bacon	51	Pork, cured, bacon, pre-sliced, cooked, pan-fried	map	keep
+figs	50	Fig, raw	loose	check
+bell-pepper-red-stewed-without-addition-of-fat-without-addition-of-salt	50		none	none
+porridge-prepared-with-partially-skimmed-milk	50		none	none
+rice-wild	50	Wild rice, raw	rule	check
+pearl-onions	50	Onions, pearl, cooked	rule	check
+rusk-wholemeal	50	Rusk, wholemeal	exact	keep
+bread-ticino	49		none	none
+basil	49	Basil, fresh	map	merge
+pasta-in-butterfly-form-farfalle	49		none	none
+parsley	48	Parsley, fresh	map	merge
+bouillon	48		none	none
+curds-natural-with-at-most-10-fidm	47		none	none
+hamburger	47	Beef, ground, 80% lean meat / 20% fat, raw	map	merge
+pine-nuts	47	Nuts, pine nuts, dried	map	merge
+spinach-raw	46	Spinach, raw	exact	merge
+brussel-sprouts	46	Brussels sprouts, boiled in unsalted water	loose	merge
+zucchini-stewed-without-addition-of-fat-without-addition-of-salt	46		none	none
+crisp-bread-wasa	46		none	none
+sauerkraut	46	Sauerkraut, canned, solids and liquids	map	merge
+spinach-steamed-without-addition-of-salt	45		none	none
+pasta-in-conch-form	45		none	none
+spring-roll-fried	44	Spring roll, vegetarian, deep fried, commercial	rule	merge
+smoothie	44	Smoothies	exact	merge
+garlic	44	Garlic, raw	map	merge
+cordon-bleu-from-pork-schnitzel-fried	44		none	none
+lentils-green-du-puy-du-berry	44		none	none
+coconut	44	Nuts, coconut meat, dried (desiccated), sweetened, shredded	map	merge
+cherries	44	Cherries, canned	loose	merge
+quiche-with-spinach-baked-with-cake-dough	43		none	none
+romanesco	43	Romanesco cauliflower or romanesco broccoli, raw	rule	merge
+bulgur	43	Bulgur, wheat, dry	loose	merge
+croutons	43	Croutons	exact	merge
+lemon-cake	43	Cake or cupcake, lemon	rule	merge
+emmental-cheese	42	Emmental cheese, from cow's milk	loose	merge
+pork-escalope	42	Pork, ham escalope, raw	rule	merge
+seeds	42	Seed, sesame, kernel, shelled, white, dried, raw, composite	loose	merge
+chicken-nuggets	41	Chicken nuggets, from other sources	loose	merge
+chestnuts	41	Chestnuts	exact	merge
+meatloaf	41	Meatloaf sandwich	rule	merge
+bread-spelt	41		none	none
+sauce-cocktail	41	Cocktail, alcohol-free (juices based cocktail without syrup)	loose	merge
+white-bread-with-butter-eggs-and-milk	41		none	none
+beef-roast	41	Beef, roast	exact	merge
+shoots	41	Taro shoots, raw	rule	merge
+cream-spinach	40	Spinach with cream sauce, prepacked	rule	merge
+bacon-raw	40	Pork, cured, bacon, pre-sliced, cooked, pan-fried	map	merge
+fish-fingers-breaded	40		none	none
+pie-plum-baked-with-cake-dough	40		none	none
+pizza-with-ham-with-mushrooms-baked	40		none	none
+curd	40	Lemon curd	rule	merge
+processed-meat-charcuterie	40		none	none
+mustard-dijon	39		none	none
+muffin	39	Muffin, English, toasted	loose	merge
+tzatziki	39	Tzatziki	exact	merge
+dough-puff-pastry-shortcrust-bread-pizza-dough	39		none	none
+sauce-sweet-sour	39	Sweet and sour pork	rule	merge
+shrimp-boiled	38	Shrimps, boiled	exact	merge
+tartar-sauce	37	Tartar sauce	exact	merge
+crackers	37	Cracker, wheat, ready to eat, Water Cracker, Arnott's	loose	merge
+coleslaw-chopped-without-sauce	37		none	none
+sorbet	37	Sorbet	exact	merge
+sauce-carbonara	37	Carbonara sauce (cream sauce with lardoons), prepacked	rule	merge
+halloumi	36		none	none
+pasta-ravioli-stuffing	36		none	none
+fondue	36	Cheese fondue	rule	merge
+tuna-in-oil-drained	36	Tuna, canned in sunflower oil, drained	rule	merge
+goat-average-raw	36		none	none
+high-protein-pasta-made-of-lentils-peas	35		none	none
+potato-salad-with-mayonnaise-yogurt-dressing	35		none	none
+juice-multifruit	35	Multifruit juice, pure juice, standard	rule	merge
+cheddar	35	Cheddar cheese, from cow's milk	rule	merge
+hamburger-bun	35	Rolls, hamburger or hotdog, plain	map	merge
+cenovis-yeast-spread	35		none	none
+ebly	35		none	none
+waffle	35	Waffle, whole grain, reduced fat	loose	merge
+chicken-wing	34	Chicken wing, grilled without sauce	loose	merge
+panna-cotta	34	Panna cotta, with fruit preparation or caramel, refrigerated	loose	merge
+croissant-wholegrain	34		none	none
+cantonese-fried-rice	34		none	none
+meat	34	Meat, NFS	loose	merge
+celery	34	Celery, raw	map	merge
+risotto-with-mushrooms-cooked	34		none	none
+anchovies	34	Anchovies, canned in oil, drained	loose	merge
+latte-macchiato-with-caffeine	34		none	none
+beans-white	34	White beans, NFS	rule	merge
+coca-cola	34		none	none
+dips	34	Dip, sour cream, lite, assorted flavours, 7% fat, composite	loose	merge
+lamb	34	Lamb, hindquarter flap boneless, separable lean & fat, simmered	loose	merge
+mousse	34	Mousse	exact	merge
+buckwheat-grain-peeled	33		none	none
+kaki	33		none	none
+apple-crumble	33	Apple crumble, prepacked	loose	merge
+grapefruit-pomelo	33		none	none
+processed-cheese	33	Cheese, pasteurized process, American, fortified with vitamin D	map	merge
+pasta-tortelloni-stuffing	33		none	none
+brie	33	Brie cheese, from cow's milk	rule	merge
+savoy-cabbage-steamed-without-addition-of-salt	33		none	none
+butter-herb	33		none	none
+mungbean-sprouts	32		none	none
+pork-chop	32	pork chop	dish	merge
+sandwich-ham-cheese-and-butter	32	Sandwich, baguette, ham, emmental cheese and butter	rule	merge
+bread-olive	32		none	none
+cheesecake	32	Cheesecake, fruit, individual	loose	merge
+sweets-candies	32	Candies, sweet chocolate	rule	merge
+coconut-milk	32	Nuts, coconut milk, canned (liquid expressed from grated meat and water)	map	merge
+cocktail	32	Cocktail, alcohol-free (juices based cocktail without syrup)	loose	merge
+vanille-cream-cooked-custard-creme-dessert	32		none	none
+bouquet-garni	32		none	none
+sauce-sweet-salted-asian	32		none	none
+tartar-meat	31		none	none
+coffee-decaffeinated	31	Beverages, coffee, brewed, prepared with tap water	map	merge
+lamb-chop	31	Lamb, chop	exact	merge
+coca-cola-zero	31		none	none
+rice-waffels	31		none	none
+pork-roast	31	Pork, fresh, loin, whole, separable lean and fat, raw	map	merge
+cod	30	Cod, in batter, fried in dripping, takeaway	loose	merge
+tete-de-moine	30	Tete de Moine cheese (PDO), from cow's milk	rule	merge
+paprika-chips	30		none	none
+lemon-pie	30	Pie, lemon	rule	merge
+chives	30	Chives, raw	map	merge
+nuts	30	Nuts, mixed nuts, dry roasted, with peanuts, without salt added	map	merge
+banana-cake	30	Cake or cupcake, banana	rule	merge
+bouillon-vegetable	29		none	none
+pecan-nut	29	Pecan nut, salted	loose	merge
+pie-apricot-baked-with-cake-dough	29		none	none
+minced-meat	29	Soy-based minced meat imitate, prepacked	rule	merge
+bread-meat-substitute-lettuce-sauce	28		none	none
+balsamic-vinegar	28	Vinegar, balsamic	map	merge
+naan-indien-bread	28		none	none
+biscuit-with-butter	28	Butter biscuit (cookie)	rule	merge
+fish-crunchies-battered	28		none	none
+chia-grains	28		none	none
+bean-seeds	28	Bean, black, seed, dry	rule	merge
+meat-balls	27	Meat balls, beef and lamb (kefta type), prepacked cooked	loose	merge
+cocoa-powder	27	Cocoa, dry powder, unsweetened	map	merge
+eggplant-caviar	27		none	none
+chocolate-egg-small	27	Custard with eggs (small jar of chocolate or vanilla cream), refrigerated	rule	merge
+perch-fillets-lake	27		none	none
+fruit-compotes	27	Fruit compote, miscellaneous fruits, reduced sugar, prepacked, refrigerated	loose	merge
+coriander	27	Coriander (cilantro) leaves, raw	map	merge
+meringue	27	Meringues	exact	merge
+maple-syrup-concentrate	26		none	none
+linseeds	26	Linseed oil	rule	merge
+carrot-cake	26	carrot cake	dish	merge
+rice-jasmin	26		none	none
+savoury-puff-pastry-stick	26		none	none
+ham-turkey	26	Turkey ham, cured turkey thigh meat	rule	merge
+croque-monsieur	26		none	none
+aperitif-with-alcohol-aperol-spritz	26		none	none
+fig-dried	26	Fig, dried	exact	merge
+pie-rhubarb-baked-with-cake-dough	26		none	none
+cake-oblong	25		none	none
+soup-tomato	25	Soup, tomato	exact	merge
+french-pizza-from-alsace-baked	25		none	none
+cooked-sausage	25	Sausage, beef, boiled, drained, composite	loose	merge
+lasagne-vegetable-prepared	24		none	none
+ice-cubes	24	-	map	merge
+white-radish	24	Radish, white/mooli, raw	rule	merge
+sugar-glazing	24		none	none
+damson-plum	24	Plum, stewed, Damson	rule	merge
+tomato-stewed-without-addition-of-fat-without-addition-of-salt	24		none	none
+turnover-with-meat-small-meat-pie-empanadas	23		none	none
+prosecco	23		none	none
+soup-miso	23	Soup, miso or tofu	rule	merge
+mushroom-average-stewed-without-addition-of-fat-without-addition-of-salt	23		none	none
+white-chocolate	23	Candies, white chocolate	map	merge
+margarine	23	Margarine, regular, 80% fat, composite, stick, with salt	map	merge
+popcorn-salted	23	Popcorn, salted, retail	rule	merge
+apricot-dried	23	Apricot, dried	exact	merge
+smoked-cooked-sausage-of-pork-and-beef-meat-sausag	23		none	none
+soup-cream-of-vegetables	22	Soup, cream of vegetable	exact	merge
+brazil-nut	22	Brazil nuts	exact	merge
+kebab-in-pita-bread	22		none	none
+milk-chocolate-with-hazelnuts	22		none	none
+soya-drink-soy-milk	22		none	none
+mix-of-dried-fruits-and-nuts	22	Mix of salted nuts and dried fruit	rule	merge
+pastry-flaky	22	Pastry, flaky, butter, raw	rule	merge
+grissini	22	Grissini or bread stick, with sesame	rule	merge
+faux-mage-cashew-vegan-chers	22		none	none
+chocolate-milk-chocolate-drink	22	Chocolate milk drink	rule	merge
+chorizo	22	Chorizo	exact	merge
+corn-flakes	22	Cereals ready-to-eat, corn flakes, pln, single brand	map	merge
+sekt	22		none	none
+soup-potato	21	Soup, potato	exact	merge
+dumplings	21	Dumplings, homemade	loose	merge
+philadelphia	21		none	none
+champagne	20	Alcoholic beverage, wine, table, white	map	merge
+macaroon	19	Macaroon, homemade	loose	merge
+tea-ginger	19	Tea, ginger	exact	merge
+black-forest-tart	19		none	none
+soya-yaourt-yahourt-yogourt-ou-yoghourt	19		none	none
+blackberry	19	Blackberry, frozen, unsweetened	loose	merge
+gummi-bears-fruit-jellies-jelly-babies-with-fruit-essence	18		none	none
+cake-marble	18	Marble cake, prepacked	rule	merge
+mango-dried	18	Mango, dried	exact	merge
+bagel-without-filling	17		none	none
+chocolate-filled	17	Chocolate, fancy & filled	rule	merge
+cake-salted	17		none	none
+italian-salad-dressing	17	Salad dressing, italian dressing, fat-free	rule	merge
+tea-spice	16		none	none
+oat-milk	16	Oat milk	exact	merge
+tea-fruit	16	Tea beverage, fruit, ready to drink	rule	merge
+buckwheat-pancake	16	Pancakes, buckwheat, dry mix, incomplete	rule	merge
+tea-rooibos	15		none	none
+m-m-s	15	McDONALD'S, McFLURRY with M&M'S CANDIES	rule	merge
+light-beer	14	Beer, light	rule	merge
+oil	12	Oil, soybean, salad or cooking	map	merge
