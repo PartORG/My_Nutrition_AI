@@ -2403,7 +2403,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiModelLargeHint.
   ///
   /// In en, this message translates to:
-  /// **'Understands more, answers about 2-3x slower. For phones with 12 GB RAM.'**
+  /// **'Understands more and recognises food on photos better; answers about 2-3x slower. For phones with 12 GB RAM.'**
   String get aiModelLargeHint;
 
   /// No description provided for @aiModelSwitch.
@@ -4139,6 +4139,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant.'**
   String get micDenied;
+
+  /// No description provided for @reviewCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this: the AI isn\'t sure'**
+  String get reviewCheck;
+
+  /// No description provided for @reviewAddFat.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooked with oil or butter?'**
+  String get reviewAddFat;
+
+  /// No description provided for @reviewAddFatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fried or roasted food usually is, and a photo can\'t show it. Adds a tablespoon of oil, which you can change.'**
+  String get reviewAddFatHint;
+
+  /// No description provided for @aiModelRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get aiModelRecommended;
 }
 
 class _AppLocalizationsDelegate

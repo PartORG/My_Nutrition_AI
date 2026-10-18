@@ -454,6 +454,21 @@ columns for them at all.
   new permission. Steps were already Health Connect's de-duplicated aggregate; a different count than Fit's comes
   from Health Connect's source priority (Health Connect → Data and access → Steps).
 
+### Photo recognition, same model (2026-10-18)
+
+- The chat is never touched: photos run in their own `openSession` (no tools, own prompt); the model is not
+  fine-tuned (LoRA isn't supported on `.litertlm` anyway). Check with `integration_test/agent_eval_test.dart`.
+- Prompt asks `grams | name | cooking` with size references (plate 26 cm, fork 19 cm, bread slice 30 g).
+- Two looks: the whole photo and a closer crop (around the detector's food boxes, or the middle 60 %). What both
+  see is sure; what only one sees is marked "Check this"; crop-only foods get a serving, not Gemma's grams.
+- Second question in the same photo session: per food up to 5 nutri.db rows, Gemma answers by letter;
+  "none" keeps the guess, marked to check. Rows the user logs most come first, then the shortest name.
+- Fried or roasted → the review offers "Cooked with oil or butter?" (unticked; adds the staple oil, 14 g).
+- Corrections: "Change" on the review, saved when the meal is logged (user.db v12 `food_corrections`), makes
+  that row the match for that seen name next time (no second question for it).
+- 12 GB phones: E4B is listed first as Recommended (better at photos). Its tool accuracy is still unmeasured.
+- Cost: a photo now takes two vision passes and a short text pass, so a few seconds more; Cancel still works.
+
 ## v0.10.0 (2026-10-17): new design (docs/New_Design), light and dark
 
 - **Tokens** (`theme.dart`): the design's dark palette (background, surface, surfaceHigh, heroSurface) and one

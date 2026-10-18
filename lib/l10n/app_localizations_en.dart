@@ -1382,7 +1382,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Understands more, answers about 2-3x slower. For phones with 12 GB RAM.';
+      'Understands more and recognises food on photos better; answers about 2-3x slower. For phones with 12 GB RAM.';
 
   @override
   String get aiModelSwitch => 'Switch';
@@ -2406,4 +2406,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get micDenied =>
       'The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant.';
+
+  @override
+  String get reviewCheck => 'Check this: the AI isn\'t sure';
+
+  @override
+  String get reviewAddFat => 'Cooked with oil or butter?';
+
+  @override
+  String get reviewAddFatHint =>
+      'Fried or roasted food usually is, and a photo can\'t show it. Adds a tablespoon of oil, which you can change.';
+
+  @override
+  String get aiModelRecommended => 'Recommended';
 }

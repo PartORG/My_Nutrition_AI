@@ -999,6 +999,16 @@ class AgentTools {
     ];
   }
 
+  /// An everyday word's row from [staples] ("oil" → vegetable oil, 14 g) as a choice; null if nutri.db lacks it.
+  FoodChoice? staple(String word) {
+    final (label, serving) = staples[word] ?? ('', null);
+    final r = nutri.select('SELECT * FROM foods WHERE name = ? COLLATE NOCASE', [label]).firstOrNull;
+    return r == null
+        ? null
+        : (kind: 'food', id: r['id'], label: r['name'] as String,
+            servingG: serving ?? (r['serving_g'] as num?)?.toDouble(), per100: _nutrientsOf(r), estimated: false);
+  }
+
   /// Logs [grams] of [food] right away: pressing "Log" on that screen is the
   /// user's confirmation.
   void logFood(FoodChoice food, double grams, String mealType) => _insertMeal(_ms(), mealType, food.label, grams,

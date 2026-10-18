@@ -480,12 +480,17 @@ class _ChatTab extends ConsumerWidget {
   }
 }
 
-/// Standard / Larger model, as a tile: [trailing] is the button for it.
+/// Standard / Larger model, as a tile: [trailing] is the button for it. Larger is the recommended one where it's
+/// offered (12 GB phones): it sees foods on photos better.
+// shortcut: recommended before its tool accuracy is measured; run integration_test/agent_eval_test.dart with E4B.
 Widget _modelTile(AppLocalizations l, Llm m, Widget trailing) {
   final gb = (m.downloadMb / 1024).toStringAsFixed(1);
   return ListTile(
     contentPadding: EdgeInsets.zero,
-    title: Text(m == e4b ? l.aiModelLarge(gb) : l.aiModelStandard(gb), style: const TextStyle(fontWeight: FontWeight.w600)),
+    title: Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      Text(m == e4b ? l.aiModelLarge(gb) : l.aiModelStandard(gb), style: const TextStyle(fontWeight: FontWeight.w600)),
+      if (m == e4b) Tag(l.aiModelRecommended, tone: TagTone.gold),
+    ]),
     subtitle: Text(m == e4b ? l.aiModelLargeHint : l.aiModelStandardHint),
     trailing: trailing,
   );
@@ -637,9 +642,9 @@ class _DownloadAiState extends ConsumerState<_DownloadAi> {
         DownloadBar(llmDownloadProvider)
       else ...[
         const SizedBox(height: 8),
-        // 12 GB phones choose; the others get the one model that fits.
+        // 12 GB phones choose, the recommended larger one first; the others get the one model that fits.
         if (choices.length > 1)
-          for (final m in choices)
+          for (final m in choices.reversed)
             _modelTile(l, m, ElevatedButton(onPressed: () => _start(m), child: Text(l.aiDownloadButton)))
         else
           ElevatedButton.icon(

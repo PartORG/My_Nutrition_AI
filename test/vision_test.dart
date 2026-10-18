@@ -71,14 +71,71 @@ void main() {
 
     test("Gemma's photo reply → foods with portions; junk amounts become a serving", () {
       expect(parseSeenFoods('150 | Boiled rice\n- 120 g | grilled chicken breast\n\n* broccoli\n0 | apple\n99999 | bread'), [
-        (name: 'boiled rice', grams: 150.0),
-        (name: 'grilled chicken breast', grams: 120.0),
-        (name: 'broccoli', grams: null),
-        (name: 'apple', grams: null),
-        (name: 'bread', grams: null),
+        (name: 'boiled rice', grams: 150.0, cooking: null),
+        (name: 'grilled chicken breast', grams: 120.0, cooking: null),
+        (name: 'broccoli', grams: null, cooking: null),
+        (name: 'apple', grams: null, cooking: null),
+        (name: 'bread', grams: null, cooking: null),
       ]);
       expect(parseSeenFoods('none'), isEmpty);
-      expect(parseSeenFoods('80,5 | banana'), [(name: 'banana', grams: 80.5)]);
+      expect(parseSeenFoods('80,5 | banana'), [(name: 'banana', grams: 80.5, cooking: null)]);
+      // The current prompt adds how it was cooked.
+      expect(parseSeenFoods('120 | Chicken breast | Fried\n150 | rice | unknown'), [
+        (name: 'chicken breast', grams: 120.0, cooking: 'fried'),
+        (name: 'rice', grams: 150.0, cooking: null),
+      ]);
+    });
+
+    test('two looks: the same food named two ways; sure when both saw it; the closer look adds what the whole missed', () {
+      expect(sameFood('boiled rice', 'rice'), isTrue);
+      expect(sameFood('white rice', 'rice'), isTrue);
+      expect(sameFood('grilled chicken breast', 'chicken breast'), isTrue);
+      expect(sameFood('tomatoes', 'tomato'), isTrue);
+      expect(sameFood('chicken breast', 'turkey breast'), isFalse);
+      SeenFood f(String name, [double? g]) => (name: name, grams: g, cooking: null);
+      final merged = mergeLooks([f('boiled rice', 150), f('chicken breast', 120)], [f('rice', 80), f('sesame seeds', 5)]);
+      expect([for (final m in merged) (m.food.name, m.food.grams, m.sure)], [
+        ('boiled rice', 150.0, true),
+        ('chicken breast', 120.0, false),
+        ('sesame seeds', null, false), // a zoomed picture misleads portions: a serving
+      ]);
+      expect(mergeLooks([f('apple')], null).single.sure, isTrue, reason: 'one look only: as before');
+    });
+
+    test('closer look: around the foods found, or the middle when none or they fill the frame', () {
+      const middle = Rect.fromLTRB(.2, .2, .8, .8);
+      expect(closerLook([]), middle);
+      expect(closerLook([const Rect.fromLTRB(0, 0, 1, 1)]), middle);
+      final box = closerLook([const Rect.fromLTRB(.3, .3, .5, .5), const Rect.fromLTRB(.4, .4, .6, .6)]);
+      expect(box.left, closeTo(.25, 1e-9));
+      expect(box.bottom, closeTo(.65, 1e-9));
+    });
+
+    test('second question: Gemma picks a row by letter; none keeps the guess, marked to check', () {
+      FoodChoice row(String label, double serving) =>
+          (kind: 'food', id: label, label: label, servingG: serving, per100: const {'kcal': 100.0}, estimated: true);
+      ScanMatch match(String name, List<FoodChoice> options, {double? grams}) => (
+            item: ScanItem(name: name, food: options.first, grams: grams ?? options.first.servingG!),
+            options: options,
+            corrected: false,
+            servingGrams: grams == null,
+          );
+      final items = [
+        match('rice', [row('Rice, white', 150), row('Rice, brown', 160)], grams: 180),
+        match('soup', [row('Soup, tomato', 250), row('Soup, lentil', 240)]),
+        match('apple', [row('Apple', 180)]), // one row: nothing to ask
+        match('stew', [row('Stew, beef', 250), row('Stew, lamb', 250)]),
+      ];
+      final q = pickQuestion(items)!;
+      expect(q.options.keys, [1, 2, 3]);
+      expect(q.text, contains('1. rice\n   a) Rice, white\n   b) Rice, brown'));
+      expect(q.text, isNot(contains('apple')));
+      expect(parsePicks('1 b\n2. b)\n3: none\nthanks'), {1: 1, 2: 1, 3: -1});
+      applyPicks(items, q.options, parsePicks('1 b\n2. b)\n3: none'));
+      expect((items[0].item.food!.label, items[0].item.grams), ('Rice, brown', 180.0), reason: "Gemma's grams stay");
+      expect((items[1].item.food!.label, items[1].item.grams), ('Soup, lentil', 240.0), reason: 'a serving follows the row');
+      expect((items[3].item.food!.label, items[3].item.sure), ('Stew, beef', false));
+      expect(pickQuestion([items[2]]), isNull);
     });
   });
 
@@ -174,6 +231,35 @@ void main() {
       await tester.pumpAndSettle();
       expect(meals().map((r) => (r['description'], r['grams'])), [('banana', 150.0), ('broccoli', 90.0)]);
       expect(scans(), ['photo: banana, broccoli']);
+    });
+
+    test('the foods this user logs come first among the matches', () {
+      final brown = data.tools.searchFood('brown rice').firstWhere((f) => f.label == 'brown rice, cooked');
+      data.tools.logFood(brown, 150, 'lunch');
+      expect(matchOptions(data.tools, 'rice cooked').first.label, 'brown rice, cooked');
+    });
+
+    testWidgets('fried food offers oil; a changed food is remembered for that name next time', (tester) async {
+      capture = (_) => parseSeenFoods('150 | banana | fried\n200 | unicorn stew | stewed');
+      await pumpChat(tester);
+      await tester.tap(find.text('Open camera').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cooked with oil or butter?'));
+      await tester.pump();
+      expect(find.widgetWithText(TextField, '14'), findsOneWidget, reason: 'a tablespoon, as its own editable row');
+      await tester.tap(find.text('Change')); // the unicorn stew: not in nutri.db
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'lentils');
+      await tester.pump();
+      await tester.tap(find.text('lentils, cooked').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Log this'));
+      await tester.pumpAndSettle();
+      expect(meals().map((r) => r['description']), containsAll(['banana', 'olive oil', 'lentils, cooked']));
+      // The next photo of a "unicorn stew" starts from what the user chose; the oil wasn't a correction.
+      final next = itemsFromSeen(data.tools, parseSeenFoods('200 | unicorn stew'));
+      expect(next.single.food?.label, 'lentils, cooked');
+      expect(data.user.select('SELECT seen FROM food_corrections').map((r) => r['seen']), ['unicorn stew']);
     });
 
     testWidgets('review rows keep their own grams after a remove and follow a changed food', (tester) async {

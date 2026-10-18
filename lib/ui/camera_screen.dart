@@ -42,6 +42,7 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   if (captured == null || !context.mounted) return;
   final (items, usedMode) = switch (captured) {
     (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found), live ? 'live' : 'photo'),
+    (List<ScanItem> items) => (items, 'photo'),
     (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
   };
@@ -50,8 +51,8 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   ));
 }
 
-/// What a capture returns: Gemma's foods from a photo
-/// (`List<SeenFood>`), or detections and whether they came from live mode
+/// What a capture returns: Gemma's foods from a photo, matched
+/// (`List<ScanItem>`; tests may return `List<SeenFood>`), or detections and whether they came from live mode
 /// (a `(List<Detection>, bool)` record); null = cancelled. Tests
 /// replace it with a dummy detector, since there is no camera on the host.
 typedef Capture = Future<Object?> Function(BuildContext context, String mode);
@@ -163,8 +164,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     }
   }
 
-  /// Gemma names the foods on [png]. Null when the chat model isn't downloaded.
-  Future<List<SeenFood>?> _name(Future<Uint8List> Function() png) async {
+  /// Gemma names the foods on [png], with a closer look around the detector's [boxes] (or the middle).
+  /// Null when the chat model isn't downloaded.
+  Future<List<ScanItem>?> _name(Future<Uint8List> Function() png, {List<Rect> boxes = const []}) async {
     setState(() {
       _naming = true;
       _cancelled = false;
@@ -176,7 +178,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       } on LlmNotDownloaded {
         return null;
       }
-      return await nameFoods(llm, await png());
+      final tools = ref.read(profileDataProvider)?.tools;
+      if (tools == null) return null; // locked meanwhile
+      final photo = await png();
+      return await scanPhoto(llm, tools, photo, crop: await _cropPng(photo, closerLook(boxes)));
     } finally {
       if (mounted) setState(() => _naming = false);
     }
@@ -196,7 +201,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     // "only apples and pizzas"), so its boxes are a live preview and the fallback when Gemma
     // isn't downloaded, sees nothing, or the user stops waiting.
     try {
-      final seen = await _name(_framePng);
+      if (!_live) await _detect(); // its boxes aim Gemma's closer look
+      final seen = await _name(_framePng, boxes: [for (final d in _found) d.box]);
       if (_cancelled || !mounted) return;
       if (seen != null && (seen.isNotEmpty || _found.isEmpty)) return Navigator.pop(context, seen);
     } on Object catch (e, st) {
@@ -204,7 +210,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       if (_cancelled || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
     }
-    if (!_live) await _detect();
     if (mounted) Navigator.pop(context, (_found, _live));
   }
 
@@ -422,6 +427,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
   late final _items = [...widget.items.where((i) => i.food == null), ...widget.items.where((i) => i.food != null)];
   late String _meal = widget.data.tools.mealTypeNow();
 
+  // Something was fried or roasted: oil or butter is likely, and no photo shows how much. Offered, not added.
+  late final _fat = widget.items.any((i) => cookedInFat(i.cooking))
+      ? widget.data.tools.staple('oil') ?? matchFood(widget.data.tools, 'oil')
+      : null;
+  ScanItem? _fatItem;
+
   Future<void> _pick(ScanItem? item) async {
     final food = await showDialog<FoodChoice>(
         context: context, builder: (_) => PickFoodDialog(tools: widget.data.tools, initial: item?.name ?? ''));
@@ -433,7 +444,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         // name stays what was seen: the row shows "seen: …" under the new food.
         item
           ..food = food
-          ..grams = food.servingG ?? item.grams;
+          ..grams = food.servingG ?? item.grams
+          ..sure = true
+          ..corrected = true;
       }
     });
   }
@@ -449,6 +462,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
     const tints = [Color(0xFF7FDDB6), Color(0xFFF7C74F), Color(0xFF9BC1EE), Color(0xFFF6A27F)];
     void log() {
       final mark = lastMealId(data.user);
+      final now = DateTime.now();
+      for (final i in _items) {
+        if (i.corrected && i.food != null && i != _fatItem) rememberCorrection(data.user, i.name, i.food!, at: now);
+      }
       final n = logScan(data.tools, _items, _meal);
       recordScan(data.user, widget.mode, loggable, at: DateTime.now());
       data.changed();
@@ -503,12 +520,35 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         seen: i.name,
                         grams: i.grams,
                         servingG: i.food?.servingG,
+                        check: !i.sure,
                         kcal: i.food == null ? null : i.food!.per100['kcal']! * i.grams / 100,
                         onChange: () => _pick(i),
                         onGrams: (g) => setState(() => i.grams = g),
-                        onRemove: () => setState(() => _items.remove(i)),
+                        onRemove: () => setState(() {
+                          _items.remove(i);
+                          if (i == _fatItem) _fatItem = null;
+                        }),
                       ),
                   ]),
+                if (_fat case final oil?) ...[
+                  const SizedBox(height: 12),
+                  Panel(
+                    padding: EdgeInsets.zero,
+                    child: CheckboxListTile(
+                      title: Text(l.reviewAddFat),
+                      subtitle: Text(l.reviewAddFatHint),
+                      value: _fatItem != null,
+                      onChanged: (on) => setState(() {
+                        if (on == true) {
+                          _items.add(_fatItem = ScanItem(name: oil.label, food: oil, grams: oil.servingG ?? 14));
+                        } else {
+                          _items.remove(_fatItem);
+                          _fatItem = null;
+                        }
+                      }),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -585,7 +625,7 @@ Future<Uint8List> _encodePng(Uint8List bytes) async {
 }
 
 /// RGB → PNG with the engine's own encoder (no image package).
-Future<Uint8List> _png(Uint8List rgb, int w, int h) async {
+Future<Uint8List> _png(Uint8List rgb, int w, int h) {
   final rgba = Uint8List(w * h * 4);
   for (var i = 0, j = 0; i < rgb.length; i += 3, j += 4) {
     rgba
@@ -594,6 +634,30 @@ Future<Uint8List> _png(Uint8List rgb, int w, int h) async {
       ..[j + 2] = rgb[i + 2]
       ..[j + 3] = 255;
   }
+  return _rgbaPng(rgba, w, h);
+}
+
+/// [box] (normalized) of a PNG, as a PNG: Gemma's closer look.
+Future<Uint8List> _cropPng(Uint8List png, Rect box) async {
+  final codec = await ui.instantiateImageCodec(png);
+  final image = (await codec.getNextFrame()).image;
+  try {
+    final w = image.width, h = image.height;
+    final rgba = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List();
+    final x0 = (box.left * w).floor(), y0 = (box.top * h).floor();
+    final cw = ((box.right * w).ceil() - x0).clamp(1, w - x0), ch = ((box.bottom * h).ceil() - y0).clamp(1, h - y0);
+    final out = Uint8List(cw * ch * 4);
+    for (var y = 0; y < ch; y++) {
+      out.setRange(y * cw * 4, (y + 1) * cw * 4, rgba, ((y0 + y) * w + x0) * 4);
+    }
+    return await _rgbaPng(out, cw, ch);
+  } finally {
+    image.dispose();
+    codec.dispose();
+  }
+}
+
+Future<Uint8List> _rgbaPng(Uint8List rgba, int w, int h) async {
   final buffer = await ui.ImmutableBuffer.fromUint8List(rgba);
   final descriptor = ui.ImageDescriptor.raw(buffer, width: w, height: h, pixelFormat: ui.PixelFormat.rgba8888);
   final codec = await descriptor.instantiateCodec();

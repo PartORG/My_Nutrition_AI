@@ -1389,7 +1389,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Comprend mieux, répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 12 Go de RAM.';
+      'Comprend mieux et reconnaît mieux les aliments sur les photos ; répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 12 Go de RAM.';
 
   @override
   String get aiModelSwitch => 'Changer';
@@ -2419,4 +2419,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get micDenied =>
       'Le micro est désactivé pour cette appli. Activez-le dans les paramètres Android pour parler à l’assistant.';
+
+  @override
+  String get reviewCheck => 'À vérifier : l’IA n’est pas sûre';
+
+  @override
+  String get reviewAddFat => 'Cuit avec de l’huile ou du beurre ?';
+
+  @override
+  String get reviewAddFatHint =>
+      'C’est souvent le cas pour les plats frits ou rôtis, et une photo ne le montre pas. Ajoute une cuillère à soupe d’huile, modifiable.';
+
+  @override
+  String get aiModelRecommended => 'Recommandé';
 }

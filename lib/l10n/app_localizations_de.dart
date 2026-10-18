@@ -1392,7 +1392,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Versteht mehr, antwortet etwa 2–3-mal langsamer. Für Handys mit 12 GB RAM.';
+      'Versteht mehr und erkennt Essen auf Fotos besser; antwortet etwa 2–3-mal langsamer. Für Handys mit 12 GB RAM.';
 
   @override
   String get aiModelSwitch => 'Wechseln';
@@ -2423,4 +2423,17 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get micDenied =>
       'Das Mikrofon ist für diese App ausgeschaltet. Schalte es in den Android-Einstellungen ein, um mit dem Assistenten zu sprechen.';
+
+  @override
+  String get reviewCheck => 'Prüfen: Die KI ist unsicher';
+
+  @override
+  String get reviewAddFat => 'Mit Öl oder Butter zubereitet?';
+
+  @override
+  String get reviewAddFatHint =>
+      'Gebratenes oder Geröstetes meist schon, und ein Foto zeigt es nicht. Fügt einen Esslöffel Öl hinzu, den du ändern kannst.';
+
+  @override
+  String get aiModelRecommended => 'Empfohlen';
 }

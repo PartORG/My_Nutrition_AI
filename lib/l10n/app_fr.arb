@@ -383,7 +383,7 @@
   "aiModelStandard": "Standard · {gb} Go",
   "aiModelStandardHint": "Réponses plus rapides. Fonctionne sur tous les téléphones compatibles.",
   "aiModelLarge": "Plus grand · {gb} Go",
-  "aiModelLargeHint": "Comprend mieux, répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 12 Go de RAM.",
+  "aiModelLargeHint": "Comprend mieux et reconnaît mieux les aliments sur les photos ; répond environ 2 à 3 fois plus lentement. Pour les téléphones avec 12 Go de RAM.",
   "aiModelSwitch": "Changer",
   "aiModelSwitchBody": "L’autre modèle se télécharge d’abord ; l’actuel est supprimé une fois terminé.",
   "aiModelInUse": "Utilisé",
@@ -672,5 +672,9 @@
   "listening": "J’écoute… touchez le micro pour arrêter",
   "transcribing": "J’écris ce que vous avez dit…",
   "voiceNothingHeard": "Rien entendu. Réessayez, un peu plus près du téléphone.",
-  "micDenied": "Le micro est désactivé pour cette appli. Activez-le dans les paramètres Android pour parler à l’assistant."
+  "micDenied": "Le micro est désactivé pour cette appli. Activez-le dans les paramètres Android pour parler à l’assistant.",
+  "reviewCheck": "À vérifier : l’IA n’est pas sûre",
+  "reviewAddFat": "Cuit avec de l’huile ou du beurre ?",
+  "reviewAddFatHint": "C’est souvent le cas pour les plats frits ou rôtis, et une photo ne le montre pas. Ajoute une cuillère à soupe d’huile, modifiable.",
+  "aiModelRecommended": "Recommandé"
 }

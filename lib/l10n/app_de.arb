@@ -383,7 +383,7 @@
   "aiModelStandard": "Standard · {gb} GB",
   "aiModelStandardHint": "Schnellere Antworten. Läuft auf jedem unterstützten Handy.",
   "aiModelLarge": "Größer · {gb} GB",
-  "aiModelLargeHint": "Versteht mehr, antwortet etwa 2–3-mal langsamer. Für Handys mit 12 GB RAM.",
+  "aiModelLargeHint": "Versteht mehr und erkennt Essen auf Fotos besser; antwortet etwa 2–3-mal langsamer. Für Handys mit 12 GB RAM.",
   "aiModelSwitch": "Wechseln",
   "aiModelSwitchBody": "Zuerst wird das andere Modell geladen; das aktuelle wird gelöscht, wenn das fertig ist.",
   "aiModelInUse": "In Verwendung",
@@ -672,5 +672,9 @@
   "listening": "Ich höre zu… tippe aufs Mikrofon zum Beenden",
   "transcribing": "Schreibe auf, was du gesagt hast…",
   "voiceNothingHeard": "Nichts gehört. Versuch es noch einmal, etwas näher am Handy.",
-  "micDenied": "Das Mikrofon ist für diese App ausgeschaltet. Schalte es in den Android-Einstellungen ein, um mit dem Assistenten zu sprechen."
+  "micDenied": "Das Mikrofon ist für diese App ausgeschaltet. Schalte es in den Android-Einstellungen ein, um mit dem Assistenten zu sprechen.",
+  "reviewCheck": "Prüfen: Die KI ist unsicher",
+  "reviewAddFat": "Mit Öl oder Butter zubereitet?",
+  "reviewAddFatHint": "Gebratenes oder Geröstetes meist schon, und ein Foto zeigt es nicht. Fügt einen Esslöffel Öl hinzu, den du ändern kannst.",
+  "aiModelRecommended": "Empfohlen"
 }

@@ -1395,7 +1395,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get aiModelLargeHint =>
-      'Розуміє більше, відповідає приблизно у 2–3 рази повільніше. Для телефонів із 12 ГБ RAM.';
+      'Розуміє більше й краще розпізнає їжу на фото; відповідає приблизно у 2–3 рази повільніше. Для телефонів із 12 ГБ RAM.';
 
   @override
   String get aiModelSwitch => 'Змінити';
@@ -2438,4 +2438,17 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get micDenied =>
       'Мікрофон для цього застосунку вимкнено. Увімкніть його в налаштуваннях Android, щоб говорити з помічником.';
+
+  @override
+  String get reviewCheck => 'Перевірте: ШІ не впевнений';
+
+  @override
+  String get reviewAddFat => 'Готували на олії чи маслі?';
+
+  @override
+  String get reviewAddFatHint =>
+      'Смажене чи запечене зазвичай так, а на фото цього не видно. Додає столову ложку олії, яку можна змінити.';
+
+  @override
+  String get aiModelRecommended => 'Рекомендовано';
 }

@@ -170,6 +170,16 @@ const userDbMigrations = <String>[
   ''',
   // v11: which recipe a shopping item is for ("For: Lentil dal").
   'ALTER TABLE shopping_list ADD COLUMN for_recipe TEXT;',
+  // v12: the food the user picked on the photo review for what Gemma saw, so the next photo starts there.
+  '''
+  CREATE TABLE food_corrections (
+    seen       TEXT PRIMARY KEY,   -- Gemma's name, lower case
+    kind       TEXT NOT NULL,      -- food, dish, recipe or product
+    food_id    TEXT NOT NULL,      -- its id (a product's barcode), as text
+    label      TEXT NOT NULL,      -- its name, to find it again
+    updated_at INTEGER NOT NULL
+  ) WITHOUT ROWID;
+  ''',
 ];
 
 Database openUserDb(String path) {

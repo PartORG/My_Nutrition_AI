@@ -900,7 +900,7 @@
       }
     }
   },
-  "aiModelLargeHint": "Understands more, answers about 2-3x slower. For phones with 12 GB RAM.",
+  "aiModelLargeHint": "Understands more and recognises food on photos better; answers about 2-3x slower. For phones with 12 GB RAM.",
   "aiModelSwitch": "Switch",
   "aiModelSwitchBody": "The other model downloads first; the current one is deleted when it's done.",
   "aiModelInUse": "In use",
@@ -1618,5 +1618,9 @@
   "listening": "Listening… tap the mic to stop",
   "transcribing": "Writing down what you said…",
   "voiceNothingHeard": "Nothing heard. Try again, a little closer to the phone.",
-  "micDenied": "The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant."
+  "micDenied": "The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant.",
+  "reviewCheck": "Check this: the AI isn't sure",
+  "reviewAddFat": "Cooked with oil or butter?",
+  "reviewAddFatHint": "Fried or roasted food usually is, and a photo can't show it. Adds a tablespoon of oil, which you can change.",
+  "aiModelRecommended": "Recommended"
 }

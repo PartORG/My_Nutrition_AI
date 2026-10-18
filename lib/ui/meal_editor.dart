@@ -23,6 +23,7 @@ class MealItemEditor extends StatefulWidget {
     this.seen,
     this.servingG,
     this.estimated = true,
+    this.check = false,
   });
 
   /// The database food; null = nothing matched yet (only Change and × then).
@@ -33,6 +34,9 @@ class MealItemEditor extends StatefulWidget {
   final double grams;
   final double? kcal, servingG;
   final bool estimated;
+
+  /// The AI isn't sure of this one (only one of its looks saw it, or no row fitted): "Check this".
+  final bool check;
   final VoidCallback onChange, onRemove;
   final ValueChanged<double> onGrams;
 
@@ -115,6 +119,15 @@ class _MealItemEditorState extends State<MealItemEditor> {
                     ]),
                     if (seen != null && seen.toLowerCase() != label.toLowerCase())
                       Text(l.seenAs(seen), style: TextStyle(fontSize: 13, color: c.muted)),
+                    if (widget.check)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.help_outline, size: 15, color: c.onWarm),
+                          const SizedBox(width: 4),
+                          Flexible(child: Text(l.reviewCheck, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.onWarm))),
+                        ]),
+                      ),
                   ]),
                 ),
               ),

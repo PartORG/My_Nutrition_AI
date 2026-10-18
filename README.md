@@ -51,7 +51,9 @@ accounts, no cloud inference and no analytics SDK.
 - **Health journal:** symptoms and readings on a timeline, plus a PDF/CSV export for your doctor.
   The app records data and never interprets it.
 - **Camera:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods and
-  estimates portions, and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
+  estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
+  foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
+  corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
   detected goes through a review screen before it is logged. No photo is ever stored.
 - **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
   remove it, add one, or change the amount (also by half servings) before saving. Every log can be
