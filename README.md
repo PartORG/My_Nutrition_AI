@@ -280,6 +280,7 @@ tool/         Python builders for nutri.db (incl. build_medical.py) and the prod
 test/         host tests
 integration_test/  on-device evaluation and latency tests
 docs/         plan and decisions, data sources, billing and Play release guides
+site/         privacy policy and terms (not hosted yet)
 ```
 
 [`docs/PLAN.md`](docs/PLAN.md) records the architecture and product decisions and is binding.

@@ -314,7 +314,7 @@ Built:
 - Release: `INTERNET` declared; implied `READ_PHONE_STATE` / storage permissions removed (TFLite GPU's and
   CameraX's old manifests); **arm64 only** — plugin `.so` files for other ABIs are excluded, else Play would
   offer the app to 32-bit/x86 phones that crash on start. `.aab` 257 MB (≈180 MB of it EmbeddingGemma).
-- Legal (`site/` removed 2026-10-18): `site/` (landing, privacy policy, terms with the Gemma notice + Prohibited Use Policy, wellness
+- Legal: `site/` (landing, privacy policy, terms with the Gemma notice + Prohibited Use Policy, wellness
   disclaimer) deployed by `.github/workflows/pages.yml`; links in Me and on the paywall; model licences
   (Apache 2.0 text, Gemma notice) on the in-app licences page.
 - `docs/PLAY_RELEASE.md`: upload key, build, internal-testing checklist, device catalog (RAM ≥ 6 GB),
