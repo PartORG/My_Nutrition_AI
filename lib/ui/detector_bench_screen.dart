@@ -12,7 +12,7 @@ import '../vision/detector.dart';
 import 'theme.dart';
 
 /// Developer only (DEV_BILLING builds, Settings → About), so English only: EfficientDet-Lite0 against the
-/// YOLOX-Tiny food detector on this phone's CPU (step 7), and YOLOX on a gallery photo.
+/// YOLOX-Tiny food detector on this phone's CPU, GPU and NNAPI (step 7), and YOLOX on a gallery photo.
 class DetectorBenchScreen extends StatefulWidget {
   const DetectorBenchScreen({super.key});
 
@@ -44,7 +44,8 @@ Future<(int, List<Detection>)> _detect(int address, Uint8List input, List<String
       final sw = Stopwatch()..start();
       it.invoke();
       final us = sw.elapsedMicroseconds;
-      return (us, decodeYolox(it.getOutputTensor(0).data.buffer.asFloat32List(), labels, w, h));
+      // 0.25, not the app's 0.4: shows what the model almost found.
+      return (us, decodeYolox(it.getOutputTensor(0).data.buffer.asFloat32List(), labels, w, h, threshold: .25));
     });
 
 class _DetectorBenchScreenState extends State<DetectorBenchScreen> {
@@ -69,49 +70,86 @@ class _DetectorBenchScreenState extends State<DetectorBenchScreen> {
 
   Future<void> _bench() => _guard(() async {
         _lines.clear();
-        for (final (asset, threads) in [
-          (TfliteDetector.asset, 2), (TfliteDetector.asset, 4), (yoloxAsset, 2), (yoloxAsset, 4)
-        ]) {
-          final sw = Stopwatch()..start();
-          final it = await Interpreter.fromAsset(asset, options: InterpreterOptions()..threads = threads);
-          final load = sw.elapsedMilliseconds;
-          try {
-            final input = Uint8List(it.getInputTensor(0).numBytes());
-            final us = (await _time(it.address, input, _warmup + _runs)).skip(_warmup).toList()..sort();
-            String ms(double p) => (us[(p * (us.length - 1)).round()] / 1000).toStringAsFixed(1);
-            _say('${asset.split('/').last}, $threads threads: median ${ms(.5)} ms, p90 ${ms(.9)} ms '
-                '(load $load ms)');
-          } finally {
-            it.close();
+        // CPU at 2 threads (4 was slower on the Xiaomi 11T for both), the GPU delegate (runs the int8 model in
+        // fp16) and NNAPI (the phone's AI chip; deprecated in Android 15, so measured, not relied on).
+        for (final how in ['CPU', 'GPU', 'NNAPI']) {
+          for (final asset in [TfliteDetector.asset, yoloxAsset]) {
+            final name = '${asset.split('/').last}, $how';
+            final gpu = how == 'GPU' ? GpuDelegateV2() : null;
+            final options = InterpreterOptions()..threads = 2;
+            if (gpu != null) options.addDelegate(gpu);
+            if (how == 'NNAPI') options.useNnApiForAndroid = true;
+            Interpreter? it;
+            try {
+              final sw = Stopwatch()..start();
+              it = await Interpreter.fromAsset(asset, options: options);
+              final load = sw.elapsedMilliseconds; // GPU: includes compiling its kernels
+              final input = Uint8List(it.getInputTensor(0).numBytes());
+              final us = (await _time(it.address, input, _warmup + _runs)).skip(_warmup).toList()..sort();
+              String ms(double p) => (us[(p * (us.length - 1)).round()] / 1000).toStringAsFixed(1);
+              _say('$name: median ${ms(.5)} ms, p90 ${ms(.9)} ms (load $load ms)');
+            } catch (e) {
+              _say('$name: failed: $e');
+            } finally {
+              it?.close();
+              gpu?.delete(); // after the interpreter that uses it
+            }
           }
         }
       });
 
-  Future<void> _tryPhoto() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1280, maxHeight: 1280);
+  /// YOLOX on one photo, tiled ([photoTiles]), on the CPU and on NNAPI (the fastest in the benchmark: are its
+  /// int8 results the same?). A screenshot of a web page still leaves the food tiny: take a real meal photo.
+  Future<void> _tryPhoto(ImageSource source) async {
+    final file = await ImagePicker().pickImage(source: source, maxWidth: 1280, maxHeight: 1280);
     if (file == null) return;
     await _guard(() async {
-      final desc = await ui.ImageDescriptor.encoded(await ui.ImmutableBuffer.fromUint8List(await file.readAsBytes()));
-      final r = min(yoloxSize / desc.width, yoloxSize / desc.height);
-      final w = (desc.width * r).floor(), h = (desc.height * r).floor();
-      final image = (await (await desc.instantiateCodec(targetWidth: w, targetHeight: h)).getNextFrame()).image;
-      final rgba = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List();
-      final input = letterboxBgr(rgba, w, h).buffer.asUint8List();
+      final image = await decodeImageFromList(await file.readAsBytes());
       final labels = readYoloxLabels(await rootBundle.loadString(yoloxLabelsAsset));
-      final it = await Interpreter.fromAsset(yoloxAsset, options: InterpreterOptions()..threads = 4);
-      try {
-        final (us, found) = await _detect(it.address, input, labels, w, h);
-        if (!mounted) {
-          image.dispose();
-          return;
-        }
-        _photo?.image.dispose();
-        setState(() => _photo = (image: image, found: found));
-        _say('Photo: ${(us / 1000).toStringAsFixed(1)} ms, ${found.length} found: '
-            '${found.map((d) => '${d.label} ${d.score.toStringAsFixed(2)}').join(', ')}');
-      } finally {
-        it.close();
+      // Each tile cropped from the full photo and scaled to fit the model, once for both runs.
+      final inputs = <(Rect, Uint8List, int, int)>[];
+      for (final tile in photoTiles) {
+        final src = Rect.fromLTRB(tile.left * image.width, tile.top * image.height, tile.right * image.width,
+            tile.bottom * image.height);
+        final r = min(yoloxSize / src.width, yoloxSize / src.height);
+        final w = (src.width * r).floor(), h = (src.height * r).floor();
+        final rec = ui.PictureRecorder();
+        Canvas(rec).drawImageRect(image, src, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
+            Paint()..filterQuality = FilterQuality.medium);
+        final crop = await rec.endRecording().toImage(w, h);
+        final rgba = (await crop.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List();
+        crop.dispose();
+        inputs.add((tile, letterboxBgr(rgba, w, h).buffer.asUint8List(), w, h));
       }
+      var found = <Detection>[];
+      for (final how in ['CPU', 'NNAPI']) {
+        final options = InterpreterOptions()..threads = 2;
+        if (how == 'NNAPI') options.useNnApiForAndroid = true;
+        final it = await Interpreter.fromAsset(yoloxAsset, options: options);
+        try {
+          var us = 0, whole = 0;
+          final all = <Detection>[];
+          for (final (tile, input, w, h) in inputs) {
+            final (t, d) = await _detect(it.address, input, labels, w, h);
+            us += t;
+            if (tile == photoTiles.first) whole = d.length;
+            all.addAll(d.map((d) => fromTile(d, tile)));
+          }
+          final merged = mergeTiles(all);
+          if (how == 'CPU') found = merged; // the boxes drawn: CPU is the reference
+          final names = merged.map((d) => '${d.label} ${d.score.toStringAsFixed(2)}').join(', ');
+          _say('$how: ${(us / 1000).toStringAsFixed(1)} ms for ${inputs.length} tiles, $whole found on the whole '
+              'photo, ${merged.length} tiled: $names');
+        } finally {
+          it.close();
+        }
+      }
+      if (!mounted) {
+        image.dispose();
+        return;
+      }
+      _photo?.image.dispose();
+      setState(() => _photo = (image: image, found: found));
     });
   }
 
@@ -127,13 +165,19 @@ class _DetectorBenchScreenState extends State<DetectorBenchScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Detector benchmark')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text('CPU, $_runs runs after $_warmup warm-up runs. Close other apps first; a release build gives the '
-            'real numbers.', style: TextStyle(color: c.muted)),
+        Text('CPU, GPU and NNAPI, $_runs runs after $_warmup warm-up runs. Close other apps first; a release build '
+            'gives the real numbers.', style: TextStyle(color: c.muted)),
         const SizedBox(height: 12),
+        FilledButton(onPressed: _busy ? null : _bench, child: const Text('Run benchmark')),
+        const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: FilledButton(onPressed: _busy ? null : _bench, child: const Text('Run benchmark'))),
+          Expanded(
+              child: OutlinedButton(
+                  onPressed: _busy ? null : () => _tryPhoto(ImageSource.camera), child: const Text('Take a photo'))),
           const SizedBox(width: 12),
-          Expanded(child: OutlinedButton(onPressed: _busy ? null : _tryPhoto, child: const Text('Try a photo'))),
+          Expanded(
+              child: OutlinedButton(
+                  onPressed: _busy ? null : () => _tryPhoto(ImageSource.gallery), child: const Text('Pick a photo'))),
         ]),
         if (_busy) const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator()),
         for (final line in _lines) Padding(padding: const EdgeInsets.only(top: 12), child: SelectableText(line)),

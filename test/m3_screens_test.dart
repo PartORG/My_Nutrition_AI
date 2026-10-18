@@ -98,6 +98,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Male'));
     await tester.enterText(find.widgetWithText(TextFormField, 'Birth year'), '1996');
+    await tester.tap(find.text('Birth month'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('March').last);
+    await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextFormField, 'ft'), '5');
     await tester.enterText(find.widgetWithText(TextFormField, 'in'), '11');
     await tester.enterText(find.widgetWithText(TextFormField, 'Weight (lb)'), '176');
@@ -110,6 +114,20 @@ void main() {
         reason: 'the form weight is a reading too, so the weight trend sees it');
     expect(b.weightKg, closeTo(79.83, .01)); // 176 lb
     expect((b.sex, b.imperial, b.activity, b.goal), (Sex.male, true, Activity.light, Goal.maintain));
+    expect((b.birthYear, b.birthMonth), (1996, 3));
+  });
+
+  testWidgets('goals form: "lose weight" with a BMI under 18.5 says the targets stay at maintain', (tester) async {
+    await pumpApp(tester, const GoalsScreen());
+    await tester.enterText(find.widgetWithText(TextFormField, 'Height (cm)'), '180');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Weight (kg)'), '55'); // BMI 17
+    await tester.ensureVisible(find.text('Lose weight'));
+    await tester.tap(find.text('Lose weight'));
+    await tester.pump();
+    expect(find.textContaining('BMI is under 18.5'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Weight (kg)'), '65'); // BMI 20
+    await tester.pump();
+    expect(find.textContaining('BMI is under 18.5'), findsNothing);
   });
 
   testWidgets('goals form rejects impossible numbers', (tester) async {
@@ -120,6 +138,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pump();
     expect(find.text('Enter a valid number'), findsNWidgets(3)); // year, height, empty weight
+    expect(find.text('Choose a month'), findsOneWidget);
     expect(loadBody(data.user), isNull);
   });
 
@@ -127,7 +146,7 @@ void main() {
     await pumpApp(tester, const HomeScreen(name: 'Anna'));
     expect(find.text('Set your daily goals'), findsOneWidget);
 
-    saveBody(data.user, (sex: Sex.male, birthYear: 1996, heightCm: 180, weightKg: 80,
+    saveBody(data.user, (sex: Sex.male, birthYear: 1996, birthMonth: 3, heightCm: 180, weightKg: 80,
         activity: Activity.moderate, goal: Goal.maintain, imperial: false), now: DateTime.now());
     final soy = data.tools.searchFood('soy sauce').firstWhere((f) => f.kind == 'food');
     data.tools.logFood(soy, 50, 'lunch'); // 2747 mg sodium: over the 2000 mg limit
@@ -274,11 +293,11 @@ void main() {
   });
 
   testWidgets('Me: the hero shows the details; the goal is changed from its row', (tester) async {
-    saveBody(data.user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
+    saveBody(data.user, (sex: Sex.female, birthYear: 1980, birthMonth: 3, heightCm: 165, weightKg: 62,
         activity: Activity.light, goal: Goal.lose, imperial: false), now: DateTime.now());
     data.user.execute("INSERT INTO user_allergens (allergen, added_at) VALUES ('peanuts', 0)");
     await pumpApp(tester, const Scaffold(body: MeScreen()));
-    for (final t in ['Anna', '165 cm', '62.0 kg', '1980', 'Goal: lose weight', 'Light: exercise 1–3 days a week',
+    for (final t in ['Anna', '165 cm', '62.0 kg', 'Mar 1980', 'Goal: lose weight', 'Light: exercise 1–3 days a week',
         'Daily targets', 'Energy']) {
       expect(find.text(t), findsOneWidget, reason: t);
     }

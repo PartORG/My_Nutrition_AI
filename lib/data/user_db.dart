@@ -180,6 +180,8 @@ const userDbMigrations = <String>[
     updated_at INTEGER NOT NULL
   ) WITHOUT ROWID;
   ''',
+  // v13: birth month (1-12), so the under-18 check is exact to the month. Null: not given yet.
+  'ALTER TABLE body ADD COLUMN birth_month INTEGER;',
 ];
 
 Database openUserDb(String path) {

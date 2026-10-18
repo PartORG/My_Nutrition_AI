@@ -85,7 +85,7 @@ void main() {
   });
 
   test('condition limits only tighten targets, even manual ones', () {
-    saveBody(user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
+    saveBody(user, (sex: Sex.female, birthYear: 1980, birthMonth: 3, heightCm: 165, weightKg: 62,
         activity: Activity.light, goal: Goal.maintain, imperial: false), now: now);
     final before = currentTargets(user, nutri: nutri, now: now).values;
     expect(before['sugar_g'], greaterThan(25));

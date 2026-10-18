@@ -29,7 +29,9 @@ accounts, no cloud inference and no analytics SDK.
   products, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
   meal in one tap.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
-  (lose, maintain or gain), with a manual override for every value. Micronutrients: calcium, iron,
+  (lose, maintain or gain), with a manual override for every value. Age counts from the birth month, so
+  the adult formulas start exactly at 18; with a BMI under 18.5, "lose" keeps the maintain targets and
+  says why. Micronutrients: calcium, iron,
   magnesium, potassium and vitamins C, D and B12.
 - **Dashboards:** Today, Week (with a weekly review), Month and Year views, water tracking, fasting,
   streaks and an Android home-screen widget. Totals that include estimates are marked "≈". A weight
@@ -56,19 +58,23 @@ accounts, no cloud inference and no analytics SDK.
   corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
   detected goes through a review screen before it is logged. No photo is ever stored.
 - **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
-  2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. It will replace EfficientDet for the live boxes once it
-  is measured on phones; for now only the developer benchmark (Settings → About in `DEV_BILLING` builds) runs it.
+  2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. On a Xiaomi 11T it runs in 21 ms on NNAPI (the
+  phone's AI chip, same results as the CPU), 53 ms on the GPU and 146 ms on the CPU. Photos are also searched
+  in four overlapping quarters, so small foods are found too. It will replace EfficientDet once real meal photos
+  confirm it; for now only the developer benchmark (Settings → About in `DEV_BILLING` builds) runs it.
   Training and export: `tool/detector_data.py`, `tool/yolox_tiny_food.py`, `tool/detector_export.py`.
 - **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
   remove it, add one, or change the amount (also by half servings) before saving. Every log can be
   undone, and a meal on Today can be changed later (food, amount or meal).
 - **Health Connect / Apple Health:** reads weight, steps and burnt calories (active calories, or for Google Fit,
   which writes only totals, the total minus your resting burn so far). Burnt calories show as
-  a second ring on Today, next to the calories left, and are never added to the goal. Steps refresh
+  a second ring on Today, next to the calories left, and are never added to the goal (it already counts your
+  activity level). Steps refresh
   while the app is open; disconnect from the steps tile or in Settings.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
   edit or delete everything it knows about you.
-- **One profile per phone:** unlocked by fingerprint, with a PIN as the fallback. You can change the
+- **One profile per phone:** sign-up is a name and a PIN, then the goals (sex is asked once, there, and the
+  avatar follows it). Unlocked by fingerprint, with a PIN as the fallback. You can change the
   PIN in Settings. Signing up with Google is optional (see Build flags), and the account can be linked
   or unlinked later. Nothing leaves the phone.
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or

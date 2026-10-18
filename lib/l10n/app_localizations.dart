@@ -876,6 +876,24 @@ abstract class AppLocalizations {
   /// **'Gain weight'**
   String get goalGain;
 
+  /// No description provided for @birthMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth month'**
+  String get birthMonth;
+
+  /// No description provided for @chooseMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a month'**
+  String get chooseMonth;
+
+  /// No description provided for @underweightNoLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Your BMI is under 18.5, so losing weight isn\'t safe: your targets stay at maintaining your weight. Talk to a doctor if you want to change it.'**
+  String get underweightNoLose;
+
   /// No description provided for @invalidNumber.
   ///
   /// In en, this message translates to:
@@ -4031,12 +4049,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your picture'**
   String get avatarTitle;
-
-  /// No description provided for @avatarHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Shown in the chat and on the unlock screen. You can change it, or use a photo, in Settings.'**
-  String get avatarHint;
 
   /// No description provided for @avatarWoman.
   ///

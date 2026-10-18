@@ -67,7 +67,7 @@ void main() {
       final user = openUserDb('${tmp.path}/user.db');
       data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
       profiles = Profiles.open(tmp);
-      saveBody(user, (sex: Sex.male, birthYear: 1990, heightCm: 180, weightKg: 82,
+      saveBody(user, (sex: Sex.male, birthYear: 1990, birthMonth: 3, heightCm: 180, weightKg: 82,
           activity: Activity.moderate, goal: Goal.maintain, imperial: false), now: DateTime(2026, 9, 1));
       final now = DateTime.now();
       for (var d = 0; d < 9; d++) {

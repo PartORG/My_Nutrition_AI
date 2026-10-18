@@ -8,9 +8,10 @@ import 'package:myfoodmind/data/user_db.dart';
 void main() {
   final now = DateTime(2026, 10, 4);
 
-  Body body({Sex sex = Sex.male, int age = 30, double h = 180, double w = 80,
+  Body body({Sex sex = Sex.male, int age = 30, int? month, double h = 180, double w = 80,
           Activity a = Activity.moderate, Goal g = Goal.maintain}) =>
-      (sex: sex, birthYear: now.year - age, heightCm: h, weightKg: w, activity: a, goal: g, imperial: false);
+      (sex: sex, birthYear: now.year - age, birthMonth: month, heightCm: h, weightKg: w, activity: a, goal: g,
+          imperial: false);
 
   group('reference values (worked by hand from the formulas)', () {
     test('man, 30 y, 180 cm, 80 kg, moderate, maintain', () {
@@ -46,6 +47,25 @@ void main() {
     test('under 18: no computed targets', () {
       expect(computeTargets(body(age: 17), now: now), isNull);
       expect(computeTargets(body(age: 18), now: now), isNotNull);
+    });
+
+    test('the birth month makes the 18 check exact; in the birth month the birthday counts as not yet', () {
+      // now is 4 Oct 2026; born 2008 is 18 by the year alone.
+      expect(ageOn(body(age: 18, month: 9), now), 18);
+      expect(ageOn(body(age: 18, month: 10), now), 17, reason: 'birthday this month: maybe not yet');
+      expect(ageOn(body(age: 18, month: 12), now), 17);
+      expect(computeTargets(body(age: 18, month: 12), now: now), isNull, reason: 'born Dec 2008: still 17');
+      expect(ageOn(body(age: 18), now), 18, reason: 'no month (before v13): the year alone');
+    });
+
+    test('underweight (BMI < 18.5): "lose" gives the maintain targets', () {
+      final thin = body(h: 180, w: 55); // BMI 17.0
+      expect(underweight(180, 55), isTrue);
+      expect(underweight(180, 60), isFalse); // BMI 18.52
+      expect(computeTargets((sex: thin.sex, birthYear: thin.birthYear, birthMonth: null, heightCm: 180, weightKg: 55,
+              activity: thin.activity, goal: Goal.lose, imperial: false), now: now)!['kcal'],
+          computeTargets(thin, now: now)!['kcal']);
+      expect(computeTargets(body(g: Goal.lose), now: now)!['kcal'], closeTo(2759 * .85, .01), reason: 'BMI 24.7');
     });
   });
 
@@ -85,6 +105,15 @@ void main() {
       expect(currentTargets(user, nutri: null, now: now).values, isEmpty);
       setOverride(user, 'kcal', 2000);
       expect(currentTargets(user, nutri: null, now: now).values, {'kcal': 2000});
+      user.close();
+    });
+
+    test('the birth month is saved and read back; a v12 row has none', () {
+      final user = openUserDb('${tmp.path}/user.db');
+      saveBody(user, body(month: 7), now: now);
+      expect(loadBody(user)!.birthMonth, 7);
+      user.execute('UPDATE body SET birth_month = NULL');
+      expect(loadBody(user)!.birthMonth, isNull);
       user.close();
     });
 

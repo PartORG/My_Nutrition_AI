@@ -466,6 +466,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get goalGain => 'Zunehmen';
 
   @override
+  String get birthMonth => 'Geburtsmonat';
+
+  @override
+  String get chooseMonth => 'Wähle einen Monat';
+
+  @override
+  String get underweightNoLose =>
+      'Dein BMI liegt unter 18,5, Abnehmen ist daher nicht sicher: Deine Ziele bleiben beim Halten des Gewichts. Sprich mit einer Ärztin oder einem Arzt, wenn du es ändern möchtest.';
+
+  @override
   String get invalidNumber => 'Gib eine gültige Zahl ein';
 
   @override
@@ -2364,10 +2374,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get avatarTitle => 'Dein Bild';
-
-  @override
-  String get avatarHint =>
-      'Erscheint im Chat und auf dem Entsperrbildschirm. Du kannst es in den Einstellungen ändern oder ein Foto nehmen.';
 
   @override
   String get avatarWoman => 'Frau';

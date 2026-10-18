@@ -175,7 +175,7 @@ class MeScreen extends ConsumerWidget {
                               onTap: () => open(WeightScreen(data: data)),
                             ),
                             const SizedBox(width: 8),
-                            fact(l.bornLabel, '${body.birthYear}'),
+                            fact(l.bornLabel, born(body, Localizations.localeOf(context).toString())),
                           ]),
                         ),
                         const SizedBox(height: 8),
@@ -450,6 +450,7 @@ class MeScreen extends ConsumerWidget {
     Body body,
   ) async {
     final l = AppLocalizations.of(context)!;
+    final thin = underweight(body.heightCm, body.weightKg);
     final goal = await showDialog<Goal>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -458,6 +459,9 @@ class MeScreen extends ConsumerWidget {
           for (final g in Goal.values)
             ListTile(
               title: Text(_goal(g, l)),
+              // Underweight: losing gives the maintain targets anyway (computeTargets), so say why.
+              subtitle: g == Goal.lose && thin ? Text(l.underweightNoLose) : null,
+              enabled: !(g == Goal.lose && thin),
               trailing: g == body.goal ? const Icon(Icons.check) : null,
               onTap: () => Navigator.pop(context, g),
             ),
@@ -468,6 +472,7 @@ class MeScreen extends ConsumerWidget {
     saveBody(data.user, (
       sex: body.sex,
       birthYear: body.birthYear,
+      birthMonth: body.birthMonth,
       heightCm: body.heightCm,
       weightKg: body.weightKg,
       activity: body.activity,
@@ -708,3 +713,7 @@ class _Link extends StatelessWidget {
     );
   }
 }
+
+/// "Mar 1990", or the year alone when the month wasn't given (before v13).
+String born(Body b, String locale) =>
+    b.birthMonth == null ? '${b.birthYear}' : DateFormat.yMMM(locale).format(DateTime(b.birthYear, b.birthMonth!));

@@ -470,6 +470,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get goalGain => 'Набрати вагу';
 
   @override
+  String get birthMonth => 'Місяць народження';
+
+  @override
+  String get chooseMonth => 'Виберіть місяць';
+
+  @override
+  String get underweightNoLose =>
+      'Ваш ІМТ нижчий за 18,5, тож схуднення небезпечне: цілі залишаються на рівні підтримки ваги. Якщо хочете її змінити, порадьтеся з лікарем.';
+
+  @override
   String get invalidNumber => 'Введіть правильне число';
 
   @override
@@ -2380,10 +2390,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get avatarTitle => 'Ваше зображення';
-
-  @override
-  String get avatarHint =>
-      'Видно в чаті й на екрані розблокування. Змінити його або вибрати фото можна в налаштуваннях.';
 
   @override
   String get avatarWoman => 'Жінка';

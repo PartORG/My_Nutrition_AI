@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../data/diary.dart' show logWeight;
@@ -24,6 +25,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   final _ft = TextEditingController();
   final _in = TextEditingController();
   final _weight = TextEditingController();
+  int? _month;
   var _sex = Sex.female;
   var _activity = Activity.light;
   var _goal = Goal.maintain;
@@ -40,6 +42,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     _goal = b.goal;
     _imperial = b.imperial;
     _year.text = '${b.birthYear}';
+    _month = b.birthMonth;
     _setHeight(b.heightCm);
     _weight.text = _fmt(b.imperial ? kgToLb(b.weightKg) : b.weightKg);
   }
@@ -86,6 +89,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     saveBody(data.user, (
       sex: _sex,
       birthYear: int.parse(_year.text),
+      birthMonth: _month,
       heightCm: _heightCm!,
       weightKg: kg,
       activity: _activity,
@@ -101,6 +105,9 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final year = DateTime.now().year;
+    final locale = Localizations.localeOf(context).toString();
+    final h = _heightCm, w = _num(_weight);
+    final thin = h != null && w != null && h > 0 && underweight(h, _imperial ? w * lbToKg : w);
     String? range(String? v, double min, double max) {
       final n = double.tryParse((v ?? '').replaceAll(',', '.'));
       return n == null || n < min || n > max ? l.invalidNumber : null;
@@ -151,29 +158,50 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             onSelectionChanged: (s) => setState(() => _sex = s.single),
           ),
           gap,
-          TextFormField(
-            controller: _year,
-            decoration: label(l.birthYear),
-            keyboardType: TextInputType.number,
-            validator: (v) => range(v, year - 120.0, year - 1.0),
-          ),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                initialValue: _month,
+                isExpanded: true,
+                decoration: label(l.birthMonth),
+                items: [
+                  for (var m = 1; m <= 12; m++)
+                    DropdownMenuItem(value: m, child: Text(DateFormat.MMMM(locale).format(DateTime(2000, m)))),
+                ],
+                validator: (m) => m == null ? l.chooseMonth : null,
+                onChanged: (m) => setState(() => _month = m),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _year,
+                decoration: label(l.birthYear),
+                keyboardType: TextInputType.number,
+                validator: (v) => range(v, year - 120.0, year - 1.0),
+              ),
+            ),
+          ]),
           gap,
           if (_imperial)
             Row(children: [
               Expanded(child: TextFormField(controller: _ft, decoration: label(l.heightFt),
+                  onChanged: (_) => setState(() {}),
                   keyboardType: TextInputType.number, validator: (v) => range(v, 2, 8))),
               const SizedBox(width: 12),
               Expanded(child: TextFormField(controller: _in, decoration: label(l.heightIn),
+                  onChanged: (_) => setState(() {}),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) => range(v, 0, 11.99))),
             ])
           else
-            TextFormField(controller: _cm, decoration: label(l.heightCm),
+            TextFormField(controller: _cm, onChanged: (_) => setState(() {}), decoration: label(l.heightCm),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => range(v, 50, 250)),
           gap,
           TextFormField(
             controller: _weight,
+            onChanged: (_) => setState(() {}), // the underweight note follows
             decoration: label(_imperial ? l.weightLb : l.weightKg),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: (v) => _imperial ? range(v, 44, 660) : range(v, 20, 300),
@@ -198,6 +226,10 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             selected: {_goal},
             onSelectionChanged: (s) => setState(() => _goal = s.single),
           ),
+          if (_goal == Goal.lose && thin) ...[
+            const SizedBox(height: 8),
+            Text(l.underweightNoLose, style: TextStyle(color: context.colors.danger)),
+          ],
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _save, child: Text(l.confirmSave)),
         ]),

@@ -388,11 +388,13 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 16),
           Divider(color: c.divider, height: 1),
           const SizedBox(height: 12),
+          // Goal − eaten = left. Burnt is shown, not added: the goal already counts the activity level, so adding
+          // the health app's calories would count the exercise twice.
           Row(children: [
             sum(_n(context, goal), l.goal, c.ink),
             sum('−$approx${_n(context, ate)}', l.eatenWord, c.ink),
-            if (burned != null) sum('+${_n(context, burned)}', l.burntWord, water),
             sum('$approx${over ? '−' : ''}${_n(context, left.abs())}', l.leftWord, over ? c.danger : c.primary),
+            if (burned != null) sum(_n(context, burned), l.burntWord, water),
           ]),
         ]),
       ),

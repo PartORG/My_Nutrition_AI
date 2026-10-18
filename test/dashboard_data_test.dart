@@ -49,7 +49,7 @@ void main() {
 
   test('weight logging (free) feeds both the trend and the goals', () {
     final at = DateTime(2026, 10, 4, 7);
-    saveBody(user, (sex: Sex.female, birthYear: 1990, heightCm: 165, weightKg: 70,
+    saveBody(user, (sex: Sex.female, birthYear: 1990, birthMonth: 3, heightCm: 165, weightKg: 70,
         activity: Activity.light, goal: Goal.lose, imperial: true), now: at.subtract(const Duration(days: 1)));
     logWeight(user, 150, imperial: true, at: at);
     expect(weightsSince(user, DateTime(2026, 9, 1)).single.kg, closeTo(68.04, .01));

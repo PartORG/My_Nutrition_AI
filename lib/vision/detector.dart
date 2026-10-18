@@ -1,4 +1,4 @@
-import 'dart:math' show exp;
+import 'dart:math' show exp, min;
 import 'dart:typed_data';
 import 'dart:ui' show Rect;
 
@@ -119,6 +119,44 @@ List<Detection> decodeYolox(List<double> raw, List<String> labels, int w, int h,
         box: Rect.fromLTRB(b.left.clamp(0, 1), b.top.clamp(0, 1), b.right.clamp(0, 1), b.bottom.clamp(0, 1)),
       )
   ];
+}
+
+/// Photo mode: the whole photo plus four quarters overlapping by 20%, so small foods are 2× bigger to the
+/// model (a flat-lay's 25 px item becomes 50 px). Live mode stays one pass. Normalized to the photo.
+const photoTiles = [
+  Rect.fromLTRB(0, 0, 1, 1),
+  Rect.fromLTRB(0, 0, .6, .6), Rect.fromLTRB(.4, 0, 1, .6),
+  Rect.fromLTRB(0, .4, .6, 1), Rect.fromLTRB(.4, .4, 1, 1),
+];
+
+/// A detection inside [tile] → the same one on the whole photo.
+Detection fromTile(Detection d, Rect tile) => (
+      label: d.label,
+      score: d.score,
+      box: Rect.fromLTRB(tile.left + d.box.left * tile.width, tile.top + d.box.top * tile.height,
+          tile.left + d.box.right * tile.width, tile.top + d.box.bottom * tile.height),
+    );
+
+/// All tiles' detections → one list, best first. Same-label boxes that mostly overlap (most of the smaller
+/// one inside the other: a tile's half plate and the whole photo's plate) become one: their combined box,
+/// the higher score. Plain NMS would keep the half plate when it scores higher.
+List<Detection> mergeTiles(List<Detection> all, {double overlap = .6}) {
+  final kept = <Detection>[];
+  for (final d in [...all]..sort((a, b) => b.score.compareTo(a.score))) {
+    final i = kept.indexWhere((k) {
+      if (k.label != d.label) return false;
+      final x = k.box.intersect(d.box);
+      if (x.width <= 0 || x.height <= 0) return false;
+      final smaller = min(k.box.width * k.box.height, d.box.width * d.box.height);
+      return x.width * x.height / smaller > overlap;
+    });
+    if (i < 0) {
+      kept.add(d);
+    } else {
+      kept[i] = (label: kept[i].label, score: kept[i].score, box: kept[i].box.expandToInclude(d.box));
+    }
+  }
+  return kept;
 }
 
 /// A YUV_420_888 camera frame → [outW]×[outH] RGB, rotated upright by

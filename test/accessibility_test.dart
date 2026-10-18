@@ -46,7 +46,7 @@ void main() {
     final nutri = openNutriDb('test/nutri_test.db');
     final user = openUserDb('${tmp.path}/user.db');
     data = ProfileData(profile: (id: 1, name: 'Anna'), nutri: nutri, user: user, tools: AgentTools(nutri, user));
-    saveBody(user, (sex: Sex.female, birthYear: 1980, heightCm: 165, weightKg: 62,
+    saveBody(user, (sex: Sex.female, birthYear: 1980, birthMonth: 3, heightCm: 165, weightKg: 62,
         activity: Activity.light, goal: Goal.lose, imperial: false), now: DateTime.now());
     for (final (q, g) in [('soy sauce', 60.0), ('lasagna', 350.0), ('banana', 118.0)]) {
       data.tools.logFood(data.tools.searchFood(q).first, g, 'lunch');

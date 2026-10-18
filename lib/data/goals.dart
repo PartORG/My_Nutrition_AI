@@ -35,6 +35,7 @@ enum Goal {
 typedef Body = ({
   Sex sex,
   int birthYear,
+  int? birthMonth, // 1-12; null: saved before v13, the year alone
   double heightCm,
   double weightKg,
   Activity activity,
@@ -48,9 +49,18 @@ const adultAge = 18;
 /// Lower kcal bound, so a "lose" goal never prescribes starving.
 const kcalFloor = {Sex.female: 1200.0, Sex.male: 1500.0, Sex.other: 1350.0};
 
+/// Whole years on [now]. In the birth month the birthday counts as not yet passed: with the month alone,
+/// that keeps a 17-year-old from ever getting the adult formulas.
+int ageOn(Body b, DateTime now) =>
+    now.year - b.birthYear - (b.birthMonth != null && now.month <= b.birthMonth! ? 1 : 0);
+
+/// Under this BMI (WHO: underweight) a deficit is unsafe: "lose" gives the maintain targets.
+const underweightBmi = 18.5;
+bool underweight(double heightCm, double weightKg) => weightKg / pow(heightCm / 100, 2) < underweightBmi;
+
 /// Mifflin-St Jeor resting kcal per day; null under 18.
 double? basalKcal(Body b, {required DateTime now}) {
-  final age = now.year - b.birthYear;
+  final age = ageOn(b, now);
   if (age < adultAge) return null;
   final base = 10 * b.weightKg + 6.25 * b.heightCm - 5 * age;
   return switch (b.sex) {
@@ -61,13 +71,14 @@ double? basalKcal(Body b, {required DateTime now}) {
 }
 
 /// Targets from the plan (docs/PLAN.md, Goals): Mifflin-St Jeor BMR × activity,
-/// ±15% for the goal, kcal floor; protein 1.2 g/kg, fat 30% of kcal, carbs the
+/// ±15% for the goal (no deficit when underweight), kcal floor; protein 1.2 g/kg, fat 30% of kcal, carbs the
 /// rest; fiber 14 g per 1000 kcal; WHO limits for sugar (10% of kcal) and
 /// sodium (2000 mg). Null under 18.
 Targets? computeTargets(Body b, {required DateTime now}) {
   final bmr = basalKcal(b, now: now);
   if (bmr == null) return null;
-  final kcal = max(bmr * b.activity.factor * (1 + b.goal.change), kcalFloor[b.sex]!);
+  final change = b.goal == Goal.lose && underweight(b.heightCm, b.weightKg) ? 0.0 : b.goal.change;
+  final kcal = max(bmr * b.activity.factor * (1 + change), kcalFloor[b.sex]!);
   final protein = 1.2 * b.weightKg;
   final fat = kcal * .30 / 9;
   return {
@@ -99,6 +110,7 @@ Body? loadBody(Database user) {
   return (
     sex: Sex.values.byName(r['sex'] as String),
     birthYear: r['birth_year'] as int,
+    birthMonth: r['birth_month'] as int?,
     heightCm: (r['height_cm'] as num).toDouble(),
     weightKg: weight,
     activity: Activity.fromDb(r['activity'] as String),
@@ -108,9 +120,9 @@ Body? loadBody(Database user) {
 }
 
 void saveBody(Database user, Body b, {required DateTime now}) => user.execute(
-      'INSERT OR REPLACE INTO body (id, sex, birth_year, height_cm, weight_kg, activity, goal, units, updated_at) '
-      'VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [b.sex.name, b.birthYear, b.heightCm, b.weightKg, b.activity.db, b.goal.name,
+      'INSERT OR REPLACE INTO body (id, sex, birth_year, birth_month, height_cm, weight_kg, activity, goal, units, '
+      'updated_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [b.sex.name, b.birthYear, b.birthMonth, b.heightCm, b.weightKg, b.activity.db, b.goal.name,
           b.imperial ? 'imperial' : 'metric', now.millisecondsSinceEpoch],
     );
 

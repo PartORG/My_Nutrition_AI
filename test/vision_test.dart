@@ -68,6 +68,22 @@ void main() {
       expect(decodeYolox(raw, ['a', 'b', 'c'], 416, 208).map((e) => e.label), ['b', 'a'], reason: '0.4 keeps both');
     });
 
+    test('photo tiles: boxes map back to the photo; a tile\'s half plate joins the whole plate', () {
+      final q = photoTiles[4]; // bottom-right quarter, 0.4-1 both ways
+      final d = fromTile((label: 'egg', score: .5, box: const Rect.fromLTRB(.5, .5, 1, 1)), q);
+      expect([d.box.left, d.box.top, d.box.right, d.box.bottom], [for (final v in [.7, .7, 1, 1]) closeTo(v, 1e-9)]);
+
+      Detection det(String label, double score, Rect box) => (label: label, score: score, box: box);
+      final merged = mergeTiles([
+        det('pasta', .6, const Rect.fromLTRB(.2, .2, .8, .8)), // whole photo: the plate
+        det('pasta', .8, const Rect.fromLTRB(.4, .4, .8, .8)), // a quarter: part of it, scores higher
+        det('egg', .5, const Rect.fromLTRB(.5, .5, .6, .6)), // another label inside: kept
+        det('egg', .4, const Rect.fromLTRB(.7, .7, .8, .8)), // a second egg elsewhere: kept
+      ]);
+      expect(merged.map((d) => (d.label, d.score)), [('pasta', .8), ('egg', .5), ('egg', .4)]);
+      expect(merged.first.box, const Rect.fromLTRB(.2, .2, .8, .8), reason: 'the combined box, not the half plate');
+    });
+
     test('YOLOX input: BGR, top-left, grey 114 padding; labels file matches the model\'s 169 = 5 + 164', () {
       final x = letterboxBgr(Uint8List.fromList([10, 20, 30, 255, 1, 2, 3, 255]), 2, 1);
       expect(x.sublist(0, 6), [30, 20, 10, 3, 2, 1]);

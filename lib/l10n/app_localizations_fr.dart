@@ -464,6 +464,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get goalGain => 'Prendre du poids';
 
   @override
+  String get birthMonth => 'Mois de naissance';
+
+  @override
+  String get chooseMonth => 'Choisissez un mois';
+
+  @override
+  String get underweightNoLose =>
+      'Votre IMC est inférieur à 18,5 : perdre du poids n’est pas sûr, vos objectifs restent au maintien du poids. Parlez-en à un médecin si vous voulez le changer.';
+
+  @override
   String get invalidNumber => 'Saisissez un nombre valide';
 
   @override
@@ -2360,10 +2370,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get avatarTitle => 'Votre image';
-
-  @override
-  String get avatarHint =>
-      'Affichée dans le chat et sur l’écran de déverrouillage. Vous pouvez la changer, ou choisir une photo, dans les paramètres.';
 
   @override
   String get avatarWoman => 'Femme';

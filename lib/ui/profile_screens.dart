@@ -30,7 +30,8 @@ class _ProfilesScreenState extends ConsumerState<ProfilesScreen> {
   }
 }
 
-/// First run, three steps: your name (or Google's), a PIN and the fingerprint, then the goals form.
+/// First run, three steps: your name (or Google's), a PIN and the fingerprint, then the goals form. Sex is asked
+/// once, there, for the formula; the avatar follows it (Settings changes it).
 class FirstRunScreen extends ConsumerStatefulWidget {
   const FirstRunScreen({super.key});
 
@@ -44,7 +45,6 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   final _pin2 = TextEditingController();
   final _form = GlobalKey<FormState>();
   String? _googleEmail;
-  AvatarKind? _kind; // null: follows the sex given for the goals
   var _step = 0;
   var _fingerprint = true;
   var _busy = false;
@@ -75,7 +75,6 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
     final profiles = ref.read(profilesProvider);
     final id = await profiles.create(name, _pin.text, googleEmail: _googleEmail);
     if (!mounted) return;
-    if (_kind case final kind?) ref.read(avatarProvider.notifier).set(kind: kind);
     // Turning fingerprint unlock on takes one scan, so it's the owner's finger.
     if (_fingerprint &&
         ref.read(biometricsAvailableProvider).value == true &&
@@ -176,11 +175,6 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
         },
       ),
       const SizedBox(height: 18),
-      Text(l.avatarTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      Text(l.avatarHint, style: TextStyle(fontSize: 14, color: c.muted)),
-      AvatarKindPicker(selected: _kind, onSelected: (k) => setState(() => _kind = k)),
-      const SizedBox(height: 14),
       FilledButton(
         onPressed: _name.text.trim().isEmpty ? null : () => setState(() => _step = 1),
         child: Text(l.continueButton),
