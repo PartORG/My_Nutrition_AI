@@ -1,3 +1,4 @@
+import 'dart:math' show exp;
 import 'dart:typed_data';
 import 'dart:ui' show Rect;
 
@@ -43,6 +44,81 @@ List<Detection> decodeDetections(List<List<double>> boxes, List<double> classes,
         )
   ];
   return found..sort((a, b) => b.score.compareTo(a.score));
+}
+
+/// YOLOX-Tiny on 164 food labels (step 7, tool/yolox_tiny_food.py); int8, val AP 30.9. Only the developer
+/// benchmark uses it so far. Ports letterbox() and decode() of tool/detector_export.py.
+const yoloxAsset = 'assets/models/yolox_tiny_food.tflite';
+const yoloxLabelsAsset = 'db/detector_labels.tsv';
+const yoloxSize = 416;
+
+/// detector_labels.tsv → the labels in class order.
+List<String> readYoloxLabels(String tsv) => [
+      for (final line in tsv.split('\n'))
+        if (line.trim().isNotEmpty && !line.startsWith('#') && !line.startsWith('label\t')) line.split('\t').first
+    ];
+
+/// RGBA of a photo already scaled to fit [yoloxSize] ([w]×[h]) → the model input as YOLOX trains it: BGR
+/// 0-255, top-left, grey 114 padding.
+Float32List letterboxBgr(Uint8List rgba, int w, int h) {
+  final out = Float32List(yoloxSize * yoloxSize * 3)..fillRange(0, yoloxSize * yoloxSize * 3, 114);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final i = (y * w + x) * 4, o = (y * yoloxSize + x) * 3;
+      out[o] = rgba[i + 2].toDouble();
+      out[o + 1] = rgba[i + 1].toDouble();
+      out[o + 2] = rgba[i].toDouble();
+    }
+  }
+  return out;
+}
+
+/// The raw head (3549 anchors × [x, y, log w, log h, objectness, a score per label]) → detections, best
+/// first, boxes normalized to the [w]×[h] photo area of the input. NMS per label, like YOLOX's eval.
+List<Detection> decodeYolox(List<double> raw, List<String> labels, int w, int h,
+    {double threshold = minScore, double nms = .65}) {
+  final row = 5 + labels.length;
+  final found = <(int, double, Rect)>[];
+  var i = 0;
+  for (final s in const [8, 16, 32]) {
+    final n = yoloxSize ~/ s;
+    for (var gy = 0; gy < n; gy++) {
+      for (var gx = 0; gx < n; gx++, i++) {
+        final r = i * row;
+        if (raw[r + 4] < threshold) continue; // the score is at most the objectness
+        var best = 0;
+        for (var c = 1; c < labels.length; c++) {
+          if (raw[r + 5 + c] > raw[r + 5 + best]) best = c;
+        }
+        final score = raw[r + 4] * raw[r + 5 + best];
+        if (score < threshold) continue;
+        final cx = (raw[r] + gx) * s, cy = (raw[r + 1] + gy) * s;
+        final bw = exp(raw[r + 2]) * s, bh = exp(raw[r + 3]) * s;
+        found.add(
+            (best, score, Rect.fromLTRB((cx - bw / 2) / w, (cy - bh / 2) / h, (cx + bw / 2) / w, (cy + bh / 2) / h)));
+      }
+    }
+  }
+  found.sort((a, b) => b.$2.compareTo(a.$2));
+  double iou(Rect a, Rect b) {
+    final x = a.intersect(b);
+    if (x.width <= 0 || x.height <= 0) return 0;
+    final inter = x.width * x.height;
+    return inter / (a.width * a.height + b.width * b.height - inter);
+  }
+
+  final kept = <(int, double, Rect)>[];
+  for (final f in found) {
+    if (!kept.any((k) => k.$1 == f.$1 && iou(k.$3, f.$3) > nms)) kept.add(f);
+  }
+  return [
+    for (final (c, score, b) in kept)
+      (
+        label: labels[c],
+        score: score,
+        box: Rect.fromLTRB(b.left.clamp(0, 1), b.top.clamp(0, 1), b.right.clamp(0, 1), b.bottom.clamp(0, 1)),
+      )
+  ];
 }
 
 /// A YUV_420_888 camera frame → [outW]×[outH] RGB, rotated upright by

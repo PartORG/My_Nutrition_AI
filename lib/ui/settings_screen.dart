@@ -17,6 +17,7 @@ import '../data/profiles.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'avatar.dart';
+import 'detector_bench_screen.dart';
 import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
 import 'nutrients.dart';
 import 'kit.dart';
@@ -201,6 +202,14 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: Icon(Icons.open_in_new, color: c.muted),
                   onTap: () => openLegal('terms.html'),
                 ),
+                if (const bool.fromEnvironment('DEV_BILLING')) // developer builds only, English only
+                  ListTile(
+                    leading: _icon(context, Icons.speed_outlined, 'fiber_g'),
+                    title: const Text('Detector benchmark'),
+                    trailing: Icon(Icons.chevron_right, color: c.muted),
+                    onTap: () => Navigator.of(context)
+                        .push(MaterialPageRoute<void>(builder: (_) => const DetectorBenchScreen())),
+                  ),
               ]),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),

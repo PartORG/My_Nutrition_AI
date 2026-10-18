@@ -26,9 +26,10 @@ Future<void> main() async {
     yield LicenseEntryWithLineBreaks(['Onest'], await rootBundle.loadString('assets/fonts/OFL-Onest.txt'));
     yield LicenseEntryWithLineBreaks(
         ['Plus Jakarta Sans'], await rootBundle.loadString('assets/fonts/OFL-PlusJakartaSans.txt'));
-    // Apache 2.0 (Gemma 4, EfficientDet) and the Gemma Terms notice EmbeddingGemma requires.
-    yield LicenseEntryWithLineBreaks(
-        ['Gemma 4 E2B', 'EmbeddingGemma', 'EfficientDet-Lite0'], await rootBundle.loadString('assets/licenses/models.txt'));
+    // Apache 2.0 (Gemma 4, EfficientDet, YOLOX), the Gemma Terms notice EmbeddingGemma requires and the CC BY
+    // credit for the food detector's training data.
+    yield LicenseEntryWithLineBreaks(['Gemma 4 E2B', 'EmbeddingGemma', 'EfficientDet-Lite0', 'YOLOX-Tiny'],
+        await rootBundle.loadString('assets/licenses/models.txt'));
     yield const LicenseEntryWithLineBreaks(['Open Food Facts'],
         'Product data from Open Food Facts (https://world.openfoodfacts.org), available under the Open Database '
         'License (ODbL) v1.0: https://opendatacommons.org/licenses/odbl/1-0/. Individual contents under the '

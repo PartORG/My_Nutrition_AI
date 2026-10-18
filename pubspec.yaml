@@ -1,7 +1,7 @@
 name: myfoodmind
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.12.0+15
+version: 0.13.0+16
 
 environment:
   sdk: ^3.12.2
@@ -83,3 +83,5 @@ flutter:
     # assets/models/ before building. Git-ignored (179 MB is over GitHub's limit).
     # Must live under assets/: flutter_edge_ai looks bundled models up as assets/<path>.
     - assets/models/
+    # The food detector's labels in class order (assets/models/yolox_tiny_food.tflite, tool/detector_export.py).
+    - db/detector_labels.tsv

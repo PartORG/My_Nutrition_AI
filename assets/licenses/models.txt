@@ -8,6 +8,11 @@ https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
 EfficientDet-Lite0 (food detector) — Copyright The TensorFlow Authors. Licensed
 under the Apache License, Version 2.0 (below).
 
+YOLOX-Tiny food detector — the YOLOX model, Copyright Megvii Inc., licensed
+under the Apache License, Version 2.0 (below); trained by My Nutrition AI on the
+Food Recognition 2022 dataset (MyFoodRepo / AIcrowd, v2.0), CC BY 4.0:
+https://creativecommons.org/licenses/by/4.0/. Labels merged into food groups.
+
 EmbeddingGemma 300M (search and memory) — Gemma is provided under and subject
 to the Gemma Terms of Use found at ai.google.dev/gemma/terms. Its use is
 subject to the Gemma Prohibited Use Policy at

@@ -55,6 +55,10 @@ accounts, no cloud inference and no analytics SDK.
   foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
   corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
   detected goes through a review screen before it is logged. No photo is ever stored.
+- **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
+  2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. It will replace EfficientDet for the live boxes once it
+  is measured on phones; for now only the developer benchmark (Settings → About in `DEV_BILLING` builds) runs it.
+  Training and export: `tool/detector_data.py`, `tool/yolox_tiny_food.py`, `tool/detector_export.py`.
 - **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
   remove it, add one, or change the amount (also by half servings) before saving. Every log can be
   undone, and a meal on Today can be changed later (food, amount or meal).
@@ -222,7 +226,7 @@ flutter run --release --dart-define=DEV_BILLING=true   # developer tier switch, 
 | Flag | Effect |
 |---|---|
 | *(none)* | Free-only build |
-| `--dart-define=DEV_BILLING=true` | Developer tier switch for testing the paid features |
+| `--dart-define=DEV_BILLING=true` | Developer tier switch for testing the paid features, and the detector benchmark in Settings → About |
 | `--dart-define=REVENUECAT_KEY=goog_…` | Real Google Play subscriptions |
 | `--dart-define=GOOGLE_CLIENT_ID=….apps.googleusercontent.com` | "Continue with Google" at sign-up and "Sign in with Google" on the lock screen. Needs an Android OAuth client (package name + SHA-1 of the signing key) and a Web client in Google Cloud Console; pass the **Web** client id. Android only for now |
 | `--dart-define=AGENT_THINKING=true` | Gemma 4 thinks before answering. Slower; compare with the eval first |
@@ -275,10 +279,11 @@ lib/
   billing/    tiers and RevenueCat
   data/       nutri.db / user.db access, goals, diary, conditions, plans, Health Connect
   ui/         screens (Today, Chat, Log, Me, camera, settings, …), voice (Gemma speech-to-text, TTS), avatars
-  vision/     EfficientDet detector and Gemma photo naming
+  vision/     EfficientDet and YOLOX detectors, Gemma photo naming
   l10n/       .arb translations (en, uk, de, fr) and generated localizations
 db/           nutri.db schema, test fixture data and the curated medical data (medical.sql)
-tool/         Python builders for nutri.db (incl. build_medical.py) and the products database
+tool/         Python builders for nutri.db (incl. build_medical.py) and the products database; food detector
+              training and export (detector_*.py, yolox_*)
 test/         host tests
 integration_test/  on-device evaluation and latency tests
 docs/         plan and decisions, data sources, billing and Play release guides

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' show log;
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
@@ -49,6 +50,31 @@ void main() {
       );
       expect(d.map((e) => e.label), ['banana', 'broccoli']); // person: not food; pizza: below 0.4
       expect(d.last.box, const Rect.fromLTRB(.2, .1, .4, .3));
+    });
+
+    test('YOLOX: grid order, stride, box size and per-label NMS, as tool/test_detector_export.py', () {
+      final raw = List.filled(3549 * 8, 0.0);
+      void put(int anchor, List<double> v) => raw.setRange(anchor * 8, anchor * 8 + 8, v);
+      put(52 * 2 + 3, [.5, .5, log(4), log(2), .9, 0, .8, 0]); // stride 8, row 2, column 3: 32×16 px
+      put(52 * 2 + 4, [-.5, .5, log(4), log(2), .8, 0, .8, 0]); // the same box one cell over: suppressed
+      put(52 * 52 + 26 * 26, [0, 0, 0, 0, .5, .9, 0, 0]); // first stride-32 cell, another label: kept
+      final d = decodeYolox(raw, ['a', 'b', 'c'], 416, 208, threshold: .01);
+      expect(d.map((e) => e.label), ['b', 'a']);
+      expect(d[0].score, closeTo(.72, 1e-9));
+      final b = d[0].box; // normalized to the 416×208 photo area; x 12-44, y 12-28 px
+      expect([b.left, b.top, b.right, b.bottom],
+          [for (final v in [12 / 416, 12 / 208, 44 / 416, 28 / 208]) closeTo(v, 1e-9)]);
+      expect(d[1].box, Rect.fromLTRB(0, 0, 16 / 416, 16 / 208)); // clamped to the photo
+      expect(decodeYolox(raw, ['a', 'b', 'c'], 416, 208).map((e) => e.label), ['b', 'a'], reason: '0.4 keeps both');
+    });
+
+    test('YOLOX input: BGR, top-left, grey 114 padding; labels file matches the model\'s 169 = 5 + 164', () {
+      final x = letterboxBgr(Uint8List.fromList([10, 20, 30, 255, 1, 2, 3, 255]), 2, 1);
+      expect(x.sublist(0, 6), [30, 20, 10, 3, 2, 1]);
+      expect([x[6], x[yoloxSize * 3], x.last], [114, 114, 114]);
+      final labels = readYoloxLabels(File(yoloxLabelsAsset).readAsStringSync());
+      expect(labels.length, 164);
+      expect(labels.toSet().length, 164);
     });
 
     test('YUV frame is rotated upright: the sensor\'s top-left lands top-right at 90°', () {
