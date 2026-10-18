@@ -33,3 +33,20 @@ def test_labels_file_check():
         "espresso: in 'coffee' and 'water'", "tea: in no label"]
     assert d.check_labels("x\tGone\t1\tunicorn\n", set(), set()) == [
         "x: no nutri.db row 'Gone'", "unicorn: not a dataset class"]
+
+
+def test_detector_data_boxes_from_polygons_and_merged_labels():
+    import detector_data as dd
+    labels, of = dd.read_labels("label\tnutri_db\tboxes\tclasses\ncoffee\tCoffee, brewed\t3\tcoffee espresso\nbread\t-\t1\tbread\n")
+    assert labels == ["coffee", "bread"] and of == {"coffee": "coffee", "espresso": "coffee", "bread": "bread"}
+    assert dd.polygon_box([[10, 20, 50, 25, 30, 90]], 40, 100) == [10, 20, 30, 70], "clipped to the image width"
+    assert dd.polygon_box([[5, 5, 6, 5, 5, 6]], 100, 100) is None, "a speck"
+    coco = {"images": [{"id": 7, "file_name": "7.jpg", "width": 100, "height": 100, "extra": 1}],
+            "categories": [{"id": 900, "name": "espresso"}, {"id": 901, "name": "bread"}],
+            "annotations": [{"id": 1, "image_id": 7, "category_id": 900, "bbox": [0, 0, 1, 1],
+                             "segmentation": [[10, 10, 30, 10, 30, 40]]}]}
+    out = dd.convert(coco, labels, of)
+    assert out["categories"] == [{"id": 1, "name": "coffee"}, {"id": 2, "name": "bread"}]
+    assert out["annotations"] == [{"id": 1, "image_id": 7, "category_id": 1, "bbox": [10, 10, 20, 30], "area": 600,
+                                   "iscrowd": 0}]
+    assert out["images"] == [{"id": 7, "file_name": "7.jpg", "width": 100, "height": 100}]

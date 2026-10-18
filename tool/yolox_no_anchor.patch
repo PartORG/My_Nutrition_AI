@@ -1,0 +1,34 @@
+diff --git a/yolox/core/trainer.py b/yolox/core/trainer.py
+index 8f8016e..f066e18 100644
+--- a/yolox/core/trainer.py
++++ b/yolox/core/trainer.py
+@@ -316,7 +316,7 @@ class Trainer:
+             else:
+                 ckpt_file = self.args.ckpt
+ 
+-            ckpt = torch.load(ckpt_file, map_location=self.device)
++            ckpt = torch.load(ckpt_file, map_location=self.device, weights_only=False)  # our own checkpoint (torch >= 2.6 default)
+             # resume the model/optimizer state dict
+             model.load_state_dict(ckpt["model"])
+             self.optimizer.load_state_dict(ckpt["optimizer"])
+diff --git a/yolox/models/yolo_head.py b/yolox/models/yolo_head.py
+index 3e51768..058c0e3 100644
+--- a/yolox/models/yolo_head.py
++++ b/yolox/models/yolo_head.py
+@@ -451,6 +451,16 @@ class YOLOXHead(nn.Module):
+             y_shifts,
+         )
+ 
++        # My Nutrition AI patch: no anchor near any box (all boxes off the canvas) crashed simota_matching
++        # ("selected index k out of range"). Give the image no positives, like an image without labels.
++        if not fg_mask.any():
++            import os
++            logger.warning(f"no anchors for {num_gt} boxes {gt_bboxes_per_image.tolist()}; no positives")
++            if not os.path.exists("no_anchor_case.pt"):
++                torch.save({"boxes": gt_bboxes_per_image.cpu(), "classes": gt_classes.cpu()}, "no_anchor_case.pt")
++            return (gt_classes[:0], fg_mask, gt_bboxes_per_image.new_zeros(0),
++                    torch.zeros(0, dtype=torch.long, device=fg_mask.device), 0)
++
+         bboxes_preds_per_image = bboxes_preds_per_image[fg_mask]
+         cls_preds_ = cls_preds[batch_idx][fg_mask]
+         obj_preds_ = obj_preds[batch_idx][fg_mask]
