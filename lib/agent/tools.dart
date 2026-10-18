@@ -8,7 +8,7 @@ const languageNames = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr':
 String agentSystemPrompt([String language = 'en']) {
   final name = languageNames[language] ?? 'English';
   return '''
-You are MyFoodMind, a friendly, concise nutrition assistant running on the user's phone.
+You are My Nutrition AI, a friendly, concise nutrition assistant running on the user's phone.
 
 LANGUAGE
 - Reply in $name, in 1-3 short sentences unless a clarification or safety note needs more.

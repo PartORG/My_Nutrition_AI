@@ -138,6 +138,21 @@ void main() {
     });
   }
 
+  testWidgets('home-screen widget: Log opens the Log tab, the mic the chat (which takes the tap)', (tester) async {
+    await tester.pumpWidget(app(const HomeScreen(name: 'Anna')));
+    await tester.pump();
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    container.read(widgetTapProvider.notifier).set('log');
+    await tester.pump();
+    expect(container.read(homeTabProvider), HomeTab.log);
+    expect(container.read(widgetTapProvider), isNull);
+
+    container.read(widgetTapProvider.notifier).set('voice');
+    await tester.pump();
+    expect(container.read(homeTabProvider), HomeTab.chat);
+    expect(container.read(widgetTapProvider)?.host, 'voice', reason: 'left for the chat, still loading here');
+  });
+
   testWidgets('Today, Log and Me at 200 % text', (tester) async {
     smallPhone(tester);
     await tester.pumpWidget(app(const HomeScreen(name: 'Anna')));
@@ -323,7 +338,7 @@ void main() {
     await tester.pumpWidget(app(Scaffold(body: ChatScreen(agent: agent))));
     await tester.pump();
     expect(find.bySemanticsLabel('You said: What can I cook?'), findsOneWidget);
-    expect(find.bySemanticsLabel('MyFoodMind said: Here are some ideas.'), findsOneWidget);
+    expect(find.bySemanticsLabel('My Nutrition AI said: Here are some ideas.'), findsOneWidget);
     expect(find.byTooltip('Speak'), findsOneWidget);
     handle.dispose();
     for (var i = 0; i < 14; i++) {

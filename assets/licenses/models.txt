@@ -1,4 +1,4 @@
-On-device AI models used by MyFoodMind
+On-device AI models used by My Nutrition AI
 ======================================
 
 Gemma 4 E2B (chat assistant) — Copyright Google LLC. Licensed under the Apache
@@ -11,7 +11,7 @@ under the Apache License, Version 2.0 (below).
 EmbeddingGemma 300M (search and memory) — Gemma is provided under and subject
 to the Gemma Terms of Use found at ai.google.dev/gemma/terms. Its use is
 subject to the Gemma Prohibited Use Policy at
-ai.google.dev/gemma/prohibited_use_policy, which is part of the MyFoodMind
+ai.google.dev/gemma/prohibited_use_policy, which is part of the My Nutrition AI
 Terms of Use.
 
 ------------------------------------------------------------------------------

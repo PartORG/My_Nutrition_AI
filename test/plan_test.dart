@@ -88,6 +88,16 @@ void main() {
         [80.0, 79.6]);
   });
 
+  test('burnt calories: active ones, else the total beyond the resting burn so far (Google Fit)', () {
+    final noon = DateTime(2026, 10, 18, 12);
+    expect(burntKcal(active: 250, now: noon), 250, reason: 'no total: active only');
+    expect(burntKcal(active: 0, total: 1200, now: noon), 0, reason: 'no goals, no resting burn known');
+    // Half the day gone: 1800 / 2 = 900 kcal of the total was resting.
+    expect(burntKcal(active: 0, total: 1200, basalPerDay: 1800, now: noon), closeTo(300, .01));
+    expect(burntKcal(active: 400, total: 1200, basalPerDay: 1800, now: noon), 400, reason: 'active wins when larger');
+    expect(burntKcal(active: 0, total: 500, basalPerDay: 1800, now: noon), 0, reason: 'never below zero');
+  });
+
   test('ingredients and shopping list in the app language, English where nutri.db has no translation', () {
     tools.language = 'uk';
     final card = tools.showRecipeById(2).card! as RecipeCard; // Shakshuka

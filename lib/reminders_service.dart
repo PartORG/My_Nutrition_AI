@@ -58,7 +58,7 @@ class RemindersService {
     if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
     await _plugin.zonedSchedule(
       id: id,
-      title: 'MyFoodMind',
+      title: 'My Nutrition AI',
       body: body,
       scheduledDate: at,
       notificationDetails: const NotificationDetails(

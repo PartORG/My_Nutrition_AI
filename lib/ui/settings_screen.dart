@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
@@ -15,11 +16,13 @@ import '../data/pin.dart' show isValidPin;
 import '../data/profiles.dart';
 import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
 import 'nutrients.dart';
 import 'kit.dart';
 import 'paywall_screen.dart';
 import 'theme.dart';
+import 'voice.dart' show Speaker;
 
 /// Everything that is set once and rarely touched, out of the Me tab.
 class SettingsScreen extends ConsumerWidget {
@@ -42,6 +45,7 @@ class SettingsScreen extends ConsumerWidget {
             final google = profiles.googleEmail(data.profile.id);
             return ListView(padding: const EdgeInsets.only(bottom: 32), children: [
               ScreenHeader(title: l.settingsTitle, back: true),
+              _Group(title: l.avatarTitle, children: const [_AvatarSettings()]),
               _Group(title: l.lookAndLanguage, children: [
                 ListTile(
                   leading: _icon(context, Icons.language, 'water'),
@@ -74,6 +78,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const _Appearance(),
               ]),
+              _Group(title: l.voiceTitle, hint: l.voiceRepliesHint, children: const [_VoiceReplies()]),
               _Group(title: l.remindersTitle, hint: l.remindersHint, children: [
                 _Reminders(data: data),
                 // Not offered under 18; the caution stays visible next to the switch.
@@ -267,6 +272,140 @@ class LanguageMenu extends ConsumerWidget {
       itemBuilder: (_) => [
         for (final MapEntry(:key, :value) in languageOptions(l).entries) PopupMenuItem(value: key, child: Text(value)),
       ],
+    );
+  }
+}
+
+/// Settings → Voice: answers read aloud after a spoken message, in a woman's or a man's voice.
+class _VoiceReplies extends ConsumerStatefulWidget {
+  const _VoiceReplies();
+
+  @override
+  ConsumerState<_VoiceReplies> createState() => _VoiceRepliesState();
+}
+
+class _VoiceRepliesState extends ConsumerState<_VoiceReplies> {
+  final _speaker = Speaker();
+
+  @override
+  void dispose() {
+    _speaker.stop();
+    super.dispose();
+  }
+
+  void _test(bool male) => _speaker.say(AppLocalizations.of(context)!.voiceSample,
+      language: appLanguage(ref.read(languageProvider)), male: male);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final voice = ref.watch(voiceRepliesProvider);
+    final set = ref.read(voiceRepliesProvider.notifier).set;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SwitchListTile(
+        secondary: _icon(context, Icons.record_voice_over_outlined, 'protein_g'),
+        title: Text(l.voiceRepliesSwitch),
+        value: voice.on,
+        onChanged: (on) => set(on: on),
+      ),
+      Divider(indent: 16, endIndent: 16, color: context.colors.divider),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 12),
+        child: Row(children: [
+          Expanded(
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(value: false, label: Text(l.voiceWoman)),
+                ButtonSegment(value: true, label: Text(l.voiceMan)),
+              ],
+              selected: {voice.male},
+              onSelectionChanged: (s) {
+                set(male: s.single);
+                _test(s.single); // hear the choice at once
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: l.voiceTest,
+            icon: const Icon(Icons.play_circle_outline),
+            onPressed: () => _test(voice.male),
+          ),
+        ]),
+      ),
+    ]);
+  }
+}
+
+/// Settings → Your picture: a photo from the phone, or an icon (woman, man, neutral) on a colour.
+class _AvatarSettings extends ConsumerWidget {
+  const _AvatarSettings();
+
+  Future<void> _pickPhoto(WidgetRef ref) async {
+    try {
+      // The system photo picker: no storage permission. Small, so the unlock screen loads it at once.
+      final f = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 85);
+      if (f != null) ref.read(avatarProvider.notifier).setPhoto(await f.readAsBytes());
+    } on Object catch (e) {
+      debugPrint('avatar photo: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    final a = ref.watch(avatarProvider);
+    final avatar = ref.read(avatarProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const UserAvatar(radius: 36),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Wrap(spacing: 8, runSpacing: 8, children: [
+              OutlinedButton.icon(
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(l.avatarPhoto),
+                onPressed: () => _pickPhoto(ref),
+              ),
+              if (a.photo != null) TextButton(onPressed: () => avatar.setPhoto(null), child: Text(l.avatarRemovePhoto)),
+            ]),
+          ),
+        ]),
+        // A photo covers the icon and its colour: they're offered again once it's removed.
+        if (a.photo == null) ...[
+          const SizedBox(height: 12),
+          AvatarKindPicker(selected: a.kind, onSelected: (k) => avatar.set(kind: k), color: a.color),
+          const SizedBox(height: 8),
+          Text(l.avatarColor, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 10, runSpacing: 10, children: [
+            for (final (i, color) in avatarColors.indexed)
+              Semantics(
+                button: true,
+                selected: color == a.color,
+                label: '${l.avatarColor} ${i + 1}',
+                excludeSemantics: true,
+                child: InkResponse(
+                  onTap: () => avatar.set(color: color),
+                  radius: 26,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Color(color),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color == a.color ? c.ink : Colors.transparent, width: 3),
+                    ),
+                    child: color == a.color ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                  ),
+                ),
+              ),
+          ]),
+        ],
+      ]),
     );
   }
 }

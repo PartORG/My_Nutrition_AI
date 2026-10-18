@@ -75,9 +75,9 @@ jobs:
       - if: steps.version.outputs.exists != 'true'
         run: |
           flutter build apk --release --target-platform android-arm64 --dart-define=DEV_BILLING=true  # shortcut: dev tier switch until RevenueCat is set up
-          mv build/app/outputs/flutter-apk/app-release.apk "myfoodmind-${{ steps.version.outputs.tag }}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "my-nutrition-ai-${{ steps.version.outputs.tag }}.apk"
 
       - if: steps.version.outputs.exists != 'true'
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" "myfoodmind-${{ steps.version.outputs.tag }}.apk" \
-            --target "$GITHUB_SHA" --title "MyFoodMind ${{ steps.version.outputs.tag }}" --generate-notes
+          gh release create "${{ steps.version.outputs.tag }}" "my-nutrition-ai-${{ steps.version.outputs.tag }}.apk" \
+            --target "$GITHUB_SHA" --title "My Nutrition AI ${{ steps.version.outputs.tag }}" --generate-notes

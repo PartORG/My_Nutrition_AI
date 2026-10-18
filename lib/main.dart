@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 
 import 'app_state.dart';
@@ -85,10 +87,16 @@ class AppGate extends ConsumerStatefulWidget {
 class _AppGateState extends ConsumerState<AppGate> {
   late final AppLifecycleListener _lifecycle;
   DateTime? _hiddenAt;
+  StreamSubscription<Uri?>? _widgetTaps;
 
   @override
   void initState() {
     super.initState();
+    // Home-screen widget buttons (Log, mic): heard here, so a tap while locked waits for the unlock.
+    if (Platform.isAndroid) {
+      HomeWidget.initiallyLaunchedFromHomeWidget().then(_widgetTap, onError: (_) {});
+      _widgetTaps = HomeWidget.widgetClicked.listen(_widgetTap, onError: (_) {});
+    }
     _lifecycle = AppLifecycleListener(
       onHide: () => _hiddenAt = DateTime.now(),
       onShow: () {
@@ -101,8 +109,13 @@ class _AppGateState extends ConsumerState<AppGate> {
     );
   }
 
+  void _widgetTap(Uri? uri) {
+    if (uri != null && uri.host.isNotEmpty && mounted) ref.read(widgetTapProvider.notifier).set(uri.host);
+  }
+
   @override
   void dispose() {
+    _widgetTaps?.cancel();
     _lifecycle.dispose();
     super.dispose();
   }

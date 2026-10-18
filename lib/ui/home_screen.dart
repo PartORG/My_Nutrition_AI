@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart' show TaskStatus;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 
 import '../app_state.dart';
@@ -15,6 +13,7 @@ import '../data/goals.dart';
 import '../data/plan.dart' show savedRecipeIds;
 import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'chat_screen.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
@@ -48,6 +47,19 @@ class HomeTab extends Notifier<int> {
   }
 }
 
+/// A home-screen widget button not acted on yet: 'log' or 'voice' (the mic). AppGate hears every tap, also
+/// while the app is locked; the home screen takes 'log', the chat takes 'voice' once it shows.
+typedef WidgetTap = ({String host, DateTime at});
+
+final widgetTapProvider = NotifierProvider<WidgetTaps, WidgetTap?>(WidgetTaps.new);
+
+class WidgetTaps extends Notifier<WidgetTap?> {
+  @override
+  WidgetTap? build() => null;
+
+  void set(String? host) => state = host == null ? null : (host: host, at: DateTime.now());
+}
+
 /// The meal the Log tab opens on; null = the one for this time of day.
 final logMealProvider = NotifierProvider<LogMeal, String?>(LogMeal.new);
 
@@ -68,28 +80,38 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  StreamSubscription<Uri?>? _widgetTaps;
   Billing? _billing;
   ProfileData? _data;
 
   @override
   void initState() {
     super.initState();
+    // Profiles from before the picture existed: it follows the sex in their goals.
+    // After the frame: Riverpod forbids changing a provider while the tree builds.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = mounted ? ref.read(profileDataProvider)?.user : null;
+      if (user == null) return;
+      if (loadBody(user)?.sex case final sex?) ref.read(avatarProvider.notifier).suggestFor(sex);
+    });
     ref.read(billingProvider.future).then((b) {
       if (!mounted) return;
       _billing = b..tier.addListener(_tierChanged);
       _data = ref.read(profileDataProvider)?..changes.addListener(_syncWater);
       _tierChanged();
     }, onError: (_) {});
-    // The widget's Log button opens the app on the Log tab (after the PIN).
-    if (Platform.isAndroid) {
-      HomeWidget.initiallyLaunchedFromHomeWidget().then(_fromWidget, onError: (_) {});
-      _widgetTaps = HomeWidget.widgetClicked.listen(_fromWidget, onError: (_) {});
-    }
+    // A widget button tapped before the PIN: its tab now.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fromWidget(mounted ? ref.read(widgetTapProvider) : null));
   }
 
-  void _fromWidget(Uri? uri) {
-    if (uri?.host == 'log' && mounted) ref.read(homeTabProvider.notifier).go(HomeTab.log);
+  /// The widget's Log button opens the Log tab; its mic the chat, which starts listening.
+  void _fromWidget(WidgetTap? tap) {
+    if (tap == null || !mounted) return;
+    if (tap.host == 'log') {
+      ref.read(homeTabProvider.notifier).go(HomeTab.log);
+      ref.read(widgetTapProvider.notifier).set(null);
+    } else if (tap.host == 'voice') {
+      ref.read(homeTabProvider.notifier).go(HomeTab.chat);
+    }
   }
 
   /// Water reminders are Basic: without it they go off on every profile of the phone,
@@ -129,7 +151,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _billing?.tier.removeListener(_tierChanged);
     _data?.changes.removeListener(_syncWater);
-    _widgetTaps?.cancel();
     super.dispose();
   }
   @override
@@ -138,6 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // both are auto-dispose and close only when this screen goes (Lock).
     final data = ref.watch(profileDataProvider);
     ref.watch(agentProvider);
+    ref.listen(widgetTapProvider, (_, tap) => _fromWidget(tap));
     final tab = ref.watch(homeTabProvider);
     final body = switch (tab) {
       HomeTab.today => TodayScreen(name: widget.name),
@@ -165,7 +187,7 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    Widget item(int i, IconData icon, IconData selectedIcon, String label) {
+    Widget item(int i, IconData icon, IconData selectedIcon, String label, {Widget? image}) {
       final on = tab == i;
       return Expanded(
         child: Semantics(
@@ -181,9 +203,9 @@ class _BottomBar extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 AnimatedContainer(
                   duration: Durations.short4,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: image == null ? 4 : 2),
                   decoration: BoxDecoration(color: on ? c.mint : Colors.transparent, borderRadius: BorderRadius.circular(16)),
-                  child: Icon(on ? selectedIcon : icon, color: on ? c.primary : c.muted, size: 22),
+                  child: image ?? Icon(on ? selectedIcon : icon, color: on ? c.primary : c.muted, size: 22),
                 ),
                 const SizedBox(height: 4),
                 Text(label,
@@ -207,7 +229,7 @@ class _BottomBar extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 76),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             item(HomeTab.today, Icons.calendar_today_outlined, Icons.calendar_today, l.tabToday),
-            item(HomeTab.chat, Icons.chat_bubble_outline, Icons.chat_bubble, l.tabChat),
+            item(HomeTab.chat, Icons.chat_bubble_outline, Icons.chat_bubble, l.tabChat, image: const EvaAvatar(size: 26)),
             Expanded(
               // heightFactor 1: a plain Center grows to the bar's max height, i.e. the whole screen.
               child: Center(
@@ -360,12 +382,7 @@ class _DrawerHeader extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
       decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.card)),
       child: Row(children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: c.primary,
-          child: Text(name.characters.first.toUpperCase(),
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c.onPrimary)),
-        ),
+        const UserAvatar(radius: 26),
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

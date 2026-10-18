@@ -1,4 +1,4 @@
-# MyFoodMind — Plan
+# My Nutrition AI — Plan
 
 Agreed 2026-10-04 in a grilling session. Decisions here are binding; change them
 by editing this file deliberately, never by silently diverging in code.
@@ -7,12 +7,12 @@ by editing this file deliberately, never by silently diverging in code.
 
 | | |
 |---|---|
-| Name / ID | **MyFoodMind** · `io.github.partorg.myfoodmind` · Dart package `myfoodmind` |
+| Name / ID | **My Nutrition AI** (MyFoodMind until v0.11.0) · repo `PartORG/My_Nutrition_AI` · app ID `io.github.partorg.myfoodmind` and Dart package `myfoodmind` kept, so installs update in place |
 | Goal | Commercial, **Android-first** (iOS later), English v1 with `flutter_localizations` + `.arb` from day one |
 | Promise | All AI and data on the phone. No analytics/crash SDK — Play vitals + RevenueCat dashboard only |
 | Min device | Android 10 (API 29)+, arm64, **≥6 GB RAM** (decided 2026-10-04 for Gemma 4 E2B) — Play device-catalog exclusion + in-app RAM check |
 | Audience | Declared 18+. One profile per phone (v0.7.0), so no child profiles; under 18 → manual targets only |
-| Privacy policy / ToS | GitHub Pages: `https://partorg.github.io/myfoodmind/` (includes Gemma use-policy terms for EmbeddingGemma; Gemma 4 is Apache 2.0) |
+| Privacy policy / ToS | GitHub Pages: `https://partorg.github.io/My_Nutrition_AI/` (includes Gemma use-policy terms for EmbeddingGemma; Gemma 4 is Apache 2.0) |
 
 ## Tiers — one subscription per phone
 
@@ -219,7 +219,8 @@ Decisions from these numbers:
   8:30 / 13:00 / 19:00; evening 21:00. Inexact daily, re-armed after reboot, private on the lock screen,
   first name only. Deleting a profile cancels its reminders.
 - Voice: **on-device recognition only**; if the phone has no offline speech pack the app explains how to add
-  it instead of falling back to online recognition (keeps "nothing leaves the phone").
+  it instead of falling back to online recognition (keeps "nothing leaves the phone"). Since v0.11.0 the chat's
+  voice input is transcribed by Gemma 4 on the phone instead.
 - Fingerprint: **only while the phone has one profile** (user decision: Android can't tell whose finger it
   is); adding a second profile turns it off for everyone. profiles.db v2. *Superseded in v0.7.0: one profile
   per phone, fingerprint always available.*
@@ -425,6 +426,33 @@ columns for them at all.
   with label micronutrients (~15 % give calcium/iron). Phones that downloaded the old file keep it until
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
+
+## v0.11.0 (2026-10-18): My Nutrition AI, voice, Eva, avatars, widget sizes, Google Fit calories
+
+- **Name:** "My Nutrition AI" everywhere users see it; the GitHub repo is `My_Nutrition_AI`. App ID, Dart package,
+  `myfoodmind://` deep links and method channels stay (a new ID would be a different app: no data, no update).
+- **Voice input (chat):** Gemma 4 E2B transcribes (its audio encoder; model loaded with `supportAudio`, retried
+  without it if that fails). `record` writes 16 kHz mono WAV to the temp dir, deleted after reading; ends on a tap,
+  2 s of quiet after speech, 8 s of nothing, or 30 s. Own session (`openSession`), like photo mode. The transcript
+  is sent as the user's message, so the crisis check, routing and the meal card still apply. Search fields and a
+  model without audio keep Android's on-device recognizer. Still nothing leaves the phone.
+- **Voice answers:** `flutter_tts` with installed offline voices only (`network_required` voices skipped), after a
+  spoken message; Settings → Voice: on/off, woman/man (per phone). Man/woman by Google voice codes; one voice for
+  a language (Ukrainian) → pitch 0.75 / 1.0.
+- **Eva:** `assets/icons/icon_chat.png` (the developer's miniature schnauzer) is the assistant: chat messages, the
+  Chat tab, a badge on the unlock screen's avatar.
+- **User picture:** woman / man / neutral (they/them) icon on a colour, or a photo (system photo picker, 512 px,
+  in the profile folder, new file name per change). Per phone in profiles.db settings so the unlock screen shows
+  it; cleared with the profile. Picked at sign-up, else follows the goals' sex (other → neutral) until picked.
+- **Widget:** one resizable widget, three layouts (small: line + mic; medium: + Log; large: + progress and kcal
+  left). Android 12+ chooses by size itself; 10–11 in `onAppWidgetOptionsChanged`. Mic → `myfoodmind://voice`:
+  after the unlock the chat starts listening; the meal card is the check before anything is saved. Taps are
+  heard by `AppGate` (also while locked); a mic tap older than 2 minutes is dropped. No background logging:
+  Android blocks the microphone without a visible app, and the PIN lock stays.
+- **Health Connect:** also reads `TotalCaloriesBurned` (Google Fit writes no active calories). Burnt = max(active,
+  total − Mifflin-St Jeor resting kcal × share of the day gone). Phones connected before are asked once for the
+  new permission. Steps were already Health Connect's de-duplicated aggregate; a different count than Fit's comes
+  from Health Connect's source priority (Health Connect → Data and access → Steps).
 
 ## v0.10.0 (2026-10-17): new design (docs/New_Design), light and dark
 

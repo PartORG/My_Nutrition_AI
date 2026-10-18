@@ -1,14 +1,14 @@
-# MyFoodMind
+# My Nutrition AI
 
 **A private, on-device AI nutrition assistant for Android.**
 
-MyFoodMind plans meals, logs food, tracks nutrients and answers nutrition questions through an
+My Nutrition AI plans meals, logs food, tracks nutrients and answers nutrition questions through an
 AI chat. The language model, the embeddings and all personal data stay on the phone. There are no
 accounts, no cloud inference and no analytics SDK.
 
-[![android](https://github.com/PartORG/myfoodmind/actions/workflows/android.yml/badge.svg)](https://github.com/PartORG/myfoodmind/actions/workflows/android.yml)
-[Latest release](https://github.com/PartORG/myfoodmind/releases/latest) ·
-[Privacy policy & terms](https://partorg.github.io/myfoodmind/)
+[![android](https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml/badge.svg)](https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml)
+[Latest release](https://github.com/PartORG/My_Nutrition_AI/releases/latest) ·
+[Privacy policy & terms](https://partorg.github.io/My_Nutrition_AI/)
 
 ---
 
@@ -17,6 +17,14 @@ accounts, no cloud inference and no analytics SDK.
 - **AI chat:** Gemma 4 runs locally with native tool calling. The model routes requests and
   phrases the answers. Code computes the numbers and the database supplies the facts, so nutrition
   values and recipes appear as cards from the database, never as model-generated text.
+- **Talk to the assistant:** tap the mic in the chat and speak; Gemma 4 itself writes down what you said (no
+  offline speech pack needed), and the answer is read aloud in a woman's or a man's voice (Settings → Voice; the
+  phone's own offline voices). The recording is deleted as soon as it is written down.
+- **Eva and you:** the assistant is drawn as Eva, the developer's miniature schnauzer (chat, tab bar, unlock
+  screen). Your own picture is a woman, man or neutral (they/them) icon on a colour you pick, or a photo from
+  your phone (Settings → Your picture).
+- **Home-screen widget:** small, medium and large sizes with today's calories (opt-in), a Log button and a mic:
+  say what you ate and the chat shows the meal card to check and save.
 - **Food logging:** search about 61,000 foods (US, NZ, French and UK government tables), 171,000 recipes, 620 dishes and 263,000 packaged
   products, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
   meal in one tap.
@@ -48,7 +56,8 @@ accounts, no cloud inference and no analytics SDK.
 - **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
   remove it, add one, or change the amount (also by half servings) before saving. Every log can be
   undone, and a meal on Today can be changed later (food, amount or meal).
-- **Health Connect / Apple Health:** reads weight, steps and active calories. Burnt calories show as
+- **Health Connect / Apple Health:** reads weight, steps and burnt calories (active calories, or for Google Fit,
+  which writes only totals, the total minus your resting burn so far). Burnt calories show as
   a second ring on Today, next to the calories left, and are never added to the goal. Steps refresh
   while the app is open; disconnect from the steps tile or in Settings.
 - **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
@@ -167,6 +176,8 @@ A food renamed in a rebuild makes its row stale: `apply` skips it and `translate
   (LiteRT-LM, GPU with a CPU fallback).
 - Personal data lives in per-profile SQLite databases on the phone. Android Auto Backup includes
   only the profile data, never the models or caches.
+- Voice stays on the phone: chat recordings are a temporary file that Gemma 4 writes down and the app then
+  deletes; spoken answers use only the phone's installed offline voices.
 - There is no analytics or crash-reporting SDK. Network access is limited to the one-time model
   download and the optional product database download, both started by the user.
 
@@ -181,8 +192,8 @@ A food renamed in a rebuild makes its row stale: `apply` skips it and `translate
 ## Getting started
 
 ```bash
-git clone git@github.com:PartORG/myfoodmind.git
-cd myfoodmind
+git clone git@github.com:PartORG/My_Nutrition_AI.git
+cd My_Nutrition_AI
 flutter pub get
 ```
 
@@ -190,7 +201,7 @@ Two large assets are git-ignored and have to be in place before a build:
 
 | File | Source |
 |---|---|
-| `assets/nutri.db` (≈310 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/myfoodmind/releases/tag/build-inputs) release |
+| `assets/nutri.db` (≈310 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/My_Nutrition_AI/releases/tag/build-inputs) release |
 | `assets/models/embeddinggemma-300M_seq256.tflite`, `assets/models/embeddinggemma_sentencepiece.model` | EmbeddingGemma (Gemma terms, gated on Hugging Face), or the `build-inputs` release |
 
 ```bash
@@ -261,7 +272,7 @@ lib/
   agent/      chat agent, tools, memory, crisis check, Gemma adapter
   billing/    tiers and RevenueCat
   data/       nutri.db / user.db access, goals, diary, conditions, plans, Health Connect
-  ui/         screens (Today, Chat, Log, Me, camera, settings, …)
+  ui/         screens (Today, Chat, Log, Me, camera, settings, …), voice (Gemma speech-to-text, TTS), avatars
   vision/     EfficientDet detector and Gemma photo naming
   l10n/       .arb translations (en, uk, de, fr) and generated localizations
 db/           nutri.db schema, test fixture data and the curated medical data (medical.sql)
@@ -277,7 +288,7 @@ site/         privacy policy and terms (GitHub Pages)
 
 ## Disclaimer
 
-MyFoodMind and its AI assistant give general information about food and nutrition. They are not a
+My Nutrition AI and its AI assistant give general information about food and nutrition. They are not a
 medical device and do not diagnose, treat, cure or prevent any disease. Nothing in the app,
 including the assistant's answers, condition limits and health information, replaces advice from a
 doctor, dietitian or other qualified health professional, and the on-device AI can make mistakes.

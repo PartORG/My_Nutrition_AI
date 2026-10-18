@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "MyFoodMind",
+  "appTitle": "My Nutrition AI",
   "addProfile": "Create profile",
   "googleWrongAccount": "That isn’t the Google account this profile was created with.",
   "signInWithGoogle": "Sign in with Google",
@@ -60,7 +60,7 @@
     }
   },
   "deviceUnsupportedTitle": "This phone isn't supported",
-  "deviceUnsupportedBody": "MyFoodMind runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about {gb} GB.",
+  "deviceUnsupportedBody": "My Nutrition AI runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about {gb} GB.",
   "@deviceUnsupportedBody": {
     "placeholders": {
       "gb": {
@@ -90,7 +90,7 @@
   "notMedicalAdvice": "General information from published guidelines, not medical advice. It doesn't replace your doctor or dietitian: talk to them before changing your diet or medicines.",
   "chatDisclaimer": "AI answers can be wrong and don't replace a doctor. In an emergency, call your local emergency number.",
   "medicalDisclaimerTitle": "Medical disclaimer",
-  "medicalDisclaimerBody": "MyFoodMind and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant's answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.",
+  "medicalDisclaimerBody": "My Nutrition AI and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant's answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.",
   "crisisTitle": "You don't have to go through this alone",
   "crisisBody": "If you might hurt yourself, call your local emergency number now. Free, confidential helplines in your country are listed at findahelpline.com.",
   "crisisButton": "Find a helpline",
@@ -296,10 +296,10 @@
       }
     }
   },
-  "notificationsDenied": "Notifications are turned off for MyFoodMind in Android settings.",
+  "notificationsDenied": "Notifications are turned off for My Nutrition AI in Android settings.",
   "voiceInput": "Speak",
   "voiceStop": "Stop listening",
-  "voiceUnavailable": "Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.",
+  "voiceUnavailable": "Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). My Nutrition AI never sends your voice online.",
   "youSaid": "You said: {text}",
   "@youSaid": {
     "placeholders": {
@@ -308,7 +308,7 @@
       }
     }
   },
-  "aiSaid": "MyFoodMind said: {text}",
+  "aiSaid": "My Nutrition AI said: {text}",
   "@aiSaid": {
     "placeholders": {
       "text": {
@@ -513,9 +513,9 @@
   "readingsTitle": "Readings",
   "reportSheetHint": "A PDF to read and a CSV for spreadsheets, with everything you logged. You choose where to send them; the app shares nothing by itself.",
   "reportShare": "Create and share",
-  "reportSubject": "MyFoodMind report",
+  "reportSubject": "My Nutrition AI report",
   "reportFailed": "Couldn't create the report.",
-  "reportTitle": "MyFoodMind report: {name}",
+  "reportTitle": "My Nutrition AI report: {name}",
   "@reportTitle": {
     "placeholders": {
       "name": {
@@ -531,7 +531,7 @@
       }
     }
   },
-  "reportDisclaimer": "Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.",
+  "reportDisclaimer": "Recorded by the user in the My Nutrition AI app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.",
   "reportNone": "None recorded.",
   "reportDailyNutrition": "Daily nutrition ({days} days with logs)",
   "@reportDailyNutrition": {
@@ -758,7 +758,7 @@
   "productsHint": "Missing a packaged product? Download all products in Me.",
   "healthConnect": "Health Connect",
   "appleHealth": "Apple Health",
-  "healthSyncHint": "Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.",
+  "healthSyncHint": "Reads your weight (for your goals), steps and burnt calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.",
   "healthSyncDenied": "No access. Allow weight, steps and active calories in the health app's settings, then try again.",
   "stepsToday": "{steps} steps today",
   "@stepsToday": {
@@ -824,7 +824,7 @@
   "fastingSwitch": "Fasting timer",
   "fastingCaution": "Not advised in pregnancy, with an eating disorder, or with diabetes treated with insulin or sulfonylureas. Ask your doctor first.",
   "widgetKcalTitle": "Calories on the home-screen widget",
-  "widgetKcalHint": "Add the MyFoodMind widget to your home screen. Today's calories are then visible there without your PIN.",
+  "widgetKcalHint": "Add the My Nutrition AI widget to your home screen. Today's calories are then visible there without your PIN.",
   "welcomeTitle": "Log your first meal",
   "nextMealTitle": "No {meal} logged yet",
   "@nextMealTitle": {
@@ -1599,5 +1599,24 @@
   "amountLeftApprox": "~{amount} left",
   "@amountLeftApprox": {"placeholders": {"amount": {"type": "String"}}},
   "microsLocked": "Today's vitamins and minerals against EU reference intakes, with Basic.",
-  "highProtein": "High protein"
+  "highProtein": "High protein",
+  "avatarTitle": "Your picture",
+  "avatarHint": "Shown in the chat and on the unlock screen. You can change it, or use a photo, in Settings.",
+  "avatarWoman": "Woman",
+  "avatarMan": "Man",
+  "avatarNeutral": "Neutral",
+  "avatarPhoto": "Choose photo",
+  "avatarRemovePhoto": "Remove photo",
+  "avatarColor": "Background colour",
+  "voiceTitle": "Voice",
+  "voiceRepliesHint": "When you talk to the assistant, it answers out loud too. It uses the voices installed on your phone; nothing leaves your phone.",
+  "voiceRepliesSwitch": "Read answers aloud",
+  "voiceWoman": "Woman's voice",
+  "voiceMan": "Man's voice",
+  "voiceTest": "Play a sample",
+  "voiceSample": "Hi! Tell me what you ate, and I'll log it for you.",
+  "listening": "Listening… tap the mic to stop",
+  "transcribing": "Writing down what you said…",
+  "voiceNothingHeard": "Nothing heard. Try again, a little closer to the phone.",
+  "micDenied": "The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant."
 }

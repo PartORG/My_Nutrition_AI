@@ -5,13 +5,13 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose a photo of your meal so the on-device AI can name the foods. The photo is only read in memory and never leaves your phone.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>MyFoodMind reads your weight (for your daily goals), steps and active calories (shown on Today). Nothing is written to Apple Health and nothing leaves your phone.</string>
+	<string>My Nutrition AI reads your weight (for your daily goals), steps and burnt calories (shown on Today). Nothing is written to Apple Health and nothing leaves your phone.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Myfoodmind</string>
+	<string>My Nutrition AI</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

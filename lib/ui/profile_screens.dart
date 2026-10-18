@@ -8,6 +8,7 @@ import '../app_state.dart';
 import '../data/pin.dart';
 import '../data/profiles.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'goals_screen.dart';
 import 'kit.dart';
 import 'theme.dart';
@@ -43,6 +44,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   final _pin2 = TextEditingController();
   final _form = GlobalKey<FormState>();
   String? _googleEmail;
+  AvatarKind? _kind; // null: follows the sex given for the goals
   var _step = 0;
   var _fingerprint = true;
   var _busy = false;
@@ -73,6 +75,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
     final profiles = ref.read(profilesProvider);
     final id = await profiles.create(name, _pin.text, googleEmail: _googleEmail);
     if (!mounted) return;
+    if (_kind case final kind?) ref.read(avatarProvider.notifier).set(kind: kind);
     // Turning fingerprint unlock on takes one scan, so it's the owner's finger.
     if (_fingerprint &&
         ref.read(biometricsAvailableProvider).value == true &&
@@ -172,6 +175,11 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
           if (t.trim().isNotEmpty) setState(() => _step = 1);
         },
       ),
+      const SizedBox(height: 18),
+      Text(l.avatarTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 4),
+      Text(l.avatarHint, style: TextStyle(fontSize: 14, color: c.muted)),
+      AvatarKindPicker(selected: _kind, onSelected: (k) => setState(() => _kind = k)),
       const SizedBox(height: 14),
       FilledButton(
         onPressed: _name.text.trim().isEmpty ? null : () => setState(() => _step = 1),
@@ -338,13 +346,19 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const SizedBox(height: 24),
+                // The user's picture with Eva, the assistant, at its corner.
                 Center(
-                  child: CircleAvatar(
-                    radius: 48,
-                    backgroundColor: white,
-                    child: Text(widget.profile.name.characters.first.toUpperCase(),
-                        style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: c.hero)),
-                  ),
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    const CircleAvatar(radius: 52, backgroundColor: white, child: UserAvatar(radius: 48)),
+                    Positioned(
+                      right: -8,
+                      bottom: -4,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: white, width: 3)),
+                        child: const EvaAvatar(size: 46),
+                      ),
+                    ),
+                  ]),
                 ),
                 const SizedBox(height: 20),
                 Semantics(

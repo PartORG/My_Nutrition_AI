@@ -845,9 +845,9 @@ class _ReportSheetState extends State<_ReportSheet> {
       if (dir.existsSync()) dir.deleteSync(recursive: true);
       dir.createSync(recursive: true);
       final stamp = DateFormat('yyyy-MM-dd').format(now);
-      final pdfFile = File('${dir.path}/myfoodmind-report-$stamp.pdf')
+      final pdfFile = File('${dir.path}/my-nutrition-ai-report-$stamp.pdf')
         ..writeAsBytesSync(pdf);
-      final csvFile = File('${dir.path}/myfoodmind-data-$stamp.csv')
+      final csvFile = File('${dir.path}/my-nutrition-ai-data-$stamp.csv')
         ..writeAsStringSync(reportCsv(data.user, now: now, days: _days));
       await SharePlus.instance.share(
         ShareParams(

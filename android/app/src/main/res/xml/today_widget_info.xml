@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- One widget, three layouts by size (TodayWidget.kt): small 1×1-2×1, medium 3×1+, large 3×2+. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/today_widget"
+    android:previewLayout="@layout/today_widget"
     android:minWidth="180dp"
     android:minHeight="56dp"
-    android:resizeMode="horizontal"
+    android:minResizeWidth="70dp"
+    android:minResizeHeight="40dp"
+    android:resizeMode="horizontal|vertical"
     android:targetCellWidth="3"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"

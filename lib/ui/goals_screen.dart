@@ -92,6 +92,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       goal: _goal,
       imperial: _imperial,
     ), now: DateTime.now());
+    ref.read(avatarProvider.notifier).suggestFor(_sex);
     data.changed();
     Navigator.of(context).pop();
   }

@@ -108,6 +108,85 @@ class LanguageSetting extends Notifier<String> {
   }
 }
 
+/// Answers read aloud after a spoken message ([on]), in a man's or a woman's voice. Per phone.
+typedef VoiceReplies = ({bool on, bool male});
+
+final voiceRepliesProvider = NotifierProvider<VoiceRepliesSetting, VoiceReplies>(VoiceRepliesSetting.new);
+
+class VoiceRepliesSetting extends Notifier<VoiceReplies> {
+  @override
+  VoiceReplies build() {
+    final p = ref.watch(appDirProvider).hasValue ? ref.watch(profilesProvider) : null;
+    return (on: p?.setting('voice_replies') != '0', male: p?.setting('voice') == 'male');
+  }
+
+  void set({bool? on, bool? male}) {
+    final p = ref.read(profilesProvider);
+    if (on != null) p.setSetting('voice_replies', on ? '1' : '0');
+    if (male != null) p.setSetting('voice', male ? 'male' : 'female');
+    state = (on: on ?? state.on, male: male ?? state.male);
+  }
+}
+
+/// The user's picture: an icon (woman, man, or neutral for they/them) on a colour, or a photo they picked.
+enum AvatarKind { woman, man, neutral }
+
+/// [color] is ARGB, null = the theme's green.
+typedef Avatar = ({AvatarKind kind, int? color, File? photo});
+
+/// Per phone (one profile per phone), so the unlock screen shows it before the PIN opens the profile.
+final avatarProvider = NotifierProvider<AvatarSetting, Avatar>(AvatarSetting.new);
+
+class AvatarSetting extends Notifier<Avatar> {
+  @override
+  Avatar build() {
+    // Before the app folder is ready (and in tests without one): the plain icon.
+    if (!ref.watch(appDirProvider).hasValue) return (kind: AvatarKind.neutral, color: null, photo: null);
+    final p = ref.watch(profilesProvider);
+    final owner = p.owner;
+    final name = p.setting('avatar_photo') ?? '';
+    final photo = owner == null || name.isEmpty ? null : File('${p.dirPath(owner.id)}/$name');
+    return (
+      kind: AvatarKind.values.asNameMap()[p.setting('avatar_kind')] ?? AvatarKind.neutral,
+      color: int.tryParse(p.setting('avatar_color') ?? ''),
+      photo: photo != null && photo.existsSync() ? photo : null,
+    );
+  }
+
+  /// False until the user picked one (or the goals gave a sex).
+  bool get chosen => ref.read(profilesProvider).setting('avatar_kind') != null;
+
+  /// Not picked yet: the picture follows the sex given for the goals ("other" → neutral).
+  void suggestFor(Sex sex) {
+    if (chosen) return;
+    set(kind: switch (sex) { Sex.female => AvatarKind.woman, Sex.male => AvatarKind.man, Sex.other => AvatarKind.neutral });
+  }
+
+  void set({AvatarKind? kind, int? color}) {
+    final p = ref.read(profilesProvider);
+    if (kind != null) p.setSetting('avatar_kind', kind.name);
+    if (color != null) p.setSetting('avatar_color', '$color');
+    ref.invalidateSelf();
+  }
+
+  /// A picked photo (image bytes), or null for the icon again. A new file name each time, so no screen
+  /// keeps showing the old one from the image cache.
+  void setPhoto(Uint8List? bytes) {
+    final p = ref.read(profilesProvider);
+    final owner = p.owner;
+    if (owner == null) return;
+    final old = state.photo;
+    var name = '';
+    if (bytes != null) {
+      name = 'avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      File('${p.dirPath(owner.id)}/$name').writeAsBytesSync(bytes, flush: true);
+    }
+    p.setSetting('avatar_photo', name);
+    if (old != null && old.existsSync()) old.deleteSync();
+    ref.invalidateSelf();
+  }
+}
+
 /// The profile currently unlocked with its PIN; null = locked.
 final unlockedProvider =
     NotifierProvider<UnlockedProfile, ProfileInfo?>(UnlockedProfile.new);
@@ -327,17 +406,33 @@ final llmProvider = FutureProvider<InferenceModel>((ref) async {
   } else {
     throw LlmNotDownloaded();
   }
-  // supportImage: photo mode names the foods with the same model (vision encoder on the CPU).
+  // supportImage: photo mode names the foods with the same model (vision encoder on the CPU);
+  // supportAudio: the chat's voice input is written down by it too (audio encoder on the CPU).
   // GPU, falling back to CPU inside the plugin. MTP (speculative decoding): up to 2.2x faster
   // answers on mobile GPUs, same output (LiteRT-LM model card).
   // ponytail: also on after a CPU fallback, where Google calls it slightly slower for free text.
-  final model = await FlutterEdgeAi.getActiveModel(
+  Future<InferenceModel> load({required bool audio}) => FlutterEdgeAi.getActiveModel(
       maxTokens: llmContextTokens, preferredBackend: PreferredBackend.gpu, supportImage: true, maxNumImages: 1,
-      enableSpeculativeDecoding: true);
+      supportAudio: audio, enableSpeculativeDecoding: true);
+  InferenceModel model;
+  try {
+    model = await load(audio: true);
+    _hearing[model] = true;
+  } on Object catch (e) {
+    // Without its audio part the chat still works; voice input then uses Android's recognizer.
+    debugPrint('LLM with audio failed ($e), loading without');
+    model = await load(audio: false);
+  }
   debugPrint('LLM running on ${model.activeBackend?.name ?? 'unknown'}');
   ref.onDispose(model.close);
   return model;
 });
+
+/// Models loaded with their audio part.
+final _hearing = Expando<bool>();
+
+/// The chat model can write down speech (see voice.dart); false = Android's recognizer instead.
+bool llmHears(InferenceModel model) => _hearing[model] ?? false;
 
 final llmDownloadProvider = NotifierProvider<LlmDownload, Download?>(LlmDownload.new);
 
@@ -443,8 +538,8 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
 // ---- all packaged products (optional download) -------------------------------
 
 /// Built by tool/build_products_db.py from the current Open Food Facts dump (ODbL), gzipped.
-// Release asset of github.com/PartORG/myfoodmind (published 2026-10-16, sha256 aebd412d…6a07).
-const productsUrl = 'https://github.com/partorg/myfoodmind/releases/download/products-2026-10-16/products.db.gz';
+// Release asset of github.com/PartORG/My_Nutrition_AI (published 2026-10-16, sha256 aebd412d…6a07).
+const productsUrl = 'https://github.com/PartORG/My_Nutrition_AI/releases/download/products-2026-10-16/products.db.gz';
 const productsDownloadMb = 117; // products.db.gz of 2026-10-16: 2,034,064 products with label micros, 303 MB unpacked
 
 File _productsFile(Directory dir) => File('${dir.path}/products.db');

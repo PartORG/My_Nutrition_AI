@@ -105,7 +105,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind'**
+  /// **'My Nutrition AI'**
   String get appTitle;
 
   /// No description provided for @addProfile.
@@ -255,7 +255,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceUnsupportedBody.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about {gb} GB.'**
+  /// **'My Nutrition AI runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about {gb} GB.'**
   String deviceUnsupportedBody(String gb);
 
   /// No description provided for @chatHint.
@@ -333,7 +333,7 @@ abstract class AppLocalizations {
   /// No description provided for @medicalDisclaimerBody.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant\'s answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.'**
+  /// **'My Nutrition AI and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant\'s answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.'**
   String get medicalDisclaimerBody;
 
   /// No description provided for @crisisTitle.
@@ -1005,7 +1005,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsDenied.
   ///
   /// In en, this message translates to:
-  /// **'Notifications are turned off for MyFoodMind in Android settings.'**
+  /// **'Notifications are turned off for My Nutrition AI in Android settings.'**
   String get notificationsDenied;
 
   /// No description provided for @voiceInput.
@@ -1023,7 +1023,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.'**
+  /// **'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). My Nutrition AI never sends your voice online.'**
   String get voiceUnavailable;
 
   /// No description provided for @youSaid.
@@ -1035,7 +1035,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiSaid.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind said: {text}'**
+  /// **'My Nutrition AI said: {text}'**
   String aiSaid(String text);
 
   /// No description provided for @useFingerprint.
@@ -1563,7 +1563,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportSubject.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind report'**
+  /// **'My Nutrition AI report'**
   String get reportSubject;
 
   /// No description provided for @reportFailed.
@@ -1575,7 +1575,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportTitle.
   ///
   /// In en, this message translates to:
-  /// **'MyFoodMind report: {name}'**
+  /// **'My Nutrition AI report: {name}'**
   String reportTitle(String name);
 
   /// No description provided for @reportCreated.
@@ -1587,7 +1587,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.'**
+  /// **'Recorded by the user in the My Nutrition AI app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.'**
   String get reportDisclaimer;
 
   /// No description provided for @reportNone.
@@ -2067,7 +2067,7 @@ abstract class AppLocalizations {
   /// No description provided for @healthSyncHint.
   ///
   /// In en, this message translates to:
-  /// **'Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.'**
+  /// **'Reads your weight (for your goals), steps and burnt calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.'**
   String get healthSyncHint;
 
   /// No description provided for @healthSyncDenied.
@@ -2241,7 +2241,7 @@ abstract class AppLocalizations {
   /// No description provided for @widgetKcalHint.
   ///
   /// In en, this message translates to:
-  /// **'Add the MyFoodMind widget to your home screen. Today\'s calories are then visible there without your PIN.'**
+  /// **'Add the My Nutrition AI widget to your home screen. Today\'s calories are then visible there without your PIN.'**
   String get widgetKcalHint;
 
   /// No description provided for @welcomeTitle.
@@ -4025,6 +4025,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'High protein'**
   String get highProtein;
+
+  /// No description provided for @avatarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your picture'**
+  String get avatarTitle;
+
+  /// No description provided for @avatarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in the chat and on the unlock screen. You can change it, or use a photo, in Settings.'**
+  String get avatarHint;
+
+  /// No description provided for @avatarWoman.
+  ///
+  /// In en, this message translates to:
+  /// **'Woman'**
+  String get avatarWoman;
+
+  /// No description provided for @avatarMan.
+  ///
+  /// In en, this message translates to:
+  /// **'Man'**
+  String get avatarMan;
+
+  /// No description provided for @avatarNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get avatarNeutral;
+
+  /// No description provided for @avatarPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get avatarPhoto;
+
+  /// No description provided for @avatarRemovePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get avatarRemovePhoto;
+
+  /// No description provided for @avatarColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Background colour'**
+  String get avatarColor;
+
+  /// No description provided for @voiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get voiceTitle;
+
+  /// No description provided for @voiceRepliesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When you talk to the assistant, it answers out loud too. It uses the voices installed on your phone; nothing leaves your phone.'**
+  String get voiceRepliesHint;
+
+  /// No description provided for @voiceRepliesSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Read answers aloud'**
+  String get voiceRepliesSwitch;
+
+  /// No description provided for @voiceWoman.
+  ///
+  /// In en, this message translates to:
+  /// **'Woman\'s voice'**
+  String get voiceWoman;
+
+  /// No description provided for @voiceMan.
+  ///
+  /// In en, this message translates to:
+  /// **'Man\'s voice'**
+  String get voiceMan;
+
+  /// No description provided for @voiceTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a sample'**
+  String get voiceTest;
+
+  /// No description provided for @voiceSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi! Tell me what you ate, and I\'ll log it for you.'**
+  String get voiceSample;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening… tap the mic to stop'**
+  String get listening;
+
+  /// No description provided for @transcribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing down what you said…'**
+  String get transcribing;
+
+  /// No description provided for @voiceNothingHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing heard. Try again, a little closer to the phone.'**
+  String get voiceNothingHeard;
+
+  /// No description provided for @micDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant.'**
+  String get micDenied;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,4 @@
-# Publishes site/ (privacy policy, terms) to https://partorg.github.io/myfoodmind/.
+# Publishes site/ (privacy policy, terms) to https://partorg.github.io/My_Nutrition_AI/.
 # Repo Settings → Pages → Source: GitHub Actions.
 name: pages
 on:

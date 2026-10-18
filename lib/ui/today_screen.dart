@@ -11,7 +11,8 @@ import '../app_state.dart';
 import '../billing/billing.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
-import '../data/health_sync.dart' show disconnectHealth, healthSyncOn, stepsToday, syncActiveKcal, syncHealthWeights;
+import '../data/health_sync.dart'
+    show askNewHealthAccess, disconnectHealth, healthSyncOn, stepsToday, syncActiveKcal, syncHealthWeights;
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'recipe_screen.dart' show RecipeScreen;
@@ -1032,7 +1033,7 @@ class _StepsTileState extends State<_StepsTile> {
     super.initState();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) => _refresh());
     _lifecycle = AppLifecycleListener(onResume: () => _refresh(weights: true));
-    _refresh();
+    askNewHealthAccess(widget.data.user).whenComplete(() => mounted ? _refresh() : null);
   }
 
   @override

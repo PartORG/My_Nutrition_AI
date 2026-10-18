@@ -86,7 +86,7 @@ String inSentence(BuildContext context, String word) =>
     Localizations.localeOf(context).languageCode == 'de' ? word : word.toLowerCase();
 
 /// Privacy policy and terms (GitHub Pages, source in site/).
-const legalBase = 'https://partorg.github.io/myfoodmind';
+const legalBase = 'https://partorg.github.io/My_Nutrition_AI';
 
 /// Privacy policy · Terms of use links, for the Me tab and the paywall.
 /// 'privacy.html' or 'terms.html' on the project's site, in the browser.

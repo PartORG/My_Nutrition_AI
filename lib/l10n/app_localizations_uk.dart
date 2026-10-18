@@ -9,7 +9,7 @@ class AppLocalizationsUk extends AppLocalizations {
   AppLocalizationsUk([String locale = 'uk']) : super(locale);
 
   @override
-  String get appTitle => 'MyFoodMind';
+  String get appTitle => 'My Nutrition AI';
 
   @override
   String get addProfile => 'Створити профіль';
@@ -106,7 +106,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String deviceUnsupportedBody(String gb) {
-    return 'MyFoodMind запускає ШІ повністю на телефоні й потребує щонайменше 6 ГБ оперативної пам’яті. У цього телефона приблизно $gb ГБ.';
+    return 'My Nutrition AI запускає ШІ повністю на телефоні й потребує щонайменше 6 ГБ оперативної пам’яті. У цього телефона приблизно $gb ГБ.';
   }
 
   @override
@@ -152,7 +152,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get medicalDisclaimerBody =>
-      'MyFoodMind і його ШІ-помічник надають загальну інформацію про їжу та харчування. Це не медичний виріб, і він не діагностує, не лікує, не виліковує і не запобігає жодним захворюванням.\n\nНіщо в застосунку, зокрема відповіді помічника, обмеження для станів здоров\'я та медична інформація, не замінює поради лікаря, дієтолога чи іншого кваліфікованого фахівця. ШІ працює на вашому телефоні й може помилятися.\n\nЗавжди радьтеся з лікарем, перш ніж змінювати харчування, ліки чи лікування, особливо якщо у вас є захворювання, ви вагітні чи годуєте грудьми або маєте чи мали розлад харчової поведінки. Ніколи не нехтуйте порадою фахівця і не відкладайте звернення до нього через щось у цьому застосунку.\n\nЯкщо вам здається, що це невідкладний медичний стан, негайно телефонуйте на місцевий номер екстреної допомоги.';
+      'My Nutrition AI і його ШІ-помічник надають загальну інформацію про їжу та харчування. Це не медичний виріб, і він не діагностує, не лікує, не виліковує і не запобігає жодним захворюванням.\n\nНіщо в застосунку, зокрема відповіді помічника, обмеження для станів здоров\'я та медична інформація, не замінює поради лікаря, дієтолога чи іншого кваліфікованого фахівця. ШІ працює на вашому телефоні й може помилятися.\n\nЗавжди радьтеся з лікарем, перш ніж змінювати харчування, ліки чи лікування, особливо якщо у вас є захворювання, ви вагітні чи годуєте грудьми або маєте чи мали розлад харчової поведінки. Ніколи не нехтуйте порадою фахівця і не відкладайте звернення до нього через щось у цьому застосунку.\n\nЯкщо вам здається, що це невідкладний медичний стан, негайно телефонуйте на місцевий номер екстреної допомоги.';
 
   @override
   String get crisisTitle => 'Вам не потрібно проходити через це самотужки';
@@ -542,7 +542,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get notificationsDenied =>
-      'Сповіщення для MyFoodMind вимкнені в налаштуваннях Android.';
+      'Сповіщення для My Nutrition AI вимкнені в налаштуваннях Android.';
 
   @override
   String get voiceInput => 'Говорити';
@@ -552,7 +552,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get voiceUnavailable =>
-      'Голосове введення потребує офлайн-розпізнавання мовлення на цьому телефоні (додаток Google → Налаштування → Голос → Офлайн-розпізнавання мовлення → українська). MyFoodMind ніколи не надсилає ваш голос в інтернет.';
+      'Голосове введення потребує офлайн-розпізнавання мовлення на цьому телефоні (додаток Google → Налаштування → Голос → Офлайн-розпізнавання мовлення → українська). My Nutrition AI ніколи не надсилає ваш голос в інтернет.';
 
   @override
   String youSaid(String text) {
@@ -561,7 +561,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String aiSaid(String text) {
-    return 'MyFoodMind сказав: $text';
+    return 'My Nutrition AI сказав: $text';
   }
 
   @override
@@ -872,14 +872,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reportShare => 'Створити й поділитися';
 
   @override
-  String get reportSubject => 'Звіт MyFoodMind';
+  String get reportSubject => 'Звіт My Nutrition AI';
 
   @override
   String get reportFailed => 'Не вдалося створити звіт.';
 
   @override
   String reportTitle(String name) {
-    return 'Звіт MyFoodMind: $name';
+    return 'Звіт My Nutrition AI: $name';
   }
 
   @override
@@ -889,7 +889,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get reportDisclaimer =>
-      'Записано користувачем у застосунку MyFoodMind. Значення показані як записані; застосунок їх не тлумачить і не дає медичних порад. Обмеження походять від станів, які обрав користувач.';
+      'Записано користувачем у застосунку My Nutrition AI. Значення показані як записані; застосунок їх не тлумачить і не дає медичних порад. Обмеження походять від станів, які обрав користувач.';
 
   @override
   String get reportNone => 'Не записано.';
@@ -1188,7 +1188,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Читає вагу (для ваших цілей), кроки й активні калорії (на екрані «Сьогодні»). Туди нічого не записується, і ніщо не залишає телефон. Вимкніть, щоб від’єднати.';
+      'Читає вагу (для ваших цілей), кроки й спалені калорії (на екрані «Сьогодні»). Туди нічого не записується, і ніщо не залишає телефон. Вимкніть, щоб від’єднати.';
 
   @override
   String get healthSyncDenied =>
@@ -1287,7 +1287,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get widgetKcalHint =>
-      'Додайте віджет MyFoodMind на головний екран. Тоді калорії за сьогодні буде видно там без PIN-коду.';
+      'Додайте віджет My Nutrition AI на головний екран. Тоді калорії за сьогодні буде видно там без PIN-коду.';
 
   @override
   String get welcomeTitle => 'Запишіть першу страву';
@@ -2377,4 +2377,65 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get highProtein => 'Багато білка';
+
+  @override
+  String get avatarTitle => 'Ваше зображення';
+
+  @override
+  String get avatarHint =>
+      'Видно в чаті й на екрані розблокування. Змінити його або вибрати фото можна в налаштуваннях.';
+
+  @override
+  String get avatarWoman => 'Жінка';
+
+  @override
+  String get avatarMan => 'Чоловік';
+
+  @override
+  String get avatarNeutral => 'Нейтрально';
+
+  @override
+  String get avatarPhoto => 'Вибрати фото';
+
+  @override
+  String get avatarRemovePhoto => 'Прибрати фото';
+
+  @override
+  String get avatarColor => 'Колір тла';
+
+  @override
+  String get voiceTitle => 'Голос';
+
+  @override
+  String get voiceRepliesHint =>
+      'Коли ви говорите з помічником, він теж відповідає вголос. Використовуються голоси, встановлені на телефоні; ніщо не залишає телефон.';
+
+  @override
+  String get voiceRepliesSwitch => 'Читати відповіді вголос';
+
+  @override
+  String get voiceWoman => 'Жіночий голос';
+
+  @override
+  String get voiceMan => 'Чоловічий голос';
+
+  @override
+  String get voiceTest => 'Прослухати';
+
+  @override
+  String get voiceSample => 'Привіт! Скажіть, що ви з’їли, і я це запишу.';
+
+  @override
+  String get listening => 'Слухаю… торкніться мікрофона, щоб зупинити';
+
+  @override
+  String get transcribing => 'Записую, що ви сказали…';
+
+  @override
+  String get voiceNothingHeard =>
+      'Нічого не чути. Спробуйте ще раз, ближче до телефона.';
+
+  @override
+  String get micDenied =>
+      'Мікрофон для цього застосунку вимкнено. Увімкніть його в налаштуваннях Android, щоб говорити з помічником.';
 }

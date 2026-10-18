@@ -48,19 +48,25 @@ const adultAge = 18;
 /// Lower kcal bound, so a "lose" goal never prescribes starving.
 const kcalFloor = {Sex.female: 1200.0, Sex.male: 1500.0, Sex.other: 1350.0};
 
+/// Mifflin-St Jeor resting kcal per day; null under 18.
+double? basalKcal(Body b, {required DateTime now}) {
+  final age = now.year - b.birthYear;
+  if (age < adultAge) return null;
+  final base = 10 * b.weightKg + 6.25 * b.heightCm - 5 * age;
+  return switch (b.sex) {
+    Sex.male => base + 5,
+    Sex.female => base - 161,
+    Sex.other => base - 78, // midpoint of the two
+  };
+}
+
 /// Targets from the plan (docs/PLAN.md, Goals): Mifflin-St Jeor BMR × activity,
 /// ±15% for the goal, kcal floor; protein 1.2 g/kg, fat 30% of kcal, carbs the
 /// rest; fiber 14 g per 1000 kcal; WHO limits for sugar (10% of kcal) and
 /// sodium (2000 mg). Null under 18.
 Targets? computeTargets(Body b, {required DateTime now}) {
-  final age = now.year - b.birthYear;
-  if (age < adultAge) return null;
-  final base = 10 * b.weightKg + 6.25 * b.heightCm - 5 * age;
-  final bmr = switch (b.sex) {
-    Sex.male => base + 5,
-    Sex.female => base - 161,
-    Sex.other => base - 78, // midpoint of the two
-  };
+  final bmr = basalKcal(b, now: now);
+  if (bmr == null) return null;
   final kcal = max(bmr * b.activity.factor * (1 + b.goal.change), kcalFloor[b.sex]!);
   final protein = 1.2 * b.weightKg;
   final fat = kcal * .30 / 9;

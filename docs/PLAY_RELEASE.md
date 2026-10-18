@@ -38,7 +38,7 @@ Never upload a `DEV_BILLING=true` build.
 
 ## 3. Internal testing (M7 "done when")
 
-Play Console → create app "MyFoodMind", default language English, app, free (with in-app purchases).
+Play Console → create app "My Nutrition AI", default language English, app, free (with in-app purchases).
 
 1. Testing → Internal testing → create release → upload the `.aab` → testers list (your Google account).
 2. Fill **App content** (below) — the release can't roll out before it's complete.
@@ -59,7 +59,7 @@ the backstop. ABI: the bundle is arm64-v8a only (32-bit and x86 phones are exclu
 
 | Item | Answer |
 |---|---|
-| Privacy policy | `https://partorg.github.io/myfoodmind/privacy.html` (source `site/`, deployed by `.github/workflows/pages.yml`; repo Settings → Pages → Source: GitHub Actions; free Pages needs a public repo, or GitHub Pro) |
+| Privacy policy | `https://partorg.github.io/My_Nutrition_AI/privacy.html` (source `site/`, deployed by `.github/workflows/pages.yml`; repo Settings → Pages → Source: GitHub Actions; free Pages needs a public repo, or GitHub Pro) |
 | Ads | No ads |
 | App access | All features available without login. For review: Pro needs a subscription → provide a licence-tester note or promo code |
 | Target audience | 18+ only |

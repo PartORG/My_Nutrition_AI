@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_title">MyFoodMind · today</string>
+    <string name="widget_title">My Nutrition AI · today</string>
     <string name="widget_kcal">%1$s kcal</string>
     <string name="widget_kcal_goal">%1$s / %2$s kcal</string>
     <string name="widget_hidden">Open to see today</string>
     <string name="widget_log">Log</string>
-    <string name="widget_description">Today\'s calories and a quick Log button</string>
+    <string name="widget_description">Today\'s calories, a mic to say what you ate and a Log button</string>
+    <string name="widget_voice">Say it</string>
+    <string name="widget_voice_description">Say what you ate</string>
+    <string name="widget_left">%1$s kcal left</string>
+    <string name="widget_over">%1$s kcal over</string>
 </resources>

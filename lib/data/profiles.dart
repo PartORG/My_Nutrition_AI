@@ -167,10 +167,14 @@ class Profiles {
   /// Episodic memory index; lives outside profiles/ so backup skips it.
   String vectorsDbPath(int id) => '${_root.parent.path}/vectors/$id.db';
 
+  /// The profile's folder: its user.db and the picture the user picked.
+  String dirPath(int id) => '${_root.path}/$id';
+
   /// "Forgot PIN" path: removes the profile and every file it owns,
   /// including its vectors (they quote the user's messages).
   void delete(int id) {
     _db.execute('DELETE FROM profiles WHERE id = ?', [id]);
+    _db.execute("DELETE FROM settings WHERE key LIKE 'avatar_%'"); // the next profile picks its own
     final dir = Directory('${_root.path}/$id');
     if (dir.existsSync()) dir.deleteSync(recursive: true);
     final vectors = File(vectorsDbPath(id));

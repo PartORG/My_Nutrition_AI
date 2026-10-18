@@ -1,5 +1,8 @@
 # Trademark pre-check: "MyFoodMind" (2026-10-05)
 
+> 2026-10-18: the app is now called **My Nutrition AI**. This check was for the old name; the new one has not
+> been checked yet (EUIPO/USPTO, classes 9 and 44) — do that before the Play listing uses it.
+
 Not legal advice and not a clearance search: a web and app-store sweep to decide whether a full search
 (or a rename) is needed before launch. Goods/services: Nice **class 9** (downloadable software) and
 **class 44** (nutrition / dietary advice); consider **class 42** (software services) too.

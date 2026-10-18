@@ -8,6 +8,7 @@ import '../data/diary.dart';
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
 import '../data/plan.dart' show savedRecipeIds;
+import 'avatar.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
 import 'history_screen.dart';
@@ -142,14 +143,7 @@ class MeScreen extends ConsumerWidget {
                     decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.hero)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       Row(children: [
-                        CircleAvatar(
-                          radius: 34,
-                          backgroundColor: c.primary,
-                          child: Text(
-                            data.profile.name.characters.first.toUpperCase(),
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: c.onPrimary),
-                          ),
-                        ),
+                        const UserAvatar(radius: 34),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

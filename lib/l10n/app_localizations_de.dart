@@ -9,7 +9,7 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
-  String get appTitle => 'MyFoodMind';
+  String get appTitle => 'My Nutrition AI';
 
   @override
   String get addProfile => 'Profil erstellen';
@@ -104,7 +104,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String deviceUnsupportedBody(String gb) {
-    return 'MyFoodMind führt seine KI vollständig auf deinem Handy aus und braucht mindestens 6 GB RAM. Dieses Handy hat etwa $gb GB.';
+    return 'My Nutrition AI führt seine KI vollständig auf deinem Handy aus und braucht mindestens 6 GB RAM. Dieses Handy hat etwa $gb GB.';
   }
 
   @override
@@ -150,7 +150,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get medicalDisclaimerBody =>
-      'MyFoodMind und sein KI-Assistent geben allgemeine Informationen zu Essen und Ernährung. Die App ist kein Medizinprodukt und dient nicht dazu, Krankheiten zu erkennen, zu behandeln, zu heilen oder ihnen vorzubeugen.\n\nNichts in der App, auch nicht die Antworten des Assistenten, die Grenzwerte für Erkrankungen und die Gesundheitsinformationen, ersetzt den Rat einer Ärztin, eines Arztes, einer Ernährungsfachkraft oder anderer medizinischer Fachleute. Die KI läuft auf deinem Handy und kann Fehler machen.\n\nSprich immer mit deiner Ärztin oder deinem Arzt, bevor du Ernährung, Medikamente oder Behandlung änderst, besonders wenn du eine Erkrankung hast, schwanger bist oder stillst oder eine Essstörung hast oder hattest. Ignoriere nie fachlichen Rat und schiebe ihn nie wegen etwas in dieser App auf.\n\nWenn du glaubst, dass es ein medizinischer Notfall ist, ruf sofort die örtliche Notrufnummer an.';
+      'My Nutrition AI und sein KI-Assistent geben allgemeine Informationen zu Essen und Ernährung. Die App ist kein Medizinprodukt und dient nicht dazu, Krankheiten zu erkennen, zu behandeln, zu heilen oder ihnen vorzubeugen.\n\nNichts in der App, auch nicht die Antworten des Assistenten, die Grenzwerte für Erkrankungen und die Gesundheitsinformationen, ersetzt den Rat einer Ärztin, eines Arztes, einer Ernährungsfachkraft oder anderer medizinischer Fachleute. Die KI läuft auf deinem Handy und kann Fehler machen.\n\nSprich immer mit deiner Ärztin oder deinem Arzt, bevor du Ernährung, Medikamente oder Behandlung änderst, besonders wenn du eine Erkrankung hast, schwanger bist oder stillst oder eine Essstörung hast oder hattest. Ignoriere nie fachlichen Rat und schiebe ihn nie wegen etwas in dieser App auf.\n\nWenn du glaubst, dass es ein medizinischer Notfall ist, ruf sofort die örtliche Notrufnummer an.';
 
   @override
   String get crisisTitle => 'Du musst das nicht allein durchstehen';
@@ -538,7 +538,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notificationsDenied =>
-      'Benachrichtigungen für MyFoodMind sind in den Android-Einstellungen ausgeschaltet.';
+      'Benachrichtigungen für My Nutrition AI sind in den Android-Einstellungen ausgeschaltet.';
 
   @override
   String get voiceInput => 'Sprechen';
@@ -548,7 +548,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get voiceUnavailable =>
-      'Spracheingabe braucht die Offline-Spracherkennung auf diesem Handy (Google-App → Einstellungen → Sprache → Offline-Spracherkennung → Deutsch). MyFoodMind sendet deine Stimme nie ins Internet.';
+      'Spracheingabe braucht die Offline-Spracherkennung auf diesem Handy (Google-App → Einstellungen → Sprache → Offline-Spracherkennung → Deutsch). My Nutrition AI sendet deine Stimme nie ins Internet.';
 
   @override
   String youSaid(String text) {
@@ -557,7 +557,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String aiSaid(String text) {
-    return 'MyFoodMind hat gesagt: $text';
+    return 'My Nutrition AI hat gesagt: $text';
   }
 
   @override
@@ -869,14 +869,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get reportShare => 'Erstellen und teilen';
 
   @override
-  String get reportSubject => 'MyFoodMind-Bericht';
+  String get reportSubject => 'My Nutrition AI-Bericht';
 
   @override
   String get reportFailed => 'Der Bericht konnte nicht erstellt werden.';
 
   @override
   String reportTitle(String name) {
-    return 'MyFoodMind-Bericht: $name';
+    return 'My Nutrition AI-Bericht: $name';
   }
 
   @override
@@ -886,7 +886,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reportDisclaimer =>
-      'Von der Person selbst in der App MyFoodMind erfasst. Die Werte werden wie eingetragen gezeigt; die App deutet sie nicht und gibt keine medizinische Beratung. Grenzwerte stammen aus den gewählten Erkrankungen.';
+      'Von der Person selbst in der App My Nutrition AI erfasst. Die Werte werden wie eingetragen gezeigt; die App deutet sie nicht und gibt keine medizinische Beratung. Grenzwerte stammen aus den gewählten Erkrankungen.';
 
   @override
   String get reportNone => 'Nichts erfasst.';
@@ -1184,7 +1184,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Liest dein Gewicht (für deine Ziele), deine Schritte und aktiven Kalorien (unter Heute). Dort wird nichts geschrieben, und nichts verlässt dein Handy. Ausschalten trennt die Verbindung.';
+      'Liest dein Gewicht (für deine Ziele), deine Schritte und verbrannten Kalorien (unter Heute). Dort wird nichts geschrieben, und nichts verlässt dein Handy. Ausschalten trennt die Verbindung.';
 
   @override
   String get healthSyncDenied =>
@@ -1285,7 +1285,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get widgetKcalHint =>
-      'Füge das MyFoodMind-Widget zu deinem Startbildschirm hinzu. Die heutigen Kalorien sind dann dort ohne PIN sichtbar.';
+      'Füge das My Nutrition AI-Widget zu deinem Startbildschirm hinzu. Die heutigen Kalorien sind dann dort ohne PIN sichtbar.';
 
   @override
   String get welcomeTitle => 'Trag deine erste Mahlzeit ein';
@@ -2361,4 +2361,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get highProtein => 'Proteinreich';
+
+  @override
+  String get avatarTitle => 'Dein Bild';
+
+  @override
+  String get avatarHint =>
+      'Erscheint im Chat und auf dem Entsperrbildschirm. Du kannst es in den Einstellungen ändern oder ein Foto nehmen.';
+
+  @override
+  String get avatarWoman => 'Frau';
+
+  @override
+  String get avatarMan => 'Mann';
+
+  @override
+  String get avatarNeutral => 'Neutral';
+
+  @override
+  String get avatarPhoto => 'Foto wählen';
+
+  @override
+  String get avatarRemovePhoto => 'Foto entfernen';
+
+  @override
+  String get avatarColor => 'Hintergrundfarbe';
+
+  @override
+  String get voiceTitle => 'Stimme';
+
+  @override
+  String get voiceRepliesHint =>
+      'Wenn du mit dem Assistenten sprichst, antwortet er auch laut. Er nutzt die auf deinem Handy installierten Stimmen; nichts verlässt dein Handy.';
+
+  @override
+  String get voiceRepliesSwitch => 'Antworten vorlesen';
+
+  @override
+  String get voiceWoman => 'Frauenstimme';
+
+  @override
+  String get voiceMan => 'Männerstimme';
+
+  @override
+  String get voiceTest => 'Probe anhören';
+
+  @override
+  String get voiceSample =>
+      'Hallo! Sag mir, was du gegessen hast, und ich trage es für dich ein.';
+
+  @override
+  String get listening => 'Ich höre zu… tippe aufs Mikrofon zum Beenden';
+
+  @override
+  String get transcribing => 'Schreibe auf, was du gesagt hast…';
+
+  @override
+  String get voiceNothingHeard =>
+      'Nichts gehört. Versuch es noch einmal, etwas näher am Handy.';
+
+  @override
+  String get micDenied =>
+      'Das Mikrofon ist für diese App ausgeschaltet. Schalte es in den Android-Einstellungen ein, um mit dem Assistenten zu sprechen.';
 }

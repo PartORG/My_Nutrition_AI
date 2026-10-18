@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'MyFoodMind';
+  String get appTitle => 'My Nutrition AI';
 
   @override
   String get addProfile => 'Create profile';
@@ -104,7 +104,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceUnsupportedBody(String gb) {
-    return 'MyFoodMind runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about $gb GB.';
+    return 'My Nutrition AI runs its AI fully on your phone and needs at least 6 GB of RAM. This phone has about $gb GB.';
   }
 
   @override
@@ -150,7 +150,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get medicalDisclaimerBody =>
-      'MyFoodMind and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant\'s answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.';
+      'My Nutrition AI and its AI assistant give general information about food and nutrition. They are not a medical device and do not diagnose, treat, cure or prevent any disease.\n\nNothing in the app, including the assistant\'s answers, condition limits and health information, replaces advice from a doctor, dietitian or other qualified health professional. The AI runs on your phone and can make mistakes.\n\nAlways talk to your doctor before changing your diet, medicines or treatment, especially if you have a medical condition, are pregnant or breastfeeding, or have or had an eating disorder. Never ignore professional advice or delay seeking it because of something in this app.\n\nIf you think you may have a medical emergency, call your local emergency number right away.';
 
   @override
   String get crisisTitle => 'You don\'t have to go through this alone';
@@ -536,7 +536,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsDenied =>
-      'Notifications are turned off for MyFoodMind in Android settings.';
+      'Notifications are turned off for My Nutrition AI in Android settings.';
 
   @override
   String get voiceInput => 'Speak';
@@ -546,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceUnavailable =>
-      'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). MyFoodMind never sends your voice online.';
+      'Voice input needs offline speech recognition on this phone (Google app → Settings → Voice → Offline speech recognition → English). My Nutrition AI never sends your voice online.';
 
   @override
   String youSaid(String text) {
@@ -555,7 +555,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String aiSaid(String text) {
-    return 'MyFoodMind said: $text';
+    return 'My Nutrition AI said: $text';
   }
 
   @override
@@ -865,14 +865,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportShare => 'Create and share';
 
   @override
-  String get reportSubject => 'MyFoodMind report';
+  String get reportSubject => 'My Nutrition AI report';
 
   @override
   String get reportFailed => 'Couldn\'t create the report.';
 
   @override
   String reportTitle(String name) {
-    return 'MyFoodMind report: $name';
+    return 'My Nutrition AI report: $name';
   }
 
   @override
@@ -882,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportDisclaimer =>
-      'Recorded by the user in the MyFoodMind app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.';
+      'Recorded by the user in the My Nutrition AI app. Values are shown as logged; the app does not interpret them and gives no medical advice. Limits come from the conditions the user selected.';
 
   @override
   String get reportNone => 'None recorded.';
@@ -1177,7 +1177,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get healthSyncHint =>
-      'Reads your weight (for your goals), steps and active calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.';
+      'Reads your weight (for your goals), steps and burnt calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.';
 
   @override
   String get healthSyncDenied =>
@@ -1276,7 +1276,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetKcalHint =>
-      'Add the MyFoodMind widget to your home screen. Today\'s calories are then visible there without your PIN.';
+      'Add the My Nutrition AI widget to your home screen. Today\'s calories are then visible there without your PIN.';
 
   @override
   String get welcomeTitle => 'Log your first meal';
@@ -2344,4 +2344,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get highProtein => 'High protein';
+
+  @override
+  String get avatarTitle => 'Your picture';
+
+  @override
+  String get avatarHint =>
+      'Shown in the chat and on the unlock screen. You can change it, or use a photo, in Settings.';
+
+  @override
+  String get avatarWoman => 'Woman';
+
+  @override
+  String get avatarMan => 'Man';
+
+  @override
+  String get avatarNeutral => 'Neutral';
+
+  @override
+  String get avatarPhoto => 'Choose photo';
+
+  @override
+  String get avatarRemovePhoto => 'Remove photo';
+
+  @override
+  String get avatarColor => 'Background colour';
+
+  @override
+  String get voiceTitle => 'Voice';
+
+  @override
+  String get voiceRepliesHint =>
+      'When you talk to the assistant, it answers out loud too. It uses the voices installed on your phone; nothing leaves your phone.';
+
+  @override
+  String get voiceRepliesSwitch => 'Read answers aloud';
+
+  @override
+  String get voiceWoman => 'Woman\'s voice';
+
+  @override
+  String get voiceMan => 'Man\'s voice';
+
+  @override
+  String get voiceTest => 'Play a sample';
+
+  @override
+  String get voiceSample =>
+      'Hi! Tell me what you ate, and I\'ll log it for you.';
+
+  @override
+  String get listening => 'Listening… tap the mic to stop';
+
+  @override
+  String get transcribing => 'Writing down what you said…';
+
+  @override
+  String get voiceNothingHeard =>
+      'Nothing heard. Try again, a little closer to the phone.';
+
+  @override
+  String get micDenied =>
+      'The microphone is turned off for this app. Turn it on in Android settings to talk to the assistant.';
 }

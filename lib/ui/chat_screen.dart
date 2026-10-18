@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent.dart';
 import '../agent/agent_tools.dart';
+import '../app_state.dart' show llmHears, llmProvider, voiceRepliesProvider;
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'camera_screen.dart';
-import 'home_screen.dart' show HomeTab, homeTabProvider;
+import 'home_screen.dart' show HomeTab, homeTabProvider, widgetTapProvider;
 import 'kit.dart';
 import 'meal_editor.dart';
 import 'memory_screen.dart';
@@ -31,38 +35,123 @@ void cookOrSay(BuildContext context, Agent agent, List<String> names) {
   }
 }
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.agent});
   final Agent agent;
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _input = TextEditingController();
-  late final _voice = Dictation(_input, () {
+  // Android's recognizer: only while the AI can't listen (loaded without its audio part).
+  late final _voice = Dictation(_input, _redraw);
+  late final _recorder = VoiceRecorder(_redraw);
+  final _speaker = Speaker();
+  var _transcribing = false;
+
+  void _redraw() {
     if (mounted) setState(() {});
-  });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _listenIfAsked());
+  }
 
   @override
   void dispose() {
     _voice.dispose();
+    _recorder.dispose();
+    _speaker.stop();
     _input.dispose();
     super.dispose();
   }
 
-  void _send([String? text]) {
+  /// The home-screen widget's mic: listen at once (a tap from minutes ago is stale).
+  void _listenIfAsked() {
+    final tap = mounted ? ref.read(widgetTapProvider) : null;
+    if (tap == null || tap.host != 'voice') return;
+    ref.read(widgetTapProvider.notifier).set(null);
+    if (DateTime.now().difference(tap.at) < const Duration(minutes: 2)) _mic();
+  }
+
+  Future<void> _send([String? text, bool spoken = false]) async {
     final t = text ?? _input.text;
     if (t.trim().isEmpty || widget.agent.busy) return;
     _input.clear();
-    widget.agent.send(t);
+    unawaited(_speaker.stop());
+    final from = widget.agent.items.length;
+    await widget.agent.send(t);
+    if (spoken && mounted) _sayAnswer(from);
+  }
+
+  /// A spoken message gets a spoken answer: the replies and card captions since [from].
+  void _sayAnswer(int from) {
+    final voice = ref.read(voiceRepliesProvider);
+    if (!voice.on) return;
+    final l = AppLocalizations.of(context)!;
+    final items = widget.agent.items;
+    final said = [
+      for (final item in items.skip(from.clamp(0, items.length)))
+        switch (item) {
+          ModelItem(:final text) => text,
+          CardItem(:final card, caption: true) => _caption(l, card) ?? '',
+          LimitItem(:final dailyFree) => l.limitReached(dailyFree),
+          ErrorItem() => l.agentError,
+          CrisisItem() => l.crisisBody,
+          _ => '',
+        }
+    ].where((t) => t.trim().isNotEmpty).join('\n');
+    unawaited(_speaker.say(said, language: widget.agent.language, male: voice.male));
+  }
+
+  /// Mic: Gemma listens (records until a tap or a pause, then writes it down and sends it).
+  Future<void> _mic() async {
+    unawaited(_speaker.stop());
+    if (_recorder.recording) return _stopListening();
+    final llm = ref.read(llmProvider).value;
+    if (llm == null || !llmHears(llm)) return _voice.toggle(context);
+    final l = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await _recorder.start(onQuiet: _stopListening)) {
+      messenger.showSnackBar(SnackBar(content: Text(l.micDenied)));
+    }
+  }
+
+  Future<void> _stopListening() async {
+    if (!_recorder.recording) return; // the pause and a tap can both end it
+    final l = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final wav = await _recorder.stop();
+    final llm = ref.read(llmProvider).value;
+    if (wav == null || llm == null || !mounted) return;
+    setState(() => _transcribing = true);
+    try {
+      final text = await transcribe(llm, wav, widget.agent.language);
+      if (!mounted) return;
+      if (text.isEmpty) {
+        messenger.showSnackBar(SnackBar(content: Text(l.voiceNothingHeard)));
+      } else {
+        setState(() => _transcribing = false);
+        await _send(text, true);
+      }
+    } on Object catch (e) {
+      debugPrint('transcribe: $e');
+      messenger.showSnackBar(SnackBar(content: Text(l.voiceNothingHeard)));
+    } finally {
+      if (mounted && _transcribing) setState(() => _transcribing = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
+    final listening = _voice.listening || _recorder.recording;
+    ref.listen(widgetTapProvider, (_, _) => _listenIfAsked()); // the widget's mic while the chat shows
     return ListenableBuilder(
       listenable: widget.agent,
       builder: (context, _) {
@@ -160,17 +249,31 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Gemma hears the user: how loud, and that a tap (or a pause) ends it.
+                  if (_recorder.recording)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 2),
+                      child: Row(children: [
+                        Icon(Icons.graphic_eq, size: 18, color: c.primary),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(l.listening, style: TextStyle(fontSize: 14, color: c.muted))),
+                        SizedBox(
+                          width: 64,
+                          child: LinearProgressIndicator(value: _recorder.level, color: c.primary, semanticsLabel: l.listening),
+                        ),
+                      ]),
+                    )
                   // On-device answers take seconds: say so where the eye is, above the input.
-                  if (agent.busy)
+                  else if (agent.busy || _transcribing)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 8, 24, 2),
                       child: Row(children: [
                         SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: c.primary)),
                         const SizedBox(width: 10),
-                        Text(l.thinking, style: TextStyle(fontSize: 14, color: c.muted)),
+                        Text(_transcribing ? l.transcribing : l.thinking, style: TextStyle(fontSize: 14, color: c.muted)),
                       ]),
                     ),
-                  if (!agent.busy) _Suggestions(agent: agent, onTap: _send),
+                  if (!agent.busy && !_transcribing && !_recorder.recording) _Suggestions(agent: agent, onTap: _send),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
                     child: Container(
@@ -203,18 +306,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                           IconButton(
-                            tooltip: _voice.listening
+                            tooltip: listening
                                 ? l.voiceStop
                                 : l.voiceInput,
                             iconSize: 26,
-                            onPressed: agent.busy
+                            onPressed: agent.busy || _transcribing
                                 ? null
-                                : () => _voice.toggle(context),
+                                : _mic,
                             icon: Icon(
-                              _voice.listening
+                              listening
                                   ? Icons.stop_circle_outlined
                                   : Icons.mic_none,
-                              color: c.ink2,
+                              color: listening ? c.primary : c.ink2,
                             ),
                           ),
                           IconButton.filled(
@@ -225,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               backgroundColor: c.primary,
                               minimumSize: const Size(56, 56),
                             ),
-                            onPressed: agent.busy ? null : _send,
+                            onPressed: agent.busy || _transcribing || _recorder.recording ? null : _send,
                             icon: Icon(Icons.arrow_forward, color: c.onPrimary),
                           ),
                         ],
@@ -255,7 +358,7 @@ class _ChatScreenState extends State<ChatScreen> {
             scheme: 'mailto',
             path: supportEmail,
             query:
-                'subject=${Uri.encodeComponent('MyFoodMind: reported AI response')}'
+                'subject=${Uri.encodeComponent('My Nutrition AI: reported AI response')}'
                 '&body=${Uri.encodeComponent('Response:\n$text\n\nWhat was wrong:\n')}',
           ),
         ),
@@ -309,41 +412,57 @@ class _Bubble extends StatelessWidget {
     final c = context.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      // One TalkBack node per message: "You said: …" / "MyFoodMind said: …".
+      // One TalkBack node per message: "You said: …" / "My Nutrition AI said: …".
       child: Semantics(
         container: true,
         label: mine ? l.youSaid(text) : l.aiSaid(text),
         excludeSemantics: true,
         child: mine
-            ? Align(
-                alignment: Alignment.centerRight,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.sizeOf(context).width * .82,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-                    decoration: BoxDecoration(
-                      color: c.dark,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(22),
-                        topRight: Radius.circular(22),
-                        bottomLeft: Radius.circular(22),
-                        bottomRight: Radius.circular(6),
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * .74,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                        decoration: BoxDecoration(
+                          color: c.dark,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(22),
+                            topRight: Radius.circular(22),
+                            bottomLeft: Radius.circular(22),
+                            bottomRight: Radius.circular(6),
+                          ),
+                        ),
+                        child: Text(
+                          text,
+                          style: TextStyle(fontSize: 16, color: c.background),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      text,
-                      style: TextStyle(fontSize: 16, color: c.background),
-                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  const UserAvatar(radius: 15),
+                ],
               )
             : Padding(
                 padding: const EdgeInsets.only(right: 24),
-                child: Text(
-                  text,
-                  style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const EvaAvatar(size: 30),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        text,
+                        style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4),
+                      ),
+                    ),
+                  ],
                 ),
               ),
       ),
