@@ -6,7 +6,8 @@
 The checkout needs tool/yolox_no_anchor.patch (git apply): YOLOX's label assignment crashed at random
 ("selected index k out of range") on an image whose boxes all have no anchor near them; the patch gives such
 an image no positives and logs the boxes. The cause: 27 training photos are EXIF-rotated, cv2 loads them turned
-but the annotations keep the stored 4032x3024 frame, so a flip can push their boxes off the image (val is clean). Resume a stopped run with --resume -c <output>/latest_ckpt.pth.
+but the annotations keep the stored 4032x3024 frame, so a flip can push their boxes off the image (val is clean).
+Resume a stopped run with --resume -c <output>/latest_ckpt.pth.
 Data from tool/detector_data.py; one class per line of db/detector_labels.tsv. Starts from the COCO-trained
 yolox_tiny.pth (its class head is replaced). Images are ~400-480 px, so 416 px input loses nothing.
 """
