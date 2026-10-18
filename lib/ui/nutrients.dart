@@ -85,7 +85,7 @@ class NutrientTiles extends StatelessWidget {
 String inSentence(BuildContext context, String word) =>
     Localizations.localeOf(context).languageCode == 'de' ? word : word.toLowerCase();
 
-/// Privacy policy and terms (GitHub Pages, source in site/).
+/// Privacy policy and terms. shortcut: not hosted anywhere since site/ was removed (2026-10-18); point at the real pages once they exist.
 const legalBase = 'https://partorg.github.io/My_Nutrition_AI';
 
 /// Privacy policy · Terms of use links, for the Me tab and the paywall.

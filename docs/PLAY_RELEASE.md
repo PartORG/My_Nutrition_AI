@@ -59,7 +59,7 @@ the backstop. ABI: the bundle is arm64-v8a only (32-bit and x86 phones are exclu
 
 | Item | Answer |
 |---|---|
-| Privacy policy | `https://partorg.github.io/My_Nutrition_AI/privacy.html` (source `site/`; not hosted yet: the Pages workflow was removed on 2026-10-18, choose where to host it first) |
+| Privacy policy | `https://partorg.github.io/My_Nutrition_AI/privacy.html` (not written yet: `site/` and the Pages workflow were removed on 2026-10-18) |
 | Ads | No ads |
 | App access | All features available without login. For review: Pro needs a subscription → provide a licence-tester note or promo code |
 | Target audience | 18+ only |
