@@ -130,6 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (wav == null || llm == null || !mounted) return;
     setState(() => _transcribing = true);
     try {
+      await widget.agent.release();
       final text = await transcribe(llm, wav, widget.agent.language);
       if (!mounted) return;
       if (text.isEmpty) {
@@ -140,7 +141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     } on Object catch (e) {
       debugPrint('transcribe: $e');
-      messenger.showSnackBar(SnackBar(content: Text(l.voiceNothingHeard)));
+      messenger.showSnackBar(SnackBar(content: Text(l.agentError))); // not "speak up": it heard, then failed
     } finally {
       if (mounted && _transcribing) setState(() => _transcribing = false);
     }

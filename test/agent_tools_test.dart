@@ -209,6 +209,18 @@ void main() {
       expect((tools.run('nutrition_status', {'period': 'week'}).forModel['goals'] as Map)['kcal'], 14000);
     });
 
+    test('adding to a saved breakfast shows only the new food, even when the model repeats the breakfast', () {
+      confirmOf(tools.run('log_meal', {'items': '2 eggs, toast', 'meal_type': 'breakfast'})).apply();
+      now = now.add(const Duration(minutes: 5));
+      final more = confirmOf(tools.run('log_meal', {'items': '2 eggs, toast, banana', 'meal_type': 'breakfast'}));
+      expect(more.items.map((i) => i.label), ['banana']);
+      more.apply();
+      expect(count('meal_log'), 3, reason: 'no second eggs and toast');
+      // Nothing new: a second helping is logged again; another meal type is not touched.
+      expect(confirmOf(tools.run('log_meal', {'items': 'banana', 'meal_type': 'breakfast'})).items.length, 1);
+      expect(confirmOf(tools.run('log_meal', {'items': '2 eggs, toast, banana', 'meal_type': 'lunch'})).items.length, 3);
+    });
+
     test('"a handful of almonds" and "200 g greek yogurt" parse (regression)', () {
       expect(confirmOf(tools.run('log_meal', {'items': 'a handful of almonds'})).lines.single,
           'almonds · 28 g · 162 kcal');
@@ -233,7 +245,7 @@ void main() {
       expect(label('overnight oats with banana'), 'Overnight oats with banana');
       expect(label('lentil soup'), 'Lentil soup');
       expect(label('chicken caesar salad'), 'caesar salad');
-      expect(label('shakshuka'), 'shakshuka', reason: 'tie between the dish and the recipe: the dish');
+      expect(label('shakshuka'), 'Shakshuka', reason: 'the recipe: v4 has no recipe-linked dish without values');
       expect(label('2 eggs'), 'egg');
       // Splitting still happens when the phrase isn't one dish's name.
       expect(confirmOf(tools.run('log_meal', {'items': 'lasagna and banana'})).lines.length, 2);
@@ -350,7 +362,7 @@ void main() {
       expect(currentFast(user), isNull);
     });
 
-    test('downloaded products.db replaces the built-in products; every word must match', () {
+    test('products come from the downloaded products.db; every word must match', () {
       final off = sqlite3.openInMemory()
         ..execute('CREATE TABLE products (barcode TEXT PRIMARY KEY, name TEXT NOT NULL, kcal REAL NOT NULL, '
             'protein_g REAL NOT NULL, fat_g REAL NOT NULL, carbs_g REAL NOT NULL, fiber_g REAL, sugar_g REAL, sodium_mg REAL); '
@@ -361,7 +373,7 @@ void main() {
       final withOff = AgentTools(nutri, user, clock: () => now, products: off);
       final hits = withOff.searchFood('ritter alpenmilch').where((f) => f.kind == 'product');
       expect(hits.map((f) => f.label), ['Ritter Sport Alpenmilch']);
-      expect(withOff.searchFood('yogurt').where((f) => f.kind == 'product'), isEmpty, reason: 'not the 2019 products');
+      expect(withOff.searchFood('yogurt').where((f) => f.kind == 'product'), isEmpty, reason: 'only the products.db given');
       off.close();
     });
 
@@ -415,12 +427,15 @@ void main() {
   });
 
   group('Log tab', () {
-    test('search covers dishes, recipes, foods and products', () {
-      final kinds = {for (final f in tools.searchFood('pasta')) f.kind};
-      expect(kinds, containsAll(['food', 'product']));
-      final shak = tools.searchFood('shakshuka');
-      expect(shak.first.kind, 'dish', reason: 'a prepared dish beats the recipe');
-      expect(shak.map((f) => f.kind), contains('recipe'));
+    test('search covers foods (dishes among them), recipes and, with products.db, products', () {
+      expect({for (final f in tools.searchFood('pasta')) f.kind}, {'food'}, reason: 'no products.db, no products');
+      final products = sqlite3.open('test/products_test.db', mode: OpenMode.readOnly);
+      final withProducts = AgentTools(nutri, user, clock: () => now, products: products);
+      expect({for (final f in withProducts.searchFood('pasta')) f.kind}, containsAll(['food', 'product']));
+      products.close();
+      final lasagna = tools.searchFood('lasagna').first;
+      expect((lasagna.kind, lasagna.estimated), ('food', true), reason: 'a dish is a food, and an estimate');
+      expect(tools.searchFood('shakshuka').map((f) => f.kind), contains('recipe'));
       final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
       expect((egg.label, egg.servingG, egg.per100['kcal']), ('egg', 50.0, 143.0));
       expect(tools.searchFood('the of'), isEmpty);

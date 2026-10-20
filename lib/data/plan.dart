@@ -96,10 +96,10 @@ typedef _Candidate = ({int id, double kcal, int? minutes});
 List<_Candidate> _pool(AgentTools tools, String mealType) {
   final excluded = tools.excludedRecipes();
   final liked = [for (final e in tools.ratings().entries) if (e.value >= 4) e.key];
+  const tagged = 'SELECT r.id, r.minutes FROM recipe_tags t JOIN recipes r ON r.id = t.recipe_id WHERE t.tag = ?';
   final rows = tools.nutri.select(
-      "SELECT id, minutes FROM recipes WHERE ',' || tags || ',' LIKE ? AND id IN (${liked.join(',')}) "
-      "UNION SELECT * FROM (SELECT id, minutes FROM recipes WHERE ',' || tags || ',' LIKE ? ORDER BY RANDOM() LIMIT 400)",
-      ['%,$mealType,%', '%,$mealType,%']);
+      '$tagged AND r.id IN (${liked.join(',')}) UNION SELECT * FROM ($tagged ORDER BY RANDOM() LIMIT 400)',
+      [mealType, mealType]);
   final minutes = {for (final r in rows) if (!excluded.contains(r['id'])) r['id'] as int: r['minutes'] as int?};
   final kcal = _kcal(tools, minutes.keys.toSet());
   return [for (final e in minutes.entries) if (kcal[e.key] != null) (id: e.key, kcal: kcal[e.key]!, minutes: e.value)];

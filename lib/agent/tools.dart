@@ -28,7 +28,8 @@ DECIDE WHAT THE USER WANTS
    techniques): answer yourself in plain text, with no tool.
 2. Food logging: when the user says they ate or drank something, or asks to add a meal, call
    log_meal with exactly the foods and amounts they said. Never invent amounts. Do not
-   suggest recipes then.
+   suggest recipes then. Adding to a meal ("add a banana to my breakfast"): only the new
+   foods; never repeat foods already logged or shown on an earlier card.
 3. Recipe search: when they ask for ideas, what to cook, or something new or different, call
    search_recipes, keeping diets and ingredients. The app never repeats a recipe it already
    suggested, so searching again with the same constraints gives new ones.
@@ -108,7 +109,8 @@ final agentTools = <Tool>[
     'period': _enum('Time range', ['today', 'week']),
   }, ['period']),
   _tool('log_meal', 'Record food or drinks the user ate, including a recipe they cooked and ate.', {
-    'items': _str('Only the foods and amounts the user said, e.g. "2 eggs, 1 toast"; never invent amounts'),
+    'items': _str('Only the foods and amounts the user said in this message, e.g. "2 eggs, 1 toast"; never invent '
+        'amounts, never repeat foods logged earlier'),
     'meal_type': _enum('Meal', ['breakfast', 'lunch', 'dinner', 'snack']),
   }, ['items']),
   _tool('remember_fact',

@@ -1,7 +1,9 @@
+import 'dart:isolate';
 import 'dart:math' show exp, min;
 import 'dart:typed_data';
 import 'dart:ui' show Rect;
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 /// Pro: finds food in a camera frame. Everything found goes to the review
@@ -11,8 +13,8 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 typedef Detection = ({String label, double score, Rect box});
 
 abstract interface class Detector {
-  /// [rgb] is [inputSize]² × 3 bytes, upright (see [yuvToRgb]).
-  Future<List<Detection>> detect(Uint8List rgb);
+  /// [rgb] is [w]×[h]×3 bytes, upright (see [yuvToRgb]), scaled to fit [yoloxSize]² with its shape kept.
+  Future<List<Detection>> detect(Uint8List rgb, int w, int h);
   void close();
 }
 
@@ -46,8 +48,8 @@ List<Detection> decodeDetections(List<List<double>> boxes, List<double> classes,
   return found..sort((a, b) => b.score.compareTo(a.score));
 }
 
-/// YOLOX-Tiny on 164 food labels (step 7, tool/yolox_tiny_food.py); int8, val AP 30.9. Only the developer
-/// benchmark uses it so far. Ports letterbox() and decode() of tool/detector_export.py.
+/// YOLOX-Tiny on 164 food labels (step 7, tool/yolox_tiny_food.py); int8, val AP 30.9. The camera's detector
+/// ([YoloxDetector]). Ports letterbox() and decode() of tool/detector_export.py.
 const yoloxAsset = 'assets/models/yolox_tiny_food.tflite';
 const yoloxLabelsAsset = 'db/detector_labels.tsv';
 const yoloxSize = 416;
@@ -58,13 +60,20 @@ List<String> readYoloxLabels(String tsv) => [
         if (line.trim().isNotEmpty && !line.startsWith('#') && !line.startsWith('label\t')) line.split('\t').first
     ];
 
-/// RGBA of a photo already scaled to fit [yoloxSize] ([w]×[h]) → the model input as YOLOX trains it: BGR
-/// 0-255, top-left, grey 114 padding.
-Float32List letterboxBgr(Uint8List rgba, int w, int h) {
+/// detector_labels.tsv → label → its reviewed nutri.db food or dish; "-" (water) logs nothing.
+Map<String, String> readYoloxRows(String tsv) => {
+      for (final line in tsv.split('\n'))
+        if (line.trim().isNotEmpty && !line.startsWith('#') && !line.startsWith('label\t'))
+          line.split('\t')[0]: line.split('\t')[1]
+    };
+
+/// RGBA (or RGB, [channels] 3) of a photo already scaled to fit [yoloxSize] ([w]×[h]) → the model input as YOLOX
+/// trains it: BGR 0-255, top-left, grey 114 padding.
+Float32List letterboxBgr(Uint8List rgba, int w, int h, {int channels = 4}) {
   final out = Float32List(yoloxSize * yoloxSize * 3)..fillRange(0, yoloxSize * yoloxSize * 3, 114);
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
-      final i = (y * w + x) * 4, o = (y * yoloxSize + x) * 3;
+      final i = (y * w + x) * channels, o = (y * yoloxSize + x) * 3;
       out[o] = rgba[i + 2].toDouble();
       out[o + 1] = rgba[i + 1].toDouble();
       out[o + 2] = rgba[i].toDouble();
@@ -160,8 +169,8 @@ List<Detection> mergeTiles(List<Detection> all, {double overlap = .6}) {
 }
 
 /// A YUV_420_888 camera frame → [outW]×[outH] RGB, rotated upright by
-/// [rotation] degrees clockwise (the sensor orientation). The default squeezes
-/// it to the [inputSize]² square EfficientDet expects. Nearest-neighbour: fast enough per frame.
+/// [rotation] degrees clockwise (the sensor orientation); only [area] of the upright frame (a photo tile). The
+/// default squeezes it to the [inputSize]² square EfficientDet expects. Nearest-neighbour: fast enough per frame.
 Uint8List yuvToRgb({
   required int width,
   required int height,
@@ -174,13 +183,14 @@ Uint8List yuvToRgb({
   required int rotation,
   int outW = inputSize,
   int outH = inputSize,
+  Rect area = const Rect.fromLTRB(0, 0, 1, 1),
 }) {
   final out = Uint8List(outW * outH * 3);
   var o = 0;
   for (var oy = 0; oy < outH; oy++) {
-    final fv = (oy + .5) / outH;
+    final fv = area.top + (oy + .5) / outH * area.height;
     for (var ox = 0; ox < outW; ox++) {
-      final fu = (ox + .5) / outW;
+      final fu = area.left + (ox + .5) / outW * area.width;
       // Display (fu, fv) → sensor (fx, fy).
       final (fx, fy) = switch (rotation) {
         90 => (fv, 1 - fu),
@@ -201,8 +211,45 @@ Uint8List yuvToRgb({
   return out;
 }
 
-/// EfficientDet-Lite0 on the CPU, in its own isolate so the preview stays smooth.
-class TfliteDetector implements Detector {
+/// YOLOX on the CPU (2 threads: 146 ms a frame on the Xiaomi 11T; NNAPI is deprecated in Android 15). Each run is
+/// a short-lived isolate that also letterboxes and decodes, so the preview stays smooth and the 2.4 MB raw head
+/// never crosses back.
+class YoloxDetector implements Detector {
+  YoloxDetector._(this._interpreter, this._labels);
+
+  static Future<YoloxDetector> load() async {
+    final labels = readYoloxLabels(await rootBundle.loadString(yoloxLabelsAsset));
+    return YoloxDetector._(await Interpreter.fromAsset(yoloxAsset, options: InterpreterOptions()..threads = 2), labels);
+  }
+
+  final Interpreter _interpreter;
+  final List<String> _labels;
+  Future<void>? _running;
+
+  @override
+  Future<List<Detection>> detect(Uint8List rgb, int w, int h) {
+    final run = _runYolox(_interpreter.address, rgb, _labels, w, h);
+    _running = run;
+    return run;
+  }
+
+  /// Waits for a run in flight, like [TfliteDetector.close].
+  @override
+  void close() {
+    (_running ?? Future<void>.value()).then((_) {}, onError: (_) {}).whenComplete(_interpreter.close);
+  }
+}
+
+/// Top level: a closure inside the class would capture the interpreter, which can't cross to the isolate.
+Future<List<Detection>> _runYolox(int address, Uint8List rgb, List<String> labels, int w, int h) => Isolate.run(() {
+      final it = Interpreter.fromAddress(address, allocated: true)
+        ..getInputTensor(0).data = letterboxBgr(rgb, w, h, channels: 3).buffer.asUint8List();
+      it.invoke();
+      return decodeYolox(it.getOutputTensor(0).data.buffer.asFloat32List(), labels, w, h);
+    });
+
+/// EfficientDet-Lite0 on the CPU, in its own isolate so the preview stays smooth. The benchmark's baseline now.
+class TfliteDetector {
   TfliteDetector._(this._interpreter, this._isolate);
 
   static const asset = 'assets/models/efficientdet_lite0.tflite';
@@ -216,7 +263,6 @@ class TfliteDetector implements Detector {
   final IsolateInterpreter _isolate;
   Future<void>? _running;
 
-  @override
   Future<List<Detection>> detect(Uint8List rgb) async {
     final boxes = [List.generate(25, (_) => List.filled(4, 0.0))];
     final classes = [List.filled(25, 0.0)], scores = [List.filled(25, 0.0)], count = [0.0];
@@ -226,7 +272,6 @@ class TfliteDetector implements Detector {
 
   /// Waits for a run in flight: freeing the native interpreter under it
   /// crashed the app on leaving the camera (back, or after Continue).
-  @override
   void close() {
     (_running ?? Future<void>.value()).then((_) {}, onError: (_) {}).whenComplete(() async {
       await _isolate.close();

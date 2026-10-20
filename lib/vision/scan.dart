@@ -25,16 +25,18 @@ class ScanItem {
   bool corrected = false;
 }
 
-/// Detections → review items: one per label, "3 × banana" = 3 servings.
-List<ScanItem> itemsFromDetections(AgentTools tools, List<Detection> found) {
+/// Detections → review items: one per label, "3 × banana" = 3 servings. A label in [rows] gets its reviewed
+/// nutri.db row (search ranks a gummy first for "strawberry"); "-" there (water) logs nothing.
+List<ScanItem> itemsFromDetections(AgentTools tools, List<Detection> found, {Map<String, String> rows = const {}}) {
   final counts = <String, int>{};
   for (final d in found) {
-    counts.update(d.label, (n) => n + 1, ifAbsent: () => 1);
+    if (rows[d.label] != '-') counts.update(d.label, (n) => n + 1, ifAbsent: () => 1);
   }
   return [
     for (final MapEntry(key: label, value: n) in counts.entries)
       () {
-        final food = matchFood(tools, label);
+        final row = rows[label];
+        final food = (row == null ? null : tools.named(row)) ?? matchFood(tools, label);
         return ScanItem(name: label, food: food, grams: n * (food?.servingG ?? 100));
       }()
   ];
@@ -54,11 +56,11 @@ const _photoPrompt = 'Look at the whole photo and list every food and drink you 
 
 /// Photo mode: Gemma 4 looks at the whole photo [png] and at a closer [crop] of it (small items show; what both
 /// looks see is surer), the names are looked up in nutri.db (the user's own corrections and usual foods first),
-/// and Gemma then picks among the closest rows, the photo still in front of it. Its own sessions, so the chat's
-/// conversation and tools are untouched; inference waits while the chat generates. Nothing is stored.
+/// and Gemma then picks among the closest rows, the photo still in front of it. Pictures go only into the model's
+/// main conversation, which ends the chat's: call [Agent.release] first. Nothing is stored.
 Future<List<ScanItem>> scanPhoto(InferenceModel model, AgentTools tools, Uint8List png, {Uint8List? crop}) async {
   Future<InferenceModelSession> open() =>
-      model.openSession(temperature: 0, topK: 1, enableVisionModality: true, maxOutputTokens: 200);
+      model.createSession(temperature: 0, topK: 1, enableVisionModality: true, maxOutputTokens: 200);
   List<SeenFood>? close;
   if (crop != null) {
     final session = await open();

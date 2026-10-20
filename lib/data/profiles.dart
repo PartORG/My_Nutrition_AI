@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'migrate.dart';
+import 'nutri_db.dart' show nutriSchemaMax;
 import 'pin.dart';
 import 'user_db.dart';
 
@@ -100,6 +101,7 @@ class Profiles {
     final id = _db.lastInsertRowId;
     Directory('${_root.path}/$id').createSync(recursive: true);
     openUserDb(userDbPath(id)).close();
+    setSetting('catalog', '$nutriSchemaMax'); // made against this catalogue: nothing to reset
     return id;
   }
 
@@ -127,6 +129,24 @@ class Profiles {
     return until > 0
         ? PinLocked(DateTime.fromMillisecondsSinceEpoch(until))
         : PinWrong(freePinAttempts - failed);
+  }
+
+  /// Catalogue v4 changed every nutri.db id (docs/PLAN.md "Catalogue v4", decision 2): once per [catalog], each
+  /// profile's user.db and memory vectors are deleted and the user.db recreated empty. The sign-in (name, PIN,
+  /// avatar, Google link) and the phone's settings stay. Returns how many profiles were reset.
+  int resetForCatalog(int catalog) {
+    if (setting('catalog') == '$catalog') return 0;
+    final profiles = list();
+    for (final p in profiles) {
+      for (final path in [userDbPath(p.id), vectorsDbPath(p.id)]) {
+        for (final f in [File(path), File('$path-wal'), File('$path-shm')]) {
+          if (f.existsSync()) f.deleteSync();
+        }
+      }
+      openUserDb(userDbPath(p.id)).close();
+    }
+    setSetting('catalog', '$catalog');
+    return profiles.length;
   }
 
   /// Per-phone settings (theme, …); null = never set.

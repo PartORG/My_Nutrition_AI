@@ -307,6 +307,16 @@ void main() {
     expect(agent.items.last, isA<ModelItem>());
   });
 
+  test('release hands the model over after the warm-up; the next message reopens the chat', () async {
+    final warming = agent.warmUp();
+    await agent.release(); // photo or voice: waits for the warm-up, then closes it
+    await warming;
+    expect(model.opens.length, 1);
+    await agent.send('Hi');
+    expect(model.opens.length, 2);
+    expect(agent.items.last, isA<ModelItem>());
+  });
+
   test('a new session replays the last 6 messages without context blocks', () async {
     for (var i = 0; i < 5; i++) {
       await agent.send('message $i');

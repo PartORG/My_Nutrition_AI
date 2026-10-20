@@ -33,7 +33,7 @@ import 'data/user_db.dart';
 import 'l10n/app_localizations.dart';
 import 'reminders_service.dart';
 
-/// App-private data directory, with nutri.db installed from the bundled asset
+/// App-private data directory, with nutri.db and health.db installed from the bundled assets
 /// when missing, unreadable by this build or older than [nutriDataVersion]. Overridden in tests.
 final appDirProvider = FutureProvider<Directory>((ref) async {
   final dir = await getApplicationSupportDirectory();
@@ -45,8 +45,13 @@ final appDirProvider = FutureProvider<Directory>((ref) async {
     if ((int.tryParse(installed.existsSync() ? installed.readAsStringSync() : '') ?? 0) < nutriDataVersion) {
       throw NutriDbException('installed data older than $nutriDataVersion');
     }
+    if (!File(healthPath(nutri.path)!).existsSync()) throw NutriDbException('no health.db');
   } on Object {
-    // ponytail: bundled dummy db; the real one (≤ 300 MB) needs its own delivery, see docs/PLAN.md M7.
+    // health.db first: nutri.db attaches it when it opens. Each through a temporary file, renamed when complete.
+    final health = File(healthPath(nutri.path)!);
+    final healthTmp = File('${health.path}.download');
+    await healthTmp.writeAsBytes((await rootBundle.load('assets/health.db')).buffer.asUint8List(), flush: true);
+    healthTmp.renameSync(health.path);
     final tmp = File('${dir.path}/nutri.db.download');
     final data = await rootBundle.load('assets/nutri.db');
     await tmp.writeAsBytes(data.buffer.asUint8List(), flush: true);
@@ -59,6 +64,7 @@ final appDirProvider = FutureProvider<Directory>((ref) async {
 final profilesProvider = Provider<Profiles>((ref) {
   final profiles = Profiles.open(ref.watch(appDirProvider).requireValue);
   ref.onDispose(profiles.close);
+  profiles.resetForCatalog(nutriSchemaMax); // once: the user data pointed at the old catalogue's ids
   for (final id in profiles.keepOnlyFirst()) {
     unawaited(ref.read(remindersProvider).cancelProfile(id));
   }

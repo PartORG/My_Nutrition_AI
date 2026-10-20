@@ -206,10 +206,11 @@ class SilenceGate {
 
 const _languageNames = {'en': 'English', 'uk': 'Ukrainian', 'de': 'German', 'fr': 'French'};
 
-/// Gemma 4 writes down [wav] in the app's [language]. Its own session, so the chat's conversation is untouched.
+/// Gemma 4 writes down [wav] in the app's [language]. Sound goes only into the model's main conversation, which
+/// ends the chat's: call [Agent.release] first.
 Future<String> transcribe(InferenceModel model, Uint8List wav, String language) async {
   final name = _languageNames[language] ?? 'English';
-  final session = await model.openSession(temperature: 0, topK: 1, enableAudioModality: true, maxOutputTokens: 256);
+  final session = await model.createSession(temperature: 0, topK: 1, enableAudioModality: true, maxOutputTokens: 256);
   try {
     await session.addQueryChunk(Message.withAudio(
         text: 'Transcribe the following speech segment in $name into $name text. Write only the transcription; '

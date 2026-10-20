@@ -29,7 +29,7 @@ import 'memory_test.dart' show fakeEmbed;
 /// The M6 gate's dummy detector: what EfficientDet would say about a fruit bowl.
 class FakeDetector implements Detector {
   @override
-  Future<List<Detection>> detect(Uint8List rgb) async => decodeDetections(
+  Future<List<Detection>> detect(Uint8List rgb, int w, int h) async => decodeDetections(
         [[.1, .1, .4, .4], [.5, .5, .9, .9], [.2, .6, .5, .9], [0, 0, 1, 1]],
         [51, 51, 55, 0], // banana, banana, broccoli, person
         [.9, .8, .7, .95],
@@ -88,9 +88,15 @@ void main() {
       final x = letterboxBgr(Uint8List.fromList([10, 20, 30, 255, 1, 2, 3, 255]), 2, 1);
       expect(x.sublist(0, 6), [30, 20, 10, 3, 2, 1]);
       expect([x[6], x[yoloxSize * 3], x.last], [114, 114, 114]);
-      final labels = readYoloxLabels(File(yoloxLabelsAsset).readAsStringSync());
+      expect(letterboxBgr(Uint8List.fromList([10, 20, 30, 1, 2, 3]), 2, 1, channels: 3).sublist(0, 6),
+          [30, 20, 10, 3, 2, 1], reason: 'camera frames are RGB');
+      final tsv = File(yoloxLabelsAsset).readAsStringSync();
+      final labels = readYoloxLabels(tsv);
       expect(labels.length, 164);
       expect(labels.toSet().length, 164);
+      final rows = readYoloxRows(tsv);
+      expect(rows.keys, labels);
+      expect([rows['white bread'], rows['water']], ['Bread, white', '-']);
     });
 
     test('YUV frame is rotated upright: the sensor\'s top-left lands top-right at 90°', () {
@@ -109,6 +115,11 @@ void main() {
       expect(yuvToRgb(width: 4, height: 2, y: y, u: uv, v: uv, yRowStride: 4, uvRowStride: 2, uvPixelStride: 1,
               rotation: 90, outW: 2, outH: 4)
           .length, 2 * 4 * 3);
+      // A photo tile: the upright frame's top-right quarter at 90° holds the sensor's top-left pixel.
+      Uint8List tile(Rect area) => yuvToRgb(width: 4, height: 2, y: y, u: uv, v: uv, yRowStride: 4, uvRowStride: 2,
+          uvPixelStride: 1, rotation: 90, outW: 1, outH: 1, area: area);
+      expect(tile(const Rect.fromLTRB(.5, 0, 1, .25))[0], 255);
+      expect(tile(const Rect.fromLTRB(0, 0, .5, .25))[0], 0);
     });
 
     test("Gemma's photo reply → foods with portions; junk amounts become a serving", () {
@@ -229,7 +240,7 @@ void main() {
     List<String> scans() => [for (final r in data.user.select('SELECT mode, text FROM scans')) '${r['mode']}: ${r['text']}'];
 
     testWidgets('photo → review → Log this meal', (tester) async {
-      final found = await FakeDetector().detect(Uint8List(0));
+      final found = await FakeDetector().detect(Uint8List(0), 0, 0);
       capture = (_) => (found, false);
       await pumpChat(tester);
       await tester.tap(find.text('Open camera').last);
@@ -279,6 +290,15 @@ void main() {
       final brown = data.tools.searchFood('brown rice').firstWhere((f) => f.label == 'brown rice, cooked');
       data.tools.logFood(brown, 150, 'lunch');
       expect(matchOptions(data.tools, 'rice cooked').first.label, 'brown rice, cooked');
+    });
+
+    test('detector labels go to their reviewed row, not search; water logs nothing', () {
+      Detection det(String label) => (label: label, score: .9, box: const Rect.fromLTRB(0, 0, 1, 1));
+      final items = itemsFromDetections(data.tools, [det('cooked rice'), det('water'), det('broccoli')],
+          rows: {'cooked rice': 'brown rice, cooked', 'water': '-', 'broccoli': 'no such row'});
+      expect(items.map((i) => (i.name, i.food?.label)),
+          [('cooked rice', 'brown rice, cooked'), ('broccoli', 'broccoli')], reason: 'a missing row falls back to search');
+      expect(items.first.food!.estimated, isTrue);
     });
 
     testWidgets('fried food offers oil; a changed food is remembered for that name next time', (tester) async {
@@ -334,7 +354,7 @@ void main() {
     });
 
     testWidgets('photo → What can I cook? shows recipes in the chat, logs nothing', (tester) async {
-      final found = await FakeDetector().detect(Uint8List(0));
+      final found = await FakeDetector().detect(Uint8List(0), 0, 0);
       capture = (_) => (found, true);
       await pumpChat(tester);
       await tester.tap(find.text('Open camera').last);

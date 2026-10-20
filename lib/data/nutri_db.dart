@@ -2,17 +2,20 @@ import 'dart:io';
 
 import 'package:sqlite3/sqlite3.dart';
 
-/// nutri.db schema versions this app build can read (see db/nutri_schema.sql).
+/// nutri.db schema versions this app build can read (see db/catalog/nutri.sql).
 // 2: micronutrients. 3: foods.source, micronutrients on dishes and products, dishes linked to foods and
-// recipes. An older file on the phone fails the check and the bundled one is reinstalled.
-const nutriSchemaMin = 3;
-const nutriSchemaMax = 3;
+// recipes. 4: catalogue v4 (docs/PLAN.md "Catalogue v4"): new ids, the full nutrient panel, aliases, recipe lines and
+// steps, health data in health.db, products in products.db. An older file on the phone fails the check and the
+// bundled one is reinstalled.
+const nutriSchemaMin = 4;
+const nutriSchemaMax = 4;
 
-/// nutri.db content release (meta.data_version). Bump it with db/medical.sql's data_version when
-/// the data changes but the schema doesn't, so phones replace their installed copy once.
+/// nutri.db content release (meta.data_version). Bump it when the data changes but the schema doesn't, so phones
+/// replace their installed copy once.
 // 1: medical data from the guidelines (db/medical.sql). 2: translated ingredient names (food_names).
-// 3: vitamins and minerals for the generic foods (foodstruct, NZ FOODfiles, FDC Foundation/Branded). 4: CIQUAL (France) and CoFID (UK) foods and dishes.
-const nutriDataVersion = 4;
+// 3: vitamins and minerals for the generic foods (foodstruct, NZ FOODfiles, FDC Foundation/Branded). 4: CIQUAL (France)
+// and CoFID (UK) foods and dishes. 5: catalogue v4 (tool/catalog).
+const nutriDataVersion = 5;
 
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';
@@ -24,17 +27,31 @@ class NutriDbException implements Exception {
   String toString() => 'NutriDbException: $message';
 }
 
-/// Opens nutri.db read-only, refusing a file this build can't read.
+/// The health.db that belongs to [nutriPath]: the same folder, "nutri" → "health" in the name; null when the name
+/// has no "nutri" (a candidate file being checked).
+String? healthPath(String nutriPath) {
+  final file = File(nutriPath);
+  final name = file.uri.pathSegments.last;
+  return name.contains('nutri') ? '${file.parent.path}/${name.replaceFirst('nutri', 'health')}' : null;
+}
+
+/// Opens nutri.db read-only, refusing a file this build can't read, with its health.db attached as `health`
+/// (conditions, their rules and foods, reference intakes, passages) when it is there.
 Database openNutriDb(String path) {
   final db = sqlite3.open(path, mode: OpenMode.readOnly);
   try {
     _check(db);
+    final health = healthPath(path);
+    if (health != null && File(health).existsSync()) db.execute('ATTACH DATABASE ? AS health', [health]);
     return db;
   } catch (_) {
     db.close();
     rethrow;
   }
 }
+
+/// health.db is attached (tests and an install that hasn't copied it yet may lack it).
+bool hasHealth(Database nutri) => nutri.select('PRAGMA database_list').any((r) => r['name'] == 'health');
 
 /// Replaces [target] with [candidate] only if the candidate passes the checks.
 /// The rename is atomic, so readers see the old file or the new one, never half.

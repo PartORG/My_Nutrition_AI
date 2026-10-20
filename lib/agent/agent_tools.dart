@@ -6,9 +6,10 @@ import '../data/conditions.dart';
 import '../data/diary.dart' show logWater, pref, setPref;
 import '../data/goals.dart';
 import '../data/journal.dart';
+import '../data/nutri_db.dart' show hasHealth;
 
-/// Nutrient columns shared by foods, dishes, products, meal_log and the
-/// recipe_nutrition view.
+/// Nutrient columns shared by foods, products, meal_log and the
+/// recipe_nutrition table.
 const nutrients = ['kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
 
 /// Per 100 g where known (USDA SR28 foods, recipes made of them, meals logged from those);
@@ -351,7 +352,7 @@ class AgentTools {
     return {
       if (mine.isNotEmpty)
         for (final r in nutri.select(
-            'SELECT food_id FROM allergens WHERE allergen IN (${List.filled(mine.length, '?').join(',')})', mine))
+            'SELECT food_id FROM food_allergens WHERE allergen IN (${List.filled(mine.length, '?').join(',')})', mine))
           r['food_id'] as int,
       ..._dietFoods(diets),
     };
@@ -377,7 +378,8 @@ class AgentTools {
         if (words.length == 1 && _allergenNames.contains(group) && !_dietAllergens.containsKey(group)) {
           ids.addAll([
             for (final r in nutri.select(
-                'SELECT food_id FROM allergens WHERE allergen = ? AND food_id IN (SELECT food_id FROM recipe_ingredients)',
+                'SELECT food_id FROM food_allergens WHERE allergen = ? '
+                'AND food_id IN (SELECT food_id FROM recipe_ingredients)',
                 [group]))
               r['food_id'] as int
           ]);
@@ -399,7 +401,7 @@ class AgentTools {
     final meal = _mealTypes.firstWhere(query.toLowerCase().contains, orElse: () => _mealTypeFor(_now()));
     final picks = [
       for (final r in nutri.select(
-          "SELECT id FROM recipes WHERE ',' || tags || ',' LIKE ? ORDER BY RANDOM() LIMIT 40", ['%,$meal,%']))
+          'SELECT recipe_id AS id FROM recipe_tags WHERE tag = ? ORDER BY RANDOM() LIMIT 40', [meal]))
         if (!blocked.contains(r['id'])) r['id'] as int
     ];
     // Still random, but closest to the user's taste first.
@@ -446,7 +448,7 @@ class AgentTools {
     return {
       for (final r in nutri.select(
           'SELECT DISTINCT ri.recipe_id FROM recipe_ingredients ri '
-          'LEFT JOIN allergens a ON a.food_id = ri.food_id '
+          'LEFT JOIN food_allergens a ON a.food_id = ri.food_id '
           'WHERE a.allergen IN (${List.filled(mine.length, '?').join(',')}) OR ri.food_id IN (${avoid.join(',')})',
           mine))
         r['recipe_id'] as int
@@ -490,7 +492,7 @@ class AgentTools {
     final byFood = <int, Caution>{};
     for (final r in nutri.select(
         'SELECT f.id, f.name, a.allergen FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id '
-        'LEFT JOIN allergens a ON a.food_id = f.id WHERE ri.recipe_id = ? ORDER BY f.name', [recipeId])) {
+        'LEFT JOIN food_allergens a ON a.food_id = f.id WHERE ri.recipe_id = ? ORDER BY f.name', [recipeId])) {
       final id = r['id'] as int;
       final allergen = why[r['allergen']] ?? (dietFoods.contains(id) ? diet : null);
       if (allergen == null && !avoid.containsKey(id)) continue;
@@ -537,7 +539,7 @@ class AgentTools {
   /// so a tap can't open the wrong recipe and "save it" refers to this one.
   ToolResult showRecipeById(int id) {
     _lastShown = id;
-    final r = nutri.select('SELECT * FROM recipes WHERE id = ?', [id]).single;
+    final r = nutri.select('SELECT * FROM recipe_info WHERE id = ?', [id]).single;
     final rows = nutri.select(
         'SELECT $foodNameColumn AS name, $foodNameColumn != f.name AS translated, ri.grams FROM recipe_ingredients ri '
         'JOIN foods f ON f.id = ri.food_id $foodNameJoin WHERE ri.recipe_id = ? ORDER BY ri.grams DESC', [id]);
@@ -618,7 +620,7 @@ class AgentTools {
   // ---- nutrition ----------------------------------------------------------
 
   ToolResult _lookupNutrition(String food) {
-    final id = _ftsIds(nutri, 'foods_fts', food, limit: 1).firstOrNull;
+    final id = _aliasFood(food) ?? _ftsIds(nutri, 'foods_fts', food, limit: 1).firstOrNull;
     if (id == null) return ToolResult.error('"$food" is not in the food database');
     final r = nutri.select('SELECT * FROM foods WHERE id = ?', [id]).single;
     final per100 = _nutrientsOf(r);
@@ -665,7 +667,7 @@ class AgentTools {
     // and so is "liver in cream" (else cream is silently dropped).
     final parts = _isDishName(items) ? [items] : _split(items.replaceAll(RegExp(r'\bin\b', caseSensitive: false), ','));
     final parsed = [for (final item in parts) _portion(item)];
-    final found = [for (final p in parsed) ?p];
+    var found = [for (final p in parsed) ?p];
     final missing = [for (final (i, p) in parsed.indexed) if (p == null) parts[i]];
     if (found.isEmpty) {
       return ToolResult.error('could not find "${missing.join('", "')}" in the food database; '
@@ -676,6 +678,18 @@ class AgentTools {
     final type = _mealTypes.contains(mealType)
         ? mealType
         : found.map((p) => p.recipeId).nonNulls.map(_mealTypeForRecipe).firstOrNull ?? _mealTypeFor(_now());
+    // "Add a banana to my breakfast": the model often repeats the breakfast saved earlier, and Save would log it
+    // twice. A meal logged today under this type drops out when all its foods come back with something new.
+    final now = _now();
+    final logged = <int, Set<String>>{};
+    for (final r in user.select('SELECT eaten_at, description FROM meal_log WHERE meal_type = ? AND eaten_at >= ?',
+        [type, DateTime(now.year, now.month, now.day).millisecondsSinceEpoch])) {
+      logged.putIfAbsent(r['eaten_at'] as int, () => {}).add((r['description'] as String).toLowerCase());
+    }
+    final labels = {for (final p in found) p.label.toLowerCase()};
+    final again = {for (final meal in logged.values) if (meal.every(labels.contains)) ...meal};
+    final fresh = [for (final p in found) if (!again.contains(p.label.toLowerCase())) p];
+    if (fresh.isNotEmpty) found = fresh; // nothing new: "another coffee" is logged again
     final total = <String, double>{for (final n in nutrients) n: 0};
     for (final p in found) {
       for (final n in nutrients) {
@@ -707,8 +721,12 @@ class AgentTools {
   bool _isDishName(String text) {
     final said = _words(text.replaceFirst(RegExp(r'^\s*\d+(?:[.,]\d+)?\s*'), ''));
     bool same(String name) => _words(name).length == said.length && _words(name).containsAll(said);
-    return _ftsIds(nutri, 'dishes_fts', text, limit: 3)
-            .any((id) => same(nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String)) ||
+    bool dish(int id) {
+      final d = nutri.select("SELECT name FROM foods WHERE id = ? AND category = 'dish'", [id]).firstOrNull;
+      return d != null && same(d['name'] as String);
+    }
+
+    return _ftsIds(nutri, 'foods_fts', text, limit: 3).any(dish) ||
         _ftsIds(nutri, 'recipes_fts', text, limit: 3).any((id) => same(_summary(id).title));
   }
 
@@ -742,36 +760,20 @@ class AgentTools {
         };
     Nutrients scale(Nutrients per100, double g) => per100.map((k, v) => MapEntry(k, v * g / 100));
 
-    if (staples[name.trim().toLowerCase()] case (final label, final serving)) {
-      if (nutri.select('SELECT * FROM foods WHERE name = ? COLLATE NOCASE', [label]).firstOrNull case final f?) {
-        final g = grams(serving ?? (f['serving_g'] as num?)?.toDouble());
-        return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
-      }
-    }
-
     // The candidate whose name the user said most completely wins: "banana" is
     // the food, not "Overnight oats with banana"; "lentil soup" is the recipe,
     // "chicken caesar salad" the dish. Ties: dish, then recipe, then food.
     final candidates = [
-      for (final id in _ftsIds(nutri, 'dishes_fts', name, limit: 3))
-        ('dish', id, nutri.select('SELECT name FROM dishes WHERE id = ?', [id]).single['name'] as String, 2),
       if (unit.isEmpty) // "200 g of shakshuka" is weighed food, not servings of a recipe
         for (final id in _ftsIds(nutri, 'recipes_fts', name, limit: 3))
           ('recipe', id, _summary(id).title, 2),
       for (final id in _ftsIds(nutri, 'foods_fts', name, limit: 10)) // search ranks "Cream Puff" above "Cream, fluid"
-        for (final f in nutri.select('SELECT name, source FROM foods WHERE id = ?', [id]))
-          ('food', id, f['name'] as String, authority(f['source'] as String)),
+        for (final f in nutri.select('SELECT name, source_id FROM foods WHERE id = ?', [id]))
+          ('food', id, f['name'] as String, authority(f['source_id'] as String)),
     ];
-    // The plain food first: "banana" is "Banana", not "Banana chips, banana",
-    // which search ranks higher for repeating the word.
-    final n = name.trim();
-    final forms = {n, if (n.length > 3 && n.endsWith('s')) n.substring(0, n.length - 1),
-        if (n.length > 4 && n.endsWith('es')) n.substring(0, n.length - 2)};
-    final names = [for (final f in forms) ...[f, '$f, raw']];
-    final plain = nutri.select(
-        'SELECT id, source FROM foods WHERE name COLLATE NOCASE IN (${List.filled(names.length, '?').join(',')}) '
-        'ORDER BY length(name) LIMIT 1', names).firstOrNull;
-    if (plain != null) candidates.insert(0, ('food', plain['id'] as int, name, authority(plain['source'] as String)));
+    // The food people mean by that word first (food_aliases: "banana" is raw banana, not "Banana chips, banana",
+    // which search ranks higher for repeating the word).
+    if (_aliasFood(name) case final id?) candidates.insert(0, ('food', id, name, 2));
     if (candidates.isEmpty) return null;
     final said = _words(name);
     double share(Iterable<String> words, Set<String> among) =>
@@ -793,22 +795,25 @@ class AgentTools {
     final (kind, id, _, _) = candidates.reduce((best, c) => better(score(c), score(best)) ? c : best);
 
     switch (kind) {
-      case 'dish':
-        final d = nutri.select('SELECT * FROM dishes WHERE id = ?', [id]).single;
-        final g = grams((d['serving_g'] as num).toDouble());
-        // The linked recipe is for opening and rating; the dish's own values win (it may have none).
-        final recipeId = d['recipe_id'] as int?;
-        final per100 = d['kcal'] != null || recipeId == null ? _nutrientsOf(d) : _recipePer100(recipeId);
-        return (label: d['name'] as String, grams: g, values: scale(per100, g), estimated: true, recipeId: recipeId);
       case 'recipe':
         final g = qty * _recipeServingGrams(id);
         return (label: _summary(id).title, grams: g, values: scale(_recipePer100(id), g), estimated: false, recipeId: id);
       default:
         final f = nutri.select('SELECT * FROM foods WHERE id = ?', [id]).single;
         final g = grams((f['serving_g'] as num?)?.toDouble());
-        return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g), estimated: false, recipeId: null);
+        // A dish ("Pizza, cheese") is an average of many recipes: an estimate, like a photo.
+        return (label: f['name'] as String, grams: g, values: scale(_nutrientsOf(f), g),
+            estimated: f['category'] == 'dish', recipeId: null);
     }
   }
+
+  /// The food people mean by [name] ("banana", "банан", "Banane"): an exact alias in English or the app's
+  /// language, the default row first (db/catalog/defaults.tsv and the everyday names); null when no alias is
+  /// exactly that.
+  int? _aliasFood(String name) => nutri.select(
+      'SELECT a.food_id FROM food_aliases a JOIN foods f ON f.id = a.food_id WHERE a.alias = ? '
+      "AND a.lang IN ('en', ?) ORDER BY f.is_default DESC LIMIT 1", [name.trim().toLowerCase(), language])
+      .firstOrNull?['food_id'] as int?;
 
   Nutrients _recipePer100(int recipeId) {
     final r = nutri.select(
@@ -824,7 +829,7 @@ class AgentTools {
 
   /// First meal tag of the recipe ('breakfast,vegetarian' → breakfast), else the time of day.
   String _mealTypeForRecipe(int recipeId) =>
-      (nutri.select('SELECT tags FROM recipes WHERE id = ?', [recipeId]).single['tags'] as String)
+      ((nutri.select('SELECT tags FROM recipe_info WHERE id = ?', [recipeId]).single['tags'] as String?) ?? '')
           .split(',')
           .map((t) => t.trim())
           .where(_mealTypes.contains)
@@ -895,10 +900,15 @@ class AgentTools {
   }
 
   ToolResult _conditionInfo(String question) {
+    // health.db: guideline passages and NIH answers, quoted with their source (docs_fts and docs live only there).
     final passages = [
-      for (final id in _ftsIds(nutri, 'docs_fts', question, limit: 2))
-        for (final r in nutri.select('SELECT source, text FROM docs WHERE id = ?', [id]))
-          (source: r['source'] as String, text: r['text'] as String)
+      if (hasHealth(nutri))
+        for (final id in _ftsIds(nutri, 'docs_fts', question, limit: 2))
+          for (final r in nutri.select(
+              'SELECT s.name AS source, d.question, d.text FROM docs d JOIN health.sources s ON s.id = d.source_id '
+              'WHERE d.id = ?', [id]))
+            (source: r['source'] as String,
+                text: r['question'] == null ? r['text'] as String : '${r['question']}\n${r['text']}')
     ];
     if (passages.isEmpty) {
       return ToolResult({'passages': [], 'note': 'nothing in the database; say so and suggest asking a doctor'});
@@ -967,46 +977,58 @@ class AgentTools {
 
   // ---- Log tab: search and log without the model ---------------------------------
 
-  /// Foods, dishes, recipes and packaged products matching [text], best first.
+  /// Foods (dishes among them), recipes and packaged products matching [text], best first.
   List<FoodChoice> searchFood(String text, {int limit = 20}) {
     FoodChoice of(String kind, Row r, double? serving, Nutrients per100, {bool estimated = false}) =>
         (kind: kind, id: r['id'], label: r['name'] as String, servingG: serving, per100: per100, estimated: estimated);
+    final meant = _aliasFood(text);
+    int rank(Row f) => (f['id'] == meant ? 4 : 0) + (f['is_default'] as int) * 2 + authority(f['source_id'] as String);
     return [
-      for (final id in _ftsIds(nutri, 'dishes_fts', text, limit: 5))
-        for (final r in nutri.select('SELECT *, id FROM dishes WHERE id = ?', [id]))
-          of('dish', r, (r['serving_g'] as num).toDouble(),
-              r['kcal'] != null || r['recipe_id'] == null ? _nutrientsOf(r) : _recipePer100(r['recipe_id'] as int),
-              estimated: true),
       for (final id in _ftsIds(nutri, 'recipes_fts', text, limit: 5))
         for (final r in nutri.select('SELECT id, title AS name FROM recipes WHERE id = ?', [id]))
           of('recipe', r, _recipeServingGrams(id), _recipePer100(id)),
-      // Government tables first, then search order: "egg" is USDA's egg before a brand's.
+      // The food the word means first ("banana" → raw banana), then defaults, then government tables, then search
+      // order: "egg" is USDA's egg before a small dataset's.
       for (final r in [
+        if (meant != null) ...nutri.select('SELECT * FROM foods WHERE id = ?', [meant]),
         for (final id in _ftsIds(nutri, 'foods_fts', text, limit: limit))
-          ...nutri.select('SELECT * FROM foods WHERE id = ?', [id])
+          if (id != meant) ...nutri.select('SELECT * FROM foods WHERE id = ?', [id])
       ].indexed.toList()
-        ..sort((a, b) => switch (authority(b.$2['source'] as String) - authority(a.$2['source'] as String)) {
+        ..sort((a, b) => switch (rank(b.$2) - rank(a.$2)) {
               0 => a.$1 - b.$1,
               final d => d,
             }))
-        of('food', r.$2, (r.$2['serving_g'] as num?)?.toDouble(), _nutrientsOf(r.$2)),
-      // Every word must match: among millions of products "any word" buries the one meant.
-      for (final r in (products ?? nutri).select(
-          'SELECT p.*, p.barcode AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
-          'WHERE products_fts MATCH ? ORDER BY bm25(products_fts) LIMIT 8',
-          [_ftsQuery(text)?.replaceAll(' OR ', ' ') ?? '""']))
-        of('product', r, null, _nutrientsOf(r)),
+        of('food', r.$2, (r.$2['serving_g'] as num?)?.toDouble(), _nutrientsOf(r.$2),
+            estimated: r.$2['category'] == 'dish'),
+      // Every word must match: among millions of products "any word" buries the one meant. Only with products.db.
+      if (products case final db?)
+        for (final r in db.select(
+            'SELECT p.*, COALESCE(p.barcode, p.rowid) AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
+            'WHERE products_fts MATCH ? ORDER BY bm25(products_fts) LIMIT 8',
+            [_ftsQuery(text)?.replaceAll(' OR ', ' ') ?? '""']))
+          of('product', r, null, _nutrientsOf(r)),
     ];
   }
 
-  /// An everyday word's row from [staples] ("oil" → vegetable oil, 14 g) as a choice; null if nutri.db lacks it.
+  /// The food an everyday word means ("oil" → vegetable oil, its serving from db/catalog/defaults.tsv) as a choice;
+  /// null if no alias is that word.
   FoodChoice? staple(String word) {
-    final (label, serving) = staples[word] ?? ('', null);
-    final r = nutri.select('SELECT * FROM foods WHERE name = ? COLLATE NOCASE', [label]).firstOrNull;
+    final id = _aliasFood(word);
+    final r = id == null ? null : nutri.select('SELECT * FROM foods WHERE id = ?', [id]).single;
     return r == null
         ? null
-        : (kind: 'food', id: r['id'], label: r['name'] as String,
-            servingG: serving ?? (r['serving_g'] as num?)?.toDouble(), per100: _nutrientsOf(r), estimated: false);
+        : (kind: 'food', id: r['id'], label: r['name'] as String, servingG: (r['serving_g'] as num?)?.toDouble(),
+            per100: _nutrientsOf(r), estimated: false);
+  }
+
+  /// The food (dishes are foods) named exactly [name], marked ≈ like every photo match; null if nutri.db lacks it.
+  FoodChoice? named(String name) {
+    final r = nutri.select('SELECT * FROM foods WHERE name = ? COLLATE NOCASE ORDER BY is_default DESC', [name])
+        .firstOrNull;
+    return r == null
+        ? null
+        : (kind: 'food', id: r['id'], label: r['name'] as String, servingG: (r['serving_g'] as num?)?.toDouble(),
+            per100: _nutrientsOf(r), estimated: true);
   }
 
   /// Logs [grams] of [food] right away: pressing "Log" on that screen is the
@@ -1028,46 +1050,16 @@ class AgentTools {
 
 typedef FoodChoice = ({String kind, Object? id, String label, double? servingG, Nutrients per100, bool estimated});
 
-/// Splits "2 eggs, toast and a coffee" into items.
-/// Everyday words with no plain row in nutri.db, where search picks something odd ("bread" →
-/// pan dulce, "cream" → whipped topping, "buckwheat" → raw groats): the row people mean, and a
-/// realistic serving (null = the row's own). test/real_nutri_db_test.dart checks every row exists.
-const staples = <String, (String, double?)>{
-  'bread': ('White Bread', 30),
-  'cream': ('Cream, fluid, light (coffee cream or table cream)', null),
-  'oil': ('Oil, vegetable, blend', 14),
-  'fish': ('Fish, cod, Atlantic, cooked, dry heat', null),
-  'salad': ('Tossed salad', 150),
-  'sausage': ('Sausage, pork, grilled, with no added fat, composite', 75),
-  'sausages': ('Sausage, pork, grilled, with no added fat, composite', 75),
-  'jam': ('Jams and preserves', null),
-  'nuts': ('Mixed nuts', 30),
-  'burger': ('Hamburger', 150),
-  'hamburger': ('Hamburger', 150),
-  'fries': ('French fries', 120),
-  'french fries': ('French fries', 120),
-  'cookie': ('Cookies, chocolate chip, commercially prepared, soft-type', 15),
-  'cookies': ('Cookies, chocolate chip, commercially prepared, soft-type', 15),
-  'cake': ('Cake, sponge, prepared from recipe', 80),
-  'honey': ('Honey', 21), // the row's own serving is a 339 g jar
-  'egg': ('Egg', 50), // no serving of its own: 100 g would be two eggs
-  'eggs': ('Egg', 50),
-  // Eaten cooked: the plain rows are dry groats.
-  'buckwheat': ('Buckwheat groats, roasted, cooked', null),
-  'rice': ('Rice, white, medium-grain, enriched, cooked', null),
-  'white rice': ('Rice, white, medium-grain, enriched, cooked', null),
-  'cooked rice': ('Rice, white, medium-grain, enriched, cooked', null),
-  'boiled rice': ('Rice, white, medium-grain, enriched, cooked', null),
-};
-
-/// nutri.db foods.source -> how much its numbers are trusted: 2 government tables, 1 USDA-derived
-/// generic (foodstruct), 0 smaller or branded datasets.
+/// nutri.db foods.source -> how much its numbers are trusted: 2 government tables (sources.authoritative), 1
+/// USDA-derived generic (foodstruct), 0 smaller datasets.
 int authority(String source) => switch (source) {
-      'usda_sr28' || 'usda_sr' || 'usda_fdc_foundation' || 'usda_fndds' || 'nz_foodfiles' || 'ciqual' || 'cofid' => 2,
+      'usda_sr' || 'usda_foundation' || 'usda_fndds' || 'cnf' || 'frida' || 'livsmedelsverket' || 'matvaretabellen' ||
+      'afcd' || 'swiss' || 'nz' || 'ciqual' || 'cofid' => 2,
       'foodstruct' => 1,
       _ => 0,
     };
 
+/// Splits "2 eggs, toast and a coffee" into items.
 List<String> _split(String s) => [
       for (final p in s.split(RegExp(r',|\band\b|\+|;|\bwith\b', caseSensitive: false)))
         if (p.trim().isNotEmpty) p.trim()

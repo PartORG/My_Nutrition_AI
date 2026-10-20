@@ -32,18 +32,27 @@ void main() {
       // (300 g chicken*1.65 + 250 broccoli*.34 + 30 soy*.53 + 15 oil*8.84 + 300 rice*1.23) / 2
       expect(stirFry['kcal'] as double, closeTo(548.8, 0.1));
       expect(db.select("SELECT rowid FROM foods_fts WHERE foods_fts MATCH 'rice'").length, 2);
-      expect(db.select("SELECT barcode FROM products_fts WHERE products_fts MATCH 'yogurt'")
-          .single['barcode'], '2000000000022');
+      // Products live in products.db (downloaded) since catalogue v4; health data in health.db, attached.
+      expect(hasHealth(db), isTrue, reason: 'test/health_test.db sits next to it');
+      expect(db.select('SELECT key FROM health.conditions ORDER BY id').first['key'], 'diabetes_t2');
       expect(() => db.execute('DELETE FROM foods'), throwsA(isA<SqliteException>()),
           reason: 'opened read-only');
+      expect(() => db.execute('DELETE FROM health.docs'), throwsA(isA<SqliteException>()),
+          reason: 'health.db is read-only too');
+      db.close();
+    });
+
+    test('a nutri.db without its health.db still opens, without health data', () {
+      final db = openNutriDb(nutriCopy({}).path); // candidate.db: no candidate health file beside it
+      expect(hasHealth(db), isFalse);
       db.close();
     });
 
     test('refuses wrong version, wrong embedder, or a non-nutri file', () {
-      expect(() => openNutriDb(nutriCopy({'schema_version': '4'}).path),
+      expect(() => openNutriDb(nutriCopy({'schema_version': '5'}).path),
           throwsA(isA<NutriDbException>()));
-      // An older file (no foods.source, no dish micronutrients) is refused too, so the app reinstalls the bundled one.
-      expect(() => openNutriDb(nutriCopy({'schema_version': '2'}).path),
+      // An older file (v3: other ids, no health.db) is refused too, so the app reinstalls the bundled one.
+      expect(() => openNutriDb(nutriCopy({'schema_version': '3'}).path),
           throwsA(isA<NutriDbException>()));
       expect(() => openNutriDb(nutriCopy({'schema_version': null}).path),
           throwsA(isA<NutriDbException>()));
@@ -119,6 +128,22 @@ void main() {
       expect(sqlite3.open(p.userDbPath(id)).userVersion, userDbMigrations.length);
       await expectLater(p.create('Bob', '12'), throwsArgumentError);
       await expectLater(p.create(' ', '1234'), throwsArgumentError);
+      p.close();
+    });
+
+    test('catalogue v4: an older profile\'s data is wiped once, its sign-in stays; a new profile is left alone', () async {
+      final p = Profiles.open(tmp);
+      final id = await p.create('Anna', '1234');
+      expect(p.resetForCatalog(nutriSchemaMax), 0, reason: 'made by this build');
+      final user = openUserDb(p.userDbPath(id));
+      user.execute("INSERT INTO saved_recipes (recipe_id, title, saved_at) VALUES (7, 'old id', 0)");
+      user.close();
+      p.setSetting('catalog', '3'); // as if made before v4
+      expect(p.resetForCatalog(nutriSchemaMax), 1);
+      expect(openUserDb(p.userDbPath(id)).select('SELECT * FROM saved_recipes'), isEmpty);
+      expect(p.list(), [(id: id, name: 'Anna')]);
+      expect(await p.unlock(id, '1234'), isA<PinOk>());
+      expect(p.resetForCatalog(nutriSchemaMax), 0, reason: 'once');
       p.close();
     });
 

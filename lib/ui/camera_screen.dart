@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show max;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
-import 'package:flutter/services.dart' show MethodChannel;
+import 'package:flutter/services.dart' show MethodChannel, rootBundle;
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart' show InferenceModel;
@@ -40,8 +41,9 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   if (data == null) return;
   final captured = await container.read(captureProvider)(context, mode);
   if (captured == null || !context.mounted) return;
+  final rows = container.read(detectorRowsProvider).value ?? const {}; // loaded with the detector
   final (items, usedMode) = switch (captured) {
-    (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found), live ? 'live' : 'photo'),
+    (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found, rows: rows), live ? 'live' : 'photo'),
     (List<ScanItem> items) => (items, 'photo'),
     (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
@@ -62,13 +64,18 @@ final captureProvider = Provider<Capture>((ref) => (context, mode) => Navigator.
     ));
 
 final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
-  final d = await TfliteDetector.load();
+  await ref.read(detectorRowsProvider.future); // ready before any box can reach the review screen
+  final d = await YoloxDetector.load();
   ref.onDispose(d.close);
   return d;
 });
 
-/// Preview with food boxes. Live: EfficientDet's boxes twice a second; on the
-/// button, in both modes, Gemma 4 names the foods (EfficientDet until the chat
+/// Each detector label's reviewed nutri.db row (db/detector_labels.tsv), so a box never goes through search.
+final detectorRowsProvider =
+    FutureProvider<Map<String, String>>((ref) async => readYoloxRows(await rootBundle.loadString(yoloxLabelsAsset)));
+
+/// Preview with food boxes. Live: YOLOX's boxes twice a second; on the
+/// button, in both modes, Gemma 4 names the foods (YOLOX's boxes, tiled in photo mode, until the chat
 /// model is downloaded). A photo can also come from the gallery (Gemma only).
 /// Frames stay in memory only — no picture is ever written.
 class CameraScreen extends ConsumerStatefulWidget {
@@ -132,8 +139,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     _start();
   }
 
-  /// [frame] → upright RGB, [inputSize]² by default.
-  Uint8List _rgb(CameraImage frame, int rotation, {int outW = inputSize, int outH = inputSize}) {
+  /// [frame] (its [area], upright) → upright RGB, [inputSize]² by default.
+  Uint8List _rgb(CameraImage frame, int rotation,
+      {int outW = inputSize, int outH = inputSize, Rect area = const Rect.fromLTRB(0, 0, 1, 1)}) {
     final p = frame.planes;
     return yuvToRgb(
       width: frame.width,
@@ -147,18 +155,29 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       rotation: rotation,
       outW: outW,
       outH: outH,
+      area: area,
     );
   }
 
-  Future<void> _detect() async {
+  /// The frame's foods; [tiled] (photo mode) also searches its four quarters, where small foods are 2× bigger.
+  Future<void> _detect({bool tiled = false}) async {
     final frame = _frame, cam = _cam;
     final detector = ref.read(detectorProvider).value;
     if (_busy || frame == null || cam == null || detector == null) return;
     _busy = true;
     try {
-      // ponytail: converted on the UI isolate (~320² pixels); move to an isolate if live mode stutters.
-      final found = await detector.detect(_rgb(frame, cam.description.sensorOrientation));
-      if (mounted) setState(() => _found = found);
+      final rotation = cam.description.sensorOrientation;
+      final (uw, uh) = rotation % 180 == 0 ? (frame.width, frame.height) : (frame.height, frame.width);
+      final all = <Detection>[];
+      for (final tile in tiled ? photoTiles : photoTiles.take(1)) {
+        // Scaled to fit the model with its shape kept: YOLOX trained on letterboxed photos, not squeezed ones.
+        final r = yoloxSize / max(uw * tile.width, uh * tile.height);
+        final w = (uw * tile.width * r).floor(), h = (uh * tile.height * r).floor();
+        // shortcut: converted on the UI isolate (~416×234 pixels a tile); move to the isolate if live mode stutters.
+        final found = await detector.detect(_rgb(frame, rotation, outW: w, outH: h, area: tile), w, h);
+        all.addAll(found.map((d) => fromTile(d, tile)));
+      }
+      if (mounted) setState(() => _found = tiled ? mergeTiles(all) : all);
     } finally {
       _busy = false;
     }
@@ -181,6 +200,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       final tools = ref.read(profileDataProvider)?.tools;
       if (tools == null) return null; // locked meanwhile
       final photo = await png();
+      if (ref.exists(agentProvider)) await ref.read(agentProvider).value?.release();
       return await scanPhoto(llm, tools, photo, crop: await _cropPng(photo, closerLook(boxes)));
     } finally {
       if (mounted) setState(() => _naming = false);
@@ -197,11 +217,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
   Future<void> _shoot(AppLocalizations l) async {
     if (_frame == null || _cam == null) return;
-    // Both modes: Gemma names the foods. EfficientDet knows only 10 COCO foods (phone test:
-    // "only apples and pizzas"), so its boxes are a live preview and the fallback when Gemma
-    // isn't downloaded, sees nothing, or the user stops waiting.
+    // Both modes: Gemma names the foods and weighs them; YOLOX's boxes are the live preview and the fallback
+    // when Gemma isn't downloaded, sees nothing, or the user stops waiting.
     try {
-      if (!_live) await _detect(); // its boxes aim Gemma's closer look
+      if (!_live) await _detect(tiled: true); // its boxes aim Gemma's closer look
       final seen = await _name(_framePng, boxes: [for (final d in _found) d.box]);
       if (_cancelled || !mounted) return;
       if (seen != null && (seen.isNotEmpty || _found.isEmpty)) return Navigator.pop(context, seen);
@@ -248,7 +267,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       _naming = false;
     });
     if (_fromGallery || _frame == null) return;
-    if (!_live) await _detect();
+    if (!_live) await _detect(tiled: true);
     if (mounted) Navigator.pop(context, (_found, _live));
   }
 

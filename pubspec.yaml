@@ -75,6 +75,7 @@ flutter:
           weight: 700
   assets:
     - assets/nutri.db
+    - assets/health.db
     - assets/icons/icon_chat.png
     - assets/fonts/
     - assets/licenses/

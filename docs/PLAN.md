@@ -20,7 +20,7 @@ by editing this file deliberately, never by silently diverging in code.
 |---|---|
 | **Free** | AI chat **30 user messages/day** (counted per phone, resets local midnight), recipe search, meal logging, saved/liked recipes, **allergen filtering (always free)**, today's dashboard, **weekly/monthly dashboard** (calories per day, averages, week review, weight trend), fingerprint/PIN lock, meal reminders, **History: last 30 days** |
 | **Basic** | Unlimited chat, **meal plan + shopping list**, **water reminders**, micronutrients, streaks, **History: 90 days** |
-| **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets**. **History: 240 days** |
+| **Medium** | + Conditions (diabetes, ALS, MS, …): rule-based filtering & limits, symptom + reading journal, timeline charts, doctor export (PDF/CSV). **Records, never interprets** (except: how often symptoms followed a food, as counts, never a cause; see "All nutrients, patterns" 12). **History: 240 days** |
 | **Pro** | + Camera: photo / live video / barcode → review & edit screen → "What can I cook?" or "Log this meal" (user confirms portion, values shown as ≈). **Year dashboard**. **History: 365 days**. **7-day free trial** (Play offer) |
 
 - RevenueCat, anonymous device user, entitlements `basic ⊂ medium ⊂ pro`, one `has(tier)` check.
@@ -126,7 +126,7 @@ nutrition and micronutrients)` · `products(barcode, name, + per-100 g nutrition
 `condition_avoid(condition_id, food_id, note)` (M5: foods to avoid, filtered like allergens) ·
 `docs(id, source, text, embedding BLOB float32[768])` + FTS5 tables.
 
-Rules: recipe nutrition is computed, never stored · additive changes need no version bump ·
+Rules: recipe nutrition is computed at build time (v4: stored per serving) · additive changes need no version bump ·
 docs chunks ≤ 512 tokens, ≤ ~50k docs · `nutri.db` ≤ 400 MB · data licensing is the data owner's job.
 
 ## Milestones
@@ -422,6 +422,125 @@ columns for them at all.
   they remove and download again.
 - **Size:** `nutri.db` was 299.75 MB, just under the 300 MB contract (raised to 400 MB in data v4).
 
+## Catalogue v4: complete rebuild — decisions (user, 2026-10-19), in progress
+
+Why: generic search is buried by branded rows in `foods` (34k of 61k: "banana" → banana chips, waffles), so the
+agent gets poor candidates. Schemas: `db/catalog/` (the v3 builder and `db/nutri_schema.sql` stay until the switch).
+
+1. **New ids, no mapping** from v3 ids.
+2. **Upgrade wipes the profile's data:** `user.db` and the memory vectors are deleted on the first unlock with the
+   v4 catalogue; the sign-in (name, PIN, avatar in profiles.db) stays.
+3. **Wide nutrient columns**, NULL = unknown (no food_nutrients table).
+4. **All sources kept:** generic → `foods`, branded → `products`.
+5. **Licence rule for new downloads:** the original source must allow commercial use (CC0, CC BY, ODbL, OGL,
+   etalab…), recorded per file in DATA_SOURCES.md. Exception: recipes (9, 10).
+6. **Health:** official reference values and guidelines, plus licence-clean medical Q&A on all topics (e.g. MedQuAD),
+   always quoted with their source, never rewritten by the model.
+7. **Three files:** `nutri.db` + `health.db` bundled (≤ 800 MB together; was 500, raised 2026-10-20); `products.db` downloaded and kept on the
+   phone (all branded: the old `foods` brands, chain menus, Open Food Facts).
+8. **Scraped recipes kept** (food.com, BBC Good Food, allrecipes, Reddit) as a deliberate exception: copyright stays
+   with the sites, takedown risk accepted by the owner.
+9. **New scraped recipe sets allowed**; a set whose own licence says non-commercial / research only stays out
+   (RecipeNLG). Foreign-language recipes kept.
+10. **Translated on the PC** (TranslateGemma, cached) to English for matching; originals stored and shown in their
+    language.
+11. **Recipes:** ingredient lines (id, position, food, grams, original line), `recipe_steps`, `recipe_tags` from a
+    fixed list, source and URL per recipe. Recipe nutrition precomputed per serving with coverage per nutrient.
+12. **No `dishes` table:** chain menu items → products; generic dishes → foods with `category = 'dish'`.
+13. **Search:** `common_name` + one `is_default` row per common name + `food_aliases` (en/uk/de/fr). The `staples`
+    map and `food_names` become data; order: exact alias → default rows → the rest by words and authority.
+14. **Full nutrient panel** (list in `db/catalog/nutrients.tsv`).
+15. **Gaps filled** from the same food in another table, then estimated from similar foods; every value marked
+    measured / borrowed / estimated; not measured shows ≈.
+16. **Health rules:** per-person reference values (DRI / EFSA, by sex, age, pregnancy, lactation), advisory
+    condition limits (min/max, never blocking), condition foods avoid / limit / prefer; every row names its source.
+17. **Pipeline:** `tool/catalog/` (uv, ruff, pytest), stages fetch → normalize → translate → match → fill → write,
+    each cached and run alone under the 9 GB cap.
+18. **No release gates;** host tests and pipeline tests pass.
+
+Built (2026-10-19), `tool/catalog/` (README in each module's docstring; `uv run --with pytest --with openpyxl pytest
+tool/catalog`):
+- **fetch** (`sources.tsv`, `fetch.py`): CNF 2015 (OGL-Canada), Frida 5.5 (CC BY), Swedish Food Agency API (CC BY),
+  Matvaretabellen (NLOD), AFCD R3 (CC BY), Swiss FCDB 7.1, MedQuAD (CC BY), DRI tables (Health Canada pages), EFSA
+  DRV summary PDF. Out: NEVO (no charging users), WHO (NC), BLS 4.0 (no licence text; owner: leave out), RecipeNLG and
+  the 2M Kaggle recipe set (NC), the "10k South Asian recipes" set (synthetic: random ingredients). By hand only (bot
+  check): Fineli. No licence-clean recipe sets from Europe, Canada or NZ with servings were found.
+- **normalize** (`readers/`): 12 government tables at the full panel (USDA SR Legacy, FNDDS, Foundation, CNF, Frida,
+  Sweden, Norway, AFCD, Swiss, CIQUAL, CoFID, NZ), the v3 loaders for the smaller and branded files (`legacy.py`),
+  Open Food Facts 2026 (2.03M), recipes through the v3 loaders (`recipes.py`, 500k raw), DRI (`dri.py`), MedQuAD.
+  Units and rules in `normalize.py` (EU available carbs + fibre, RAE not RE, kJ, DFE else total folate, omega-3 sums,
+  a per-nutrient maximum in nutrients.tsv drops wrong units).
+- **match** (`match.py`, `names.py`, `match_recipes.py`): 41k generic foods, 13k defaults, 43.5k branded rows to
+  products; recipes through the v3 matcher and ingredient_map.txt, translated to v4 rows: 168,642 kept (v3 170,951).
+- **fill**: 1.43M values measured, 293k borrowed, 429 estimated.
+- **translate**: everyday names → uk/de/fr aliases with TranslateGemma 4B (`db/catalog/aliases.tsv`, resumable, ~10.5k
+  names, ~5 h). Machine translation: review the most-used names.
+- **write**: nutri.db 339 MB + health.db 40 MB (recipe nutrition was a view to save 140 MB; stored again since the 800 MB limit, 2026-10-20), products.db 523 MB
+  (2.08M). Doc embeddings not stored (search is FTS, as v3).
+- **App**: schema 4 / data 5; health.db attached as `health`; `food_aliases` replace `staples`; dishes are foods
+  (≈); products only from products.db; `Profiles.resetForCatalog` wipes old profiles' user.db once. Test fixtures:
+  `python3 tool/catalog/test_db.py` (v3 dummy data converted). The app still shows the 14 v3 nutrients; the other 42
+  are in nutri.db for a later UI step. The published products.db.gz is still v3's (works with this code): the v4
+  file needs uploading to a new GitHub release before the URL changes.
+- **Size limit raised to 800 MB** (user, 2026-10-20): recipe nutrition is stored again (`write.py` turns the view
+  into a table); nutri.db 512 MB + health.db 40 MB. Over Play's 500 MB base module: a Play build needs an asset pack.
+- **Translations done** (2026-10-20): 10,479 names × uk/de/fr. The 300 most used were reviewed by hand (~1 in 4 had a
+  wrong word: lime → "mustard powder", turkey → "Turkish"); the rest is unreviewed machine output. A translated word
+  goes to the food that owns the English name, once per language (most used first).
+
+## All nutrients, patterns, model-first chat — decisions (user, 2026-10-20), not built yet
+
+Ships in the same release as Catalogue v4, after v4 is committed on its own.
+
+**All nutrients**
+1. **meal_log stores all 56 nutrients** as columns, copied at log time (NULL = unknown). No migration: the v4
+   upgrade already wipes user.db.
+2. **Goals from health.db** (NASEM): RDA, else AI, by sex, age (birth month), pregnancy and lactation; editable
+   like kcal. The ULs become upper limits with warnings. The 26 nutrients without a reference value are tracked,
+   without a goal.
+3. **Context block:** "Low today" (at most 5 by % of goal, only after the usual dinner time) and "Over the limit"
+   (always), ~40 tokens. The full table through `nutrition_status` and its card.
+4. **UI:** a new "All nutrients" screen grouped as in `db/catalog/nutrients.tsv` (any day, the week; goal bars, UL
+   marker; amino acids and single sugars behind "More"); a Low/Over chip on Today; the Goals screen grouped and
+   collapsed. NASEM goals replace the EU label % (`microReference`): one source of truth. 4 languages.
+5. **Fill every gap in nutri.db foods** (571,796 NULL cells in v4), in order, each value with its provenance
+   (per value, not per food): borrowed from the same food in a government table (reviewed name match, extends
+   `fill.py`) → web research with a URL for the top ~200 foods (`db/catalog/manual_values.tsv`, wins over
+   estimates) → estimated from similar foods (food group + close name, scaled by a related known value, e.g.
+   amino acids by protein). Estimates show as ≈; a test scores the estimator on held-back real values. No values
+   from an LLM's memory.
+6. **Products keep their label values only** (no estimates: fortified products differ, and the download would
+   grow); their unknowns show as "partly known" (≥ the known sum).
+
+**Behaviour patterns** (SQL over 14–30 days, no model)
+7. **All seven:** skipped meals; late eating; weekdays vs weekends; recurring nutrient gaps; logging gaps (so a
+   half-logged day isn't read as a low day); weight trend vs intake; symptoms after foods (≥ 5 cases, counts only,
+   never "causes", "you might note this to a doctor").
+8. **Delivery:** the 3 strongest in the context block (refreshed at the day's first message), a `my_patterns`
+   tool for all of them, and a "Patterns" section in the weekly review.
+
+**Model-first chat**
+9. **The model decides every message;** `route()` is no longer the first step. Code checks the tool arguments
+   against the user's words (every food in `log_meal` was said; a recipe number exists in the list shown); one
+   retry with the reason; then the old router logic as the fallback.
+10. **Every answer is checked** by a second model pass, small talk included: a hidden turn in the same
+    conversation ("check your last answer against these facts" → OK / WRONG: …). Answers stream with a
+    "checking…" mark, then ✓. WRONG → regenerated once with the reason; WRONG again → the cards stay, the text
+    is hidden, "couldn't verify this answer". Checks don't count towards Free's 30 messages. Expected cost:
+    +3–9 s per answer, and the conversation is cut back every ~4–5 messages (+~300 tokens per check).
+11. **Phone gate before shipping:** the routing set plus every case the router used to handle, in 4 languages, on
+    the Xiaomi: ≥ 95 % right tool after check and retry, ≤ 1 % wrong meals logged, with timings per step. Failing
+    it, the router stays first until the prompts are fixed.
+
+**Tiers**
+12. **Free:** all 56 tracked, the Low/Over chip, UL warnings (safety, like allergens). **Basic:** the All nutrients
+    screen, micronutrient goals, the "Low today" line, patterns 1–6. **Medium:** symptoms after foods; its rule
+    becomes "records, never interprets; shows how often symptoms followed a food, as counts, never as a cause".
+    **All tiers:** model-first chat and the answer check.
+
+Order: finish v4 (build, tests, phone, commit) → fill the gaps (pipeline) → meal log, goals, context, screens,
+translations → patterns → model-first and the check → phone gate → one release.
+
 ## v0.11.0 (2026-10-18): My Nutrition AI, voice, Eva, avatars, widget sizes, Google Fit calories
 
 - **Name:** "My Nutrition AI" everywhere users see it; the GitHub repo is `My_Nutrition_AI`. App ID, Dart package,
@@ -491,6 +610,14 @@ columns for them at all.
 - **Training: this PC's RTX 4070 Laptop (8 GB)**, run alone and memory-capped (the 14 GB box OOMs otherwise).
 - **Gates before it ships:** mAP on a held-out set of own meal photos above EfficientDet's; ≤ 150 ms per frame
   on the Xiaomi 11T at 2 FPS; review-screen label quality checked on real meals.
+- **In the camera (user, 2026-10-19), before the held-out gate:** `YoloxDetector` replaces EfficientDet (kept for
+  the benchmark). CPU, 2 threads; frames scaled to fit 416 with their shape kept (letterboxed, as trained); photo
+  mode searches the frame tiled (`photoTiles`); each label logs its reviewed row from `detector_labels.tsv`
+  (`AgentTools.named`), search only if the row is missing; water logs nothing. Threshold still 0.4, not tuned.
+- **Fixed (phone report 2026-10-19): voice input always "Nothing heard", photo naming always failed, so spoken
+  answers never came.** flutter_edge_ai_litertlm 1.11 rejects images and audio on `openSession` (UnsupportedError,
+  caught and shown as those messages). Both now use `createSession`, which ends the chat's conversation, so they
+  call `Agent.release()` first (waits for a warm-up or turn; the chat reopens with its history).
 
 ## v0.10.0 (2026-10-17): new design (docs/New_Design), light and dark
 

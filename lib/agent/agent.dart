@@ -164,7 +164,22 @@ class Agent extends ChangeNotifier {
 
   /// Opens the conversation ahead of the first message (the first prefill of
   /// the tool declarations is the slow part, M0: 7.5 s).
-  Future<void> warmUp() async => _session ??= await _open();
+  Future<void> warmUp() => _warming ??= () async {
+        _session ??= await _open();
+      }();
+  Future<void>? _warming;
+
+  /// Photo and voice hand the model pictures and sound, which it takes only in its one main conversation
+  /// (flutter_edge_ai rejects media on `openSession`), and opening that one ends the chat's. Waits for a warm-up or
+  /// turn in flight; the chat reopens with its history next message, as after [translateRecipe].
+  Future<void> release() async {
+    await _warming?.then((_) {}, onError: (_) {});
+    while (busy) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+    await _session?.close();
+    _session = null;
+  }
 
   Future<void> send(String text) async {
     text = text.trim();

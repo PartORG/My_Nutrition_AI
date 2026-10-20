@@ -43,7 +43,7 @@ void main() {
   // profile's condition says to avoid.
   test('no forbidden ingredient for a given condition', () {
     final queries = [
-      for (final r in nutri.select('SELECT title, tags FROM recipes')) ...[r['title'] as String, r['tags'] as String],
+      for (final r in nutri.select('SELECT title, tags FROM recipe_info')) ...[r['title'] as String, r['tags'] as String],
       for (final r in nutri.select('SELECT name FROM foods')) r['name'] as String,
       'dinner', 'breakfast', 'quick lunch', 'high protein', 'something with fish',
     ];

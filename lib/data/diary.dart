@@ -99,7 +99,8 @@ void replaceMeal(Database user, int id, FoodChoice food) {
 }
 
 /// Meals logged before nutri.db had vitamins and minerals for their food get them from the food of the
-/// same name (a food or a dish), once per [dataVersion]. Recipes already had them; products and quick adds stay unknown.
+/// same name (dishes are foods), once per [dataVersion]. Recipes already had them; products and quick adds stay
+/// unknown.
 int fillMissingMicros(Database user, Database nutri, int dataVersion) {
   if (pref(user, 'micros_filled') == '$dataVersion') return 0;
   final rows = user.select('SELECT id, description, grams FROM meal_log WHERE iron_mg IS NULL AND grams > 0 AND recipe_id IS NULL');
@@ -108,12 +109,10 @@ int fillMissingMicros(Database user, Database nutri, int dataVersion) {
   final foods = names.isEmpty
       ? const <String, Row>{}
       : {
-          // Dishes too: logged before they had vitamins (a dish and a food may share a name; the food wins).
-          for (final table in ['dishes', 'foods'])
-            for (final f in nutri.select(
-                'SELECT name, ${micronutrients.join(', ')} FROM $table WHERE iron_mg IS NOT NULL AND name IN ($marks)',
-                names))
-              f['name'] as String: f
+          for (final f in nutri.select(
+              'SELECT name, ${micronutrients.join(', ')} FROM foods WHERE iron_mg IS NOT NULL AND name IN ($marks)',
+              names))
+            f['name'] as String: f
         };
   var n = 0;
   for (final r in rows) {
