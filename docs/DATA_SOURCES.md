@@ -1,4 +1,60 @@
-# nutri.db data sources
+# Data sources
+
+## Catalogue v4 (2026-10-19, tool/catalog)
+
+Built by `tool/catalog` (fetch → normalize → translate → match → fill → write; docs/PLAN.md "Catalogue v4") from
+`nutrition-ai-assistant/data`. Each downloaded folder has a `FETCHED.tsv` (file, bytes, sha256, url, date, licence);
+`tool/catalog/sources.tsv` lists every dataset considered, with why the excluded ones are out.
+
+### nutri.db: generic foods (41,067; 13,053 defaults) and recipes (168,642)
+
+| source | foods | of them dishes | licence |
+|---|---|---|---|
+| USDA SR Legacy (FoodData Central) | 7,528 | 73 | public domain |
+| Canadian Nutrient File 2015 | 5,690 | 297 | Open Government Licence - Canada |
+| USDA FNDDS 2021-2023 | 5,431 | 1,598 | public domain |
+| ANSES-CIQUAL 2025 | 3,484 | 407 | Licence Ouverte / etalab 2.0 |
+| CoFID 2021 (UK) | 2,886 | 507 | Open Government Licence v3.0 |
+| NZ FOODfiles 2018 | 2,767 | | © Plant & Food Research / Ministry of Health (terms to confirm) |
+| Swedish Food Agency | 2,606 | | CC BY 4.0 |
+| Matvaretabellen (Norway) | 2,121 | | NLOD 2.0 |
+| AFCD Release 3 (Australia) | 1,588 | | CC BY 4.0 |
+| Frida 5.5 (Denmark) | 1,381 | | CC BY 4.0 |
+| Swiss Food Composition Database 7.1 | 1,216 | | free use incl. commercial, source required |
+| USDA Foundation Foods | 395 | | public domain |
+| v3 datasets: Indonesian table, foodstruct, INDB, nutrients_csvfile, Food_Nutrition_Dataset, Food-101 dishes, daily_food, FDA produce | 3,974 | 183 | as in the v3 report below |
+
+Recipes: food.com 168,589, BBC Good Food 53. Scraped content: copyright stays with the sites and authors; kept by the
+owner's decision (2026-10-19). Every line maps to a food and grams; calories per serving plausible and within 30 %
+of the published value.
+
+Gaps (a nutrient a row lacks) are filled from the same food in the same state: 1,434,030 values measured, 292,004
+borrowed from another government table (foods.borrowed), 429 estimated as the median of the same food (foods.estimated).
+
+### health.db
+
+- Reference intakes: National Academies DRIs as Health Canada publishes them (numbers only): RDA, AI, UL, AMDR by sex,
+  age band, pregnancy and lactation, 31 nutrients.
+- Conditions, daily limits, foods to avoid and 51 guideline passages: `db/medical.sql`, curated from the guidelines in
+  `raw_medical/` (each row names its guideline; paraphrased).
+- 16,407 question-answer passages, quoted: MedQuAD (CC BY 4.0, NIH sites: GARD, GHR, NIDDK, NINDS, MedlinePlus Health
+  Topics, NIH SeniorHealth, cancer.gov, NHLBI, CDC). The three subsets whose answers the authors removed add nothing.
+- EFSA DRV summary tables (PDF) are downloaded but not parsed yet.
+
+### products.db (download): 2,077,610 products
+
+Open Food Facts dump 2026-10-16 (ODbL 1.0 / DbCL; 2,034,064 rows), USDA Branded Foods (public domain, 29,824),
+Healthy Foods DB (7,772), the v3 Open Food Facts extract (4,509), baked goods (643), USDA SR chain items (265), chain
+menus (503), Swiss branded foods (30). One row per barcode: the most complete label.
+
+### Not used
+
+NEVO (users may not be charged for its data), WHO (CC BY-NC-SA), BLS 4.0 (no licence text published), RecipeNLG and
+"Recipe Dataset (over 2M)" (non-commercial), "10k South Asian Recipes" (synthetic data). Fineli (CC BY) only by hand
+(its site blocks scripts).
+
+## v3 build report (2026-10-16, tool/build_real_nutri_db.py)
+
 
 Built by `tool/build_real_nutri_db.py` on 2026-10-16 from `nutrition-ai-assistant/data/raw_nutritions` and `raw_recipes`. Every file in both folders is listed; byte-identical copies are read once.
 

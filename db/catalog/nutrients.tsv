@@ -1,0 +1,65 @@
+# The nutrient panel of catalogue v4 (docs/PLAN.md, decision 14): one column per row in foods, products and
+# recipe_nutrition, all per 100 g (recipes: per serving), NULL = unknown. The column order is this file's order.
+# Keys keep v3's names where they existed, so meal_log and the app's nutrient code carry over.
+# carbs_g = total carbohydrate including fibre (USDA style); folate_ug = dietary folate equivalents; vitamin_a_ug = RAE.
+# usda: USDA / Canadian Nutrient File nutrient numbers; eurofir: EuroFIR component codes and INFOODS tagnames that
+# mean exactly this (|-separated). Codes that need a rule (available carbohydrate, retinol equivalents, kJ, total
+# folate, single fatty acids) are left out here and handled in tool/catalog/normalize.py: derive().
+# max: the most per 100 g a real food has (a little above the richest one); higher values are a wrong unit and dropped.
+key	unit	group	name	usda	eurofir	max
+kcal	kcal	energy	Energy	208		902
+protein_g	g	macro	Protein	203	PROT|PROCNT	100
+fat_g	g	macro	Fat	204	FAT|FATCE	100
+carbs_g	g	macro	Carbohydrate	205	CHOCDF	100
+fiber_g	g	macro	Fibre	291	FIBT|FIBTG|FIBC|FIB-	100
+sugar_g	g	macro	Sugars	269	SUGAR|SUGTOT	100
+starch_g	g	macro	Starch	209|810	STARCH	100
+alcohol_g	g	macro	Alcohol	221	ALC	100
+water_g	g	macro	Water	255	WATER	100
+saturated_fat_g	g	fat	Saturated fat	606	FASAT	100
+mono_fat_g	g	fat	Monounsaturated fat	645	FAMS	100
+poly_fat_g	g	fat	Polyunsaturated fat	646	FAPU	100
+trans_fat_g	g	fat	Trans fat	605	FATRN	100
+omega3_g	g	fat	Omega-3 fatty acids	868	FAPUN3|FAN3	100
+omega6_g	g	fat	Omega-6 fatty acids	869	FAPUN6|FAN6	100
+cholesterol_mg	mg	fat	Cholesterol	601	CHORL|CHOLE	3500
+sucrose_g	g	sugar	Sucrose	210	SUCS	100
+glucose_g	g	sugar	Glucose	211	GLUS	100
+fructose_g	g	sugar	Fructose	212	FRUS	100
+lactose_g	g	sugar	Lactose	213	LACS	100
+added_sugar_g	g	sugar	Added sugars		SUGAD	100
+sodium_mg	mg	mineral	Sodium	307	NA	40000
+potassium_mg	mg	mineral	Potassium	306	K	17000
+calcium_mg	mg	mineral	Calcium	301	CA	8000
+magnesium_mg	mg	mineral	Magnesium	304	MG	1500
+phosphorus_mg	mg	mineral	Phosphorus	305	P	12000
+iron_mg	mg	mineral	Iron	303	FE	150
+zinc_mg	mg	mineral	Zinc	309	ZN	100
+copper_mg	mg	mineral	Copper	312	CU	50
+manganese_mg	mg	mineral	Manganese	315	MN	1500
+selenium_ug	µg	mineral	Selenium	317	SE	2000
+iodine_ug	µg	mineral	Iodine	314	ID	300000
+vitamin_a_ug	µg	vitamin	Vitamin A	320|814	VITA_RAE	30000
+beta_carotene_ug	µg	vitamin	Beta-carotene	321	CARTB|CARTBTOT|CARTBTRANS	100000
+vitamin_d_ug	µg	vitamin	Vitamin D	328|339	VITD|VITDEQ	250
+vitamin_e_mg	mg	vitamin	Vitamin E	323	TOCPHA|VITE	200
+vitamin_k_ug	µg	vitamin	Vitamin K	430	VITK|VITK1	2000
+vitamin_c_mg	mg	vitamin	Vitamin C	401	VITC	3000
+vitamin_b1_mg	mg	vitamin	Thiamin (B1)	404	THIA|THIACLHCL	25
+vitamin_b2_mg	mg	vitamin	Riboflavin (B2)	405	RIBF	20
+vitamin_b3_mg	mg	vitamin	Niacin (B3)	406	NIA	130
+vitamin_b5_mg	mg	vitamin	Pantothenic acid (B5)	410	PANTAC	30
+vitamin_b6_mg	mg	vitamin	Vitamin B6	415	VITB6|VITB6A|VITB6C	15
+vitamin_b7_ug	µg	vitamin	Biotin (B7)	416	BIOT	250
+folate_ug	µg	vitamin	Folate	435|815	FOLDFE	5000
+vitamin_b12_ug	µg	vitamin	Vitamin B12	418	VITB12	100
+choline_mg	mg	vitamin	Choline	421|862	CHOLN	3000
+histidine_g	g	amino	Histidine	512	HIS|HISTN	20
+isoleucine_g	g	amino	Isoleucine	503	ILE|ILEU	20
+leucine_g	g	amino	Leucine	504	LEU	20
+lysine_g	g	amino	Lysine	505	LYS	20
+methionine_g	g	amino	Methionine	506	MET	20
+phenylalanine_g	g	amino	Phenylalanine	508	PHE	20
+threonine_g	g	amino	Threonine	502	THR	20
+tryptophan_g	g	amino	Tryptophan	501	TRP	20
+valine_g	g	amino	Valine	510	VAL	20

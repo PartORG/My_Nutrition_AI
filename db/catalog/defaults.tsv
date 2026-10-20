@@ -1,0 +1,188 @@
+# Reviewed defaults (docs/PLAN.md "Catalogue v4", decision 13): what people say → the exact food they mean,
+# and its serving in grams where the row's own is wrong or missing. Seeded from db/detector_labels.tsv and the
+# app's staples map (agent_tools.dart); add a line when search picks the wrong default.
+# alias	source (empty = most authoritative row of that name)	food name	serving_g
+white bread		Bread, white	
+wholemeal bread		Bread, whole wheat	
+coffee		Coffee, brewed	
+green salad		Lettuce, raw	
+hard cheese		Cheese, gruyere	
+tomato		Tomatoes, raw	
+butter		Butter, salted	
+carrot		Carrots, raw	
+mixed vegetables		Classic mixed vegetables, NS as to form, cooked	
+apple		Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)	
+chocolate		Chocolate, dark	
+red wine		Wine, red	
+boiled potatoes		Potatoes, old, boiled in unsalted water, flesh only	
+coffee with milk		Coffee, Cappuccino	
+chicken		Chicken, flesh, roasted	
+cucumber		Cucumber, with peel, raw	
+banana		Bananas, raw	
+white wine		Wine, white	
+salad dressing		Dressing, vinaigrette	
+muesli		Muesli (average)	
+bell pepper		Peppers, sweet, red, raw	
+pizza		Pizza, cheese and tomato (Margherita), prepacked	
+soft cheese		Cheese, brie	
+mixed salad		Mixed salad greens, raw	
+ham		Ham, sliced	
+soup		Soup, vegetable, homemade	
+olives		Olives, NFS	
+croissant		Croissant	
+orange		Oranges, raw, navels	
+avocado		Avocados, raw, all commercial varieties	
+spinach		Spinach, cooked	
+tomato sauce		Tomato sauce, homemade	
+soft drink		Cola	
+zucchini		Squash, summer, zucchini, includes skin, raw	
+cabbage		Green cabbage, cooked	
+strawberries		Strawberries, raw	
+juice		Orange juice, raw	
+salami		Salami	
+onion		Onions, raw	
+mayonnaise		Mayonnaise, regular	
+beef		Beef, rump steak, grilled/pan-fried	
+parmesan		Cheese, parmesan, grated	
+gravy		Gravy, NFS	
+mushrooms		Mushrooms, cooked, as ingredient	
+fruit tart		Fruit tart (average)	
+seeds		Mixed seeds	
+quiche		Quiche, vegetable, retail	
+cottage cheese		Cheese, cottage, NFS	
+green beans		Beans, snap, green, cooked, boiled, drained, without salt	
+bacon		Pork, cured, bacon, pre-sliced, cooked, pan-fried	
+milk		Milk, whole	
+couscous		Couscous, cooked	
+almonds		Nuts, almonds	
+curry		Vegetable curry	
+corn		Corn, sweet, yellow, cooked, boiled, drained, without salt	
+blueberries		Blueberries, raw	
+beer		Beer	
+radish		Radishes, raw	
+melon		Honeydew melon, raw	
+ice cream		Ice cream, vanilla	
+fruit salad		Fruit salad, homemade	
+crisps		Potato chips, plain	
+hummus		Hummus, plain	
+asparagus		Asparagus, cooked, boiled, drained	
+beetroot		Beets, cooked, boiled, drained	
+dried fruit		Raisins	
+feta		Cheese, feta	
+omelette		Egg omelet or scrambled egg, NS as to fat	
+pear		Pears, raw	
+pickles		Pickles, dill	
+eggplant		Eggplant, cooked	
+tofu		Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)	
+smoked salmon		Salmon, smoked	
+toast		Bread, white, toasted	
+cauliflower		Cauliflower, cooked, as ingredient	
+mozzarella		Cheese, Mozzarella, NFS	
+herbs		Parsley, fresh	
+kiwi		Kiwifruit, green, raw	
+sweet potato		Sweet potato, cooked	
+peach		Peaches, yellow, raw	
+minced meat		Beef, ground, cooked (average)	
+risotto		Risotto, plain, homemade	
+pork		Pork, roast, cooked	
+peanut butter		Peanut butter	
+flatbread		Bread, pita	
+dried meat		Beef, cured, dried	
+grapes		Grapes, raw	
+quinoa		Quinoa, cooked	
+raspberries		Raspberries, raw	
+fennel		Fennel, bulb, raw	
+chickpeas		Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt	
+crispbread		Crackers, crispbread	
+shrimp		Crustaceans, shrimp, cooked	
+lentils		Lentils, mature seeds, cooked, boiled, without salt	
+crepe		Crepe, plain	
+fruit compote		Applesauce, unsweetened	
+pudding		Custard	
+tuna		Fish, tuna, canned	
+berries		Berries, NFS	
+pancake		Pancakes, plain	
+sprouts		Sprouts, NFS	
+breaded meat or fish		Wiener schnitzel, homemade	
+apricot		Apricots, raw	
+mashed potatoes		Mashed potatoes (average)	
+ratatouille		Ratatouille	
+guacamole		Guacamole, NFS	
+puff pastry		Pastry, puff	
+ketchup		Ketchup	
+bolognese sauce		Bolognese sauce (with meat), homemade	
+soy sauce		Soy sauce	
+gratin		Potatoes, au gratin, home-prepared from recipe using butter	
+lemon		Lemons, raw, without peel	
+caprese salad		caprese salad	
+pesto		Pesto, green	
+mustard		Mustard	
+leek		Leeks, (bulb and lower leaf-portion), cooked, boiled, drained, without salt	
+beans		Beans, kidney, all types, mature seeds, cooked, boiled, without salt	
+chocolate spread		Chocolate hazelnut spread	
+celeriac		Celeriac, cooked	
+pomegranate		Pomegranate, raw	
+plum		Plums, raw	
+kohlrabi		Kohlrabi, raw	
+sushi		Sushi, NFS	
+cream cheese		Cheese, cream	
+peas		Green peas, NS as to form, cooked	
+lasagne		Lasagna with meat	
+mango		Mangos, raw	
+polenta		Polenta or maize/corn semolina, cooked, no added salt	
+pumpkin		Pumpkin, cooked, boiled, drained, without salt	
+dumplings		Wonton, dumpling or pot sticker, steamed	
+pineapple		Pineapple, raw, all varieties	
+gnocchi		Gnocchi, potato	
+rosti		Rostis	
+sandwich		Ham sandwich on white, with cheese	
+fruit bread		Bread, fruit	
+falafel		Falafel, home-prepared	
+tiramisu		Tiramisu	
+dip		Tzatziki	
+sun-dried tomatoes		Tomatoes, sun-dried	
+iced tea		Tea, iced, bottled, black	
+lamb	cofid	Lamb, leg joint, roasted, lean	
+pretzel		Pretzels, soft	
+cocktail		Cocktail, NFS	
+artichoke		Artichokes, (globe or french), cooked, boiled, drained, without salt	
+chili con carne		Chili con carne, prepacked	
+candy		Candy, gummy	
+bread		White Bread	30
+cream		Cream, fluid, light (coffee cream or table cream)	
+oil		Oil, vegetable, blend	14
+fish		Fish, cod, Atlantic, cooked, dry heat	
+salad		Tossed salad	150
+sausage		Sausage, pork, grilled, with no added fat, composite	75
+sausages		Sausage, pork, grilled, with no added fat, composite	75
+jam		Jams and preserves	
+nuts		Mixed nuts	30
+burger		Hamburger	150
+hamburger		Hamburger	150
+fries		French fries	120
+french fries		French fries	120
+cookie		Cookies, chocolate chip, commercially prepared, soft-type	15
+cookies		Cookies, chocolate chip, commercially prepared, soft-type	15
+cake		Cake, sponge, prepared from recipe	80
+honey		Honey	21
+egg	usda_sr	Egg, whole, raw, fresh	50
+eggs	usda_sr	Egg, whole, raw, fresh	50
+buckwheat		Buckwheat groats, roasted, cooked	
+rice		Rice, white, medium-grain, enriched, cooked	
+white rice		Rice, white, medium-grain, enriched, cooked	
+cooked rice		Rice, white, medium-grain, enriched, cooked	
+boiled rice		Rice, white, medium-grain, enriched, cooked	
+sugar	usda_sr	Sugars, granulated	4
+granulated sugar	usda_sr	Sugars, granulated	4
+spaghetti	usda_sr	Pasta, cooked, enriched, without added salt	140
+pasta	usda_sr	Pasta, cooked, enriched, without added salt	140
+potato	usda_sr	Potatoes, boiled, cooked without skin, flesh, without salt	150
+potatoes	usda_sr	Potatoes, boiled, cooked without skin, flesh, without salt	150
+broccoli	usda_sr	Broccoli, raw	91
+salmon	usda_sr	Fish, salmon, Atlantic, farmed, cooked, dry heat	150
+yogurt	usda_sr	Yogurt, plain, whole milk	245
+yoghurt	usda_sr	Yogurt, plain, whole milk	245
+tea	usda_sr	Beverages, tea, black, brewed, prepared with tap water	240
+salt	usda_sr	Salt, table	1
+water	usda_sr	Beverages, water, tap, drinking	250
+chicken liver	usda_sr	Chicken, liver, all classes, raw	100

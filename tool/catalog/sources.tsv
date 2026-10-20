@@ -1,0 +1,30 @@
+# Catalogue v4 datasets (docs/PLAN.md "Catalogue v4", decisions 5, 9). The fetch stage downloads each url into
+# nutrition-ai-assistant/data/<folder>/; status: ok = licence confirmed on the primary page, manual = download by hand
+# (bot check), check = licence still to confirm, no = excluded (reason in note). Existing raw_* files stay as they are.
+id	folder	url	licence	status	note
+cnf	raw_cnf	https://www.canada.ca/content/dam/hc-sc/migration/hc-sc/fn-an/alt_formats/zip/nutrition/fiche-nutri-data/cnf-fcen-csv.zip	Open Government Licence - Canada	ok	Canadian Nutrient File 2015, Health Canada; licence from open.canada.ca package 089885f9 (ca-ogl-lgo)
+cnf_update	raw_cnf	https://www.canada.ca/content/dam/hc-sc/migration/hc-sc/fn-an/alt_formats/zip/nutrition/fiche-nutri-data/cnf-fcen-csv-update-miseajour.zip	Open Government Licence - Canada	ok	CNF 2015 update files (changed, added, deleted records)
+frida	raw_frida	https://ndownloader.figshare.com/files/60901603	CC BY 4.0	ok	Frida 5.5, DTU (Denmark), doi:10.11583/DTU.29500682; licence from the figshare record
+frida_doc	raw_frida	https://ndownloader.figshare.com/files/60901597	CC BY 4.0	ok	Frida 5.5 documentation (English)
+fineli	raw_fineli	https://fineli.fi/fineli/en/avoin-data	CC BY 4.0	manual	Fineli (THL, Finland): Cloudflare blocks scripts; download the English open-data package by hand. CC BY per University of Helsinki; derived services must not imply THL endorsement
+livsmedelsverket	raw_se	https://dataportal.livsmedelsverket.se/livsmedel/api/v1/livsmedel	CC BY 4.0	ok	Swedish Food Agency food composition API (JSON); credit the Swedish Food Agency
+matvaretabellen	raw_no	https://www.matvaretabellen.no/api/en/foods.json	NLOD 2.0	ok	Norwegian Food Composition Table (Mattilsynet); NLOD per data.norge.no (commercial use allowed with attribution)
+matvaretabellen_nutrients	raw_no	https://www.matvaretabellen.no/api/en/nutrients.json	NLOD 2.0	ok	its nutrient ids and units
+matvaretabellen_groups	raw_no	https://www.matvaretabellen.no/api/en/food-groups.json	NLOD 2.0	ok	its food groups
+afcd_foods	raw_afcd	https://www.foodstandards.gov.au/sites/default/files/2025-12/AFCD%20Release%203%20-%20Food%20Details.xlsx	CC BY 4.0	ok	FSANZ AFCD Release 3 (1,588 foods); licence from foodstandards.gov.au/legal-policies/copyright (credit FSANZ, no endorsement implied)
+afcd_nutrients	raw_afcd	https://www.foodstandards.gov.au/sites/default/files/2025-12/AFCD%20Release%203%20-%20Nutrient%20profiles.xlsx	CC BY 4.0	ok	AFCD R3 nutrient profiles per 100 g
+afcd_recipes	raw_afcd	https://www.foodstandards.gov.au/sites/default/files/2025-12/AFCD%20Release%203%20-%20Recipes.xlsx	CC BY 4.0	ok	AFCD R3 recipe ingredients of its mixed foods
+afcd_nutrient_details	raw_afcd	https://www.foodstandards.gov.au/sites/default/files/2025-12/AFCD%20Release%203%20-%20Nutrient%20details.xlsx	CC BY 4.0	ok	AFCD R3 nutrient names, units, methods
+afcd_groups	raw_afcd	https://www.foodstandards.gov.au/sites/default/files/2025-12/AFCD%20Release%203%20-%20Food%20group%20information.xlsx	CC BY 4.0	ok	AFCD R3 food groups
+swiss	raw_ch	https://naehrwertdaten.ch/wp-content/uploads/2026/07/Swiss_food_composition_database.xlsx	opendata.swiss terms_by (commercial allowed, reference required)	ok	Swiss Food Composition Database (FSVO), EN/DE/FR/IT names; file linked from naehrwertdaten.ch/en/downloads
+bls	-	https://blsdb.de	free of charge since 2025-12-16 (no licence text published)	no	Bundeslebensmittelschlüssel 4.0: left out (owner, 2026-10-19) until MRI publishes terms for redistribution
+south_asian_recipes	raw_recipes_new/south_asian	https://www.kaggle.com/datasets/ahsanneural/10k-south-asian-recipes-with-nutrition-and-steps	CC BY-SA 4.0	no	licence accepted (owner, 2026-10-19), but the data is synthetic: 336 "Biryani" filed as Beverages/Bread with random ingredients and amounts ("4 tbsp chicken", "933 g shrimp"), 3,085 names for 9,997 recipes; files kept in raw_recipes_new/south_asian
+ods_factsheets	raw_medical/ods	https://ods.od.nih.gov/factsheets/list-all/	public domain (US government)	no	behind a bot check; DRI numbers come from dri_tables and NIH texts from MedQuAD instead
+efsa_drv	raw_medical/efsa	https://www.efsa.europa.eu/sites/default/files/assets/DRV_Summary_tables_jan_17.pdf	EFSA: re-use authorised with EFSA acknowledged	ok	EFSA summary tables of all dietary reference values (2017 compilation); legal notice efsa.europa.eu/al/legalnotice
+dri_vitamins	raw_medical/dri	https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/dietary-reference-intakes/tables/reference-values-vitamins-dietary-reference-intakes-tables-2005.html	numbers only (facts): National Academies DRIs as published by Health Canada	ok	EAR, RDA/AI, UL for vitamins by age, sex, pregnancy, lactation; the builder takes the values, not the text (NCBI Bookshelf serves scripts a captcha)
+dri_elements	raw_medical/dri	https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/dietary-reference-intakes/tables/reference-values-elements.html	numbers only (facts): National Academies DRIs as published by Health Canada	ok	EAR, RDA/AI, UL for minerals
+dri_macronutrients	raw_medical/dri	https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/dietary-reference-intakes/tables/reference-values-macronutrients.html	numbers only (facts): National Academies DRIs as published by Health Canada	ok	EAR, RDA/AI, AMDR for protein, carbohydrate, fibre, fats, water
+dga	raw_medical/dga	https://www.dietaryguidelines.gov/resources/2020-2025-dietary-guidelines-online-materials	public domain (US government)	check	Dietary Guidelines for Americans; check for the newest edition and its PDF URL
+who	-	https://www.who.int	CC BY-NC-SA 3.0 IGO	no	non-commercial licence
+nevo	-	https://www.rivm.nl/en/dutch-food-composition-database	RIVM conditions of use	no	users may not be charged for access to the data: a paid app can't use it
+medquad	raw_medquad	https://github.com/abachaa/MedQuAD	CC BY 4.0	ok	47,457 NIH Q&A pairs; answers of A.D.A.M., MedlinePlus Drugs and Herbs removed by the authors (MedlinePlus copyright)
