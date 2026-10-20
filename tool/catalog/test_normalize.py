@@ -47,6 +47,10 @@ def test_folate_dfe_else_total_folate_and_omega3_from_its_fatty_acids():
     assert panel([("usda", "435", 30, "µg"), ("usda", "417", 20, "µg")])["folate_ug"] == 30
     assert panel([("eurofir", "FOL", 20, "µg")])["folate_ug"] == 20
     assert panel([("eurofir", "F18D3N3", 0.1, "g"), ("eurofir", "F22D6N3", 0.2, "g")])["omega3_g"] == pytest.approx(0.3)
+    # USDA numbers: ALA's n-3 form wins over its undifferentiated total (no double count), plus DHA.
+    usda = panel([("usda", "851", 0.1, "g"), ("usda", "619", 0.12, "g"), ("usda", "621", 0.2, "g"),
+                  ("usda", "618", 1.0, "g"), ("usda", "620", 0.05, "g")])
+    assert usda["omega3_g"] == pytest.approx(0.3) and usda["omega6_g"] == pytest.approx(1.05)
 
 
 def test_cells():

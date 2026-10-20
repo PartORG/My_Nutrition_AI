@@ -198,6 +198,7 @@ def write_nutri(out: Path) -> None:
         *KEYS,
         "borrowed",
         "estimated",
+        "sources",
     ]
     con.executemany(
         f"INSERT INTO foods ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
@@ -216,6 +217,7 @@ def write_nutri(out: Path) -> None:
                 *nutrients(f["nutrients"]),
                 ",".join(f.get("borrowed", [])),
                 ",".join(f.get("estimated", [])),
+                ";".join(f"{k}={v}" for k, v in f.get("sources", {}).items()),
             )
             for f in foods.values()
         ],

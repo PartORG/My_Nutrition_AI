@@ -28,8 +28,19 @@ Recipes: food.com 168,589, BBC Good Food 53. Scraped content: copyright stays wi
 owner's decision (2026-10-19). Every line maps to a food and grams; calories per serving plausible and within 30 %
 of the published value.
 
-Gaps (a nutrient a row lacks) are filled from the same food in the same state: 1,434,030 values measured, 292,004
-borrowed from another government table (foods.borrowed), 429 estimated as the median of the same food (foods.estimated).
+Every gap is filled (2026-10-20, docs/PLAN.md "All nutrients" 5; tool/catalog/fill.py), each value's origin in
+foods.sources: 1,465,445 values measured; 285,268 borrowed (the same food in another government table; 196 from
+reviewed twins under another name, db/catalog/same_food.tsv; 419 iodine values from the USDA iodine database; 45
+researched biotin values, db/catalog/manual_values.tsv); 549,058 estimated (the median of the same food elsewhere;
+kcal from the macros; else the 5 most similar foods that measured it, scaled by its base, e.g. amino acids by
+protein). Held back 3 % of real values: the similar-food estimate beats guessing the nutrient's median for every
+nutrient, 36-99 % within ±25 % (amino acids ~90 %, most vitamins and minerals 50-70 %). Omega-3/6 for USDA rows are
+the sums of their fatty acids.
+
+| lends to fill.py | values | licence |
+|---|---|---|
+| [USDA, FDA and ODS-NIH Iodine Content of Common Foods, Release 4.0](https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/methods-and-application-of-food-composition-laboratory/mafcl-site-pages/iodine/) (2024, ICP-MS) | iodine of 459 USDA rows, by NDB number | public domain |
+| [Staggs et al. 2004, biotin of 87 foods](https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/) (J Food Compos Anal 17:767, HPLC/avidin) | biotin of 45 matching rows | facts from a published table, cited |
 
 ### health.db
 

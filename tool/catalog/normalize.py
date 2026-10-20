@@ -90,11 +90,13 @@ def derive(found: dict[str, float], raw: dict[str, list[tuple[float, str]]]) -> 
     if "vitamin_d_ug" not in out and (iu := g("324", "VITD_IU")) is not None:
         out["vitamin_d_ug"] = iu / 40
     # Omega-3 / omega-6 as the sum of their fatty acids when no total is given.
-    n3 = [g(c) for c in ("F18:3", "F18D3N3", "F18D3CN3", "F20D5N3", "F20:5", "F22D5N3", "F22:5", "F22D6N3", "F22:6")]
+    # One value per fatty acid: EuroFIR codes, else USDA numbers (the n-3/n-6 form first, else the undifferentiated).
+    n3 = [g(*c) for c in (("F18:3", "F18D3N3", "F18D3CN3", "851", "619"), ("F20D5N3", "F20:5", "629"),
+                          ("F22D5N3", "F22:5", "631"), ("F22D6N3", "F22:6", "621"))]
     if "omega3_g" not in out and any(v is not None for v in n3):
         out["omega3_g"] = sum(v for v in n3 if v is not None)
-    if "omega6_g" not in out and (la := g("F18D2N6", "F18D2CN6", "F18:2")) is not None:
-        out["omega6_g"] = la + (g("F20D4N6", "F20:4") or 0.0)
+    if "omega6_g" not in out and (la := g("F18D2N6", "F18D2CN6", "F18:2", "675", "618")) is not None:
+        out["omega6_g"] = la + (g("F20D4N6", "F20:4", "855", "620") or 0.0)
     return out
 
 

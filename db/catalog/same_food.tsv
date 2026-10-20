@@ -1,0 +1,75 @@
+# Reviewed cross-table matches (docs/PLAN.md "All nutrients" 5): the same food, in the same state, in another
+# government table under another name. tool/catalog/fill.py lends its measured values for what the food lacks.
+# Reviewed by hand from fill.neighbours() candidates for the 200 most used foods (2026-10-20); add a line when a
+# food's estimates have a real twin elsewhere.
+source	name	lender source	lender name
+usda_sr	Sugars, granulated	livsmedelsverket	Sugar
+usda_sr	Egg, whole, raw, fresh	frida	Eggs, chicken, battery hens, raw
+usda_sr	Vanilla extract	afcd	Vanilla bean extract
+usda_sr	Lemon juice, raw	nz	Juice, lemon, raw
+usda_sr	Parsley, fresh	livsmedelsverket	Leaf parsley
+usda_sr	Spices, pepper, red or cayenne	cofid	Pepper, cayenne, ground
+usda_sr	Onions, spring or scallions (includes tops and bulb), raw	frida	Onions, spring, raw
+usda_sr	Cream, fluid, heavy whipping	frida	Cream, whipping, 38 % fat
+usda_sr	Sugars, powdered	usda_fndds	Sugar, white, confectioner's, powdered
+usda_sr	Mushrooms, white, raw	afcd	Mushroom, common, fresh, raw
+usda_sr	Coriander (cilantro) leaves, raw	frida	Coriander, leaf, raw
+usda_sr	Soup, chicken broth, ready-to-serve	cnf	Soup, broth, chicken, ready-to-serve
+usda_sr	Cornstarch	ciqual	Maize/corn starch
+usda_sr	Soy sauce made from soy and wheat (shoyu)	cnf	Soy sauce (made with soy and wheat), shoyu, regular
+usda_sr	Ginger root, raw	matvaretabellen	Ginger, root, raw
+usda_sr	Bread, crumbs, dry, grated, plain	afcd	Breadcrumbs, white
+usda_sr	Margarine, regular, 80% fat, composite, stick, with salt	frida	Margarine, (more than 50 % fat), average
+usda_sr	Candies, semisweet chocolate	cnf	Candies, chocolate, dark, 45-59% cacao solids
+usda_sr	Squash, summer, zucchini, includes skin, raw	frida	Squash, all varieties, raw
+usda_sr	Lemon peel, raw	nz	Lemon, peel, raw
+usda_sr	Sauce, ready-to-serve, pepper or hot	cnf	Sauce, pepper, TABASCO, ready-to-serve
+usda_sr	Catsup	usda_fndds	Ketchup
+usda_sr	Cream, fluid, half and half	cofid	Cream, half, fresh
+usda_sr	Cheese, monterey	usda_foundation	Cheese, monterey jack, solid
+usda_sr	Cabbage, raw	afcd	Cabbage, white, raw
+usda_sr	Soup, vegetable broth, ready to serve	livsmedelsverket	Vegetable stock RTE
+usda_sr	Milk, whole, 3.25% milkfat, with added vitamin D	frida	Milk, whole, 3.5, (UHT), % fat
+usda_sr	Dill weed, fresh	cofid	Dill, fresh
+usda_sr	Molasses	afcd	Treacle or molasses
+usda_sr	Onions, sweet, raw	swiss	Onion, raw
+usda_sr	Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D	cofid	Milk, 1% fat, pasteurised
+usda_sr	Soup, beef broth or bouillon canned, ready-to-serve	livsmedelsverket	Beef stock canned RTE
+usda_sr	Jams and preserves	cnf	Sweets, jams and preserves
+usda_sr	Cereals ready-to-eat, ALPEN	cnf	Cereal, ready to eat, Alpen (muesli), Weetabix
+usda_sr	Egg, whole, cooked, hard-boiled	cnf	Egg, chicken, whole, cooked, boiled in shell, hard-cooked
+usda_foundation	Onions, white, raw	frida	Onion, raw
+usda_foundation	Yogurt, plain, nonfat	usda_fndds	Yogurt, nonfat milk, plain
+usda_sr	Bread, french or vienna (includes sourdough)	ciqual	Bread, French bread, baguette
+usda_sr	Cream, fluid, light (coffee cream or table cream)	frida	Cream, 18 % fat
+usda_sr	Rhubarb, raw	frida	Rhubarb, raw
+usda_sr	Crackers, standard snack-type, regular	ciqual	Salty snacks, crackers, made from wheat, various types
+usda_sr	Soup, cream of celery, canned, condensed	cnf	Soup, cream, celery, canned, condensed
+usda_sr	Yogurt, Greek, plain, lowfat	matvaretabellen	Yoghurt, plain, 2 % fat, Greek/Turkish
+usda_sr	Peas, edible-podded, raw	ciqual	Snow pea, raw
+usda_sr	Potatoes, hash brown, frozen, plain, unprepared	cnf	Potato, hashed brown, frozen, plain, unprepared
+usda_sr	Pickle relish, sweet	usda_fndds	Relish, pickle
+usda_sr	Chili with beans, canned	cnf	Chili con carne with beans, canned
+usda_sr	Seeds, sunflower seed kernels, dried	frida	Sunflower seeds, decorticated, dried
+usda_sr	Fish, tilapia, raw	cofid	Tilapia, raw
+usda_sr	Wonton wrappers (includes egg roll wrappers)	matvaretabellen	Wonton pastry
+usda_sr	Noodles, egg, enriched, cooked	ciqual	Pasta, dry, with egg, cooked, no added salt
+usda_sr	Candies, hard	usda_fndds	Candy, hard
+usda_sr	Kiwifruit, green, raw	cnf	Kiwi fruit, raw
+usda_sr	Pie crust, refrigerated, regular, baked	livsmedelsverket	Pie crust baked
+usda_sr	Nuts, hazelnuts or filberts	usda_fndds	Hazelnuts
+usda_sr	Pasta with tomato sauce, no meat, canned	nz	Spaghetti, in tomato sauce, canned, composite
+usda_sr	Pork, bacon, rendered fat, cooked	cnf	Pork, cured, bacon, rendered fat, cooked
+usda_sr	Seeds, flaxseed	livsmedelsverket	Linseeds whole
+usda_sr	Frankfurter, meat	matvaretabellen	Sausage, Frankfurter/Wiener
+usda_sr	Soy sauce made from soy (tamari)	cnf	Soy sauce (made from soy), tamari
+usda_sr	Fish broth	cnf	Soup, broth, fish
+usda_sr	Lentils, pink or red, raw	cnf	Lentils, pink, raw
+usda_sr	Onions, frozen, chopped, unprepared	nz	Onion, bulb vegetable, sliced or diced, frozen, unprepared, composite
+usda_sr	Vegetable juice cocktail, canned	livsmedelsverket	Vegetable juice canned or pasteurised RTD
+usda_sr	Chocolate-flavored hazelnut spread	ciqual	Chocolate spread with hazelnuts
+usda_sr	Snacks, corn-based, extruded, chips, plain	usda_fndds	Corn chips, plain (Fritos)
+usda_sr	Soup, beef broth bouillon and consomme, canned, condensed	cnf	Soup, broth (consomme), beef, canned, condensed
+usda_sr	Chicken, liver, all classes, raw	ciqual	Liver, chicken, raw
+usda_sr	Beans, baked, home prepared	cnf	Beans, baked, homemade
+usda_sr	Jerusalem-artichokes, raw	frida	Jerusalem artichoke, raw

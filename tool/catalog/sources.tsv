@@ -28,3 +28,4 @@ dga	raw_medical/dga	https://www.dietaryguidelines.gov/resources/2020-2025-dietar
 who	-	https://www.who.int	CC BY-NC-SA 3.0 IGO	no	non-commercial licence
 nevo	-	https://www.rivm.nl/en/dutch-food-composition-database	RIVM conditions of use	no	users may not be charged for access to the data: a paid app can't use it
 medquad	raw_medquad	https://github.com/abachaa/MedQuAD	CC BY 4.0	ok	47,457 NIH Q&A pairs; answers of A.D.A.M., MedlinePlus Drugs and Herbs removed by the authors (MedlinePlus copyright)
+usda_iodine	raw_iodine	https://www.ars.usda.gov/ARSUserFiles/80400535/Data/Iodine/IODINE_RELEASE_4.zip	public domain (US government work)	ok	USDA, FDA and ODS-NIH Database for the Iodine Content of Common Foods, Release 4.0 (2024), 478 foods, ICP-MS; lends iodine only (fill.py)

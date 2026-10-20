@@ -6,7 +6,9 @@
 --  * The NUTRIENTS marker expands to one REAL column per row of db/catalog/nutrients.tsv, in its order
 --    (tool/catalog/schema.py).
 --  * `borrowed` / `estimated`: comma-separated nutrient keys whose value was not measured for this row
---    (borrowed = the same food in another table; estimated = from similar foods). The rest are measured.
+--    (borrowed = the same food in another table or a researched source; estimated = from the same food elsewhere,
+--    from similar foods, or kcal from the macros). The rest are measured. `sources` names each one's origin:
+--    a source id, a URL, 'same', 'similar' or 'atwater'.
 --  * ids are new in v4 and stable from here on: a rebuild keeps the id of a row from the same source code.
 
 CREATE TABLE meta (
@@ -36,7 +38,8 @@ CREATE TABLE foods (
   serving     TEXT,                   -- what serving_g is: "1 medium (118 g)"
   /*NUTRIENTS*/,
   borrowed    TEXT NOT NULL DEFAULT '',
-  estimated   TEXT NOT NULL DEFAULT ''
+  estimated   TEXT NOT NULL DEFAULT '',
+  sources     TEXT NOT NULL DEFAULT ''   -- origin of each value not measured: "iron_mg=cofid;zinc_mg=similar"
 );
 CREATE INDEX foods_common ON foods (common_name, is_default DESC);
 CREATE UNIQUE INDEX foods_one_default ON foods (common_name) WHERE is_default = 1;

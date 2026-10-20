@@ -1,0 +1,50 @@
+# Researched values (docs/PLAN.md "All nutrients" 5): a published, cited value per 100 g for a nutrient a food's
+# own table did not measure. tool/catalog/fill.py applies them over estimates, never over a measured value.
+# Biotin: Staggs, Sealey, McCabe, Teague, Mock (2004), J Food Compos Anal 17:767-776, Table 1 (HPLC/avidin
+# binding, ng/g ÷ 10 = µg/100 g); only rows whose food and state match ours.
+source	name	nutrient	value	url
+usda_sr	Beef, variety meats and by-products, liver, cooked, braised	vitamin_b7_ug	41.6	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Chicken, liver, all classes, cooked, simmered	vitamin_b7_ug	187.2	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Egg, whole, cooked, hard-boiled	vitamin_b7_ug	21.4	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Beef, ground, 80% lean meat / 20% fat, patty, cooked, pan-broiled	vitamin_b7_ug	4.5	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Pork, fresh, loin, center loin (chops), bone-in, separable lean and fat, cooked, broiled	vitamin_b7_ug	4.5	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Fish, salmon, pink, canned, drained solids	vitamin_b7_ug	5.9	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)	vitamin_b7_ug	0.682	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D	vitamin_b7_ug	0.113	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)	vitamin_b7_ug	0.131	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Milk, whole, 3.25% milkfat, with added vitamin D	vitamin_b7_ug	0.091	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Cheese, pasteurized process, American, without added vitamin D	vitamin_b7_ug	3.1	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Cheese, cheddar (Includes foods for USDA's Food Distribution Program)	vitamin_b7_ug	1.4	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Yogurt, plain, whole milk	vitamin_b7_ug	0.084	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Cheese, provolone	vitamin_b7_ug	0.117	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Broccoli, raw	vitamin_b7_ug	0.943	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Carrots, canned, regular pack, drained solids	vitamin_b7_ug	0.622	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Cauliflower, raw	vitamin_b7_ug	0.161	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Beans, snap, green, canned, regular pack, drained solids	vitamin_b7_ug	0.007	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Mushrooms, canned, drained solids	vitamin_b7_ug	2.16	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Spinach, frozen, chopped or leaf, cooked, boiled, drained, without salt	vitamin_b7_ug	0.705	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Sweet potato, cooked, baked in skin, flesh, without salt	vitamin_b7_ug	1.45	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Corn, sweet, yellow, canned, whole kernel, drained solids	vitamin_b7_ug	0.047	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)	vitamin_b7_ug	0.02	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Apple juice, canned or bottled, unsweetened, without added ascorbic acid	vitamin_b7_ug	0.052	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Avocados, raw, all commercial varieties	vitamin_b7_ug	0.961	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Bananas, raw	vitamin_b7_ug	0.133	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Oranges, raw, all commercial varieties	vitamin_b7_ug	0.049	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Orange juice, frozen concentrate, unsweetened, diluted with 3 volume water	vitamin_b7_ug	0.413	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Raspberries, raw	vitamin_b7_ug	0.178	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Strawberries, raw	vitamin_b7_ug	1.5	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Tomatoes, red, ripe, raw, year round average	vitamin_b7_ug	0.701	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Crackers, saltines (includes oyster, soda, soup)	vitamin_b7_ug	0.29	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Noodles, egg, enriched, cooked	vitamin_b7_ug	0.181	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Bread, whole-wheat, commercially prepared	vitamin_b7_ug	0.074	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Cereals, corn grits, white, regular and quick, enriched, cooked with water, without salt	vitamin_b7_ug	0.051	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Nuts, almonds, oil roasted, with salt added	vitamin_b7_ug	4.407	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Peanuts, all types, oil-roasted, with salt	vitamin_b7_ug	17.5	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Nuts, pecans	vitamin_b7_ug	2.0	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Seeds, sunflower seed kernels, oil roasted, with salt added	vitamin_b7_ug	7.8	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Nuts, walnuts, english	vitamin_b7_ug	2.59	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Catsup	vitamin_b7_ug	0.074	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Salad dressing, mayonnaise, regular	vitamin_b7_ug	0.185	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Alcoholic beverage, beer, regular, all	vitamin_b7_ug	0.114	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Alcoholic beverage, wine, table, white	vitamin_b7_ug	0.117	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
+usda_sr	Beverages, carbonated, cola, regular	vitamin_b7_ug	0.081	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/

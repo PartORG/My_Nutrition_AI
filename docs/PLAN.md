@@ -492,6 +492,11 @@ tool/catalog`):
 
 Ships in the same release as Catalogue v4, after v4 is committed on its own.
 
+Built 2026-10-20: **5** (all gaps filled; numbers and the estimator's held-back check in DATA_SOURCES.md). Web research
+gave little beyond the tables: the USDA iodine database (a dataset, used whole) and the Staggs 2004 biotin table; NIH
+ODS fact sheets quote USDA values already in the tables (and block downloads). Staggs found published biotin values
+often several times too high, so the CoFID/Frida biotin that lends to similar foods may be high.
+
 **All nutrients**
 1. **meal_log stores all 56 nutrients** as columns, copied at log time (NULL = unknown). No migration: the v4
    upgrade already wipes user.db.
