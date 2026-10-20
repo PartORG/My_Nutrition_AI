@@ -488,9 +488,30 @@ tool/catalog`):
   wrong word: lime → "mustard powder", turkey → "Turkish"); the rest is unreviewed machine output. A translated word
   goes to the food that owns the English name, once per language (most used first).
 
-## All nutrients, patterns, model-first chat — decisions (user, 2026-10-20), not built yet
+## All nutrients, patterns, model-first chat — decisions (user, 2026-10-20), in progress
 
 Ships in the same release as Catalogue v4, after v4 is committed on its own.
+
+**Status (paused 2026-10-20 by the user; resume here)**
+
+Done:
+- [x] Catalogue v4 finished and committed (b1cf4cc pipeline, 27e1f1e app): translations (top 300 reviewed by hand),
+  alias ownership fixes, recipe nutrition stored (800 MB limit), all host tests pass, release APK builds.
+- [x] Decision 5, fill every gap in nutri.db foods (a6b2287): no NULL left, `foods.sources` per value.
+
+To do, in order:
+- [ ] Decisions 1–4: meal_log with all 56 nutrients; NASEM goals and UL limits from health.db; "Low today" /
+  "Over the limit" in the context block; full table in `nutrition_status`; All nutrients screen, Low/Over chip,
+  grouped Goals screen; per-value ≈ for estimated values (`foods.estimated`); nutrient names in uk/de/fr.
+- [ ] Decision 12: tier gating (Free / Basic / Medium) for the above and the patterns.
+- [ ] Decisions 7–8: the seven behaviour patterns, the context line, `my_patterns`, the weekly review section.
+- [ ] Decisions 9–10: model-first routing with argument checks, the hidden answer check, the "checking…" mark.
+- [ ] Decision 11: the phone gate on the Xiaomi (needs the phone connected), then the user's own phone test.
+- [ ] One release.
+
+Open, the owner's call (not blocking): upload the v4 products.db to a new GitHub release; a Play asset pack (the
+bundled files are over Play's 500 MB base limit); review the ~10,000 unreviewed machine translations; check the
+biotin of CoFID/Frida (see below).
 
 Built 2026-10-20: **5** (all gaps filled; numbers and the estimator's held-back check in DATA_SOURCES.md). Web research
 gave little beyond the tables: the USDA iodine database (a dataset, used whole) and the Staggs 2004 biotin table; NIH
