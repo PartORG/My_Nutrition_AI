@@ -14,6 +14,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import match
 from normalize import BUILD
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -54,6 +55,8 @@ def wanted() -> list[str]:
                 if x["food_id"] in foods:
                     uses[foods[x["food_id"]]["common_name"]] += 1
     names = {f["common_name"] for f in foods.values() if f.get("authoritative") or len(f["aliases"]) > 2}
+    names |= {f["common_name"] for f in foods.values() if f["source"] == "off_median"}  # db/catalog/drinks.tsv
+    names |= {o["alias"] for o in match.overrides()}  # the reviewed everyday names of defaults.tsv
     return sorted(names | set(uses), key=lambda n: (-uses[n], n))
 
 

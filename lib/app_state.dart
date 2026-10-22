@@ -499,7 +499,6 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final dir = ref.watch(appDirProvider).requireValue;
   final nutri = openNutriDb('${dir.path}/nutri.db');
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
-  fillMissingMicros(user, nutri, nutriDataVersion); // once per data release: past meals get vitamins too
   final data = ProfileData(profile: profile, nutri: nutri, user: user,
       tools: AgentTools(nutri, user, products: openProducts(dir)));
   // listen, not watch: a language switch must not reopen the databases.
@@ -628,7 +627,10 @@ final agentProvider = FutureProvider.autoDispose<Agent>((ref) async {
   File(vectorsPath).parent.createSync(recursive: true);
   final vectors = openVectorsDb(vectorsPath);
   final memory = Memory(data.user, vectors, embedder.generateEmbeddings,
-      nutri: data.nutri, historyDays: () => billing.tier.value.historyDays);
+      nutri: data.nutri, historyDays: () => billing.tier.value.historyDays,
+      basic: () => billing.tier.value.includes(Tier.basic), medium: () => billing.tier.value.includes(Tier.medium));
+  data.tools.basic = () => billing.tier.value.includes(Tier.basic);
+  data.tools.medium = () => billing.tier.value.includes(Tier.medium);
   final agent = Agent(
     model: GemmaChatModel(llm),
     tools: data.tools,

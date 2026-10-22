@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/agent/memory.dart';
+import 'package:myfoodmind/data/nutri_db.dart';
 import 'package:myfoodmind/data/user_db.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -118,6 +119,22 @@ void main() {
         "VALUES (1, 'male', 1996, 180, 80, 'moderate', 'maintain', 'metric', 0)");
     expect(memory.context(), contains('Daily goals: 2000 kcal, 96 g protein, 387 g carbs, 69 g sugar. '
         'Left today: 1895 kcal, 86 g protein, 367 g carbs, 69 g sugar.'));
+  });
+
+  test('context: "Over the limit" always, "Low today" after the usual dinner time', () {
+    final nutri = openNutriDb('test/nutri_test.db');
+    final m = Memory(user, vectors, fakeEmbed, nutri: nutri, clock: () => now);
+    user.execute('INSERT INTO body (id, sex, birth_year, height_cm, weight_kg, activity, goal, units, updated_at) '
+        "VALUES (1, 'female', 1996, 165, 60, 'light', 'maintain', 'metric', 0)");
+    user.execute('INSERT INTO meal_log (eaten_at, description, grams, kcal, protein_g, fat_g, carbs_g, fiber_g, sugar_g, '
+        "sodium_mg, iron_mg, vitamin_d_ug) VALUES (?, 'ramen', 500, 600, 20, 20, 80, 30, 5, 3000, 2, 0)", [ms(now)]);
+    final ctx = m.context();
+    expect(ctx, contains('Over the limit today: sodium 3000 of 2000 mg.'));
+    expect(ctx, contains('Low today: vitamin d 0.0 of 15 µg, iron 2.0 of 18 mg, protein 20 of 72 g.'));
+    final free = Memory(user, vectors, fakeEmbed, nutri: nutri, clock: () => now, basic: () => false).context();
+    expect(free, contains('Over the limit today'));
+    expect(free, isNot(contains('Low today')), reason: 'the low line is Basic');
+    nutri.close();
   });
 
   test('forgetting conversations sticks; meals stay remembered', () async {

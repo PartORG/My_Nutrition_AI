@@ -313,9 +313,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                   ),
                   const SizedBox(height: 12),
                   _MacroTiles(values: values),
-                  if (microLabels(l).entries
-                          .where((e) => card.perServing[e.key] != null)
-                          .toList()
+                  if (headlineMicros.where((k) => card.perServing[k] != null).toList()
                       case final micros when micros.isNotEmpty)
                     TierBuilder(
                       // micronutrients are Basic
@@ -325,10 +323,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 micros
-                                    .map(
-                                      (e) =>
-                                          '${e.value.$1} ${formatMicro(values[e.key]!, e.value.$2)}',
-                                    )
+                                    .map((k) => '${nutrientName(l, k)} ${formatMicro(values[k]!, nutrientUnit(k))}')
                                     .join(' · '),
                                 style: TextStyle(fontSize: 13, color: c.muted),
                               ),

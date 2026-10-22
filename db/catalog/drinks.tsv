@@ -1,0 +1,17 @@
+# Drinks no government table has (reviewed 2026-10-21): each line becomes one generic food whose values are the
+# median of the Open Food Facts labels in those categories (tool/catalog/readers/off_drinks.py, ODbL), at least 5
+# products, every nutrient from the labels that give it. Left out on purpose: OFF's rooibos, matcha and yerba mate
+# are the dry leaves (per 100 g of tea, not of the drink: aliases to herbal tea instead, defaults.tsv), and its
+# "compotes to drink" are fruit purée pouches, not uzvar. Prosecco, cava, porter, ryazhenka, limoncello, absinthe, raki
+# and Aperol spritz have under 5 labels with values (EU alcohol labels need none): aliases in defaults.tsv instead.
+# Serving: the usual container, in grams (≈ ml): a can 330, a bottle 500, a glass 250; alcohol as NIAAA's standard
+# drinks (https://www.niaaa.nih.gov/alcohols-effects-health/what-standard-drink): beer 355, wine 148, spirits 44.
+# name	categories (any of, |-separated)	serving_g	serving
+Kvass	en:kvass	250	1 glass (250 ml)
+Diet cola (zero sugar)	en:diet-cola-soft-drink	330	1 can (330 ml)
+Sugar-free energy drink	en:energy-drink-without-sugar-and-with-artificial-sweeteners	250	1 can (250 ml)
+Flavoured water	en:flavored-waters	500	1 bottle (500 ml)
+Radler (beer with lemonade)	en:radler-beers|en:shandy	355	1 bottle (330 ml)
+IPA beer	ca:cervesa-ipa|en:session-ipa|en:hazy-ipa|en:double-ipa|en:new-england-ipa|en:american-style-ipa|en:west-coast-ipa	355	1 bottle (330 ml)
+Drinking yogurt, flavoured	en:flavoured-yogurt-drinks|en:strawberry-yogurt-drinks|en:fruit-flavoured-yogurt-drinks	250	1 glass (250 ml)
+Hemp drink	en:hemp-based-drinks	250	1 glass (250 ml)

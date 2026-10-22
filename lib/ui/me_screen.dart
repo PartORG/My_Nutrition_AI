@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../agent/agent_tools.dart' show micronutrients;
 import '../app_state.dart';
 import '../billing/billing.dart' show Tier;
 import '../data/diary.dart';
@@ -19,7 +20,6 @@ import 'paywall_screen.dart';
 import 'plan_screen.dart';
 import 'settings_screen.dart' show SettingsScreen;
 import 'theme.dart';
-import 'today_screen.dart' show limitNutrients;
 import 'weight_screen.dart';
 
 class MeScreen extends ConsumerWidget {
@@ -250,6 +250,31 @@ class MeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  if (targets.values.keys.any(micronutrients.contains))
+                    // The reference intakes (health.db), grouped and collapsed: two dozen rows would bury the rest.
+                    // Micronutrient goals are Basic.
+                    TierBuilder(
+                      builder: (context, tier) => !tier.includes(Tier.basic)
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Panel(
+                                padding: EdgeInsets.zero,
+                                child: ExpansionTile(
+                                  title: Text(l.microsTitle),
+                                  shape: const Border(),
+                                  children: [
+                                    for (final MapEntry(key: group, value: keys) in nutrientGroups.entries)
+                                      if ([for (final k in keys) if (micronutrients.contains(k) && targets.values[k] != null) k]
+                                          case final shown when shown.isNotEmpty) ...[
+                                        SectionLabel(l.nutrientGroup(group), padding: const EdgeInsets.fromLTRB(16, 12, 16, 4)),
+                                        for (final k in shown) _targetRow(context, ref, l, k, targets),
+                                      ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ),
                   const SizedBox(height: 16),
                   PanelList(
                     children: [
@@ -306,7 +331,7 @@ class MeScreen extends ConsumerWidget {
           ? l.limitShort
           : t.custom.contains(key)
               ? l.custom
-              : limitNutrients.contains(key)
+              : limitKeys.contains(key)
                   ? l.limitShort
                   : null;
 
@@ -401,7 +426,7 @@ class MeScreen extends ConsumerWidget {
     final value = targets.values[key];
     return _TargetRow(
       color: context.nutrientColor(key),
-      label: nutrientLabels(l)[key]!.$1,
+      label: nutrientName(l, key),
       note: _note(l, key, targets),
       value: value == null ? '—' : formatNutrient(key, value, l),
       onTap: () => _editTarget(context, ref, key, value),
@@ -495,7 +520,7 @@ class MeScreen extends ConsumerWidget {
     final result = await showDialog<double>(
       context: context,
       builder: (_) => TargetDialog(
-        title: l.editTarget(nutrientLabels(l)[key]!.$1),
+        title: l.editTarget(nutrientName(l, key)),
         initial: current,
       ),
     );
@@ -527,7 +552,8 @@ class TargetDialog extends StatefulWidget {
 
 class _TargetDialogState extends State<TargetDialog> {
   late final _value = TextEditingController(
-    text: widget.initial == null ? '' : '${widget.initial!.round()}',
+    // 2.4 µg of vitamin B12 must not become 2.
+    text: switch (widget.initial) { null => '', final v when v < 10 => v.toStringAsFixed(1), final v => '${v.round()}' },
   );
 
   @override

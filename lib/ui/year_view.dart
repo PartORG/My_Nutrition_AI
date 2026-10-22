@@ -9,7 +9,7 @@ import 'kit.dart';
 import 'nutrients.dart';
 import 'period_view.dart';
 import 'theme.dart';
-import 'today_screen.dart' show NutrientBar, limitNutrients;
+import 'today_screen.dart' show NutrientBar;
 
 /// Pro: this calendar year — a logging calendar, calories per month vs goal,
 /// nutrient averages with the best and worst month, weight, and what was eaten most.
@@ -91,7 +91,7 @@ class YearView extends StatelessWidget {
                     if (logged.length >= 2)
                       () {
                         // A ceiling is best low; a target is best close to the goal.
-                        final ceiling = limitNutrients.contains(k) || t.limited.containsKey(k);
+                        final ceiling = limitKeys.contains(k) || t.limited.containsKey(k);
                         double off(MonthStats m) => ceiling ? m.avg[k]! : (m.avg[k]! - goal).abs();
                         final sorted = [...logged]..sort((a, b) => off(a).compareTo(off(b)));
                         return Padding(

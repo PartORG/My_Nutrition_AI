@@ -1132,33 +1132,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get calcium => 'Calcium';
-
-  @override
-  String get iron => 'Fer';
-
-  @override
-  String get magnesium => 'Magnésium';
-
-  @override
-  String get potassium => 'Potassium';
-
-  @override
-  String get vitaminC => 'Vitamine C';
-
-  @override
-  String get vitaminD => 'Vitamine D';
-
-  @override
-  String get vitaminB12 => 'Vitamine B12';
-
-  @override
   String get microsTitle => 'Vitamines et minéraux';
-
-  @override
-  String microsCoverage(int known, int meals) {
-    return 'Sur $known des $meals repas aux valeurs connues ; apports de référence UE';
-  }
 
   @override
   String get productsTitle => 'Produits emballés';
@@ -2362,10 +2336,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get microsLocked =>
-      'Vitamines et minéraux du jour face aux apports de référence de l’UE, avec Basic.';
-
-  @override
   String get highProtein => 'Riche en protéines';
 
   @override
@@ -2438,4 +2408,177 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aiModelRecommended => 'Recommandé';
+
+  @override
+  String nutrientName(String key) {
+    String _temp0 = intl.Intl.selectLogic(key, {
+      'starch_g': 'Amidon',
+      'alcohol_g': 'Alcool',
+      'water_g': 'Eau',
+      'saturated_fat_g': 'Acides gras saturés',
+      'mono_fat_g': 'Acides gras mono-insaturés',
+      'poly_fat_g': 'Acides gras polyinsaturés',
+      'trans_fat_g': 'Acides gras trans',
+      'omega3_g': 'Oméga-3',
+      'omega6_g': 'Oméga-6',
+      'cholesterol_mg': 'Cholestérol',
+      'sucrose_g': 'Saccharose',
+      'glucose_g': 'Glucose',
+      'fructose_g': 'Fructose',
+      'lactose_g': 'Lactose',
+      'added_sugar_g': 'Sucres ajoutés',
+      'potassium_mg': 'Potassium',
+      'calcium_mg': 'Calcium',
+      'magnesium_mg': 'Magnésium',
+      'phosphorus_mg': 'Phosphore',
+      'iron_mg': 'Fer',
+      'zinc_mg': 'Zinc',
+      'copper_mg': 'Cuivre',
+      'manganese_mg': 'Manganèse',
+      'selenium_ug': 'Sélénium',
+      'iodine_ug': 'Iode',
+      'vitamin_a_ug': 'Vitamine A',
+      'beta_carotene_ug': 'Bêta-carotène',
+      'vitamin_d_ug': 'Vitamine D',
+      'vitamin_e_mg': 'Vitamine E',
+      'vitamin_k_ug': 'Vitamine K',
+      'vitamin_c_mg': 'Vitamine C',
+      'vitamin_b1_mg': 'Thiamine (B1)',
+      'vitamin_b2_mg': 'Riboflavine (B2)',
+      'vitamin_b3_mg': 'Niacine (B3)',
+      'vitamin_b5_mg': 'Acide pantothénique (B5)',
+      'vitamin_b6_mg': 'Vitamine B6',
+      'vitamin_b7_ug': 'Biotine (B7)',
+      'folate_ug': 'Folates',
+      'vitamin_b12_ug': 'Vitamine B12',
+      'choline_mg': 'Choline',
+      'histidine_g': 'Histidine',
+      'isoleucine_g': 'Isoleucine',
+      'leucine_g': 'Leucine',
+      'lysine_g': 'Lysine',
+      'methionine_g': 'Méthionine',
+      'phenylalanine_g': 'Phénylalanine',
+      'threonine_g': 'Thréonine',
+      'tryptophan_g': 'Tryptophane',
+      'valine_g': 'Valine',
+      'other': '$key',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String nutrientGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'macro': 'Macronutriments',
+      'fat': 'Lipides',
+      'sugar': 'Sucres',
+      'mineral': 'Minéraux',
+      'vitamin': 'Vitamines',
+      'amino': 'Acides aminés essentiels',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lifeStage => 'Enceinte ou allaitante ?';
+
+  @override
+  String get lifeStageNone => 'Non';
+
+  @override
+  String get lifeStagePregnant => 'Enceinte';
+
+  @override
+  String get lifeStageBreastfeeding => 'Allaitante';
+
+  @override
+  String get allNutrientsTitle => 'Tous les nutriments';
+
+  @override
+  String get moreNutrients => 'Plus : sucres simples, acides aminés';
+
+  @override
+  String get fewerNutrients => 'Moins';
+
+  @override
+  String get panelNote =>
+      '≈ estimé d’après des aliments similaires · ≥ certains aliments ne l’indiquent pas · Objectifs en vitamines et minéraux, limites : apports de référence NASEM';
+
+  @override
+  String get microsLocked =>
+      'Vitamines et minéraux du jour face à vos apports de référence, avec Basic.';
+
+  @override
+  String chipLow(String names) {
+    return 'Peu : $names';
+  }
+
+  @override
+  String chipOver(String names) {
+    return 'Au-dessus de la limite : $names';
+  }
+
+  @override
+  String upperLimitValue(String amount) {
+    return 'limite supérieure $amount';
+  }
+
+  @override
+  String get patternsTitle => 'Tendances';
+
+  @override
+  String get patternsNone =>
+      'Rien ne ressort encore. Les tendances demandent au moins une semaine de saisies.';
+
+  @override
+  String get captionPatterns => 'Ce que montrent vos saisies :';
+
+  @override
+  String patternLogging(String n, String days) {
+    return 'Jours notés en entier : $n sur les $days derniers. Les autres tendances ne comptent que ceux-là.';
+  }
+
+  @override
+  String patternSkipped(String meal, String n, String days) {
+    return '$meal sauté $n jours sur $days';
+  }
+
+  @override
+  String patternLate(String time, String n, String days) {
+    return 'Repas après $time $n jours sur $days';
+  }
+
+  @override
+  String patternWeekend(String weekend, String weekday, String change) {
+    return 'Week-end $weekend kcal par jour, semaine $weekday kcal ($change)';
+  }
+
+  @override
+  String patternGap(String nutrient, String n, String days) {
+    return '$nutrient sous 80 % de l’objectif $n jours sur $days';
+  }
+
+  @override
+  String patternWeight(String change, String kcal) {
+    return 'Tendance du poids $change kg par semaine, en moyenne $kcal kcal par jour';
+  }
+
+  @override
+  String patternSymptom(
+    String symptom,
+    String food,
+    String n,
+    String times,
+    String hours,
+  ) {
+    return '$symptom noté dans les $hours h après $food : $n fois sur $times. Un décompte, pas une cause : vous pourriez en parler à un médecin.';
+  }
+
+  @override
+  String get answerChecking => 'vérification…';
+
+  @override
+  String get answerUnverified =>
+      'Je n’ai pas pu vérifier cette réponse, elle est donc masquée. Essayez de reformuler.';
 }

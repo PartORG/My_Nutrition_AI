@@ -1,10 +1,13 @@
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../agent/agent_tools.dart';
 import '../data/conditions.dart';
+import '../data/patterns.dart';
 import '../l10n/app_localizations.dart';
 import 'theme.dart';
+import 'today_screen.dart' show mealName;
 
 /// Display name and unit per nutrient key.
 Map<String, (String, String)> nutrientLabels(AppLocalizations l) => {
@@ -12,18 +15,24 @@ Map<String, (String, String)> nutrientLabels(AppLocalizations l) => {
       'fiber_g': (l.fiber, 'g'), 'sugar_g': (l.sugar, 'g'), 'sodium_mg': (l.sodium, 'mg'),
     };
 
-/// Display name and unit per micronutrient key.
-Map<String, (String, String)> microLabels(AppLocalizations l) => {
-      'calcium_mg': (l.calcium, 'mg'), 'iron_mg': (l.iron, 'mg'), 'magnesium_mg': (l.magnesium, 'mg'),
-      'potassium_mg': (l.potassium, 'mg'), 'vitamin_c_mg': (l.vitaminC, 'mg'), 'vitamin_d_ug': (l.vitaminD, 'µg'),
-      'vitamin_b12_ug': (l.vitaminB12, 'µg'),
-    };
-
-/// EU reference intakes for adults (Regulation 1169/2011, Annex XIII), the "%" on labels.
-const microReference = {
-  'calcium_mg': 800.0, 'iron_mg': 14.0, 'magnesium_mg': 375.0, 'potassium_mg': 2000.0,
-  'vitamin_c_mg': 80.0, 'vitamin_d_ug': 5.0, 'vitamin_b12_ug': 2.5,
+/// The panel as the screens group it (db/catalog/nutrients.tsv's groups and order, energy among the macros; a test
+/// keeps them equal). [moreGroups] stay behind "More".
+const nutrientGroups = {
+  'macro': ['kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'starch_g', 'alcohol_g', 'water_g'],
+  'fat': ['saturated_fat_g', 'mono_fat_g', 'poly_fat_g', 'trans_fat_g', 'omega3_g', 'omega6_g', 'cholesterol_mg'],
+  'sugar': ['sucrose_g', 'glucose_g', 'fructose_g', 'lactose_g', 'added_sugar_g'],
+  'mineral': ['sodium_mg', 'potassium_mg', 'calcium_mg', 'magnesium_mg', 'phosphorus_mg', 'iron_mg', 'zinc_mg',
+      'copper_mg', 'manganese_mg', 'selenium_ug', 'iodine_ug'],
+  'vitamin': ['vitamin_a_ug', 'beta_carotene_ug', 'vitamin_d_ug', 'vitamin_e_mg', 'vitamin_k_ug', 'vitamin_c_mg',
+      'vitamin_b1_mg', 'vitamin_b2_mg', 'vitamin_b3_mg', 'vitamin_b5_mg', 'vitamin_b6_mg', 'vitamin_b7_ug', 'folate_ug',
+      'vitamin_b12_ug', 'choline_mg'],
+  'amino': ['histidine_g', 'isoleucine_g', 'leucine_g', 'lysine_g', 'methionine_g', 'phenylalanine_g', 'threonine_g',
+      'tryptophan_g', 'valine_g'],
 };
+const moreGroups = {'sugar', 'amino'};
+
+/// Any panel key's display name.
+String nutrientName(AppLocalizations l, String key) => nutrientLabels(l)[key]?.$1 ?? l.nutrientName(key);
 
 /// "8.2 mg", "350 mg": one decimal below 10.
 String formatMicro(double v, String unit) => '${v < 10 ? v.toStringAsFixed(1) : v.round()} $unit';
@@ -34,10 +43,12 @@ String formatNutrient(String key, double value, AppLocalizations l) {
   return '$n $unit';
 }
 
-/// "540" and "kcal" apart, for a table that sets the number bigger than the unit.
+/// "540" and "kcal" apart, for a table that sets the number bigger than the unit. Vitamins and minerals keep a
+/// decimal below 10 ("2.4 µg").
 (String, String) formatNutrientParts(String key, double value, AppLocalizations l) {
-  final unit = nutrientLabels(l)[key]!.$2;
-  return ('${value.round()}', unit.isEmpty ? l.kcal : unit);
+  final unit = nutrientUnit(key);
+  final n = nutrients.contains(key) || value >= 10 ? '${value.round()}' : value.toStringAsFixed(1);
+  return (n, unit == 'kcal' ? l.kcal : unit);
 }
 
 /// Compact nutrient pills ("● 540 kcal", "● 12 g Protein"): a colour dot marks
@@ -79,6 +90,22 @@ class NutrientTiles extends StatelessWidget {
           ),
     ]);
   }
+}
+
+/// A pattern (data/patterns.dart) as the app says it.
+String patternText(AppLocalizations l, Pattern p) {
+  final a = p.args;
+  String n(Object? v) => NumberFormat.decimalPattern(l.localeName).format(v as num);
+  String signed(num v) => '${v > 0 ? '+' : ''}${n(v)}';
+  return switch (p.kind) {
+    'logging' => l.patternLogging(n(a['n']), n(a['days'])),
+    'skipped' => l.patternSkipped(mealName(l, a['meal'] as String), n(a['n']), n(a['days'])),
+    'late' => l.patternLate('${a['hour']}:00', n(a['n']), n(a['days'])),
+    'weekend' => l.patternWeekend(n(a['weekend']), n(a['weekday']), '${signed(a['change'] as num)} %'),
+    'gap' => l.patternGap(nutrientName(l, a['nutrient'] as String), n(a['n']), n(a['days'])),
+    'weight' => l.patternWeight(signed(a['change'] as num), n(a['kcal'])),
+    _ => l.patternSymptom(a['symptom'] as String, a['food'] as String, n(a['n']), n(a['times']), n(a['hours'])),
+  };
 }
 
 /// A word inside a sentence: "breakfast" — but German nouns keep their capital ("Frühstück").

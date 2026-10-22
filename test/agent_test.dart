@@ -24,6 +24,10 @@ class FakeModel implements ChatModel {
   final systems = <String>[];
   final sent = <String>[];
   final toolResults = <(String, Map<String, Object?>)>[];
+
+  /// The verdicts for the hidden answer checks, in order; OK when it runs out.
+  final checks = <String>[];
+  final checkPrompts = <String>[];
   bool fail = false;
 
   @override
@@ -45,6 +49,10 @@ class _FakeSession implements ChatSession {
 
   @override
   Stream<ModelEvent> sendUser(String text) {
+    if (text.startsWith('[Check] Compare')) {
+      m.checkPrompts.add(text);
+      return Stream.value(TextChunk(m.checks.isEmpty ? 'OK' : m.checks.removeAt(0)));
+    }
     m.sent.add(text);
     return _next();
   }
@@ -72,7 +80,7 @@ void main() {
   late Agent agent;
   var paid = false;
 
-  Agent makeAgent({String language = 'en'}) => Agent(
+  Agent makeAgent({String language = 'en', bool modelFirst = true, bool check = true}) => Agent(
         model: model,
         tools: AgentTools(nutri, user, clock: () => DateTime(2026, 10, 4, 8)),
         memory: Memory(user, vectors, fakeEmbed, clock: () => DateTime(2026, 10, 4, 8)),
@@ -81,6 +89,8 @@ void main() {
         unlimited: () => paid,
         clock: () => DateTime(2026, 10, 4, 8),
         language: language,
+        modelFirst: modelFirst,
+        checkAnswers: check,
       );
 
   setUp(() {
@@ -143,7 +153,9 @@ void main() {
     expect(card.undone, isTrue);
   });
 
-  test('plain "I ate…" and "I\'m allergic to…" get their card without the model or the daily count', () async {
+  test('router first (the phone gate failed): plain "I ate…" and "I\'m allergic to…" skip the model and the count',
+      () async {
+    agent = makeAgent(modelFirst: false);
     await agent.send('I ate 2 eggs and a banana for breakfast');
     await agent.send("I'm allergic to peanuts");
     expect(model.sent, isEmpty);
@@ -362,6 +374,7 @@ void main() {
   });
 
   test('the conversation is recreated, with the whole context, before its tokens run out', () async {
+    agent = makeAgent(check: false); // the check turns spend tokens too: counted in the next test
     await agent.send('Hi!');
     final long = List.filled(800, 'word').join(' '); // ~1k tokens at 4 chars per token
     await agent.send(long);
@@ -369,5 +382,106 @@ void main() {
     await agent.send(long);
     expect(model.opens.length, 2);
     expect(model.sent.last, startsWith('[Context]\nNow: '));
+  });
+
+  group('model first (docs/PLAN.md "All nutrients, patterns", 9)', () {
+    test('the model is asked first; a call that holds against the words runs, and the message is counted', () async {
+      model.script.add([ToolCall('log_meal', {'items': '2 eggs, banana', 'meal_type': 'breakfast'})]);
+      await agent.send('I ate 2 eggs and a banana for breakfast');
+      expect(model.sent.single, endsWith('I ate 2 eggs and a banana for breakfast'));
+      expect((agent.items.whereType<CardItem>().single.card as ConfirmCard).lines.length, 2);
+      expect(ChatLimit(profilesDb, clock: () => DateTime(2026, 10, 4, 8)).usedToday, 1);
+    });
+
+    test('an invented food or amount goes back once with the reason; the retry runs', () async {
+      model.script.addAll([
+        [ToolCall('log_meal', {'items': '2 eggs, 200 g bacon'})],
+        [ToolCall('log_meal', {'items': '2 eggs'})],
+      ]);
+      await agent.send('I had 2 eggs');
+      expect(model.toolResults.first.$2['error'], contains('did not mention 200 g bacon'));
+      final card = agent.items.whereType<CardItem>().single.card as ConfirmCard;
+      expect(card.lines, ['egg · 100 g · 143 kcal']);
+    });
+
+    test('amounts: digits or number words in any language; an invented one is refused', () {
+      final t = AgentTools(nutri, user);
+      expect(t.checkCall('log_meal', {'items': '2 eggs'}, 'two eggs please'), isNull);
+      expect(t.checkCall('log_meal', {'items': '3 eggs'}, 'я з’їв три яйця'), isNull);
+      expect(t.checkCall('log_meal', {'items': '200 g rice'}, 'some rice'), contains('200'));
+      expect(t.checkCall('log_health', {'kind': 'weight', 'value': '73 kg'}, 'I weigh 72.5'), contains('73'));
+      expect(t.checkCall('recipe', {'action': 'show', 'recipe': '4'}, 'the fourth one'), 'no recipe list was shown');
+    });
+
+    test('a food said in another language passes through its aliases', () {
+      final t = AgentTools(nutri, user)..language = 'uk';
+      final banana = nutri.select(
+          "SELECT alias FROM food_aliases WHERE lang = 'uk' AND food_id = (SELECT id FROM foods WHERE name = 'banana')")
+          .firstOrNull?['alias'] as String?;
+      if (banana != null) expect(t.checkCall('log_meal', {'items': 'banana'}, 'я з’їв $banana'), isNull);
+      expect(t.checkCall('log_meal', {'items': 'salmon'}, 'я з’їв банан'), anyOf(isNull, contains('salmon')),
+          reason: 'salmon without a Ukrainian alias in the test data cannot be told');
+    });
+
+    test('a second failed check falls back to the router', () async {
+      model.script.addAll([
+        [ToolCall('log_meal', {'items': '300 g bacon'})],
+        [ToolCall('log_meal', {'items': '300 g bacon'})],
+      ]);
+      await agent.send('I ate 2 eggs');
+      final card = agent.items.whereType<CardItem>().single;
+      expect((card.card as ConfirmCard).lines, ['egg · 100 g · 143 kcal']);
+      expect(card.caption, isTrue);
+    });
+
+    test('no call where the router sees one: the router card follows the reply, unless the model asked back',
+        () async {
+      model.script.addAll([
+        [TextChunk('Enjoy your eggs!')],
+        [TextChunk('How many eggs did you have?')],
+      ]);
+      await agent.send('I ate 2 eggs');
+      expect(agent.items.whereType<CardItem>().length, 1);
+      await agent.send('I ate eggs');
+      expect(agent.items.whereType<CardItem>().length, 1, reason: 'the question was the right answer');
+    });
+  });
+
+  group('the answer check (decision 10)', () {
+    test('OK: ✓, the check is not counted', () async {
+      model.script.add([TextChunk('Spinach has iron.')]);
+      await agent.send('Which vegetable has iron?');
+      final reply = agent.items.whereType<ModelItem>().single;
+      expect(reply.check, ReplyCheck.verified);
+      expect(model.checkPrompts.length, 1);
+      expect(ChatLimit(profilesDb, clock: () => DateTime(2026, 10, 4, 8)).usedToday, 1);
+    });
+
+    test('WRONG once: written again with the reason; the stored text is the new one', () async {
+      model.script.addAll([
+        [TextChunk('You ate 900 kcal today.')],
+        [TextChunk('You have not logged anything today.')],
+      ]);
+      model.checks.add('WRONG: nothing is logged today');
+      await agent.send('How much did I eat today?');
+      final reply = agent.items.whereType<ModelItem>().single;
+      expect((reply.text, reply.check), ('You have not logged anything today.', ReplyCheck.verified));
+      expect(model.sent.last, contains('nothing is logged today'));
+      expect(user.select("SELECT text FROM chat_messages WHERE role = 'model'").single['text'],
+          'You have not logged anything today.');
+    });
+
+    test('WRONG twice: the text is hidden and never replayed; cards stay', () async {
+      model.script.addAll([
+        [ToolCall('condition_info', {'question': 'diabetes diet'})], // always answered in words, after its card
+        [TextChunk('Diabetes is cured by cinnamon.')],
+        [TextChunk('Cinnamon cures it.')],
+      ]);
+      model.checks.addAll(['WRONG: the passages say no such thing', 'WRONG: still not in the passages']);
+      await agent.send('What should I eat with diabetes?');
+      expect(agent.items.whereType<ModelItem>().single.check, ReplyCheck.unverified);
+      expect(agent.items.whereType<CardItem>(), isNotEmpty);
+      expect(user.select("SELECT 1 FROM chat_messages WHERE role = 'model'"), isEmpty);
+    });
   });
 }

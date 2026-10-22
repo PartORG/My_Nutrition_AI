@@ -1980,59 +1980,11 @@ abstract class AppLocalizations {
   /// **'Suggest recipes low in {nutrient}'**
   String reviewAskLow(String nutrient);
 
-  /// No description provided for @calcium.
-  ///
-  /// In en, this message translates to:
-  /// **'Calcium'**
-  String get calcium;
-
-  /// No description provided for @iron.
-  ///
-  /// In en, this message translates to:
-  /// **'Iron'**
-  String get iron;
-
-  /// No description provided for @magnesium.
-  ///
-  /// In en, this message translates to:
-  /// **'Magnesium'**
-  String get magnesium;
-
-  /// No description provided for @potassium.
-  ///
-  /// In en, this message translates to:
-  /// **'Potassium'**
-  String get potassium;
-
-  /// No description provided for @vitaminC.
-  ///
-  /// In en, this message translates to:
-  /// **'Vitamin C'**
-  String get vitaminC;
-
-  /// No description provided for @vitaminD.
-  ///
-  /// In en, this message translates to:
-  /// **'Vitamin D'**
-  String get vitaminD;
-
-  /// No description provided for @vitaminB12.
-  ///
-  /// In en, this message translates to:
-  /// **'Vitamin B12'**
-  String get vitaminB12;
-
   /// No description provided for @microsTitle.
   ///
   /// In en, this message translates to:
   /// **'Vitamins and minerals'**
   String get microsTitle;
-
-  /// No description provided for @microsCoverage.
-  ///
-  /// In en, this message translates to:
-  /// **'From {known} of {meals} meals with known values; EU reference intakes'**
-  String microsCoverage(int known, int meals);
 
   /// No description provided for @productsTitle.
   ///
@@ -4032,12 +3984,6 @@ abstract class AppLocalizations {
   /// **'~{amount} left'**
   String amountLeftApprox(String amount);
 
-  /// No description provided for @microsLocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Today\'s vitamins and minerals against EU reference intakes, with Basic.'**
-  String get microsLocked;
-
   /// No description provided for @highProtein.
   ///
   /// In en, this message translates to:
@@ -4175,6 +4121,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recommended'**
   String get aiModelRecommended;
+
+  /// No description provided for @nutrientName.
+  ///
+  /// In en, this message translates to:
+  /// **'{key, select, starch_g{Starch} alcohol_g{Alcohol} water_g{Water} saturated_fat_g{Saturated fat} mono_fat_g{Monounsaturated fat} poly_fat_g{Polyunsaturated fat} trans_fat_g{Trans fat} omega3_g{Omega-3} omega6_g{Omega-6} cholesterol_mg{Cholesterol} sucrose_g{Sucrose} glucose_g{Glucose} fructose_g{Fructose} lactose_g{Lactose} added_sugar_g{Added sugars} potassium_mg{Potassium} calcium_mg{Calcium} magnesium_mg{Magnesium} phosphorus_mg{Phosphorus} iron_mg{Iron} zinc_mg{Zinc} copper_mg{Copper} manganese_mg{Manganese} selenium_ug{Selenium} iodine_ug{Iodine} vitamin_a_ug{Vitamin A} beta_carotene_ug{Beta-carotene} vitamin_d_ug{Vitamin D} vitamin_e_mg{Vitamin E} vitamin_k_ug{Vitamin K} vitamin_c_mg{Vitamin C} vitamin_b1_mg{Thiamin (B1)} vitamin_b2_mg{Riboflavin (B2)} vitamin_b3_mg{Niacin (B3)} vitamin_b5_mg{Pantothenic acid (B5)} vitamin_b6_mg{Vitamin B6} vitamin_b7_ug{Biotin (B7)} folate_ug{Folate} vitamin_b12_ug{Vitamin B12} choline_mg{Choline} histidine_g{Histidine} isoleucine_g{Isoleucine} leucine_g{Leucine} lysine_g{Lysine} methionine_g{Methionine} phenylalanine_g{Phenylalanine} threonine_g{Threonine} tryptophan_g{Tryptophan} valine_g{Valine} other{{key}}}'**
+  String nutrientName(String key);
+
+  /// No description provided for @nutrientGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'{group, select, macro{Macronutrients} fat{Fats} sugar{Sugars} mineral{Minerals} vitamin{Vitamins} amino{Essential amino acids} other{{group}}}'**
+  String nutrientGroup(String group);
+
+  /// No description provided for @lifeStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnant or breastfeeding?'**
+  String get lifeStage;
+
+  /// No description provided for @lifeStageNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get lifeStageNone;
+
+  /// No description provided for @lifeStagePregnant.
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnant'**
+  String get lifeStagePregnant;
+
+  /// No description provided for @lifeStageBreastfeeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Breastfeeding'**
+  String get lifeStageBreastfeeding;
+
+  /// No description provided for @allNutrientsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All nutrients'**
+  String get allNutrientsTitle;
+
+  /// No description provided for @moreNutrients.
+  ///
+  /// In en, this message translates to:
+  /// **'More: single sugars, amino acids'**
+  String get moreNutrients;
+
+  /// No description provided for @fewerNutrients.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer'**
+  String get fewerNutrients;
+
+  /// No description provided for @panelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ estimated from similar foods · ≥ some foods don’t list it · Vitamin and mineral goals, upper limits: NASEM reference intakes'**
+  String get panelNote;
+
+  /// No description provided for @microsLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s vitamins and minerals against your reference intakes, with Basic.'**
+  String get microsLocked;
+
+  /// No description provided for @chipLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low: {names}'**
+  String chipLow(String names);
+
+  /// No description provided for @chipOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the limit: {names}'**
+  String chipOver(String names);
+
+  /// No description provided for @upperLimitValue.
+  ///
+  /// In en, this message translates to:
+  /// **'upper limit {amount}'**
+  String upperLimitValue(String amount);
+
+  /// No description provided for @patternsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Patterns'**
+  String get patternsTitle;
+
+  /// No description provided for @patternsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing stands out yet. Patterns need a week or more of logs.'**
+  String get patternsNone;
+
+  /// No description provided for @captionPatterns.
+  ///
+  /// In en, this message translates to:
+  /// **'What your logs show:'**
+  String get captionPatterns;
+
+  /// No description provided for @patternLogging.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole days logged: {n} of the last {days}. The other patterns count only those.'**
+  String patternLogging(String n, String days);
+
+  /// No description provided for @patternSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{meal} skipped on {n} of {days} days'**
+  String patternSkipped(String meal, String n, String days);
+
+  /// No description provided for @patternLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Ate after {time} on {n} of {days} days'**
+  String patternLate(String time, String n, String days);
+
+  /// No description provided for @patternWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekends {weekend} kcal a day, weekdays {weekday} kcal ({change})'**
+  String patternWeekend(String weekend, String weekday, String change);
+
+  /// No description provided for @patternGap.
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient} under 80 % of the goal on {n} of {days} days'**
+  String patternGap(String nutrient, String n, String days);
+
+  /// No description provided for @patternWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight trend {change} kg a week, on average {kcal} kcal a day eaten'**
+  String patternWeight(String change, String kcal);
+
+  /// No description provided for @patternSymptom.
+  ///
+  /// In en, this message translates to:
+  /// **'{symptom} logged within {hours} h after {food}: {n} of {times} times. A count, not a cause: you might mention it to a doctor.'**
+  String patternSymptom(
+    String symptom,
+    String food,
+    String n,
+    String times,
+    String hours,
+  );
+
+  /// No description provided for @answerChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'checking…'**
+  String get answerChecking;
+
+  /// No description provided for @answerUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'I couldn’t verify this answer, so it’s hidden. Try asking another way.'**
+  String get answerUnverified;
 }
 
 class _AppLocalizationsDelegate

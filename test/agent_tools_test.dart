@@ -209,6 +209,44 @@ void main() {
       expect((tools.run('nutrition_status', {'period': 'week'}).forModel['goals'] as Map)['kcal'], 14000);
     });
 
+    test('status: vitamins and minerals as a share of their goal with Basic; the upper limits for everyone', () {
+      user.execute('INSERT INTO body (id, sex, birth_year, height_cm, weight_kg, activity, goal, units, updated_at) '
+          "VALUES (1, 'female', 1996, 165, 60, 'light', 'maintain', 'metric', 0)");
+      tools.quickAdd('Ramen', {'kcal': 600, 'protein_g': 20, 'fat_g': 20, 'carbs_g': 80, 'sodium_mg': 3000}, 'lunch');
+      tools.logFood(tools.searchFood('egg').firstWhere((f) => f.kind == 'food'), 100, 'breakfast');
+      var r = tools.run('nutrition_status', {'period': 'today'}).forModel;
+      expect(r['vitamins_minerals_percent_of_goal'], containsPair('iron_mg', 10)); // 1.75 of 18 mg
+      expect(r['over_upper_limit'], ['sodium_mg 3142 of 2000']); // the egg has 142 mg
+      expect(r['not_known_for_every_meal'], contains('iron_mg'), reason: 'the ramen has no label for it');
+      tools.basic = () => false;
+      r = tools.run('nutrition_status', {'period': 'today'}).forModel;
+      expect(r.containsKey('vitamins_minerals_percent_of_goal'), isFalse, reason: 'micronutrient goals are Basic');
+      expect(r['over_upper_limit'], ['sodium_mg 3142 of 2000'], reason: 'safety, like allergens');
+    });
+
+    test('my_patterns: the card with Basic, a note on Free', () {
+      for (var d = 1; d <= 3; d++) {
+        now = DateTime(2026, 10, d, 13);
+        tools.quickAdd('Soup', {'kcal': 900, 'protein_g': 20, 'fat_g': 20, 'carbs_g': 80}, 'lunch');
+        now = DateTime(2026, 10, d, 22);
+        tools.quickAdd('Pasta', {'kcal': 900, 'protein_g': 20, 'fat_g': 20, 'carbs_g': 80}, 'dinner');
+      }
+      now = DateTime(2026, 10, 4, 12);
+      expect(tools.run('my_patterns', {}).forModel['note'], contains('need a week'));
+      for (var d = 4; d <= 9; d++) {
+        now = DateTime(2026, 10, d, 13);
+        tools.quickAdd('Soup', {'kcal': 900, 'protein_g': 20, 'fat_g': 20, 'carbs_g': 80}, 'lunch');
+        now = DateTime(2026, 10, d, 22);
+        tools.quickAdd('Pasta', {'kcal': 900, 'protein_g': 20, 'fat_g': 20, 'carbs_g': 80}, 'dinner');
+      }
+      now = DateTime(2026, 10, 10, 12);
+      final r = tools.run('my_patterns', {});
+      expect(r.forModel['patterns'], contains('breakfast skipped on 9 of 9 days'));
+      expect(r.card, isA<PatternsCard>());
+      tools.basic = () => false;
+      expect(tools.run('my_patterns', {}).forModel['note'], contains('Basic'));
+    });
+
     test('adding to a saved breakfast shows only the new food, even when the model repeats the breakfast', () {
       confirmOf(tools.run('log_meal', {'items': '2 eggs, toast', 'meal_type': 'breakfast'})).apply();
       now = now.add(const Duration(minutes: 5));
@@ -319,19 +357,6 @@ void main() {
       expect(totalsOn(user, now)['kcal']!.round(), 858); // egg 143 + rice 65 (swapped above) + 650
     });
 
-    test('past meals get vitamins and minerals once nutri.db has them for that food', () {
-      final egg = tools.searchFood('egg').firstWhere((f) => f.kind == 'food');
-      tools.logFood(egg, 50, 'breakfast');
-      final id = mealsOn(user, now).single.id;
-      user.execute('UPDATE meal_log SET iron_mg = NULL, calcium_mg = NULL WHERE id = ?', [id]); // as logged before
-      expect(microTotalsOn(user, now).known, 0);
-
-      expect(fillMissingMicros(user, nutri, 3), 1);
-      final iron = egg.per100['iron_mg'];
-      expect(microTotalsOn(user, now).totals['iron_mg'], closeTo(iron! / 2, 1e-9));
-      expect(fillMissingMicros(user, nutri, 3), 0, reason: 'once per data version');
-    });
-
     test('water: "2 glasses of water" is a water card, not food; goal from weight', () {
       expect(waterMl('2 glasses of water'), 500);
       expect(waterMl('500 ml water'), 500);
@@ -379,9 +404,14 @@ void main() {
 
     test('micronutrients: known ones flow from foods and recipes into the log; unknown stays unknown', () {
       confirmOf(tools.run('log_meal', {'items': '2 eggs, 100 g broccoli'})).apply(); // broccoli: no values in the test db
-      final m = microTotalsOn(user, now);
-      expect((m.known, m.meals), (1, 2));
+      final (from, to) = dayRange(now);
+      final m = panelTotals(user, nutri, from, to);
+      expect(m.meals, 2);
+      expect(m.partial, contains('iron_mg'), reason: 'broccoli does not know it: the total is "at least"');
       expect(m.totals['iron_mg'], closeTo(1.75, .01)); // 100 g egg
+      expect(m.approx, isEmpty);
+      tools.logFood(tools.searchFood('banana').firstWhere((f) => f.kind == 'food'), 120, 'snack');
+      expect(panelTotals(user, nutri, from, to).approx, {'zinc_mg', 'vitamin_b7_ug'}, reason: "banana's estimates");
       expect(user.select("SELECT iron_mg FROM meal_log WHERE description = 'broccoli'").single['iron_mg'], isNull);
       final shakshuka = tools.showRecipeById(2).card! as RecipeCard;
       expect(shakshuka.perServing['iron_mg'], closeTo(1.75, .01)); // 100 g egg per serving

@@ -59,23 +59,35 @@ LABEL = {
 CORE = ("kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "sugar_g", "sodium_mg")
 
 
-def read(data):
+def rows(data):
+    """The dump's rows, as dicts of its columns."""
     with gzip.open(
         data / "raw_off_2026-10-16/products.csv.gz", "rt", encoding="utf-8", errors="replace", newline=""
     ) as fh:
-        for r in csv.DictReader(fh, delimiter="\t", quoting=csv.QUOTE_NONE):
-            got = v3.off_product(lambda k, r=r: r.get(k) or "")
-            if isinstance(got, str):
-                continue
-            n = {k: got[k] for k in CORE}
-            total = number(r.get("carbohydrates-total_100g"))
-            if total is not None:
-                n["carbs_g"] = total
-            elif "United States" not in (r.get("countries_en") or "") and n["fiber_g"] is not None:
-                n["carbs_g"] += n["fiber_g"]
-            for col, key in LABEL.items():
-                if (v := number(r.get(f"{col}_100g"))) is not None:
-                    n[key] = convert(v, "g", UNIT[key])
+        yield from csv.DictReader(fh, delimiter="\t", quoting=csv.QUOTE_NONE)
+
+
+def label(r: dict) -> tuple[dict, dict] | None:
+    """A row that passes the checks → (v3's checked product, its label as panel keys); None when it doesn't."""
+    got = v3.off_product(lambda k: r.get(k) or "")
+    if isinstance(got, str):
+        return None
+    n = {k: got[k] for k in CORE}
+    total = number(r.get("carbohydrates-total_100g"))
+    if total is not None:
+        n["carbs_g"] = total
+    elif "United States" not in (r.get("countries_en") or "") and n["fiber_g"] is not None:
+        n["carbs_g"] += n["fiber_g"]
+    for col, key in LABEL.items():
+        if (v := number(r.get(f"{col}_100g"))) is not None:
+            n[key] = convert(v, "g", UNIT[key])
+    return got, n
+
+
+def read(data):
+    for r in rows(data):
+        if (checked := label(r)) is not None:
+            got, n = checked
             yield {
                 "source": "off",
                 "code": got["barcode"],

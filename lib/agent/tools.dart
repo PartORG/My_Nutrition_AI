@@ -36,7 +36,7 @@ DECIDE WHAT THE USER WANTS
 4. Recipe action: recipe shows, bookmarks or rates a recipe already mentioned. Bookmarking is
    not eating it.
 5. Nutrition facts about a food: lookup_nutrition. The user's own eaten totals or remaining
-   budget: nutrition_status.
+   budget: nutrition_status. Their habits over weeks ("do I skip breakfast?"): my_patterns.
 6. Lasting likes, dislikes and personal facts: remember_fact; not one-off wishes.
 7. Allergies and diets: set_allergen only when the user says one lasts ("I'm allergic to
    nuts", "I'm vegetarian") or asks to add or remove one.
@@ -105,9 +105,12 @@ final agentTools = <Tool>[
     'food': _str('Food name'),
   }, ['food']),
   _tool('nutrition_status',
-      "The user's own eaten totals and remaining budget. Not facts about a food.", {
+      "The user's own eaten totals (vitamins and minerals too) and remaining budget. Not facts about a food.", {
     'period': _enum('Time range', ['today', 'week']),
   }, ['period']),
+  _tool('my_patterns',
+      "The user's eating habits over the last weeks: skipped or late meals, weekends, recurring gaps, weight, "
+          'symptoms after foods.', {}),
   _tool('log_meal', 'Record food or drinks the user ate, including a recipe they cooked and ate.', {
     'items': _str('Only the foods and amounts the user said in this message, e.g. "2 eggs, 1 toast"; never invent '
         'amounts, never repeat foods logged earlier'),

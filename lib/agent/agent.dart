@@ -25,7 +25,14 @@ class UserItem extends ChatItem {
 class ModelItem extends ChatItem {
   ModelItem([this.text = '']);
   String text; // grows while streaming
+
+  /// The hidden second pass over this answer (docs/PLAN.md "All nutrients, patterns", 10).
+  ReplyCheck check = ReplyCheck.none;
 }
+
+/// none: not checked (a replayed message); checking: "checking…"; verified: ✓; unverified: the text is hidden,
+/// "couldn't verify this answer".
+enum ReplyCheck { none, checking, verified, unverified }
 
 class CardItem extends ChatItem {
   CardItem(this.card, {this.caption = false});
@@ -56,8 +63,17 @@ class Agent extends ChangeNotifier {
     required this.unlimited,
     this.onWrite,
     this.language = 'en',
+    this.modelFirst = true,
+    this.checkAnswers = true,
     DateTime Function()? clock,
   }) : _now = clock ?? DateTime.now;
+
+  /// The model decides every message, the router is its fallback (decision 9). False puts the router first again:
+  /// the phone gate (decision 11) failed.
+  final bool modelFirst;
+
+  /// Every text answer gets a hidden check turn (decision 10).
+  final bool checkAnswers;
 
   /// Called after the user confirms a write, so other screens can refresh.
   final VoidCallback? onWrite;
@@ -199,7 +215,7 @@ class Agent extends ChangeNotifier {
         items.add(CrisisItem()); // never routed through the model
         return;
       }
-      if (tools.route(text) case final routed?) {
+      if ((modelFirst ? null : tools.route(text)) case final routed?) {
         // Plain "I ate…" / "I'm allergic to…": the card at once, no model, not counted.
         final at = _now();
         final id = _store('user', text, at);
@@ -232,7 +248,15 @@ class Agent extends ChangeNotifier {
         size = await _session!.countTokens(prompt);
       }
       _sessionTokens += size;
-      await _runTurn(_session!.sendUser(prompt), text);
+      final turn = await _runTurn(_session!.sendUser(prompt), text);
+      // The model wrote no call where the router sees one ("I ate 2 eggs" answered "Enjoy!"): the router's card.
+      // Not when it asked something back ("How many eggs?"): that is the right answer.
+      final asked = turn.reply?.text.trim().endsWith('?') ?? false;
+      if ((modelFirst && !turn.called && !asked ? tools.route(text) : null) case final routed?) {
+        _store('tool', 'fallback router -> ${routed.forModel}', _now());
+        items.add(CardItem(routed.card!, caption: turn.reply == null));
+      }
+      if ((checkAnswers ? turn.reply : null) case final reply?) await _check(reply, turn.storedId!);
     } catch (e, st) {
       debugPrint('agent error: $e\n$st');
       items.add(ErrorItem());
@@ -244,7 +268,12 @@ class Agent extends ChangeNotifier {
     }
   }
 
-  Future<void> _runTurn(Stream<ModelEvent> stream, String said) async {
+  /// One turn: model text and tool rounds. [reply] is the last text the user sees (and [storedId] its chat row);
+  /// [called] whether any tool ran.
+  Future<({ModelItem? reply, int? storedId, bool called})> _runTurn(Stream<ModelEvent> stream, String said) async {
+    ModelItem? last;
+    int? lastId;
+    var called = false, failedChecks = 0;
     for (var round = 0;; round++) {
       ModelItem? reply;
       final calls = <ToolCall>[];
@@ -271,13 +300,46 @@ class Agent extends ChangeNotifier {
       }
       if (reply != null && reply.text.trim().isNotEmpty) {
         _sessionTokens += await _session!.countTokens(reply.text);
-        _store('model', reply.text.trim(), _now());
+        (last, lastId) = (reply, _store('model', reply.text.trim(), _now()));
       }
-      if (calls.isEmpty) return;
+      if (calls.isEmpty) return (reply: last, storedId: lastId, called: called);
       if (round >= _maxToolCalls) {
         items.add(ErrorItem()); // still calling tools: a confused model, not an answer
-        return;
+        return (reply: null, storedId: null, called: called);
       }
+      // Model first: the arguments must hold against the user's words. One retry with the reason, then the router.
+      final problems = [for (final call in calls) modelFirst ? tools.checkCall(call.name, call.args, said) : null];
+      if (problems.nonNulls.isNotEmpty) {
+        _store('tool', 'check failed: ${[for (final (i, c) in calls.indexed) if (problems[i] != null) '${c.name} '
+            '${problems[i]}']}', _now());
+        if (++failedChecks > 1) {
+          // Its words went with the wrong call ("I'll log the bacon"): gone from the screen and the replay.
+          if (last != null) {
+            items.remove(last);
+            user.execute('DELETE FROM chat_messages WHERE id = ?', [lastId]);
+          }
+          if (tools.route(said) case final routed?) {
+            items.add(CardItem(routed.card!, caption: true));
+            await _session!.stageToolResult(calls.last.name, routed.forModel);
+            return (reply: null, storedId: null, called: true);
+          }
+          items.add(ErrorItem());
+          return (reply: null, storedId: null, called: called);
+        }
+        final answers = [
+          for (final problem in problems)
+            problem == null
+                ? {'status': 'not run: another call failed the check; call it again if still needed'}
+                : {'error': 'checked against the user\'s words: $problem. Call it again with only what the user '
+                      'said, or ask them'},
+        ];
+        for (var i = 0; i < calls.length - 1; i++) {
+          await _session!.stageToolResult(calls[i].name, answers[i]);
+        }
+        stream = _session!.sendToolResult(calls.last.name, answers.last);
+        continue;
+      }
+      called = true;
       final results = [for (final call in calls) (call: call, result: tools.run(call.name, call.args, said: said))];
       final saidAll = results.every((r) => _cardSaysItAll(r.call.name, r.result));
       for (final (:call, :result) in results) {
@@ -288,16 +350,67 @@ class Agent extends ChangeNotifier {
         if (result.card != null) items.add(CardItem(result.card!, caption: saidAll));
       }
       notifyListeners();
-      final last = results.removeLast();
+      final lastResult = results.removeLast();
       for (final (:call, :result) in results) {
         await _session!.stageToolResult(call.name, result.forModel);
       }
       if (saidAll) {
-        await _session!.stageToolResult(last.call.name, last.result.forModel);
-        return;
+        await _session!.stageToolResult(lastResult.call.name, lastResult.result.forModel);
+        // The text before the calls ("Let me log that") isn't the answer to check: the cards are.
+        return (reply: null, storedId: null, called: true);
       }
-      stream = _session!.sendToolResult(last.call.name, last.result.forModel);
+      stream = _session!.sendToolResult(lastResult.call.name, lastResult.result.forModel);
     }
+  }
+
+  static const _checkPrompt = '[Check] Compare your last answer with the [Context] block and the tool results above. '
+      'Is every number, food, recipe and claim in it backed by them or by general knowledge, and does it answer the '
+      'user? Reply only OK, or WRONG: and the reason in a few words.';
+
+  /// The hidden second pass (decision 10), in the same conversation: OK → ✓; WRONG → written again once with the
+  /// reason; WRONG again → the text is hidden ("couldn't verify"), the cards stay. Not counted as a message.
+  Future<void> _check(ModelItem reply, int storedId) async {
+    reply.check = ReplyCheck.checking;
+    notifyListeners();
+    for (var attempt = 0;; attempt++) {
+      final wrong = await _verdict();
+      if (wrong == null) {
+        reply.check = ReplyCheck.verified;
+        user.execute('UPDATE chat_messages SET text = ? WHERE id = ?', [reply.text.trim(), storedId]);
+        break;
+      }
+      _store('tool', 'answer check: WRONG: $wrong', _now());
+      if (attempt == 1) {
+        reply.check = ReplyCheck.unverified;
+        user.execute('DELETE FROM chat_messages WHERE id = ?', [storedId]); // never replayed as if it were right
+        break;
+      }
+      final prompt = "[Check] Your last answer was wrong: $wrong. Write the answer to the user's message again, "
+          'correctly, in the same language, without calling tools.';
+      _sessionTokens += await _session!.countTokens(prompt);
+      reply.text = '';
+      notifyListeners();
+      await for (final e in _session!.sendUser(prompt)) {
+        if (e is TextChunk) {
+          reply.text += e.text;
+          notifyListeners();
+        }
+      }
+      _sessionTokens += await _session!.countTokens(reply.text);
+    }
+    notifyListeners();
+  }
+
+  /// The check turn's verdict: null = OK (anything but WRONG: a check that rambles hides no answer), else the reason.
+  Future<String?> _verdict() async {
+    _sessionTokens += await _session!.countTokens(_checkPrompt);
+    var out = '';
+    await for (final e in _session!.sendUser(_checkPrompt)) {
+      if (e is TextChunk) out += e.text;
+    }
+    _sessionTokens += await _session!.countTokens(out);
+    final m = RegExp(r'^\W*WRONG\W*(.*)', caseSensitive: false, dotAll: true).firstMatch(out.trim());
+    return m == null ? null : (m[1]!.trim().isEmpty ? 'not backed by the facts' : m[1]!.trim());
   }
 
   /// The card shows everything the reply would say. The model still answers after

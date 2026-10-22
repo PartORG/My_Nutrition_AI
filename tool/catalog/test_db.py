@@ -47,6 +47,7 @@ def nutri(v3: sqlite3.Connection) -> None:
         db.execute("INSERT INTO food_aliases VALUES (?, 'en', ?)", (d["name"], 100 + d["id"]))
     db.executemany("INSERT INTO food_aliases VALUES (?, ?, ?)",
                    [(r["name"], r["lang"], r["food_id"]) for r in v3.execute("SELECT * FROM food_names")])
+    db.execute("UPDATE foods SET estimated = 'zinc_mg,vitamin_b7_ug' WHERE name = 'banana'")  # for the ≈ marks
     db.executemany("INSERT INTO food_allergens VALUES (?, ?)",
                    [(r["food_id"], r["allergen"]) for r in v3.execute("SELECT * FROM allergens")])
     names = {r["id"]: r["name"] for r in v3.execute("SELECT id, name FROM foods")}
@@ -67,6 +68,28 @@ def nutri(v3: sqlite3.Connection) -> None:
     db.commit()
 
 
+# A few real adult NASEM rows (nutrient, sex, age_from, age_to, life_stage, kind, amount): enough for goals, upper
+# limits, a supplement-only UL (magnesium) and pregnancy.
+ADULT = [(19, 31), (31, 51), (51, 71), (71, 200)]
+REFERENCE = [
+    *[("iron_mg", "female", a, b, "", "rda", 18 if a < 51 else 8) for a, b in ADULT],
+    *[("iron_mg", "male", a, b, "", "rda", 8) for a, b in ADULT],
+    *[("iron_mg", sex, a, b, "", "ul", 45) for a, b in ADULT for sex in ("female", "male")],
+    *[("iron_mg", "female", a, b, stage, kind, amount) for a, b in ADULT[:2]
+      for stage, kind, amount in (("pregnancy", "rda", 27), ("pregnancy", "ul", 45))],
+    *[("vitamin_d_ug", "any", a, b, "", "rda", 20 if a >= 71 else 15) for a, b in ADULT],
+    *[("vitamin_d_ug", "any", a, b, "", "ul", 100) for a, b in ADULT],
+    *[("vitamin_a_ug", sex, a, b, "", "rda", amount) for a, b in ADULT for sex, amount in (("female", 700), ("male", 900))],
+    *[("vitamin_a_ug", "any", a, b, "", "ul", 3000) for a, b in ADULT],
+    *[("magnesium_mg", "male", a, b, "", "rda", 400 if a < 31 else 420) for a, b in ADULT],
+    *[("magnesium_mg", "female", a, b, "", "rda", 310 if a < 31 else 320) for a, b in ADULT],
+    *[("magnesium_mg", "any", a, b, "", "ul", 350) for a, b in ADULT],
+    *[("potassium_mg", sex, a, b, "", "ai", amount) for a, b in ADULT for sex, amount in (("female", 2600), ("male", 3400))],
+    *[("sodium_mg", "any", a, b, "", kind, amount) for a, b in ADULT for kind, amount in (("ai", 1500), ("ul", 2300))],
+    *[("protein_g", sex, a, b, "", "rda", amount) for a, b in ADULT for sex, amount in (("female", 46), ("male", 56))],
+]
+
+
 def health(v3: sqlite3.Connection) -> None:
     db = fresh("health")
     db.execute("INSERT INTO sources VALUES ('dummy', 'DUMMY', 'none', NULL)")
@@ -80,6 +103,8 @@ def health(v3: sqlite3.Connection) -> None:
                    [tuple(r) for r in v3.execute("SELECT condition_id, food_id, note FROM condition_avoid")])
     db.executemany("INSERT INTO docs (id, kind, text, source_id) VALUES (?, 'guideline', ?, 'dummy')",
                    [(r["id"], r["text"]) for r in v3.execute("SELECT * FROM docs")])
+    db.execute("INSERT INTO sources VALUES ('nasem_dri', 'DRI (test subset)', 'facts', NULL)")
+    db.executemany("INSERT INTO reference_values VALUES (?, ?, ?, ?, ?, ?, ?, 'nasem_dri')", REFERENCE)
     db.executemany("INSERT INTO meta VALUES (?, ?)", [("schema_version", "1"), ("built_at", "dummy")])
     db.execute("INSERT INTO docs_fts(docs_fts) VALUES ('rebuild')")
     db.commit()

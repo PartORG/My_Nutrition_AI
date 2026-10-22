@@ -2,8 +2,12 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/data/diary.dart' show activeKcalOn, storeActiveKcal, trendPerWeek, weightTrend;
+import 'package:myfoodmind/agent/agent_tools.dart' show AgentTools, micronutrients, nutrients;
 import 'package:myfoodmind/data/goals.dart';
+import 'package:myfoodmind/data/nutri_db.dart';
+import 'package:myfoodmind/data/reminders.dart';
 import 'package:myfoodmind/data/user_db.dart';
+import 'package:myfoodmind/ui/nutrients.dart' show nutrientGroups;
 
 void main() {
   final now = DateTime(2026, 10, 4);
@@ -125,6 +129,92 @@ void main() {
       expect(loadBody(user)!.weightKg, closeTo(74.84, .01));
       user.close();
     });
+  });
+
+  group('reference intakes (health.db, NASEM)', () {
+    late Directory tmp;
+    setUp(() => tmp = Directory.systemTemp.createTempSync('myfoodmind_ref_'));
+    tearDown(() => tmp.deleteSync(recursive: true));
+
+    test('RDA, else AI, by sex, age and life stage; adults only; "other" the mean', () {
+      final nutri = openNutriDb('test/nutri_test.db');
+      Map<String, double> goals(Sex sex, {int age = 30, String stage = ''}) =>
+          referenceGoals(nutri, body(sex: sex, age: age), stage, now: now);
+      expect(goals(Sex.female)['iron_mg'], 18);
+      expect(goals(Sex.male)['iron_mg'], 8);
+      expect(goals(Sex.female, age: 60)['iron_mg'], 8);
+      expect(goals(Sex.other)['iron_mg'], 13);
+      expect(goals(Sex.female, stage: 'pregnancy')['iron_mg'], 27);
+      expect(goals(Sex.female, age: 60, stage: 'pregnancy')['iron_mg'], 8, reason: 'no rows at 60: plain values');
+      expect(goals(Sex.male)['potassium_mg'], 3400, reason: 'AI when there is no RDA');
+      expect(goals(Sex.male, age: 75)['vitamin_d_ug'], 20);
+      expect(goals(Sex.male, age: 17), isEmpty, reason: 'under 18 targets are manual');
+      nutri.close();
+    });
+
+    test('upper limits: food-only ones, the lower for "other"; vitamin A counts retinol only', () {
+      final nutri = openNutriDb('test/nutri_test.db');
+      final ul = upperLimits(nutri, body(), '', now: now);
+      expect(ul, containsPair('iron_mg', 45));
+      expect(ul, containsPair('sodium_mg', 2300));
+      expect(ul.containsKey('magnesium_mg'), isFalse, reason: 'its UL is for supplements');
+      expect(upperLimits(nutri, body(age: 15), '', now: now), isEmpty, reason: 'the test rows are adult only');
+      // 500 g of carrots: lots of RAE, nearly all of it beta-carotene.
+      expect(overLimits({'vitamin_a_ug': 4200, 'beta_carotene_ug': 41000}, ul), isEmpty);
+      expect(overLimits({'vitamin_a_ug': 9000, 'beta_carotene_ug': 100}, ul).single.$1, 'vitamin_a_ug', reason: 'liver');
+      nutri.close();
+    });
+
+    test('current targets: the formula keeps the macros, health.db adds the rest; any of it can be overridden', () {
+      final nutri = openNutriDb('test/nutri_test.db');
+      final user = openUserDb('${tmp.path}/user.db');
+      saveBody(user, body(sex: Sex.female, w: 60), now: now);
+      var t = currentTargets(user, nutri: nutri, now: now).values;
+      expect(t['protein_g'], closeTo(72, .01), reason: '1.2 g/kg, not the RDA of 46 g');
+      expect(t['iron_mg'], 18);
+      setLifeStage(user, 'pregnancy');
+      expect(currentTargets(user, nutri: nutri, now: now).values['iron_mg'], 27);
+      setOverride(user, 'iron_mg', 20);
+      t = currentTargets(user, nutri: nutri, now: now).values;
+      expect(t['iron_mg'], 20);
+      // Sodium's ceiling: the target (2000) is under the UL (2300).
+      expect(dayLimits(user, nutri, now: now)['sodium_mg'], 2000);
+      user.close();
+      nutri.close();
+    });
+
+    test('Low (after the usual dinner time) and Over (always)', () {
+      final nutri = openNutriDb('test/nutri_test.db');
+      final user = openUserDb('${tmp.path}/user.db');
+      saveBody(user, body(sex: Sex.female, w: 60), now: now);
+      final morning = DateTime(2026, 10, 4, 9);
+      final tools = AgentTools(nutri, user, clock: () => morning);
+      final none = lowAndOver(user, nutri, now: morning);
+      expect([...none.low, ...none.over], isEmpty, reason: 'nothing logged');
+      tools.quickAdd('Ramen', {'kcal': 600, 'protein_g': 20, 'sodium_mg': 3000}, 'lunch');
+      tools.logFood(tools.searchFood('egg').firstWhere((f) => f.kind == 'food'), 100, 'breakfast');
+      var r = lowAndOver(user, nutri, now: morning);
+      expect(r.low, isEmpty, reason: 'before dinner the day is not over');
+      expect([for (final o in r.over) o.$1], ['sodium_mg']);
+      final evening = DateTime(2026, 10, 4, 21);
+      r = lowAndOver(user, nutri, now: evening);
+      expect(r.low.map((e) => e.$1), contains('protein_g'));
+      expect(r.low.map((e) => e.$1), isNot(contains('iron_mg')), reason: 'the ramen does not know its iron: "at least"');
+      saveReminder(user, (slot: 'dinner', enabled: true, hour: 22, minute: 0));
+      expect(lowAndOver(user, nutri, now: evening).low, isEmpty, reason: 'dinner is later for this user');
+      user.close();
+      nutri.close();
+    });
+  });
+
+  test('the nutrient lists match db/catalog/nutrients.tsv', () {
+    final keys = [
+      for (final line in File('db/catalog/nutrients.tsv').readAsLinesSync())
+        if (!line.startsWith('#') && !line.startsWith('key\t')) line.split('\t').first
+    ];
+    expect({...nutrients, ...micronutrients}, keys.toSet());
+    expect(micronutrients, [for (final k in keys) if (!nutrients.contains(k)) k], reason: 'same order');
+    expect([for (final g in nutrientGroups.values) ...g], keys, reason: "the screens' groups, in the file's order");
   });
 
   test('imperial conversions round-trip', () {

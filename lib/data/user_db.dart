@@ -182,6 +182,59 @@ const userDbMigrations = <String>[
   ''',
   // v13: birth month (1-12), so the under-18 check is exact to the month. Null: not given yet.
   'ALTER TABLE body ADD COLUMN birth_month INTEGER;',
+  // v14: the full nutrient panel (db/catalog/nutrients.tsv) on a logged meal, and a goal override for any nutrient
+  // of it (SQLite can't drop the old CHECK, so the table is rebuilt).
+  '''
+  ALTER TABLE meal_log ADD COLUMN starch_g REAL;
+  ALTER TABLE meal_log ADD COLUMN alcohol_g REAL;
+  ALTER TABLE meal_log ADD COLUMN water_g REAL;
+  ALTER TABLE meal_log ADD COLUMN saturated_fat_g REAL;
+  ALTER TABLE meal_log ADD COLUMN mono_fat_g REAL;
+  ALTER TABLE meal_log ADD COLUMN poly_fat_g REAL;
+  ALTER TABLE meal_log ADD COLUMN trans_fat_g REAL;
+  ALTER TABLE meal_log ADD COLUMN omega3_g REAL;
+  ALTER TABLE meal_log ADD COLUMN omega6_g REAL;
+  ALTER TABLE meal_log ADD COLUMN cholesterol_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN sucrose_g REAL;
+  ALTER TABLE meal_log ADD COLUMN glucose_g REAL;
+  ALTER TABLE meal_log ADD COLUMN fructose_g REAL;
+  ALTER TABLE meal_log ADD COLUMN lactose_g REAL;
+  ALTER TABLE meal_log ADD COLUMN added_sugar_g REAL;
+  ALTER TABLE meal_log ADD COLUMN phosphorus_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN zinc_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN copper_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN manganese_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN selenium_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN iodine_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_a_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN beta_carotene_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_e_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_k_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b1_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b2_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b3_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b5_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b6_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN vitamin_b7_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN folate_ug REAL;
+  ALTER TABLE meal_log ADD COLUMN choline_mg REAL;
+  ALTER TABLE meal_log ADD COLUMN histidine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN isoleucine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN leucine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN lysine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN methionine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN phenylalanine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN threonine_g REAL;
+  ALTER TABLE meal_log ADD COLUMN tryptophan_g REAL;
+  ALTER TABLE meal_log ADD COLUMN valine_g REAL;
+  CREATE TABLE goal_overrides_v14 (
+    nutrient TEXT PRIMARY KEY,
+    value    REAL NOT NULL CHECK (value > 0)
+  );
+  INSERT INTO goal_overrides_v14 SELECT nutrient, value FROM goal_overrides;
+  DROP TABLE goal_overrides;
+  ALTER TABLE goal_overrides_v14 RENAME TO goal_overrides;
+  ''',
 ];
 
 Database openUserDb(String path) {

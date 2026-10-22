@@ -9,6 +9,7 @@ import '../agent/agent_tools.dart';
 import '../app_state.dart' show llmHears, llmProvider, voiceRepliesProvider;
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
+import 'all_nutrients_screen.dart' show NutrientTable;
 import 'avatar.dart';
 import 'camera_screen.dart';
 import 'home_screen.dart' show HomeTab, homeTabProvider, widgetTapProvider;
@@ -97,6 +98,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final said = [
       for (final item in items.skip(from.clamp(0, items.length)))
         switch (item) {
+          ModelItem(check: ReplyCheck.unverified) => l.answerUnverified,
           ModelItem(:final text) => text,
           CardItem(:final card, caption: true) => _caption(l, card) ?? '',
           LimitItem(:final dailyFree) => l.limitReached(dailyFree),
@@ -351,9 +353,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final c = context.colors;
     return switch (item) {
       UserItem(:final text) => _Bubble(text: text, mine: true),
-      ModelItem(:final text) => _Bubble(
+      ModelItem(check: ReplyCheck.unverified) => _Bubble(text: l.answerUnverified, mine: false),
+      ModelItem(:final text, :final check) => _Bubble(
         text: text,
         mine: false,
+        // The hidden second pass (docs/PLAN.md "All nutrients, patterns", 10).
+        mark: switch (check) {
+          ReplyCheck.checking => l.answerChecking,
+          ReplyCheck.verified => '✓',
+          _ => null,
+        },
         onReport: () => launchUrl(
           Uri(
             scheme: 'mailto',
@@ -402,10 +411,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 /// The user's words in a dark bubble on the right; the assistant's as plain text on the left.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.text, required this.mine, this.onReport});
+  const _Bubble({required this.text, required this.mine, this.onReport, this.mark});
   final String text;
   final bool mine;
   final VoidCallback? onReport;
+
+  /// Under a model answer: "checking…" or ✓.
+  final String? mark;
 
   @override
   Widget build(BuildContext context) {
@@ -458,10 +470,14 @@ class _Bubble extends StatelessWidget {
                     const EvaAvatar(size: 30),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        text,
-                        style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4),
-                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(
+                          text,
+                          style: TextStyle(fontSize: 16, color: c.ink2, height: 1.4),
+                        ),
+                        if (mark != null)
+                          Text(mark!, style: AppText.caption.copyWith(color: c.muted)),
+                      ]),
                     ),
                   ],
                 ),
@@ -562,7 +578,26 @@ class _CardView extends StatelessWidget {
       NutritionCard c => _Framed(
         icon: Icons.pie_chart_outline,
         title: _nutritionTitle(l, c.title),
-        child: NutrientTiles(values: c.values, estimated: c.estimated),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          NutrientTiles(values: c.values, estimated: c.estimated),
+          if (c.values.keys.any(micronutrients.contains))
+            ExpansionTile(
+              title: Text(l.allNutrientsTitle),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              children: [
+                NutrientTable(values: c.values, goals: c.goals, limits: c.limits, approx: c.approx, partial: c.partial),
+              ],
+            ),
+        ]),
+      ),
+      PatternsCard(:final patterns) => _Framed(
+        icon: Icons.insights_outlined,
+        title: l.patternsTitle,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          for (final p in patterns)
+            Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('•  ${patternText(l, p)}')),
+        ]),
       ),
       InfoCard(:final passages) => _Framed(
         icon: Icons.info_outline,
@@ -673,6 +708,7 @@ String? _caption(AppLocalizations l, AgentCard card) => switch (card) {
   RecipeListCard() => l.captionIdeas,
   RecipeCard() => l.captionRecipe,
   NutritionCard() => l.captionNumbers,
+  PatternsCard() => l.captionPatterns,
   CameraCard() => l.captionCamera,
   InfoCard() => null,
 };

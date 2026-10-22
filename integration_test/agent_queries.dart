@@ -68,6 +68,13 @@ const List<Q> agentQueries = [
   (q: 'Did I eat enough fiber today?', tool: 'nutrition_status', args: {'period': 'today'}),
   (q: 'Show my nutrition for the last 7 days', tool: 'nutrition_status', args: {'period': 'week'}),
 
+  // my_patterns — 5
+  (q: 'Do I skip breakfast a lot?', tool: 'my_patterns', args: {}),
+  (q: 'What patterns do you see in my eating?', tool: 'my_patterns', args: {}),
+  (q: 'Do I eat late at night often?', tool: 'my_patterns', args: {}),
+  (q: 'Do I eat more on weekends?', tool: 'my_patterns', args: {}),
+  (q: 'Which nutrients am I always short on?', tool: 'my_patterns', args: {}),
+
   // log_meal — 10
   (q: 'I had 2 eggs and toast for breakfast', tool: 'log_meal', args: {'items': 'egg', 'meal_type': 'breakfast'}),
   (q: 'Just ate an avocado', tool: 'log_meal', args: {'items': 'avocado'}),

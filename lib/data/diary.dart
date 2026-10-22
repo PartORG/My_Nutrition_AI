@@ -16,6 +16,9 @@ typedef MealEntry = ({
   int? recipeId, // logged from a recipe: Today opens it again
 });
 
+/// Local-day window [start, end) for [day], as times.
+(DateTime, DateTime) dayRange(DateTime day) => (DateTime(day.year, day.month, day.day), DateTime(day.year, day.month, day.day + 1));
+
 /// Local-day window [start, end) for [day].
 (int, int) _dayRange(DateTime day) {
   final start = DateTime(day.year, day.month, day.day);
@@ -48,17 +51,42 @@ Nutrients totalsOn(Database user, DateTime day) {
   return {for (final n in nutrients) n: (r[n] as num).toDouble()};
 }
 
-/// Micronutrients eaten on [day], from the meals that know them; [known] = how many of the
-/// day's meals had values (the rest add nothing).
-({Nutrients totals, int known, int meals}) microTotalsOn(Database user, DateTime day) {
-  final (from, to) = _dayRange(day);
+/// The full panel eaten over [from]–[to) (a day: [dayRange]). [partial]: some meals there don't know that nutrient
+/// (a product label, a quick add), so the total is at least this. [approx]: it leans on an estimate — a photo or dish
+/// meal, or a food whose value nutri.db estimated from similar foods (foods.estimated).
+({Nutrients totals, Set<String> partial, Set<String> approx, int meals}) panelTotals(Database user, Database nutri,
+    DateTime from, DateTime to) {
+  final range = [from.millisecondsSinceEpoch, to.millisecondsSinceEpoch];
+  final keys = [...nutrients, ...micronutrients];
   final r = user.select(
-      'SELECT COUNT(*) AS meals, COUNT(iron_mg) AS known, ${[for (final m in micronutrients) 'TOTAL($m) AS $m'].join(', ')} '
-      'FROM meal_log WHERE eaten_at >= ? AND eaten_at < ?', [from, to]).single;
+      'SELECT COUNT(*) AS meals, TOTAL(estimated) AS guessed, '
+      '${[for (final k in keys) 'TOTAL($k) AS $k, COUNT($k) AS n_$k'].join(', ')} '
+      'FROM meal_log WHERE eaten_at >= ? AND eaten_at < ?', range).single;
+  final meals = r['meals'] as int;
+  final approx = <String>{};
+  if ((r['guessed'] as num) > 0) {
+    approx.addAll(keys);
+  } else {
+    // shortcut: meal_log keeps no food id, so a meal finds its food by name; a name in two tables takes either's marks.
+    final names = [for (final m in user.select('SELECT DISTINCT description FROM meal_log WHERE eaten_at >= ? '
+        'AND eaten_at < ? AND recipe_id IS NULL', range)) m['description']];
+    final recipes = [for (final m in user.select('SELECT DISTINCT recipe_id FROM meal_log WHERE eaten_at >= ? '
+        'AND eaten_at < ? AND recipe_id IS NOT NULL', range)) m['recipe_id']];
+    String marks(List<Object?> l) => List.filled(l.length, '?').join(',');
+    for (final f in [
+      if (names.isNotEmpty) ...nutri.select("SELECT estimated FROM foods WHERE name IN (${marks(names)}) AND estimated <> ''", names),
+      if (recipes.isNotEmpty)
+        ...nutri.select('SELECT DISTINCT f.estimated FROM recipe_ingredients ri JOIN foods f ON f.id = ri.food_id '
+            "WHERE ri.recipe_id IN (${marks(recipes)}) AND f.estimated <> ''", recipes),
+    ]) {
+      approx.addAll((f['estimated'] as String).split(','));
+    }
+  }
   return (
-    totals: {for (final m in micronutrients) m: (r[m] as num).toDouble()},
-    known: r['known'] as int,
-    meals: r['meals'] as int,
+    totals: {for (final k in keys) k: (r[k] as num).toDouble()},
+    partial: {for (final k in keys) if ((r['n_$k'] as int) < meals) k},
+    approx: approx,
+    meals: meals,
   );
 }
 
@@ -96,35 +124,6 @@ void replaceMeal(Database user, int id, FoodChoice food) {
         for (final m in micronutrients) switch (food.per100[m]) { final v? => v * g / 100, null => null },
         id,
       ]);
-}
-
-/// Meals logged before nutri.db had vitamins and minerals for their food get them from the food of the
-/// same name (dishes are foods), once per [dataVersion]. Recipes already had them; products and quick adds stay
-/// unknown.
-int fillMissingMicros(Database user, Database nutri, int dataVersion) {
-  if (pref(user, 'micros_filled') == '$dataVersion') return 0;
-  final rows = user.select('SELECT id, description, grams FROM meal_log WHERE iron_mg IS NULL AND grams > 0 AND recipe_id IS NULL');
-  final names = {for (final r in rows) r['description'] as String}.toList();
-  final marks = List.filled(names.length, '?').join(',');
-  final foods = names.isEmpty
-      ? const <String, Row>{}
-      : {
-          for (final f in nutri.select(
-              'SELECT name, ${micronutrients.join(', ')} FROM foods WHERE iron_mg IS NOT NULL AND name IN ($marks)',
-              names))
-            f['name'] as String: f
-        };
-  var n = 0;
-  for (final r in rows) {
-    final f = foods[r['description']];
-    if (f == null) continue;
-    final share = (r['grams'] as num) / 100;
-    user.execute('UPDATE meal_log SET ${[for (final m in micronutrients) '$m = ?'].join(', ')} WHERE id = ?',
-        [for (final m in micronutrients) switch (f[m]) { final num v => v * share, _ => null }, r['id']]);
-    n++;
-  }
-  setPref(user, 'micros_filled', '$dataVersion');
-  return n;
 }
 
 /// What the user logs most in the last 30 days, then most recently: one tap to log again.

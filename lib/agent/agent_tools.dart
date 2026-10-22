@@ -3,20 +3,35 @@ import 'dart:math';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../data/conditions.dart';
-import '../data/diary.dart' show logWater, pref, setPref;
+import '../data/diary.dart' show logWater, panelTotals, pref, setPref;
 import '../data/goals.dart';
 import '../data/journal.dart';
+import '../data/patterns.dart';
 import '../data/nutri_db.dart' show hasHealth;
 
 /// Nutrient columns shared by foods, products, meal_log and the
 /// recipe_nutrition table.
 const nutrients = ['kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
 
-/// Per 100 g where known (USDA SR28 foods, recipes made of them, meals logged from those);
-/// a missing key means unknown, not zero. Dishes and packaged products have none.
+/// The rest of the panel, in db/catalog/nutrients.tsv's order (a test keeps them equal): per 100 g where known;
+/// a missing key means unknown, not zero. nutri.db foods know them all; products only what their label says.
 const micronutrients = [
+  'starch_g', 'alcohol_g', 'water_g', 'saturated_fat_g', 'mono_fat_g', 'poly_fat_g', 'trans_fat_g', 'omega3_g',
+  'omega6_g', 'cholesterol_mg', 'sucrose_g', 'glucose_g', 'fructose_g', 'lactose_g', 'added_sugar_g',
+  'potassium_mg', 'calcium_mg', 'magnesium_mg', 'phosphorus_mg', 'iron_mg', 'zinc_mg', 'copper_mg', 'manganese_mg',
+  'selenium_ug', 'iodine_ug', 'vitamin_a_ug', 'beta_carotene_ug', 'vitamin_d_ug', 'vitamin_e_mg', 'vitamin_k_ug',
+  'vitamin_c_mg', 'vitamin_b1_mg', 'vitamin_b2_mg', 'vitamin_b3_mg', 'vitamin_b5_mg', 'vitamin_b6_mg',
+  'vitamin_b7_ug', 'folate_ug', 'vitamin_b12_ug', 'choline_mg', 'histidine_g', 'isoleucine_g', 'leucine_g',
+  'lysine_g', 'methionine_g', 'phenylalanine_g', 'threonine_g', 'tryptophan_g', 'valine_g',
+];
+
+/// The vitamins and minerals named where the whole panel doesn't fit (lookup_nutrition, a recipe's line).
+const headlineMicros = [
   'calcium_mg', 'iron_mg', 'magnesium_mg', 'potassium_mg', 'vitamin_c_mg', 'vitamin_d_ug', 'vitamin_b12_ug',
 ];
+
+/// "mg", "µg", "g" or "kcal", from the key's suffix.
+String nutrientUnit(String key) => switch (key.split('_').last) { 'mg' => 'mg', 'ug' => 'µg', 'g' => 'g', _ => 'kcal' };
 typedef Nutrients = Map<String, double>;
 
 typedef RecipeSummary = ({int id, String title, int? minutes, double kcal, double protein});
@@ -57,11 +72,22 @@ class RecipeCard extends AgentCard {
 typedef Caution = ({String food, String? allergen, String? condition});
 
 class NutritionCard extends AgentCard {
-  NutritionCard({required this.title, required this.values, this.estimated = false, this.goals = const {}});
+  NutritionCard({required this.title, required this.values, this.estimated = false, this.goals = const {},
+      this.limits = const {}, this.approx = const {}, this.partial = const {}});
   final String title;
   final Nutrients values;
   final bool estimated;
   final Nutrients goals; // empty = no goals set
+  final Nutrients limits; // upper limits for the same period
+
+  /// Per value: estimated from similar foods (≈), or not known for every meal (≥).
+  final Set<String> approx, partial;
+}
+
+/// my_patterns: what the logs show, as the app's own sentences.
+class PatternsCard extends AgentCard {
+  PatternsCard(this.patterns);
+  final List<Pattern> patterns;
 }
 
 class InfoCard extends AgentCard {
@@ -150,6 +176,10 @@ class AgentTools {
   /// The app's language: recipe ingredients show in it where nutri.db has a translation.
   String language = 'en';
 
+  /// Basic or above: micronutrient goals and patterns 1–6; Medium: symptoms after foods (docs/PLAN.md
+  /// "All nutrients", 12). Set with the agent.
+  bool Function() basic = () => true, medium = () => true;
+
   /// `name` of food `f` in [language]: food_names (machine-translated or reviewed), else foods.name.
   // An older nutri.db without the table (before data_version 2) shows the English names.
   late final bool _hasFoodNames =
@@ -198,6 +228,7 @@ class AgentTools {
         },
       'lookup_nutrition' => _lookupNutrition(arg('food')),
       'nutrition_status' => _nutritionStatus(arg('period')),
+      'my_patterns' => _myPatterns(),
       'log_meal' => _logMeal(arg('items'), arg('meal_type')),
       'remember_fact' => _remember(arg('fact')),
       'set_allergen' => _setAllergen(arg('allergen'), remove),
@@ -211,6 +242,82 @@ class AgentTools {
       _ => ToolResult.error('unknown tool $name'),
     };
   }
+
+  /// Model first (docs/PLAN.md "All nutrients, patterns", 9): the model's arguments against the user's own words.
+  /// A reason when they don't hold, null when they do or can't be told (a food named in a language its aliases
+  /// don't cover).
+  String? checkCall(String name, Map<String, dynamic> args, String said) {
+    String arg(String k) => '${args[k] ?? ''}'.trim();
+    final heard = _heardWords(said);
+    switch (name) {
+      case 'log_meal':
+        final items = mealFoods(arg('items'));
+        final unsaid = [for (final item in _split(items)) if (!_saidFood(item, heard)) item];
+        if (unsaid.isNotEmpty) return 'the user did not mention ${unsaid.join(', ')}';
+        final invented = [for (final n in _numbers(items)) if (!_saidNumber(n, said, heard)) n];
+        if (invented.isNotEmpty) return 'the user did not say the amount ${invented.join(', ')}; never invent amounts';
+      case 'log_health' when arg('kind') != 'symptom':
+        final invented = [for (final n in _numbers(arg('value'))) if (!_saidNumber(n, said, heard)) n];
+        if (invented.isNotEmpty) return 'the user did not say ${invented.join(', ')}';
+      case 'recipe':
+        if (RegExp(r'^\s*(?:#|no\.?\s*|number\s*)?(\d+)\s*$', caseSensitive: false).firstMatch(arg('recipe'))
+            case final m?) {
+          final n = int.parse(m[1]!), shown = _lastRecipes.length;
+          if (n < 1 || n > shown) {
+            return shown == 0 ? 'no recipe list was shown' : 'the last list has $shown recipes, numbered 1 to $shown';
+          }
+        }
+    }
+    return null;
+  }
+
+  /// Letters-only words of [said], lower case, any language.
+  static Set<String> _heardWords(String said) =>
+      {for (final m in RegExp(r'\p{L}+', unicode: true).allMatches(said.toLowerCase())) _singular(m[0]!)};
+
+  /// Two words are the same word give or take an ending ("tomatoes"/"tomato", "яйця"/"яйце").
+  static bool _sameWord(String a, String b) {
+    final n = min(a.length, b.length);
+    if (n < 3) return a == b;
+    final k = n <= 4 ? 3 : 4;
+    return a.substring(0, k) == b.substring(0, k);
+  }
+
+  /// One food of log_meal was said: one of its own words, or a word of one of its food's aliases in any language.
+  /// A food whose aliases miss the app's language can't be told: it passes.
+  bool _saidFood(String item, Set<String> heard) {
+    final name = item.replaceAll(RegExp(r'\d+(?:[.,]\d+)?'), ' ');
+    final own = {..._words(name)}..removeAll(_unitWords);
+    if (own.isEmpty || own.any((w) => heard.any((h) => _sameWord(w, h)))) return true;
+    final id = _aliasFood(name) ?? _ftsIds(nutri, 'foods_fts', name, limit: 1).firstOrNull;
+    if (id == null) return false;
+    final aliases = nutri.select('SELECT alias, lang FROM food_aliases WHERE food_id = ?', [id]);
+    if (aliases.any((a) => _heardWords(a['alias'] as String).any((w) => heard.any((h) => _sameWord(w, h))))) return true;
+    return language != 'en' && !aliases.any((a) => a['lang'] == language);
+  }
+
+  static Iterable<double> _numbers(String text) =>
+      RegExp(r'\d+(?:[.,]\d+)?').allMatches(text).map((m) => double.parse(m[0]!.replaceAll(',', '.')));
+
+  /// [n] is in [said] as a number, or as a word for it; 1 always passes ("a banana" is 1 banana).
+  static bool _saidNumber(double n, String said, Set<String> heard) =>
+      n == 1 ||
+      _numbers(said).contains(n) ||
+      (_numberWords[n]?.any((w) => heard.any((h) => h.startsWith(w))) ?? false);
+
+  static const _unitWords = {
+    'g', 'gram', 'gramm', 'kg', 'ml', 'slice', 'piece', 'portion', 'serving', 'bowl', 'cup', 'plate', 'handful',
+    'glass', 'tablespoon', 'teaspoon', 'tbsp', 'tsp', 'can', 'bottle', 'half', 'small', 'large', 'medium', 'big',
+  };
+
+  static final _numberWords = <double, List<String>>{
+    0.5: ['half', 'полов', 'пів', 'halb', 'demi', 'moitié'],
+    2.0: ['two', 'два', 'дві', 'двоє', 'zwei', 'deux', 'couple', 'pair'],
+    3.0: ['three', 'три', 'троє', 'drei', 'trois'],
+    4.0: ['four', 'чотир', 'vier', 'quatre'],
+    5.0: ['five', 'п’ять', "п'ять", 'пять', 'fünf', 'cinq'],
+    6.0: ['six', 'шість', 'sechs'],
+  };
 
   /// The intent router: a message that plainly logs food ("I ate 2 eggs") or
   /// states an allergy ("I'm allergic to peanuts") gets its card at once, without
@@ -234,13 +341,6 @@ class AgentTools {
       return _allergenNames.contains(allergen) ? _setAllergen(allergen, false) : null;
     }
     if (!_ateStatement.hasMatch(said) || _allergyWords.hasMatch(said)) return null;
-    if (waterMl(mealFoods(said)) case final ml?) {
-      return ToolResult({'status': _pendingNote, 'water_ml': ml}, ConfirmCard(
-        title: 'Log water',
-        lines: ['Water · ${ml.round()} ml'],
-        apply: (_) => logWater(user, ml, _now()),
-      ));
-    }
     final r = _logMeal(said, '');
     // Nothing found → the model asks what was meant.
     return r.card is ConfirmCard && !r.forModel.containsKey('not_found') ? r : null;
@@ -624,36 +724,64 @@ class AgentTools {
     if (id == null) return ToolResult.error('"$food" is not in the food database');
     final r = nutri.select('SELECT * FROM foods WHERE id = ?', [id]).single;
     final per100 = _nutrientsOf(r);
+    final approx = {...((r['estimated'] as String?) ?? '').split(',')}..remove('');
     return ToolResult({
       'food': r['name'],
-      'per_100g': per100.map((k, v) => MapEntry(k, _round(v))),
+      // The headline vitamins and minerals only: the card shows the whole panel.
+      'per_100g': {for (final k in [...nutrients, ...headlineMicros]) if (per100[k] case final v?) k: _round(v)},
+      if (approx.isNotEmpty) 'estimated_from_similar_foods': approx.toList(),
       'typical_serving_g': ?r['serving_g'],
-    }, NutritionCard(title: '${r['name']} · per 100 g', values: per100));
+    }, NutritionCard(title: '${r['name']} · per 100 g', values: per100, approx: approx));
   }
 
   ToolResult _nutritionStatus(String period) {
     final now = _now();
     final week = period == 'week';
     final from = week ? now.subtract(const Duration(days: 7)) : DateTime(now.year, now.month, now.day);
-    final r = user.select(
-        'SELECT COUNT(*) AS meals, ${[for (final n in nutrients) 'TOTAL($n) AS $n'].join(', ')} '
-        'FROM meal_log WHERE eaten_at >= ?', [from.millisecondsSinceEpoch]).single;
-    final totals = _nutrientsOf(r);
+    final p = panelTotals(user, nutri, from, DateTime(now.year, now.month, now.day + 1));
+    final totals = p.totals;
+    final days = week ? 7 : 1;
     final daily = currentTargets(user, nutri: nutri, now: now).values;
-    final goals = daily.map((k, v) => MapEntry(k, week ? v * 7 : v));
+    final goals = {
+      for (final MapEntry(key: k, value: v) in daily.entries) if (basic() || nutrients.contains(k)) k: v * days
+    };
+    final limits = dayLimits(user, nutri, now: now).map((k, v) => MapEntry(k, v * days));
+    final over = overLimits(totals, limits);
     return ToolResult({
       'period': week ? 'last 7 days' : 'today',
-      'meals_logged': r['meals'],
-      'eaten': totals.map((k, v) => MapEntry(k, _round(v))),
+      'meals_logged': p.meals,
+      'eaten': {for (final k in nutrients) k: _round(totals[k]!)},
       'goals': goals.isEmpty
           ? 'not set; suggest setting them in the Me tab'
-          : goals.map((k, v) => MapEntry(k, _round(v))),
+          : {for (final k in nutrients) if (goals[k] case final v?) k: _round(v)},
       if (!week && goals.isNotEmpty)
-        'left_today': {for (final e in goals.entries) e.key: _round(e.value - totals[e.key]!)},
-      if (r['meals'] == 0)
+        'left_today': {for (final k in nutrients) if (goals[k] case final v?) k: _round(v - totals[k]!)},
+      // The rest as a share of its goal, so the model can name what's low without 50 numbers.
+      if (goals.keys.any(micronutrients.contains))
+        'vitamins_minerals_percent_of_goal': {
+          for (final k in micronutrients) if (goals[k] case final v? when v > 0) k: (totals[k]! / v * 100).round()
+        },
+      if (over.isNotEmpty) 'over_upper_limit': [for (final (k, v, l) in over) '$k ${_round(v)} of ${_round(l)}'],
+      if (p.partial.isNotEmpty) 'not_known_for_every_meal': p.partial.toList(),
+      if (p.meals == 0)
         'note': 'nothing logged ${week ? 'in the last 7 days' : 'today'}. Saved recipes do not count as eaten; '
             'offer to log what the user ate',
-    }, NutritionCard(title: week ? 'Last 7 days' : 'Today', values: totals, goals: goals));
+    }, NutritionCard(title: week ? 'Last 7 days' : 'Today', values: totals, goals: goals, limits: limits,
+        approx: p.approx, partial: p.partial));
+  }
+
+  ToolResult _myPatterns() {
+    if (!basic()) return ToolResult({'note': 'patterns come with the Basic plan; say so in one sentence'});
+    final now = _now();
+    final found = findPatterns(user, now: now, goals: currentTargets(user, nutri: nutri, now: now).values,
+        symptoms: medium());
+    if (found.isEmpty) {
+      return ToolResult({'patterns': [], 'note': 'nothing stands out yet; patterns need a week or more of logs'});
+    }
+    return ToolResult({
+      'patterns': [for (final p in found) patternSentence(p)],
+      'note': 'counts from the logs: repeat them as they are, never as causes or a diagnosis',
+    }, PatternsCard(found));
   }
 
   ToolResult _logMeal(String items, String mealType) {
@@ -663,6 +791,14 @@ class AgentTools {
         : _mealTypes.firstWhere(items.toLowerCase().contains, orElse: () => '');
     items = mealFoods(items);
     if (items.isEmpty) return ToolResult.error('the user did not say what they ate; ask them');
+    // Water goes to the water tracker, not the meal log.
+    if (waterMl(items) case final ml?) {
+      return ToolResult({'status': _pendingNote, 'water_ml': ml}, ConfirmCard(
+        title: 'Log water',
+        lines: ['Water · ${ml.round()} ml'],
+        apply: (_) => logWater(user, ml, _now()),
+      ));
+    }
     // "overnight oats with banana" is one recipe; "chicken with rice" is two foods,
     // and so is "liver in cream" (else cream is silently dropped).
     final parts = _isDishName(items) ? [items] : _split(items.replaceAll(RegExp(r'\bin\b', caseSensitive: false), ','));

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../app_state.dart';
 import '../data/diary.dart';
 import '../data/goals.dart';
+import '../data/patterns.dart';
 import '../l10n/app_localizations.dart';
 import 'history_screen.dart';
 import 'kit.dart';
@@ -18,8 +19,11 @@ import 'today_screen.dart';
 /// The week in a few lines, computed from the logs; "Ideas for next week" asks the
 /// assistant about the weakest point.
 class _WeekReviewCard extends ConsumerWidget {
-  const _WeekReviewCard({required this.review, required this.streak});
+  const _WeekReviewCard({required this.review, required this.streak, this.patterns});
   final WeekReview review;
+
+  /// What the last weeks' logs show (Basic); null = not shown.
+  final List<Pattern>? patterns;
 
   /// The logging streak (Basic); null = not shown.
   final int? streak;
@@ -63,6 +67,19 @@ class _WeekReviewCard extends ConsumerWidget {
               Expanded(child: Text(t, style: const TextStyle(fontSize: 16, height: 1.35))),
             ]),
           ),
+        if (patterns case final found?) ...[
+          const SizedBox(height: 8),
+          Text(l.patternsTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          for (final t in found.isEmpty ? [l.patternsNone] : [for (final p in found) patternText(l, p)])
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('•  ', style: TextStyle(fontSize: 16)),
+                Expanded(child: Text(t, style: const TextStyle(fontSize: 16, height: 1.35))),
+              ]),
+            ),
+        ],
         if (ask != null) ...[
           const SizedBox(height: 8),
           Text(l.reviewIdeas, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
@@ -81,12 +98,12 @@ class _WeekReviewCard extends ConsumerWidget {
 }
 
 /// The last [days] days — calories per day, daily averages vs goals, weight trend;
-/// the logging streak only with [basic].
+/// the logging streak and the patterns only with [basic], symptoms after foods with [medium].
 class PeriodView extends StatelessWidget {
-  const PeriodView({super.key, required this.data, required this.days, required this.basic});
+  const PeriodView({super.key, required this.data, required this.days, required this.basic, this.medium = false});
   final ProfileData data;
   final int days;
-  final bool basic;
+  final bool basic, medium;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +127,11 @@ class PeriodView extends StatelessWidget {
             trailing: logged.isEmpty ? null : l.avgValue(NumberFormat.decimalPattern(locale).format(avg('kcal').round())),
             child: SizedBox(height: 200, child: DailyBarChart(series: series, nutrient: 'kcal', goal: targets['kcal'])),
           ),
-          if (days == 7) _WeekReviewCard(review: weeklyReview(data.user, targets, now), streak: basic ? streak : null),
+          if (days == 7) _WeekReviewCard(
+              review: weeklyReview(data.user, targets, now),
+              streak: basic ? streak : null,
+              patterns: basic ? findPatterns(data.user, now: now, goals: targets, symptoms: medium) : null,
+            ),
           if (logged.isNotEmpty) ...[
             SectionTitle(l.historyTitle),
             PanelList(children: [

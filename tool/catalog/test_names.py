@@ -93,6 +93,11 @@ def test_a_defaults_alias_belongs_only_to_its_food():
     by_code = {f["code"]: f for f in foods}
     assert "rice" not in by_code["1"]["aliases"]
     assert "rice" in by_code["2"]["aliases"]
+    bird = [{"source": "usda_sr", "code": "3", "name": "Turkey, roasted", "category": "food", "serving_g": 3812,
+             "serving": "1 bird"}]
+    portion = [{"alias": "turkey", "source": "", "name": "Turkey, roasted", "serving_g": 150.0}]
+    f = match_foods(bird, portion)[0][0]
+    assert (f["serving_g"], f["serving"]) == (150.0, None), "an override's grams drop the table's label"
 
 
 def test_a_translation_goes_to_the_english_names_owner_once_per_language():
@@ -105,5 +110,7 @@ def test_a_translation_goes_to_the_english_names_owner_once_per_language():
     ]
     names = {"rice": {"uk": "рис", "de": "Reis", "fr": "riz"}, "rice bran": {"uk": "Рис", "de": "Reiskleie", "fr": ""}}
     got = translated_aliases(foods, names)
-    assert ("рис", "uk", 2) in got and ("Reis", "de", 2) in got
-    assert [g for g in got if g[2] == 3] == [("Reiskleie", "de", 3)]
+    assert ("рис", "uk", 2) in got and ("reis", "de", 2) in got, "lower case, as the app looks them up"
+    assert [g for g in got if g[2] == 3] == [("reiskleie", "de", 3)]
+    kvass = [{"id": 4, "common_name": "kvass", "is_default": True, "aliases": ["kvass"]}]
+    assert translated_aliases(kvass, {"kvass": {"uk": "Квас", "de": "", "fr": ""}}) == [("квас", "uk", 4)], "not ASCII"

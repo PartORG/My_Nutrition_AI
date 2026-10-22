@@ -43,6 +43,7 @@ SOURCE_RANK = {
             "food_nutrition_dataset",
             "daily_food",
             "food101",
+            "off_median",
         ]
     )
 }
@@ -102,7 +103,7 @@ def match_foods(rows: list[dict], defaults: list[dict] | None = None) -> tuple[l
             continue
         f = min(hits, key=lambda h: SOURCE_RANK.get(h["source"], 99))
         if o["serving_g"]:
-            f["serving_g"] = o["serving_g"]
+            f["serving_g"], f["serving"] = o["serving_g"], None  # the table's label ("1 bird") no longer fits
         f["aliases"].append(o["alias"])
         owner[o["alias"]] = f
         # The override's food is the default of its own common name; a line whose alias is that name wins over one

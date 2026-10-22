@@ -97,6 +97,7 @@ void main() {
     await tester.tap(find.text('Imperial'));
     await tester.pump();
     await tester.tap(find.text('Male'));
+    await tester.pump(); // the pregnancy row goes away, the fields move up
     await tester.enterText(find.widgetWithText(TextFormField, 'Birth year'), '1996');
     await tester.tap(find.text('Birth month'));
     await tester.pumpAndSettle();
@@ -159,7 +160,8 @@ void main() {
     expect(find.text('2,759'), findsOneWidget);
     expect(find.text('−27'), findsOneWidget);
     expect(find.text('over by 747 mg'), findsOneWidget);
-    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget, reason: 'never colour alone');
+    expect(find.text('Over the limit: Sodium'), findsOneWidget, reason: "Today's chip");
+    expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(2), reason: 'never colour alone: the bar and the chip');
 
     // Delete is in the meal's edit sheet: open the meal, then its item.
     expect(find.text('soy sauce'), findsOneWidget, reason: 'the closed meal lists what was eaten');

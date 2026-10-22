@@ -4,12 +4,13 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-import 'agent_tools.dart' show knownAllergen;
+import 'agent_tools.dart' show knownAllergen, nutrientUnit;
 
 import '../data/conditions.dart';
 import '../data/diary.dart' show waterGoal, waterOn;
 import '../data/goals.dart';
 import '../data/migrate.dart';
+import '../data/patterns.dart';
 
 /// Turns texts into vectors (EmbeddingGemma on device, a fake in tests).
 typedef Embed = Future<List<List<double>>> Function(List<String> texts);
@@ -54,8 +55,15 @@ Database openVectorsDb(String path) {
 /// semantic (memory_facts), episodic (vectors.db) and habits (SQL over logs).
 class Memory {
   Memory(this.user, this.vectors, this.embed,
-      {this.nutri, DateTime Function()? clock, this.minScore = 0.55, this.historyDays})
-      : _now = clock ?? DateTime.now;
+      {this.nutri, DateTime Function()? clock, this.minScore = 0.55, this.historyDays, bool Function()? basic,
+      bool Function()? medium})
+      : _now = clock ?? DateTime.now,
+        _basic = basic ?? (() => true),
+        _medium = medium ?? (() => true);
+
+  /// Basic or above: the "Low today" line and patterns 1–6; Medium: symptoms after foods too (docs/PLAN.md
+  /// "All nutrients", 12).
+  final bool Function() _basic, _medium;
 
   /// How far back recall reaches, like the History screen (Tier.historyDays); null = no limit.
   final int Function()? historyDays;
@@ -198,6 +206,9 @@ class Memory {
           '${(today['c'] as num).round()} g carbs, ${(today['s'] as num).round()} g sugar '
           '(${today['n']} items).',
       _goalsLine(now, today),
+      ..._lowOverLines(now),
+      ?patternsLine(user, now: now, goals: currentTargets(user, nutri: nutri, now: now).values, basic: _basic(),
+          medium: _medium()),
       'Water today: ${waterOn(user, now).round()} of ${waterGoal(user).round()} ml.',
       'Allergies and diet: ${allergens.isEmpty ? 'none recorded' : allergens.join(', ')}.',
       ?_conditionsLine(),
@@ -221,6 +232,21 @@ class Memory {
         if (t[e.key] != null) '${(t[e.key]! - (today[e.value.$1] as num)).round()}${e.value.$2} ${e.value.$3}'
     ];
     return 'Daily goals: ${goals.join(', ')}. Left today: ${left.join(', ')}.';
+  }
+
+  /// "Over the limit today: sodium 2900 of 2300 mg." and, after dinner time, "Low today: iron 4.1 of 18 mg, …".
+  List<String> _lowOverLines(DateTime now) {
+    if (nutri == null) return const [];
+    final r = lowAndOver(user, nutri!, now: now);
+    String amounts(List<(String, double, double)> l) => l.map((e) {
+          final n = e.$1 == 'kcal' ? 'energy' : e.$1.substring(0, e.$1.lastIndexOf('_')).replaceAll('_', ' ');
+          String v(double x) => x < 10 ? x.toStringAsFixed(1) : '${x.round()}';
+          return '$n ${v(e.$2)} of ${v(e.$3)} ${nutrientUnit(e.$1)}';
+        }).join(', ');
+    return [
+      if (r.over.isNotEmpty) 'Over the limit today: ${amounts(r.over)}.',
+      if (r.low.isNotEmpty && _basic()) 'Low today: ${amounts(r.low)}.',
+    ];
   }
 
   /// Facts only; recipes with avoided foods are already filtered out by the tools.

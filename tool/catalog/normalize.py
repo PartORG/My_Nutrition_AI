@@ -33,6 +33,7 @@ READERS = [
     "nz",
     "legacy",
     "off",
+    "off_drinks",
     "recipes",
 ]
 

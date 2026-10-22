@@ -30,12 +30,14 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   var _activity = Activity.light;
   var _goal = Goal.maintain;
   var _imperial = false;
+  var _stage = '';
 
   @override
   void initState() {
     super.initState();
     final user = ref.read(profileDataProvider)?.user;
     final b = user == null ? null : loadBody(user);
+    if (user != null) _stage = lifeStage(user);
     if (b == null) return;
     _sex = b.sex;
     _activity = b.activity;
@@ -96,6 +98,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       goal: _goal,
       imperial: _imperial,
     ), now: DateTime.now());
+    setLifeStage(data.user, _sex == Sex.male ? '' : _stage);
     ref.read(avatarProvider.notifier).suggestFor(_sex);
     data.changed();
     Navigator.of(context).pop();
@@ -157,6 +160,19 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             selected: {_sex},
             onSelectionChanged: (s) => setState(() => _sex = s.single),
           ),
+          if (_sex != Sex.male) ...[
+            const SizedBox(height: 12),
+            // The reference intakes for vitamins and minerals change (health.db's life stages).
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: '', label: Text(l.lifeStageNone)),
+                ButtonSegment(value: 'pregnancy', label: Text(l.lifeStagePregnant)),
+                ButtonSegment(value: 'lactation', label: Text(l.lifeStageBreastfeeding)),
+              ],
+              selected: {_stage},
+              onSelectionChanged: (s) => setState(() => _stage = s.single),
+            ),
+          ],
           gap,
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(

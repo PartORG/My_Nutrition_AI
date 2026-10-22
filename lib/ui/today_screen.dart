@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../agent/agent_tools.dart' show FoodChoice;
+import '../agent/agent_tools.dart' show FoodChoice, headlineMicros, micronutrients, nutrientUnit;
 import '../app_state.dart';
 import '../billing/billing.dart';
 import '../data/diary.dart';
@@ -15,6 +15,7 @@ import '../data/health_sync.dart'
     show askNewHealthAccess, disconnectHealth, healthSyncOn, stepsToday, syncActiveKcal, syncHealthWeights;
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
+import 'all_nutrients_screen.dart';
 import 'recipe_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
 import 'history_screen.dart';
@@ -33,9 +34,6 @@ String mealName(AppLocalizations l, String type) => switch (type) {
       'dinner' => l.mealDinner,
       _ => l.mealSnack,
     };
-
-/// Nutrients where the goal is a ceiling, not something to reach.
-const limitNutrients = {'sugar_g', 'sodium_mg'};
 
 /// Macros shown as bars on the hero card (the others get their own card).
 const _heroMacros = ['protein_g', 'carbs_g', 'fat_g'];
@@ -105,7 +103,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
             ? _DayView(data: data)
             : TierBuilder(
                 builder: (context, tier) => _days < 365
-                    ? PeriodView(data: data, days: _days, basic: tier.includes(Tier.basic))
+                    ? PeriodView(data: data, days: _days, basic: tier.includes(Tier.basic), medium: tier.includes(Tier.medium))
                     : tier.includes(Tier.pro)
                         ? YearView(data: data)
                         : ListView(padding: const EdgeInsets.all(16), children: [
@@ -204,6 +202,7 @@ class _DayView extends ConsumerWidget {
                 _NutrientTile(nutrient: key, eaten: eaten[key]!, goal: targets[key]!, limited: t.limited.containsKey(key)),
             ]),
           ],
+          _LowOverChip(data: data),
           SectionTitle(l.mealsTitle,
               padding: const EdgeInsets.fromLTRB(2, 20, 2, 10),
               trailing: Text(l.mealsLogged(logged), textAlign: TextAlign.end, style: AppText.caption.copyWith(color: c.muted))),
@@ -490,7 +489,7 @@ class _NutrientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    final limit = limited || limitNutrients.contains(nutrient);
+    final limit = limited || limitKeys.contains(nutrient);
     final over = limit && eaten > goal;
     final color = context.nutrientColor(nutrient);
     final name = nutrientLabels(l)[nutrient]!.$1;
@@ -539,20 +538,28 @@ class _NutrientTile extends StatelessWidget {
 
 /// A nutrient against its goal (or ceiling) on the period cards: dot, name, values, bar.
 class NutrientBar extends StatelessWidget {
-  const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal, this.limited = false});
+  const NutrientBar({super.key, required this.nutrient, required this.eaten, required this.goal, this.limited = false,
+      this.mark = '', this.upper, this.overUpper = false});
   final String nutrient;
   final double eaten, goal;
 
   /// A condition caps this nutrient, so its goal is a ceiling too.
   final bool limited;
 
+  /// '≈' (estimated) or '≥' (some meals don't know it) before the amount eaten.
+  final String mark;
+
+  /// The upper limit above a goal, and whether the day is over it ([overLimits] decides: vitamin A counts retinol).
+  final double? upper;
+  final bool overUpper;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final limit = limited || limitNutrients.contains(nutrient);
-    final over = limit && eaten > goal;
+    final limit = limited || limitKeys.contains(nutrient);
+    final over = limit && eaten > goal || overUpper;
     final color = context.nutrientColor(nutrient);
-    final name = nutrientLabels(l)[nutrient]!.$1;
+    final name = nutrientName(l, nutrient);
     final danger = context.colors.danger;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -563,7 +570,7 @@ class NutrientBar extends StatelessWidget {
           Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
           Flexible(
             child: Text(
-              '${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
+              '$mark${formatNutrient(nutrient, eaten, l)} / ${limit ? '${l.limitSuffix} ' : ''}${formatNutrient(nutrient, goal, l)}',
               style: TextStyle(fontSize: 13, color: context.colors.muted),
               textAlign: TextAlign.end,
             ),
@@ -576,8 +583,14 @@ class NutrientBar extends StatelessWidget {
           color: over ? danger : color,
           label: '$name: ${formatNutrient(nutrient, eaten, l)} / ${formatNutrient(nutrient, goal, l)}',
         ),
+        if (upper != null && !limit)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(l.upperLimitValue(formatNutrient(nutrient, upper!, l)),
+                style: TextStyle(fontSize: 12, color: overUpper ? danger : context.colors.muted)),
+          ),
         // Own line: next to the values it overflows narrow phones.
-        if (over)
+        if (over && (limit || upper == null))
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Row(children: [
@@ -1090,7 +1103,52 @@ class _StepsTileState extends State<_StepsTile> {
   }
 }
 
-/// Basic: today's vitamins and minerals against EU reference intakes, lowest first, two to a row.
+/// Opens every nutrient with Basic, else the plans.
+void _openAllNutrients(BuildContext context, ProfileData data, Tier tier) => Navigator.of(context)
+    .push(MaterialPageRoute<void>(
+        builder: (_) => tier.includes(Tier.basic) ? AllNutrientsScreen(data: data) : const PaywallScreen()))
+    .then((_) => data.changed());
+
+/// Free: "Over the limit: Sodium" (always) and "Low: Iron, Vitamin D" (after the usual dinner time; vitamins and
+/// minerals with Basic), from [lowAndOver]; nothing when all is well.
+class _LowOverChip extends StatelessWidget {
+  const _LowOverChip({required this.data});
+  final ProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = context.colors;
+    String names(List<(String, double, double)> list) => list.map((e) => nutrientName(l, e.$1)).join(', ');
+    return TierBuilder(builder: (context, tier) {
+      final r = lowAndOver(data.user, data.nutri, now: DateTime.now(), micros: tier.includes(Tier.basic));
+      if (r.low.isEmpty && r.over.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Panel(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          onTap: () => _openAllNutrients(context, data, tier),
+          child: Row(children: [
+            Icon(r.over.isEmpty ? Icons.eco_outlined : Icons.warning_amber_rounded,
+                size: 20, color: r.over.isEmpty ? context.nutrientColor('sugar_g') : c.danger),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (r.over.isNotEmpty)
+                  Text(l.chipOver(names(r.over)), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: c.danger)),
+                if (r.low.isNotEmpty) Text(l.chipLow(names(r.low)), style: TextStyle(fontSize: 14, color: c.ink)),
+              ]),
+            ),
+            Icon(Icons.chevron_right, color: c.muted),
+          ]),
+        ),
+      );
+    });
+  }
+}
+
+/// Basic: today's vitamins and minerals against the reference intakes (health.db), lowest first, two to a row; a tap
+/// opens every nutrient. No goals yet (no body data): the headline ones, amounts only.
 class _MicrosCard extends StatelessWidget {
   const _MicrosCard({required this.data});
   final ProfileData data;
@@ -1099,45 +1157,57 @@ class _MicrosCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
-    final m = microTotalsOn(data.user, DateTime.now());
-    final labels = microLabels(l);
-    final share = {for (final k in labels.keys) k: m.totals[k]! / microReference[k]!};
-    final keys = labels.keys.toList()..sort((a, b) => share[a]!.compareTo(share[b]!));
+    final now = DateTime.now();
+    final (from, to) = dayRange(now);
+    final p = panelTotals(data.user, data.nutri, from, to);
+    final t = currentTargets(data.user, nutri: data.nutri, now: now);
+    final share = {
+      for (final k in micronutrients)
+        if (t.values[k] case final g? when g > 0 && !t.limited.containsKey(k)) k: p.totals[k]! / g
+    };
+    final keys = share.isEmpty ? headlineMicros : (share.keys.toList()..sort((a, b) => share[a]!.compareTo(share[b]!))).take(6).toList();
     final lime = context.nutrientColor('sugar_g');
     Widget item(String k) {
-      final (name, unit) = labels[k]!;
-      final amounts = '${formatMicro(m.totals[k]!, unit)} / ${formatMicro(microReference[k]!, unit)}';
+      final name = nutrientName(l, k), unit = nutrientUnit(k);
+      final mark = p.approx.contains(k) ? '≈' : p.partial.contains(k) ? '≥' : '';
+      final goal = t.values[k];
       // Amounts, not "%": "4.2 mg / 14 mg" says how much more to eat.
+      final amounts = '$mark${formatMicro(p.totals[k]!, unit)}${goal == null ? '' : ' / ${formatMicro(goal, unit)}'}';
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
         Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.body.copyWith(fontSize: 13, color: c.ink)),
         Text(amounts, style: AppText.caption.copyWith(color: c.muted, fontFeatures: AppText.tabular)),
-        const SizedBox(height: 4),
-        Bar(value: share[k]!, height: 5, color: share[k]! >= 1 ? c.primary : lime, label: '$name $amounts'),
+        if (share[k] case final s?) ...[
+          const SizedBox(height: 4),
+          Bar(value: s, height: 5, color: s >= 1 ? c.primary : lime, label: '$name $amounts'),
+        ],
       ]);
     }
 
     final per = MediaQuery.textScalerOf(context).scale(10) > 15 ? 1 : 2;
-    return Panel(
-      radius: Radii.card,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          IconTile(icon: Icons.eco_outlined, color: lime, size: 32),
-          const SizedBox(width: 10),
-          Expanded(child: Semantics(header: true, child: Text(l.microsTitle, style: AppText.section.copyWith(color: c.ink)))),
-        ]),
-        const SizedBox(height: 12),
-        for (var i = 0; i < keys.length; i += per) ...[
-          if (i > 0) const SizedBox(height: 12),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (var j = i; j < i + per; j++) ...[
-              if (j > i) const SizedBox(width: 16),
-              Expanded(child: j < keys.length ? item(keys[j]) : const SizedBox.shrink()),
-            ],
+    return TierBuilder(
+      builder: (context, tier) => Panel(
+        radius: Radii.card,
+        onTap: () => _openAllNutrients(context, data, tier),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            IconTile(icon: Icons.eco_outlined, color: lime, size: 32),
+            const SizedBox(width: 10),
+            Expanded(child: Semantics(header: true, child: Text(l.microsTitle, style: AppText.section.copyWith(color: c.ink)))),
           ]),
-        ],
-        const SizedBox(height: 12),
-        Text(l.microsCoverage(m.known, m.meals), style: AppText.caption.copyWith(color: c.muted)),
-      ]),
+          const SizedBox(height: 12),
+          for (var i = 0; i < keys.length; i += per) ...[
+            if (i > 0) const SizedBox(height: 12),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              for (var j = i; j < i + per; j++) ...[
+                if (j > i) const SizedBox(width: 16),
+                Expanded(child: j < keys.length ? item(keys[j]) : const SizedBox.shrink()),
+              ],
+            ]),
+          ],
+          const SizedBox(height: 12),
+          Text('${l.allNutrientsTitle} ›', style: AppText.caption.copyWith(color: c.primary, fontWeight: FontWeight.w700)),
+        ]),
+      ),
     );
   }
 }

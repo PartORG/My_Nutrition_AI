@@ -499,18 +499,42 @@ Done:
   alias ownership fixes, recipe nutrition stored (800 MB limit), all host tests pass, release APK builds.
 - [x] Decision 5, fill every gap in nutri.db foods (a6b2287): no NULL left, `foods.sources` per value.
 
-To do, in order:
-- [ ] Decisions 1–4: meal_log with all 56 nutrients; NASEM goals and UL limits from health.db; "Low today" /
-  "Over the limit" in the context block; full table in `nutrition_status`; All nutrients screen, Low/Over chip,
-  grouped Goals screen; per-value ≈ for estimated values (`foods.estimated`); nutrient names in uk/de/fr.
-- [ ] Decision 12: tier gating (Free / Basic / Medium) for the above and the patterns.
-- [ ] Decisions 7–8: the seven behaviour patterns, the context line, `my_patterns`, the weekly review section.
-- [ ] Decisions 9–10: model-first routing with argument checks, the hidden answer check, the "checking…" mark.
-- [ ] Decision 11: the phone gate on the Xiaomi (needs the phone connected), then the user's own phone test.
+- [x] Decisions 1–4 (2026-10-21): meal_log has all 56 nutrients (user.db v14); NASEM goals (RDA, else AI) and ULs from
+  health.db by sex, age, pregnancy/breastfeeding (a choice on the Goals form, a profile pref); "Over the limit" and,
+  after the usual dinner time, "Low today" in the context block; `nutrition_status` gives the macros, the rest as % of
+  goal, the ULs passed, and a card with the full table; All nutrients screen (day or week, history window), the
+  Low/Over chip on Today, the vitamins card on NASEM goals (EU label % gone), micronutrient goals grouped and collapsed
+  on Me; ≈ for values nutri.db estimated, ≥ for totals some meal doesn't know; names in 4 languages.
+  Choices made on the way: the 7 macros keep the formula (personal kcal, protein per kg), NASEM gives the rest; "other"
+  takes the mean of the female and male goals and the lower UL; no UL warning for magnesium, niacin, folate and
+  vitamin E (NASEM: supplements and added forms only), and vitamin A's UL counts retinol (RAE − β-carotene/12); never
+  "low": energy, fat, carbs, ceilings and totals some meal doesn't know; under 18 no automatic goals (as the kcal
+  formula). Pregnancy does not change kcal yet (NASEM adds 340–450 kcal by trimester; the app doesn't ask it).
+- [x] Decision 12, the part above: Free has the panel, the chip (protein and fibre can be low) and UL warnings;
+  Basic adds the All nutrients screen, micronutrient goals (Me, the chat card, `nutrition_status`) and "Low today".
+  The patterns' gating comes with the patterns.
+- [x] Decisions 7–8 (2026-10-21, `lib/data/patterns.dart`): the seven patterns over the last 28 whole days (two meals
+  or more and half the kcal goal; a half-logged day is never a low day), from the first log on, a week at least. The
+  3 strongest in the context block (computed at the day's first message, kept in prefs), `my_patterns` with its card,
+  a "Patterns" section in the weekly review. Basic: 1–6; Medium: symptoms after foods (≥ 5 times and at least half
+  the times the food was eaten — a daily staple precedes every symptom — within 6 h, counts only, "you might mention
+  it to a doctor"). Weight against intake gives both numbers, no verdict.
+- [x] Decisions 9–10 (2026-10-21): the model decides every message (`Agent.modelFirst`, the router first again when
+  false). `AgentTools.checkCall` holds the arguments against the user's words: every log_meal food was said (its own
+  words, or an alias of its food in any language; a food without an alias in the app's language can't be told and
+  passes), every amount was said (digits or a number word in 4 languages), a recipe number is in the list shown,
+  a reading's number was said. One retry with the reason, then the router; the router also stands in when the model
+  calls nothing it should have (not when it asked back). Water from log_meal goes to the water tracker. Every text
+  answer gets the hidden check turn (`Agent.checkAnswers`): "checking…", ✓; WRONG → written again once with the
+  reason; WRONG again → hidden, "couldn't verify", never replayed. Checks don't count. Cost on the phone: not measured
+  yet (the gate prints it).
+- [ ] Decision 11: the phone gate on the Xiaomi: `integration_test/phone_gate_test.dart` (the real Agent, the routing
+  set plus the router's cases in en/uk/de/fr, `agent_queries_i18n.dart`; prints accuracy, wrong meals, retries and
+  every step's time). Needs the phone connected; then the user's own phone test.
 - [ ] One release.
 
 Open, the owner's call (not blocking): upload the v4 products.db to a new GitHub release; a Play asset pack (the
-bundled files are over Play's 500 MB base limit); review the ~10,000 unreviewed machine translations; check the
+bundled files are over Play's 500 MB base limit); check the
 biotin of CoFID/Frida (see below).
 
 Built 2026-10-20: **5** (all gaps filled; numbers and the estimator's held-back check in DATA_SOURCES.md). Web research
@@ -566,6 +590,51 @@ often several times too high, so the CoFID/Frida biotin that lends to similar fo
 
 Order: finish v4 (build, tests, phone, commit) → fill the gaps (pipeline) → meal log, goals, context, screens,
 translations → patterns → model-first and the check → phone gate → one release.
+
+## Drinks, store size limits, translation review (user, 2026-10-21), in progress — resume here
+
+**Status (paused 2026-10-21 by the user; resume here)**
+
+Done (not committed, not yet in assets/nutri.db):
+- [x] Drinks: nutri.db already had most drinks (government tables); the gaps were servings and a few kinds. New
+  servings stage `tool/catalog/servings.py` (after fill): every drink gets a serving — USDA's own volume portions
+  (`food_portion.csv`, CC0), else the median of drinks of the same everyday name, else the usual size of its kind
+  (NIAAA standard drinks: beer 355, wine 148, spirits 44; can 330, cup 240, espresso 30); a table's "serving" over
+  750 g (a litre carton) is reset. Tests: `tool/catalog/test_servings.py`.
+- [x] Missing drink kinds from Open Food Facts medians (`db/catalog/drinks.tsv`, `readers/off_drinks.py`, source
+  `off_median`, ODbL, ≥ 5 labels): kvass, diet cola, sugar-free energy drink, flavoured water, radler, IPA, drinking
+  yogurt, hemp drink. Too few labels (EU alcohol needs no nutrition label) → aliases in defaults.tsv instead:
+  prosecco/cava/sparkling wine, porter, limoncello, raki, ouzo; rooibos/yerba mate/mint/chamomile → herbal tea (OFF has
+  the dry leaves); mors → cranberry drink; latte, americano, flat white, cold brew, still/mineral/sparkling water,
+  wheat and alcohol-free beer, cola zero/coke zero/pepsi max/diet coke. No clean source: uzvar, kissel (OFF's
+  "compotes to drink" are purée pouches).
+- [x] Bug: translated aliases were stored as written ("Квас") and the app looks up lower case; SQLite NOCASE folds
+  ASCII only, so every capitalised Ukrainian alias never matched. `write.py` now lowercases (test in test_names.py).
+  `translate.wanted()` now also covers off_median drinks and every defaults.tsv alias; 44 everyday words that had no
+  translation row (coffee, tea, eggs, potatoes, fries, …) were added.
+
+To do, in order:
+- [x] Translation review of `db/catalog/aliases.tsv` (10,546 names × uk/de/fr), done 2026-10-22: every row read
+  and fixed for meaning errors, wrong words, Russian forms (long descriptive names: meaning only); unbalanced quotes
+  repaired by script (uk → «», de/fr stripped). Common machine errors were "app." read as an app, "w/" lists, fish,
+  berry and meat-cut names swapped (veal → beef, turkey → "Turkish", pear → peach), "ns as to" qualifiers, Swedish
+  dish names. Not checked: whether every alias still reaches the right food after matching.
+- [x] Rebuilt 2026-10-22 under the 9 GB cap (`normalize.py off_drinks` → `match.py` → `fill.py` → `servings.py` →
+  `write.py <out> nutri health`; fill/servings/write need `uv run --no-project --with openpyxl --with numpy --with
+  scipy`): nutri.db 41,075 foods, 168,642 recipes, 497 MB; health.db 40 MB; copied to assets/. `pytest tool/catalog`
+  63 passed; all 24 host test files pass one at a time. Three defaults fixed in defaults.tsv before the final build:
+  "calf" (most used by recipes, so it owned `телятина`/`veau`/`Kalb`) → "Veal, meat, cooked (average)" instead of a
+  calf's head; coffee 240 g (the table said 480 g "1 medium"); turkey 150 g (the table said a 3.8 kg bird). An
+  override's grams now drop the table's serving label. Committed on main as v0.15.0+18 (2026-10-22).
+- [ ] Store size (decision for the owner, not built): Android base module limit is 500 MB compressed (Play; asset
+  packs 1.5 GB each, 4 GB install-time total, 30 GB fast-follow/on-demand); the release APK is 490 MB compressed —
+  nutri.db 205 MB, EmbeddingGemma 179 MB (stored uncompressed), native libs ~70 MB, health.db 12 MB. Recipes are
+  ~430 of nutri.db's 497 MB (steps 109, ingredient lines 101 + indexes 54, recipe_nutrition 99). Recommended: an
+  install-time asset pack with nutri.db, health.db and the embedder (installed with the app, offline; the app copies
+  the files out on first run through a small platform channel); base drops to ~100 MB. Alternatives: download them
+  like products.db; recipe_nutrition back to a view (−99 MB raw). iOS: 4 GB uncompressed app limit (fine), over
+  200 MB only asks before a cellular download; big files can use Apple-hosted Background Assets (200 GB per app).
+- [ ] Still open from "All nutrients, patterns": decision 11 (phone gate, needs the Xiaomi) and the release.
 
 ## v0.11.0 (2026-10-18): My Nutrition AI, voice, Eva, avatars, widget sizes, Google Fit calories
 

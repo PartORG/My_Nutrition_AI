@@ -4,7 +4,7 @@
 # alias	source (empty = most authoritative row of that name)	food name	serving_g
 white bread		Bread, white	
 wholemeal bread		Bread, whole wheat	
-coffee		Coffee, brewed	
+coffee		Coffee, brewed	240
 green salad		Lettuce, raw	
 hard cheese		Cheese, gruyere	
 tomato		Tomatoes, raw	
@@ -186,3 +186,32 @@ tea	usda_sr	Beverages, tea, black, brewed, prepared with tap water	240
 salt	usda_sr	Salt, table	1
 water	usda_sr	Beverages, water, tap, drinking	250
 chicken liver	usda_sr	Chicken, liver, all classes, raw	100
+latte	usda_fndds	Coffee, Latte	
+americano	matvaretabellen	Americano, coffee	
+flat white	livsmedelsverket	Flat white	
+cold brew	usda_fndds	Iced Coffee, brewed	
+still water	livsmedelsverket	Mineral water	250
+mineral water	livsmedelsverket	Mineral water	250
+sparkling water	ciqual	Mineral sparkling water, bottled (average)	250
+herbal tea	cofid	Tea, herbal, infusion	240
+chamomile tea	cofid	Tea, herbal, infusion	240
+mint tea	cofid	Tea, herbal, infusion	240
+rooibos	cofid	Tea, herbal, infusion	240
+yerba mate	cofid	Tea, herbal, infusion	240
+wheat beer	ciqual	Beer, white	500
+non-alcoholic beer	usda_fndds	Beer, nonalcoholic	
+alcohol-free beer	usda_fndds	Beer, nonalcoholic	
+mors	usda_sr	Cranberry juice cocktail, bottled	
+ouzo	ciqual	Pastis (anise-flavoured spirit)	44
+coke zero	off_median	Diet cola (zero sugar)	
+cola zero	off_median	Diet cola (zero sugar)	
+pepsi max	off_median	Diet cola (zero sugar)	
+diet coke	off_median	Diet cola (zero sugar)	
+prosecco	swiss	Sparkling wine, champagne	148
+cava	swiss	Sparkling wine, champagne	148
+sparkling wine	swiss	Sparkling wine, champagne	148
+porter	nz	Beer, extra stout	355
+limoncello	livsmedelsverket	Liqueur reduced sweetness vol. % 24	44
+raki	ciqual	Pastis (anise-flavoured spirit)	44
+turkey	usda_sr	Turkey, whole, meat only, cooked, roasted	150
+calf	ciqual	Veal, meat, cooked (average)	

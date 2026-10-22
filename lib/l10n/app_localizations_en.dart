@@ -1127,33 +1127,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get calcium => 'Calcium';
-
-  @override
-  String get iron => 'Iron';
-
-  @override
-  String get magnesium => 'Magnesium';
-
-  @override
-  String get potassium => 'Potassium';
-
-  @override
-  String get vitaminC => 'Vitamin C';
-
-  @override
-  String get vitaminD => 'Vitamin D';
-
-  @override
-  String get vitaminB12 => 'Vitamin B12';
-
-  @override
   String get microsTitle => 'Vitamins and minerals';
-
-  @override
-  String microsCoverage(int known, int meals) {
-    return 'From $known of $meals meals with known values; EU reference intakes';
-  }
 
   @override
   String get productsTitle => 'Packaged products';
@@ -2349,10 +2323,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get microsLocked =>
-      'Today\'s vitamins and minerals against EU reference intakes, with Basic.';
-
-  @override
   String get highProtein => 'High protein';
 
   @override
@@ -2425,4 +2395,177 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiModelRecommended => 'Recommended';
+
+  @override
+  String nutrientName(String key) {
+    String _temp0 = intl.Intl.selectLogic(key, {
+      'starch_g': 'Starch',
+      'alcohol_g': 'Alcohol',
+      'water_g': 'Water',
+      'saturated_fat_g': 'Saturated fat',
+      'mono_fat_g': 'Monounsaturated fat',
+      'poly_fat_g': 'Polyunsaturated fat',
+      'trans_fat_g': 'Trans fat',
+      'omega3_g': 'Omega-3',
+      'omega6_g': 'Omega-6',
+      'cholesterol_mg': 'Cholesterol',
+      'sucrose_g': 'Sucrose',
+      'glucose_g': 'Glucose',
+      'fructose_g': 'Fructose',
+      'lactose_g': 'Lactose',
+      'added_sugar_g': 'Added sugars',
+      'potassium_mg': 'Potassium',
+      'calcium_mg': 'Calcium',
+      'magnesium_mg': 'Magnesium',
+      'phosphorus_mg': 'Phosphorus',
+      'iron_mg': 'Iron',
+      'zinc_mg': 'Zinc',
+      'copper_mg': 'Copper',
+      'manganese_mg': 'Manganese',
+      'selenium_ug': 'Selenium',
+      'iodine_ug': 'Iodine',
+      'vitamin_a_ug': 'Vitamin A',
+      'beta_carotene_ug': 'Beta-carotene',
+      'vitamin_d_ug': 'Vitamin D',
+      'vitamin_e_mg': 'Vitamin E',
+      'vitamin_k_ug': 'Vitamin K',
+      'vitamin_c_mg': 'Vitamin C',
+      'vitamin_b1_mg': 'Thiamin (B1)',
+      'vitamin_b2_mg': 'Riboflavin (B2)',
+      'vitamin_b3_mg': 'Niacin (B3)',
+      'vitamin_b5_mg': 'Pantothenic acid (B5)',
+      'vitamin_b6_mg': 'Vitamin B6',
+      'vitamin_b7_ug': 'Biotin (B7)',
+      'folate_ug': 'Folate',
+      'vitamin_b12_ug': 'Vitamin B12',
+      'choline_mg': 'Choline',
+      'histidine_g': 'Histidine',
+      'isoleucine_g': 'Isoleucine',
+      'leucine_g': 'Leucine',
+      'lysine_g': 'Lysine',
+      'methionine_g': 'Methionine',
+      'phenylalanine_g': 'Phenylalanine',
+      'threonine_g': 'Threonine',
+      'tryptophan_g': 'Tryptophan',
+      'valine_g': 'Valine',
+      'other': '$key',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String nutrientGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'macro': 'Macronutrients',
+      'fat': 'Fats',
+      'sugar': 'Sugars',
+      'mineral': 'Minerals',
+      'vitamin': 'Vitamins',
+      'amino': 'Essential amino acids',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lifeStage => 'Pregnant or breastfeeding?';
+
+  @override
+  String get lifeStageNone => 'No';
+
+  @override
+  String get lifeStagePregnant => 'Pregnant';
+
+  @override
+  String get lifeStageBreastfeeding => 'Breastfeeding';
+
+  @override
+  String get allNutrientsTitle => 'All nutrients';
+
+  @override
+  String get moreNutrients => 'More: single sugars, amino acids';
+
+  @override
+  String get fewerNutrients => 'Fewer';
+
+  @override
+  String get panelNote =>
+      '≈ estimated from similar foods · ≥ some foods don’t list it · Vitamin and mineral goals, upper limits: NASEM reference intakes';
+
+  @override
+  String get microsLocked =>
+      'Today’s vitamins and minerals against your reference intakes, with Basic.';
+
+  @override
+  String chipLow(String names) {
+    return 'Low: $names';
+  }
+
+  @override
+  String chipOver(String names) {
+    return 'Over the limit: $names';
+  }
+
+  @override
+  String upperLimitValue(String amount) {
+    return 'upper limit $amount';
+  }
+
+  @override
+  String get patternsTitle => 'Patterns';
+
+  @override
+  String get patternsNone =>
+      'Nothing stands out yet. Patterns need a week or more of logs.';
+
+  @override
+  String get captionPatterns => 'What your logs show:';
+
+  @override
+  String patternLogging(String n, String days) {
+    return 'Whole days logged: $n of the last $days. The other patterns count only those.';
+  }
+
+  @override
+  String patternSkipped(String meal, String n, String days) {
+    return '$meal skipped on $n of $days days';
+  }
+
+  @override
+  String patternLate(String time, String n, String days) {
+    return 'Ate after $time on $n of $days days';
+  }
+
+  @override
+  String patternWeekend(String weekend, String weekday, String change) {
+    return 'Weekends $weekend kcal a day, weekdays $weekday kcal ($change)';
+  }
+
+  @override
+  String patternGap(String nutrient, String n, String days) {
+    return '$nutrient under 80 % of the goal on $n of $days days';
+  }
+
+  @override
+  String patternWeight(String change, String kcal) {
+    return 'Weight trend $change kg a week, on average $kcal kcal a day eaten';
+  }
+
+  @override
+  String patternSymptom(
+    String symptom,
+    String food,
+    String n,
+    String times,
+    String hours,
+  ) {
+    return '$symptom logged within $hours h after $food: $n of $times times. A count, not a cause: you might mention it to a doctor.';
+  }
+
+  @override
+  String get answerChecking => 'checking…';
+
+  @override
+  String get answerUnverified =>
+      'I couldn’t verify this answer, so it’s hidden. Try asking another way.';
 }

@@ -1134,33 +1134,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get calcium => 'Calcium';
-
-  @override
-  String get iron => 'Eisen';
-
-  @override
-  String get magnesium => 'Magnesium';
-
-  @override
-  String get potassium => 'Kalium';
-
-  @override
-  String get vitaminC => 'Vitamin C';
-
-  @override
-  String get vitaminD => 'Vitamin D';
-
-  @override
-  String get vitaminB12 => 'Vitamin B12';
-
-  @override
   String get microsTitle => 'Vitamine und Mineralstoffe';
-
-  @override
-  String microsCoverage(int known, int meals) {
-    return 'Aus $known von $meals Mahlzeiten mit bekannten Werten; EU-Referenzmengen';
-  }
 
   @override
   String get productsTitle => 'Verpackte Produkte';
@@ -2366,10 +2340,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get microsLocked =>
-      'Vitamine und Mineralstoffe des Tages im Vergleich zu den EU-Referenzwerten – mit Basic.';
-
-  @override
   String get highProtein => 'Proteinreich';
 
   @override
@@ -2442,4 +2412,177 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiModelRecommended => 'Empfohlen';
+
+  @override
+  String nutrientName(String key) {
+    String _temp0 = intl.Intl.selectLogic(key, {
+      'starch_g': 'Stärke',
+      'alcohol_g': 'Alkohol',
+      'water_g': 'Wasser',
+      'saturated_fat_g': 'Gesättigte Fettsäuren',
+      'mono_fat_g': 'Einfach ungesättigte Fettsäuren',
+      'poly_fat_g': 'Mehrfach ungesättigte Fettsäuren',
+      'trans_fat_g': 'Transfettsäuren',
+      'omega3_g': 'Omega-3-Fettsäuren',
+      'omega6_g': 'Omega-6-Fettsäuren',
+      'cholesterol_mg': 'Cholesterin',
+      'sucrose_g': 'Saccharose',
+      'glucose_g': 'Glukose',
+      'fructose_g': 'Fruktose',
+      'lactose_g': 'Laktose',
+      'added_sugar_g': 'Zugesetzter Zucker',
+      'potassium_mg': 'Kalium',
+      'calcium_mg': 'Calcium',
+      'magnesium_mg': 'Magnesium',
+      'phosphorus_mg': 'Phosphor',
+      'iron_mg': 'Eisen',
+      'zinc_mg': 'Zink',
+      'copper_mg': 'Kupfer',
+      'manganese_mg': 'Mangan',
+      'selenium_ug': 'Selen',
+      'iodine_ug': 'Jod',
+      'vitamin_a_ug': 'Vitamin A',
+      'beta_carotene_ug': 'Beta-Carotin',
+      'vitamin_d_ug': 'Vitamin D',
+      'vitamin_e_mg': 'Vitamin E',
+      'vitamin_k_ug': 'Vitamin K',
+      'vitamin_c_mg': 'Vitamin C',
+      'vitamin_b1_mg': 'Thiamin (B1)',
+      'vitamin_b2_mg': 'Riboflavin (B2)',
+      'vitamin_b3_mg': 'Niacin (B3)',
+      'vitamin_b5_mg': 'Pantothensäure (B5)',
+      'vitamin_b6_mg': 'Vitamin B6',
+      'vitamin_b7_ug': 'Biotin (B7)',
+      'folate_ug': 'Folat',
+      'vitamin_b12_ug': 'Vitamin B12',
+      'choline_mg': 'Cholin',
+      'histidine_g': 'Histidin',
+      'isoleucine_g': 'Isoleucin',
+      'leucine_g': 'Leucin',
+      'lysine_g': 'Lysin',
+      'methionine_g': 'Methionin',
+      'phenylalanine_g': 'Phenylalanin',
+      'threonine_g': 'Threonin',
+      'tryptophan_g': 'Tryptophan',
+      'valine_g': 'Valin',
+      'other': '$key',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String nutrientGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'macro': 'Makronährstoffe',
+      'fat': 'Fette',
+      'sugar': 'Zucker',
+      'mineral': 'Mineralstoffe',
+      'vitamin': 'Vitamine',
+      'amino': 'Essenzielle Aminosäuren',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lifeStage => 'Schwanger oder stillend?';
+
+  @override
+  String get lifeStageNone => 'Nein';
+
+  @override
+  String get lifeStagePregnant => 'Schwanger';
+
+  @override
+  String get lifeStageBreastfeeding => 'Stillend';
+
+  @override
+  String get allNutrientsTitle => 'Alle Nährstoffe';
+
+  @override
+  String get moreNutrients => 'Mehr: einzelne Zucker, Aminosäuren';
+
+  @override
+  String get fewerNutrients => 'Weniger';
+
+  @override
+  String get panelNote =>
+      '≈ aus ähnlichen Lebensmitteln geschätzt · ≥ nicht alle Lebensmittel geben es an · Ziele für Vitamine und Mineralstoffe, Obergrenzen: NASEM-Referenzwerte';
+
+  @override
+  String get microsLocked =>
+      'Vitamine und Mineralstoffe des Tages im Vergleich zu deinen Referenzwerten – mit Basic.';
+
+  @override
+  String chipLow(String names) {
+    return 'Wenig: $names';
+  }
+
+  @override
+  String chipOver(String names) {
+    return 'Über dem Limit: $names';
+  }
+
+  @override
+  String upperLimitValue(String amount) {
+    return 'Obergrenze $amount';
+  }
+
+  @override
+  String get patternsTitle => 'Muster';
+
+  @override
+  String get patternsNone =>
+      'Noch fällt nichts auf. Muster brauchen eine Woche Einträge oder mehr.';
+
+  @override
+  String get captionPatterns => 'Das zeigen deine Einträge:';
+
+  @override
+  String patternLogging(String n, String days) {
+    return 'Ganz eingetragene Tage: $n der letzten $days. Die anderen Muster zählen nur diese.';
+  }
+
+  @override
+  String patternSkipped(String meal, String n, String days) {
+    return '$meal an $n von $days Tagen ausgelassen';
+  }
+
+  @override
+  String patternLate(String time, String n, String days) {
+    return 'Nach $time gegessen an $n von $days Tagen';
+  }
+
+  @override
+  String patternWeekend(String weekend, String weekday, String change) {
+    return 'Wochenende $weekend kcal am Tag, Werktage $weekday kcal ($change)';
+  }
+
+  @override
+  String patternGap(String nutrient, String n, String days) {
+    return '$nutrient unter 80 % des Ziels an $n von $days Tagen';
+  }
+
+  @override
+  String patternWeight(String change, String kcal) {
+    return 'Gewichtstrend $change kg pro Woche, im Schnitt $kcal kcal am Tag gegessen';
+  }
+
+  @override
+  String patternSymptom(
+    String symptom,
+    String food,
+    String n,
+    String times,
+    String hours,
+  ) {
+    return '$symptom innerhalb von $hours h nach $food eingetragen: $n von $times Mal. Eine Zählung, keine Ursache: du könntest es ärztlich ansprechen.';
+  }
+
+  @override
+  String get answerChecking => 'wird geprüft …';
+
+  @override
+  String get answerUnverified =>
+      'Ich konnte diese Antwort nicht prüfen, deshalb ist sie ausgeblendet. Frag am besten anders.';
 }

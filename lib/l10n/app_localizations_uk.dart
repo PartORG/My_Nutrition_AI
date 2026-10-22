@@ -1138,33 +1138,7 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get calcium => 'Кальцій';
-
-  @override
-  String get iron => 'Залізо';
-
-  @override
-  String get magnesium => 'Магній';
-
-  @override
-  String get potassium => 'Калій';
-
-  @override
-  String get vitaminC => 'Вітамін C';
-
-  @override
-  String get vitaminD => 'Вітамін D';
-
-  @override
-  String get vitaminB12 => 'Вітамін B12';
-
-  @override
   String get microsTitle => 'Вітаміни й мінерали';
-
-  @override
-  String microsCoverage(int known, int meals) {
-    return 'З $known з $meals страв із відомими значеннями; референтні норми ЄС';
-  }
 
   @override
   String get productsTitle => 'Упаковані товари';
@@ -2382,10 +2356,6 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get microsLocked =>
-      'Вітаміни й мінерали за день порівняно з референтними нормами ЄС — у тарифі Basic.';
-
-  @override
   String get highProtein => 'Багато білка';
 
   @override
@@ -2457,4 +2427,177 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get aiModelRecommended => 'Рекомендовано';
+
+  @override
+  String nutrientName(String key) {
+    String _temp0 = intl.Intl.selectLogic(key, {
+      'starch_g': 'Крохмаль',
+      'alcohol_g': 'Алкоголь',
+      'water_g': 'Вода',
+      'saturated_fat_g': 'Насичені жири',
+      'mono_fat_g': 'Мононенасичені жири',
+      'poly_fat_g': 'Поліненасичені жири',
+      'trans_fat_g': 'Трансжири',
+      'omega3_g': 'Омега-3',
+      'omega6_g': 'Омега-6',
+      'cholesterol_mg': 'Холестерин',
+      'sucrose_g': 'Сахароза',
+      'glucose_g': 'Глюкоза',
+      'fructose_g': 'Фруктоза',
+      'lactose_g': 'Лактоза',
+      'added_sugar_g': 'Доданий цукор',
+      'potassium_mg': 'Калій',
+      'calcium_mg': 'Кальцій',
+      'magnesium_mg': 'Магній',
+      'phosphorus_mg': 'Фосфор',
+      'iron_mg': 'Залізо',
+      'zinc_mg': 'Цинк',
+      'copper_mg': 'Мідь',
+      'manganese_mg': 'Марганець',
+      'selenium_ug': 'Селен',
+      'iodine_ug': 'Йод',
+      'vitamin_a_ug': 'Вітамін A',
+      'beta_carotene_ug': 'Бета-каротин',
+      'vitamin_d_ug': 'Вітамін D',
+      'vitamin_e_mg': 'Вітамін E',
+      'vitamin_k_ug': 'Вітамін K',
+      'vitamin_c_mg': 'Вітамін C',
+      'vitamin_b1_mg': 'Тіамін (B1)',
+      'vitamin_b2_mg': 'Рибофлавін (B2)',
+      'vitamin_b3_mg': 'Ніацин (B3)',
+      'vitamin_b5_mg': 'Пантотенова кислота (B5)',
+      'vitamin_b6_mg': 'Вітамін B6',
+      'vitamin_b7_ug': 'Біотин (B7)',
+      'folate_ug': 'Фолат',
+      'vitamin_b12_ug': 'Вітамін B12',
+      'choline_mg': 'Холін',
+      'histidine_g': 'Гістидин',
+      'isoleucine_g': 'Ізолейцин',
+      'leucine_g': 'Лейцин',
+      'lysine_g': 'Лізин',
+      'methionine_g': 'Метіонін',
+      'phenylalanine_g': 'Фенілаланін',
+      'threonine_g': 'Треонін',
+      'tryptophan_g': 'Триптофан',
+      'valine_g': 'Валін',
+      'other': '$key',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String nutrientGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'macro': 'Макронутрієнти',
+      'fat': 'Жири',
+      'sugar': 'Цукри',
+      'mineral': 'Мінерали',
+      'vitamin': 'Вітаміни',
+      'amino': 'Незамінні амінокислоти',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lifeStage => 'Вагітність або годування груддю?';
+
+  @override
+  String get lifeStageNone => 'Ні';
+
+  @override
+  String get lifeStagePregnant => 'Вагітна';
+
+  @override
+  String get lifeStageBreastfeeding => 'Годую груддю';
+
+  @override
+  String get allNutrientsTitle => 'Усі поживні речовини';
+
+  @override
+  String get moreNutrients => 'Більше: окремі цукри, амінокислоти';
+
+  @override
+  String get fewerNutrients => 'Менше';
+
+  @override
+  String get panelNote =>
+      '≈ оцінено за схожими продуктами · ≥ не всі продукти це вказують · Цілі для вітамінів і мінералів, верхні межі: референтні норми NASEM';
+
+  @override
+  String get microsLocked =>
+      'Вітаміни й мінерали за день порівняно з вашими нормами — у тарифі Basic.';
+
+  @override
+  String chipLow(String names) {
+    return 'Мало: $names';
+  }
+
+  @override
+  String chipOver(String names) {
+    return 'Понад межу: $names';
+  }
+
+  @override
+  String upperLimitValue(String amount) {
+    return 'верхня межа $amount';
+  }
+
+  @override
+  String get patternsTitle => 'Закономірності';
+
+  @override
+  String get patternsNone =>
+      'Поки нічого не помітно. Закономірності потребують тижня записів або більше.';
+
+  @override
+  String get captionPatterns => 'Що показують ваші записи:';
+
+  @override
+  String patternLogging(String n, String days) {
+    return 'Повністю записаних днів: $n з останніх $days. Інші закономірності враховують лише їх.';
+  }
+
+  @override
+  String patternSkipped(String meal, String n, String days) {
+    return '$meal пропущено в $n з $days дн.';
+  }
+
+  @override
+  String patternLate(String time, String n, String days) {
+    return 'Їли після $time в $n з $days дн.';
+  }
+
+  @override
+  String patternWeekend(String weekend, String weekday, String change) {
+    return 'Вихідні — $weekend ккал на день, будні — $weekday ккал ($change)';
+  }
+
+  @override
+  String patternGap(String nutrient, String n, String days) {
+    return '$nutrient: менше 80 % цілі в $n з $days дн.';
+  }
+
+  @override
+  String patternWeight(String change, String kcal) {
+    return 'Тренд ваги $change кг на тиждень, у середньому з’їдено $kcal ккал на день';
+  }
+
+  @override
+  String patternSymptom(
+    String symptom,
+    String food,
+    String n,
+    String times,
+    String hours,
+  ) {
+    return '$symptom записано протягом $hours год після «$food»: $n з $times разів. Це підрахунок, а не причина: можна згадати про це лікарю.';
+  }
+
+  @override
+  String get answerChecking => 'перевіряю…';
+
+  @override
+  String get answerUnverified =>
+      'Не вдалося перевірити цю відповідь, тому її приховано. Спробуйте запитати інакше.';
 }

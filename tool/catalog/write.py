@@ -83,6 +83,12 @@ SOURCES = {
     "nz": ("NZ FOODfiles 2018, Plant & Food Research / Ministry of Health", V3, "https://www.foodcomposition.co.nz", 1),
     "off": ("Open Food Facts", "ODbL 1.0 (database), DbCL (contents)", "https://world.openfoodfacts.org", 0),
     "off_extract": ("Open Food Facts extract (v3)", "ODbL 1.0", "https://world.openfoodfacts.org", 0),
+    "off_median": (
+        "Open Food Facts, median label of a drink category (db/catalog/drinks.tsv)",
+        "ODbL 1.0 (database), DbCL (contents)",
+        "https://world.openfoodfacts.org",
+        0,
+    ),
     "usda_fdc_branded": (
         "USDA Branded Foods (FoodData Central)",
         "public domain (US government)",
@@ -172,9 +178,11 @@ def translated_aliases(foods, names: dict | None = None) -> list[tuple]:
     out, seen = [], set()
     for name, row in names.items():
         for lang in translate.LANGS:
-            if name in owner and row[lang] and (row[lang].lower(), lang) not in seen:
-                seen.add((row[lang].lower(), lang))
-                out.append((row[lang], lang, owner[name]))
+            # Lower case, as the app looks aliases up (SQLite's NOCASE folds ASCII only: "Квас" never met "квас").
+            alias = row[lang].strip().strip('"«»').lower()
+            if name in owner and alias and (alias, lang) not in seen:
+                seen.add((alias, lang))
+                out.append((alias, lang, owner[name]))
     return out
 
 
