@@ -254,11 +254,21 @@ class Agent extends ChangeNotifier {
       // ("I've saved your dinner. Anything else?") is not: the card is the only way the meal gets saved.
       final said = turn.reply?.text.trim() ?? '';
       final asked = said.endsWith('?') && !RegExp(r'[.!]\s').hasMatch(said);
-      if ((modelFirst && !turn.called && !asked ? tools.route(text) : null) case final routed?) {
+      final routed = modelFirst && !turn.called && !asked ? tools.route(text) : null;
+      if (routed != null) {
         _store('tool', 'fallback router -> ${routed.forModel}', _now());
-        items.add(CardItem(routed.card!, caption: turn.reply == null));
+        // A write it only talked about ("I have logged your breakfast of 2 eggs and 40 g toast", seen on the phone):
+        // its words go from the screen and the replay (where the model copies them next time), as after a second
+        // failed check; the card says what happened.
+        if ((routed.card is ConfirmCard ? turn.reply : null) case final reply?) {
+          items.remove(reply);
+          user.execute('DELETE FROM chat_messages WHERE id = ?', [turn.storedId]);
+        }
+        items.add(CardItem(routed.card!, caption: !items.contains(turn.reply)));
       }
-      if ((checkAnswers ? turn.reply : null) case final reply?) await _check(reply, turn.storedId!);
+      if ((checkAnswers && items.contains(turn.reply) ? turn.reply : null) case final reply?) {
+        await _check(reply, turn.storedId!);
+      }
     } catch (e, st) {
       debugPrint('agent error: $e\n$st');
       items.add(ErrorItem());

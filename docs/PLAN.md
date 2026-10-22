@@ -684,6 +684,11 @@ already used DateTime(y, m, d + i).
 v0.25.3: still wrapping on the phone at 92 % text: the recipe's macro tile ("Protei/n"), its "Log a serving" and
 "Start cooking" buttons, and Log's "Snap a / photo". Those labels are one line now, shrunk to fit (FittedBox, as
 StatTile's value already was).
+v0.25.4: the original report, reproduced on the phone: "I had 2 eggs for breakfast" got "I have logged your breakfast of
+2 boiled eggs and 40.0 g toast" (toast from an earlier message), no call, and the check passed it ✓. The fallback card
+came (v0.25.0), but the false words stayed on screen and in the replay, where a reopened conversation (every voice
+message) copies them. When the fallback card is a write (ConfirmCard), the reply goes from the screen and
+chat_messages and is not checked, as after a second failed check.
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

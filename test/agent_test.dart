@@ -452,6 +452,9 @@ void main() {
       final card = agent.items.whereType<CardItem>().single.card as ConfirmCard;
       expect(card.lines, ['egg · 100 g · 143 kcal']);
       expect(card.mealType, 'dinner');
+      expect(agent.items.whereType<ModelItem>(), isEmpty, reason: 'the false "stored" claim is not shown');
+      expect(user.select("SELECT 1 FROM chat_messages WHERE role = 'model'"), isEmpty, reason: 'nor replayed');
+      expect(model.checkPrompts, isEmpty, reason: 'no check of words that are gone');
     });
 
     test('a meal looked up instead of logged gets the meal card (seen on the phone, v0.25.0)', () async {
