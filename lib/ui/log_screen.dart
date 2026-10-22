@@ -6,6 +6,7 @@ import '../app_state.dart';
 import '../data/diary.dart';
 import 'meal_editor.dart' show showLoggedSnack;
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'camera_screen.dart';
 import 'home_screen.dart' show logMealProvider;
 import 'kit.dart';
@@ -164,8 +165,8 @@ class _LogScreenState extends ConsumerState<LogScreen> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
-                textAlign: TextAlign.center),
+            child: EvaNote(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
+                asset: evaEatingAsset),
           ),
         )
       else if (list.isNotEmpty)

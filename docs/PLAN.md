@@ -663,7 +663,7 @@ To do, in order:
   Breastfeeding (+330 / +400 kcal by months since birth) is not asked yet.
 - [x] Release v0.16.0: first-run download, products v4, trimester, biotin.
 
-## Owner's ideas (2026-10-22, not started — grill before building)
+## Owner's ideas (2026-10-22; 3–6 done the same day, 1 and 2 not started — grill before building)
 
 1. **Photo in chat.** Today chat only shows a CameraCard that opens the camera screen (`openCamera`,
    `lib/ui/camera_screen.dart`); recognition happens there, not in the conversation. Wanted: attach a photo (camera or
@@ -677,16 +677,29 @@ To do, in order:
    screen hints at the download when a search finds nothing. Not used: barcodes (no scanner), photos, recipes. To
    decide: keep and make it useful (barcode scan on the Log screen and in chat → exact label; a brand chip in
    results; "update available" for a newer release; maybe only the user's country to cut the 523 MB), or drop it.
-3. **More profile looks.** Today: picture = woman / man / neutral icon on a colour, or a photo (`avatar.dart`,
+3. **Done 2026-10-22: more profile looks.** Built: 17 icons (3 named person icons + 14 more), 18 colours,
+   background solid / gradient / soft wash, shape circle / rounded / hexagon / flower, outline none / thin / thick;
+   shape and outline apply to a photo too (prefs `avatar_shape`, `avatar_style`, `avatar_ring`; `UserAvatar`,
+   `AvatarChoices` in `avatar.dart`). Asked for: Today: picture = woman / man / neutral icon on a colour, or a photo (`avatar.dart`,
    Settings). Wanted: more options — more icons and colours, background, outline (contour) and shape (circle,
    rounded square, …).
-4. **Light theme too bright** (too much white: `AppColors.light` has `surface: Colors.white` on a near-white
+4. **Done 2026-10-22: light theme less bright.** Built: background #E8EEEA, cards #F6F9F7 (no pure white),
+   chips and borders a step darker; accents darkened just enough to keep ≥ 4.5:1 on the new background
+   (`test/theme_test.dart` checks every text colour on background and cards, icons ≥ 3:1 on their tint, both
+   themes). Dark theme, same day: text off-white at L* 90 (was 95, glare on black), cards one tone above the
+   background. Not done: golden screenshots per screen. Asked for: light theme too bright (too much white: `AppColors.light` has `surface: Colors.white` on a near-white
    `background`). Rework from researched practice: tinted neutral surfaces instead of pure white (Material 3 tonal
    surfaces / surface containers from the seed), fewer elevation levels told apart by tone, WCAG AA contrast kept for
    text (4.5:1) and UI parts (3:1); check every screen in both themes (golden tests).
-5. **Drawer: more entries.** Today: Weight, History & year, Goals, Health, Saved recipes, Shopping list, What the AI
+5. **Done 2026-10-22: drawer.** Built: "Go to" with the five tabs (current one highlighted, Eva on Chat), All
+   nutrients under Track (Basic, else the plans), Photo of a meal under Food (Pro, else the plans). Asked for: Today: Weight, History & year, Goals, Health, Saved recipes, Shopping list, What the AI
    knows. Add navigation to the tabs too (Today, Chat, Log, Plan, Me) and anything else reachable only by deep taps.
-6. **Eva (the chat icon, the owner's schnauzer) in more places:** the drawer header, empty states, the unlock/login
+6. **Done 2026-10-22: Eva in more places.** Built: `assets/icons/eva_cutout.png` (icon_chat.png without its disc,
+   by code), `EvaCutout` and `EvaNote` in `avatar.dart`; Eva peeks from the drawer header, sits beside the logo on
+   the welcome screen, and fronts the empty states (what the AI knows, shopping list, saved recipes, history, Log
+   search with no match, health journal). The unlock screen already had her. Poses from the owner (3 images,
+   cut off their paper and floor, 384 px): `eva_waving.png` on the welcome screen, `eva_sleeping.png` on the
+   "nothing yet" notes, `eva_eating.png` on no food found / nothing to buy / no saved recipe. Asked for: Eva the drawer header, empty states, the unlock/login
    screen; new poses/forms of the picture generated from `assets/icons/icon_chat.png` (e.g. waving, sleeping for empty
    states, holding a bowl). Keep it small and where space is free; one style across them.
 

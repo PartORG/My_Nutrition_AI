@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../billing/billing.dart';
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'kit.dart';
 import 'recipe_screen.dart' show RecipeScreen;
 import 'paywall_screen.dart';
@@ -63,7 +64,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           Widget empty(String text) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Text(text, textAlign: TextAlign.center, style: TextStyle(color: c.muted)),
+                child: EvaNote(text),
               );
 
           return ListView(padding: const EdgeInsets.fromLTRB(0, 0, 0, 24), children: [

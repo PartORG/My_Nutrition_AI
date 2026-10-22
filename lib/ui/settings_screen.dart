@@ -346,7 +346,8 @@ class _VoiceRepliesState extends ConsumerState<_VoiceReplies> {
   }
 }
 
-/// Settings → Your picture: a photo from the phone, or an icon (woman, man, neutral) on a colour.
+/// Settings → Your picture: a photo from the phone, or an icon on a colour (solid, gradient or soft); either in a
+/// shape, with or without an outline.
 class _AvatarSettings extends ConsumerWidget {
   const _AvatarSettings();
 
@@ -366,6 +367,7 @@ class _AvatarSettings extends ConsumerWidget {
     final c = context.colors;
     final a = ref.watch(avatarProvider);
     final avatar = ref.read(avatarProvider.notifier);
+    final label = AppText.caption.copyWith(fontSize: 13, color: c.muted);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -383,12 +385,18 @@ class _AvatarSettings extends ConsumerWidget {
             ]),
           ),
         ]),
-        // A photo covers the icon and its colour: they're offered again once it's removed.
+        // A photo covers the icon, its colour and background: they're offered again once it's removed.
         if (a.photo == null) ...[
           const SizedBox(height: 12),
-          AvatarKindPicker(selected: a.kind, onSelected: (k) => avatar.set(kind: k), color: a.color),
-          const SizedBox(height: 8),
-          Text(l.avatarColor, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+          AvatarChoices(values: personAvatars, selected: a.kind, label: (k) => avatarKindName(l, k),
+              preview: (k) => copyAvatar(a, kind: k), onSelected: (k) => avatar.set(kind: k)),
+          const SizedBox(height: 4),
+          AvatarChoices(
+              values: [for (final k in AvatarKind.values) if (!personAvatars.contains(k)) k],
+              selected: a.kind, label: (k) => avatarKindName(l, k), captions: false,
+              preview: (k) => copyAvatar(a, kind: k, ring: AvatarRing.none), onSelected: (k) => avatar.set(kind: k)),
+          const SizedBox(height: 12),
+          Text(l.avatarColor, style: label),
           const SizedBox(height: 8),
           Wrap(spacing: 10, runSpacing: 10, children: [
             for (final (i, color) in avatarColors.indexed)
@@ -413,7 +421,19 @@ class _AvatarSettings extends ConsumerWidget {
                 ),
               ),
           ]),
+          const SizedBox(height: 12),
+          Text(l.avatarBackground, style: label),
+          AvatarChoices(values: AvatarStyle.values, selected: a.style, label: (s) => l.avatarStyleName(s.name),
+              preview: (s) => copyAvatar(a, style: s), onSelected: (s) => avatar.set(style: s)),
         ],
+        const SizedBox(height: 8),
+        Text(l.avatarShape, style: label),
+        AvatarChoices(values: AvatarShape.values, selected: a.shape, label: (s) => l.avatarShapeName(s.name),
+            preview: (s) => copyAvatar(a, shape: s), onSelected: (s) => avatar.set(shape: s)),
+        const SizedBox(height: 8),
+        Text(l.avatarOutline, style: label),
+        AvatarChoices(values: AvatarRing.values, selected: a.ring, label: (r) => l.avatarRingName(r.name),
+            preview: (r) => copyAvatar(a, ring: r), onSelected: (r) => avatar.set(ring: r)),
       ]),
     );
   }

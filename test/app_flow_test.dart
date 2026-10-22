@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/app_state.dart';
 import 'package:myfoodmind/main.dart';
+import 'package:myfoodmind/ui/me_screen.dart' show MeScreen;
 
 void main() {
   late Directory tmp;
@@ -68,14 +69,26 @@ void main() {
     await settle(tester);
     expect(find.text('Hello, Anna'), findsOneWidget);
 
-    // The drawer: menu button → the deeper screens → × closes it.
+    // The drawer: menu button → the tabs and the deeper screens → × closes it.
+    final drawerList = find.descendant(of: find.byType(Drawer), matching: find.byType(Scrollable));
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
-    expect(find.text('Health'), findsOneWidget);
     expect(find.text('Left today'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Health'), 200, scrollable: drawerList);
+    await tester.scrollUntilVisible(find.byTooltip('Close'), -200, scrollable: drawerList);
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    expect(find.text('Health'), findsNothing);
+    expect(find.byType(Drawer), findsNothing);
+
+    // Go to: a tab from the drawer, which closes.
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byType(Drawer), matching: find.text('Me')));
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsNothing);
+    expect(find.byType(MeScreen), findsOneWidget);
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
 
     // Forgot PIN → confirm → profile and its files are gone, back to sign-up.
     await tester.tap(find.byTooltip('Lock'));

@@ -144,15 +144,17 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
           ]),
         );
     return [
-      Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
+      // The logo, and Eva, the assistant, waving hello beside it.
+      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Container(
           width: 64,
           height: 64,
           decoration: BoxDecoration(color: c.hero, borderRadius: BorderRadius.circular(18)),
           child: const Icon(Icons.eco_outlined, color: Colors.white, size: 34),
         ),
-      ),
+        const Spacer(),
+        const EvaCutout(size: 104, asset: evaWavingAsset),
+      ]),
       const SizedBox(height: 20),
       Semantics(header: true, child: Text(l.welcomeHeadline, style: Theme.of(context).textTheme.headlineLarge)),
       const SizedBox(height: 10),
@@ -343,7 +345,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                 // The user's picture with Eva, the assistant, at its corner.
                 Center(
                   child: Stack(clipBehavior: Clip.none, children: [
-                    const CircleAvatar(radius: 52, backgroundColor: white, child: UserAvatar(radius: 48)),
+                    const UserAvatar(radius: 48, frame: white),
                     Positioned(
                       right: -8,
                       bottom: -4,

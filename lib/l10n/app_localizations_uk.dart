@@ -2314,6 +2314,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get leftToday => 'Залишилось';
 
   @override
+  String get drawerGo => 'Перейти';
+
+  @override
   String get drawerTrack => 'Відстеження';
 
   @override
@@ -2386,6 +2389,54 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get avatarColor => 'Колір тла';
+
+  @override
+  String avatarIconN(int n) {
+    return 'Значок $n';
+  }
+
+  @override
+  String get avatarBackground => 'Фон';
+
+  @override
+  String get avatarShape => 'Форма';
+
+  @override
+  String get avatarOutline => 'Контур';
+
+  @override
+  String avatarStyleName(String style) {
+    String _temp0 = intl.Intl.selectLogic(style, {
+      'solid': 'Суцільний',
+      'gradient': 'Градієнт',
+      'soft': 'М’який',
+      'other': '$style',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String avatarShapeName(String shape) {
+    String _temp0 = intl.Intl.selectLogic(shape, {
+      'circle': 'Коло',
+      'rounded': 'Заокруглена',
+      'hexagon': 'Шестикутник',
+      'flower': 'Квітка',
+      'other': '$shape',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String avatarRingName(String ring) {
+    String _temp0 = intl.Intl.selectLogic(ring, {
+      'none': 'Без контуру',
+      'thin': 'Тонкий',
+      'thick': 'Товстий',
+      'other': '$ring',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get voiceTitle => 'Голос';

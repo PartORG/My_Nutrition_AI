@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myfoodmind/app_state.dart';
 import 'package:myfoodmind/data/goals.dart' show Sex;
+import 'package:material_ui/material_ui.dart';
+import 'package:myfoodmind/ui/avatar.dart';
+import 'package:myfoodmind/ui/theme.dart';
 import 'package:myfoodmind/ui/voice.dart';
 
 Map<String, String> voice(String name, String locale, {bool network = false, String features = ''}) =>
@@ -76,7 +79,34 @@ void main() {
       expect(container.read(avatarProvider).kind, AvatarKind.man);
       avatar.set(kind: AvatarKind.neutral, color: 0xFF1565C0); // they/them, picked
       avatar.suggestFor(Sex.female);
-      expect(container.read(avatarProvider), (kind: AvatarKind.neutral, color: 0xFF1565C0, photo: null));
+      expect(container.read(avatarProvider), (kind: AvatarKind.neutral, color: 0xFF1565C0, photo: null,
+          shape: AvatarShape.circle, style: AvatarStyle.solid, ring: AvatarRing.none));
+    });
+
+    test('shape, background and outline are kept; one changes, the rest stay', () {
+      final avatar = container.read(avatarProvider.notifier);
+      avatar.set(kind: AvatarKind.pets, shape: AvatarShape.flower, style: AvatarStyle.gradient, ring: AvatarRing.thick);
+      avatar.set(style: AvatarStyle.soft);
+      final a = container.read(avatarProvider);
+      expect((a.kind, a.shape, a.style, a.ring), (AvatarKind.pets, AvatarShape.flower, AvatarStyle.soft, AvatarRing.thick));
+    });
+
+    testWidgets('every icon, shape, background and outline draws, also around a photo', (tester) async {
+      final photo = File('${tmp.path}/p.png')..writeAsBytesSync([0]); // not an image: drawn without it
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Wrap(children: [
+          for (final k in AvatarKind.values)
+            for (final s in AvatarShape.values)
+              for (final st in AvatarStyle.values)
+                for (final r in AvatarRing.values)
+                  UserAvatar(radius: 10, avatar: (kind: k, color: 0xFF1565C0, photo: k == AvatarKind.sun ? photo : null,
+                      shape: s, style: st, ring: r), frame: r == AvatarRing.thin ? Colors.white : null),
+        ]),
+      ));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(UserAvatar), findsNWidgets(AvatarKind.values.length * 4 * 3 * 3));
     });
 
     test('a photo replaces the old one on disk; removing it and deleting the profile leave nothing', () {

@@ -3,8 +3,8 @@ import 'package:material_ui/material_ui.dart';
 /// The design's tokens (docs/New_Design/Colour & type tokens): one colour per nutrient and per meal,
 /// used the same way on every screen. Dark is the design's; light keeps the roles with darker hues.
 class AppColors {
-  static const Color primary = Color(0xFF0B7D4C);
-  static const Color background = Color(0xFFF3F6F4);
+  static const Color primary = Color(0xFF0B7849);
+  static const Color background = Color(0xFFE8EEEA);
 }
 
 /// The app's colours for the current theme: `context.colors.muted`.
@@ -90,58 +90,62 @@ class AppPalette extends ThemeExtension<AppPalette> {
     'water': Color(0xFF5CC2FF),
   };
 
-  // The same hues, dark enough for text on white (each ≥ 4.5:1).
+  // The same hues, dark enough for text on the light background and cards (each ≥ 4.5:1, test/theme_test.dart).
   static const _lightAccents = {
-    'kcal': Color(0xFF0B7D4C),
-    'protein_g': Color(0xFFC9471F),
-    'carbs_g': Color(0xFF9A6500),
+    'kcal': Color(0xFF0B7849),
+    'protein_g': Color(0xFFB7411C),
+    'carbs_g': Color(0xFF905E00),
     'fat_g': Color(0xFF6650DB),
-    'fiber_g': Color(0xFFBF3A7A),
-    'sugar_g': Color(0xFF587600),
+    'fiber_g': Color(0xFFB73875),
+    'sugar_g': Color(0xFF567300),
     'sodium_mg': Color(0xFF3460D0),
-    'water': Color(0xFF0072AD),
+    'water': Color(0xFF006FA8),
   };
 
+  // No pure white (glare, and cards told apart only by a border): green-tinted neutrals stepped by tone like
+  // Material 3's surface containers, background darkest, cards lightest.
   static const light = AppPalette(
-    primary: Color(0xFF0B7D4C),
+    primary: Color(0xFF0B7849),
     primaryDark: Color(0xFF07603A),
     onPrimary: Colors.white,
-    background: Color(0xFFF3F6F4),
-    surface: Colors.white,
-    surfaceHigh: Color(0xFFE7EEEA),
-    heroSurface: Color(0xFFDCF2E6),
+    background: Color(0xFFE8EEEA),
+    surface: Color(0xFFF6F9F7),
+    surfaceHigh: Color(0xFFDDE6E0),
+    heroSurface: Color(0xFFD2EADC),
     ink: Color(0xFF0F1A15),
     ink2: Color(0xFF33433B),
     muted: Color(0xFF56665E),
-    border: Color(0xFFE1E7E3),
-    divider: Color(0xFFECF0ED),
-    track: Color(0xFFE7EEEA),
-    outline: Color(0xFFCDD6D1),
-    hero: Color(0xFF0B7D4C),
-    mint: Color(0xFFE2F1EB),
+    border: Color(0xFFD5DDD8),
+    divider: Color(0xFFDFE6E1),
+    track: Color(0xFFDAE3DD),
+    outline: Color(0xFFBFC9C3),
+    hero: Color(0xFF0B7849),
+    mint: Color(0xFFD5EBDF),
     onMint: Color(0xFF07603A),
-    warm: Color(0xFFF6EFE0),
+    warm: Color(0xFFF2E7D0),
     onWarm: Color(0xFF7A5000),
-    water: Color(0xFF0072AD),
-    waterBg: Color(0xFFE0EEF5),
-    waterTint: Color(0xFFD5E6EF),
+    water: Color(0xFF006FA8),
+    waterBg: Color(0xFFDFEDF4),
+    waterTint: Color(0xFFCCDFE9),
     danger: Color(0xFFB3261E),
-    dangerBg: Color(0xFFFCEDEB),
+    dangerBg: Color(0xFFF7E2DE),
     gold: Color(0xFFFFC24D),
     dark: Color(0xFF0F1A15),
     accents: _lightAccents,
   );
 
+  // Off-white text (L* 90, as Material's onSurface), not near-white: less glare and smear on black; cards a
+  // tone above the background so they read without borders.
   static const night = AppPalette(
     primary: Color(0xFF6EE7A8),
     primaryDark: Color(0xFF9FF0C6),
     onPrimary: Color(0xFF0D1311),
     background: Color(0xFF0D1311),
-    surface: Color(0xFF151D1A),
+    surface: Color(0xFF19221E),
     surfaceHigh: Color(0xFF26332D),
     heroSurface: Color(0xFF17332A),
-    ink: Color(0xFFECF3EE),
-    ink2: Color(0xFFC9D6CF),
+    ink: Color(0xFFDFE7E2),
+    ink2: Color(0xFFC2CEC8),
     muted: Color(0xFFA3B5AC),
     border: Color(0xFF1E2824),
     divider: Color(0xFF222C27),
@@ -158,7 +162,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     danger: Color(0xFFFF8F80),
     dangerBg: Color(0xFF3D211D),
     gold: Color(0xFFFFC24D),
-    dark: Color(0xFFECF3EE),
+    dark: Color(0xFFDFE7E2),
     accents: _nightAccents,
   );
 

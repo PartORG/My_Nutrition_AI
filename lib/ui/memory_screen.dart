@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../agent/agent.dart';
 import '../agent/memory.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'kit.dart';
 import 'theme.dart';
 
@@ -87,7 +88,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
           Panel(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(l.factsSection, style: Theme.of(context).textTheme.titleMedium),
-              if (facts.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.factsEmpty)),
+              if (facts.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: EvaNote(l.factsEmpty)),
               for (final (i, f) in facts.indexed) ...[
                 if (i > 0) Divider(color: c.divider),
                 Row(children: [

@@ -2280,6 +2280,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leftToday => 'Left today';
 
   @override
+  String get drawerGo => 'Go to';
+
+  @override
   String get drawerTrack => 'Track';
 
   @override
@@ -2353,6 +2356,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get avatarColor => 'Background colour';
+
+  @override
+  String avatarIconN(int n) {
+    return 'Icon $n';
+  }
+
+  @override
+  String get avatarBackground => 'Background';
+
+  @override
+  String get avatarShape => 'Shape';
+
+  @override
+  String get avatarOutline => 'Outline';
+
+  @override
+  String avatarStyleName(String style) {
+    String _temp0 = intl.Intl.selectLogic(style, {
+      'solid': 'Solid',
+      'gradient': 'Gradient',
+      'soft': 'Soft',
+      'other': '$style',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String avatarShapeName(String shape) {
+    String _temp0 = intl.Intl.selectLogic(shape, {
+      'circle': 'Circle',
+      'rounded': 'Rounded',
+      'hexagon': 'Hexagon',
+      'flower': 'Flower',
+      'other': '$shape',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String avatarRingName(String ring) {
+    String _temp0 = intl.Intl.selectLogic(ring, {
+      'none': 'None',
+      'thin': 'Thin',
+      'thick': 'Thick',
+      'other': '$ring',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get voiceTitle => 'Voice';

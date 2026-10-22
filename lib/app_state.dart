@@ -109,11 +109,29 @@ class VoiceRepliesSetting extends Notifier<VoiceReplies> {
   }
 }
 
-/// The user's picture: an icon (woman, man, or neutral for they/them) on a colour, or a photo they picked.
-enum AvatarKind { woman, man, neutral }
+/// The user's picture: an icon (woman, man, neutral for they/them, or one of the others) on a colour, or a photo
+/// they picked; in a shape, with an optional outline. Stored by name: new values go at the end.
+enum AvatarKind { woman, man, neutral, face2, face4, face5, pets, leaf, flower, spa, runner, yoga, food, coffee, heart, star, sun }
+
+enum AvatarShape { circle, rounded, hexagon, flower }
+
+/// The icon's background: the colour, a gradient of it, or a soft wash of it under an icon in the colour.
+enum AvatarStyle { solid, gradient, soft }
+
+enum AvatarRing { none, thin, thick }
 
 /// [color] is ARGB, null = the theme's green.
-typedef Avatar = ({AvatarKind kind, int? color, File? photo});
+typedef Avatar = ({
+  AvatarKind kind,
+  int? color,
+  File? photo,
+  AvatarShape shape,
+  AvatarStyle style,
+  AvatarRing ring,
+});
+
+const Avatar plainAvatar = (kind: AvatarKind.neutral, color: null, photo: null, shape: AvatarShape.circle,
+    style: AvatarStyle.solid, ring: AvatarRing.none);
 
 /// Per phone (one profile per phone), so the unlock screen shows it before the PIN opens the profile.
 final avatarProvider = NotifierProvider<AvatarSetting, Avatar>(AvatarSetting.new);
@@ -122,7 +140,7 @@ class AvatarSetting extends Notifier<Avatar> {
   @override
   Avatar build() {
     // Before the app folder is ready (and in tests without one): the plain icon.
-    if (!ref.watch(appDirProvider).hasValue) return (kind: AvatarKind.neutral, color: null, photo: null);
+    if (!ref.watch(appDirProvider).hasValue) return plainAvatar;
     final p = ref.watch(profilesProvider);
     final owner = p.owner;
     final name = p.setting('avatar_photo') ?? '';
@@ -131,6 +149,9 @@ class AvatarSetting extends Notifier<Avatar> {
       kind: AvatarKind.values.asNameMap()[p.setting('avatar_kind')] ?? AvatarKind.neutral,
       color: int.tryParse(p.setting('avatar_color') ?? ''),
       photo: photo != null && photo.existsSync() ? photo : null,
+      shape: AvatarShape.values.asNameMap()[p.setting('avatar_shape')] ?? AvatarShape.circle,
+      style: AvatarStyle.values.asNameMap()[p.setting('avatar_style')] ?? AvatarStyle.solid,
+      ring: AvatarRing.values.asNameMap()[p.setting('avatar_ring')] ?? AvatarRing.none,
     );
   }
 
@@ -143,10 +164,13 @@ class AvatarSetting extends Notifier<Avatar> {
     set(kind: switch (sex) { Sex.female => AvatarKind.woman, Sex.male => AvatarKind.man, Sex.other => AvatarKind.neutral });
   }
 
-  void set({AvatarKind? kind, int? color}) {
+  void set({AvatarKind? kind, int? color, AvatarShape? shape, AvatarStyle? style, AvatarRing? ring}) {
     final p = ref.read(profilesProvider);
     if (kind != null) p.setSetting('avatar_kind', kind.name);
     if (color != null) p.setSetting('avatar_color', '$color');
+    if (shape != null) p.setSetting('avatar_shape', shape.name);
+    if (style != null) p.setSetting('avatar_style', style.name);
+    if (ring != null) p.setSetting('avatar_ring', ring.name);
     ref.invalidateSelf();
   }
 

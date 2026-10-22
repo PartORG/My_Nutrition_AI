@@ -13,7 +13,9 @@ import '../data/goals.dart';
 import '../data/plan.dart' show savedRecipeIds;
 import '../data/reminders.dart' show waterReminderPref, waterScheduledSetting, waterTimes, waterTimesPref;
 import '../l10n/app_localizations.dart';
+import 'all_nutrients_screen.dart';
 import 'avatar.dart';
+import 'camera_screen.dart' show openCamera;
 import 'chat_screen.dart';
 import 'goals_screen.dart';
 import 'health_screen.dart';
@@ -269,8 +271,8 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
-/// The screens a few taps deep in Me, one swipe from the left edge: who is signed in and today's numbers
-/// on top, then Track and Food, Settings and Lock at the foot.
+/// Everywhere, one swipe from the left edge: who is signed in and today's numbers on top, then the tabs (Go to),
+/// the screens a few taps deep (Track, Food), Settings and Lock at the foot.
 class _Drawer extends ConsumerWidget {
   const _Drawer({required this.name, required this.data});
   final String name;
@@ -291,8 +293,18 @@ class _Drawer extends ConsumerWidget {
     Widget plan(ProfileData data, PlanTab tab) =>
         Scaffold(body: SafeArea(child: PlanScreen(data: data, initialTab: tab, back: true)));
 
-    Widget item(IconData icon, String accent, String label, VoidCallback? onTap, {String? trailing}) => ListTile(
-          leading: IconTile(icon: icon, color: context.nutrientColor(accent), size: 32),
+    final tab = ref.watch(homeTabProvider);
+    final tier = ref.watch(billingProvider).value?.tier.value ?? Tier.free;
+    void go(int to) {
+      nav.pop();
+      ref.read(homeTabProvider.notifier).go(to);
+    }
+
+    Widget item(IconData icon, String accent, String label, VoidCallback? onTap,
+            {String? trailing, bool selected = false, Widget? leading}) => ListTile(
+          leading: leading ?? IconTile(icon: icon, color: context.nutrientColor(accent), size: 32),
+          selected: selected,
+          selectedTileColor: c.mint,
           title: Text(label, style: AppText.body.copyWith(fontSize: 15, color: c.ink)),
           trailing: trailing == null ? null : Text(trailing, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
           minLeadingWidth: 32,
@@ -335,12 +347,27 @@ class _Drawer extends ConsumerWidget {
                       _DrawerHeader(name: name, onPlans: () => open(const PaywallScreen())),
                       const SizedBox(height: 10),
                       _DrawerNumbers(data: data),
+                      SectionLabel(l.drawerGo, padding: const EdgeInsets.fromLTRB(12, 18, 12, 6)),
+                      item(Icons.calendar_today_outlined, 'kcal', l.tabToday, () => go(HomeTab.today),
+                          selected: tab == HomeTab.today),
+                      item(Icons.chat_bubble_outline, 'kcal', l.tabChat, () => go(HomeTab.chat),
+                          selected: tab == HomeTab.chat, leading: const EvaAvatar(size: 32)),
+                      item(Icons.add, 'kcal', l.logFoodTitle, () => go(HomeTab.log), selected: tab == HomeTab.log),
+                      item(Icons.article_outlined, 'kcal', l.tabPlan, () => go(HomeTab.plan), selected: tab == HomeTab.plan),
+                      item(Icons.person_outline, 'kcal', l.tabMe, () => go(HomeTab.me), selected: tab == HomeTab.me),
                       SectionLabel(l.drawerTrack, padding: const EdgeInsets.fromLTRB(12, 18, 12, 6)),
                       item(Icons.monitor_weight_outlined, 'kcal', l.weight, () => open(WeightScreen(data: data))),
                       item(Icons.history, 'water', l.historyAndYear, () => open(HistoryScreen(data: data))),
                       item(Icons.flag_outlined, 'carbs_g', l.goalsTitle, () => open(const GoalsScreen())),
                       item(Icons.favorite_border, 'fiber_g', l.healthTitle, () => open(const HealthScreen())),
+                      // Basic, else the plans (as from Today's panel).
+                      item(Icons.science_outlined, 'sodium_mg', l.allNutrientsTitle,
+                          () => open(tier.includes(Tier.basic) ? AllNutrientsScreen(data: data) : const PaywallScreen())),
                       SectionLabel(l.drawerFood, padding: const EdgeInsets.fromLTRB(12, 18, 12, 6)),
+                      item(Icons.photo_camera_outlined, 'water', l.snapPhoto, () {
+                        nav.pop();
+                        openCamera(nav.context, 'photo'); // the drawer's own context is gone once it closes
+                      }),
                       item(Icons.bookmark_border, 'protein_g', l.savedRecipesTitle, () => open(plan(data, PlanTab.recipes)),
                           trailing: switch (savedRecipeIds(data.tools).length) { 0 => null, final n => '$n' }),
                       item(Icons.shopping_cart_outlined, 'fat_g', l.shoppingList, () => open(plan(data, PlanTab.shopping))),
@@ -378,34 +405,44 @@ class _DrawerHeader extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
     final billing = ref.watch(billingProvider).value;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
-      decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.card)),
-      child: Row(children: [
-        const UserAvatar(radius: 26),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: AppText.title.copyWith(color: c.ink), overflow: TextOverflow.ellipsis),
-            if (billing != null)
-              ValueListenableBuilder(
-                valueListenable: billing.tier,
-                builder: (context, tier, _) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: InkWell(
-                    onTap: onPlans,
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                    child: Tag(tierName(tier, l).toUpperCase(), tone: tier == Tier.free ? TagTone.neutral : TagTone.gold),
+    // Eva peeks up from the header's bottom edge, under the ×.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(Radii.card),
+      child: Stack(children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
+          decoration: BoxDecoration(color: c.heroSurface, borderRadius: BorderRadius.circular(Radii.card)),
+          child: Row(children: [
+            const UserAvatar(radius: 26),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, style: AppText.title.copyWith(color: c.ink), overflow: TextOverflow.ellipsis),
+                if (billing != null)
+                  ValueListenableBuilder(
+                    valueListenable: billing.tier,
+                    builder: (context, tier, _) => Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: InkWell(
+                        onTap: onPlans,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                        child: Tag(tierName(tier, l).toUpperCase(), tone: tier == Tier.free ? TagTone.neutral : TagTone.gold),
+                      ),
+                    ),
                   ),
-                ),
+              ]),
+            ),
+            Column(children: [
+              IconButton(
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                icon: Icon(Icons.close, color: c.muted),
+                onPressed: () => Navigator.of(context).pop(),
               ),
+              const SizedBox(height: 30), // Eva's room
+            ]),
           ]),
         ),
-        IconButton(
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          icon: Icon(Icons.close, color: c.muted),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        const Positioned(right: 4, bottom: -14, child: EvaCutout(size: 56)),
       ]),
     );
   }

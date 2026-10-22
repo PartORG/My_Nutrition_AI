@@ -3912,6 +3912,12 @@ abstract class AppLocalizations {
   /// **'Left today'**
   String get leftToday;
 
+  /// No description provided for @drawerGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to'**
+  String get drawerGo;
+
   /// No description provided for @drawerTrack.
   ///
   /// In en, this message translates to:
@@ -4043,6 +4049,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Background colour'**
   String get avatarColor;
+
+  /// No description provided for @avatarIconN.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon {n}'**
+  String avatarIconN(int n);
+
+  /// No description provided for @avatarBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get avatarBackground;
+
+  /// No description provided for @avatarShape.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape'**
+  String get avatarShape;
+
+  /// No description provided for @avatarOutline.
+  ///
+  /// In en, this message translates to:
+  /// **'Outline'**
+  String get avatarOutline;
+
+  /// No description provided for @avatarStyleName.
+  ///
+  /// In en, this message translates to:
+  /// **'{style, select, solid{Solid} gradient{Gradient} soft{Soft} other{{style}}}'**
+  String avatarStyleName(String style);
+
+  /// No description provided for @avatarShapeName.
+  ///
+  /// In en, this message translates to:
+  /// **'{shape, select, circle{Circle} rounded{Rounded} hexagon{Hexagon} flower{Flower} other{{shape}}}'**
+  String avatarShapeName(String shape);
+
+  /// No description provided for @avatarRingName.
+  ///
+  /// In en, this message translates to:
+  /// **'{ring, select, none{None} thin{Thin} thick{Thick} other{{ring}}}'**
+  String avatarRingName(String ring);
 
   /// No description provided for @voiceTitle.
   ///
