@@ -666,6 +666,11 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+v0.20 (same day): the app icon is the owner's design (`assets/icons/app_icon.png`, 1024 px made from a 195 px
+screenshot, so soft on iOS and in the Play listing; a full-size original would sharpen it): iOS AppIcon set, Android
+legacy mipmaps and an adaptive icon (green #365F44 behind, the artwork in the 72 dp visible area). Every Eva picture
+is lighter, salt-and-pepper grey as the real Eva (dark fur lifted, eyes, nose and outlines kept).
+
 1. **Done 2026-10-22 (v0.19): photo in chat.** Built: a "Photo of your meal" chip first above the chat input (Pro,
    else the plans; not a fourth button in the input row, which squeezed the field on narrow phones) and the chat's
    own "Open camera" card both run the camera (shoot or gallery, Gemma's recognition, `capturePhoto` shared with the
