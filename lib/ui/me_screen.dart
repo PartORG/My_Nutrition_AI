@@ -476,6 +476,7 @@ class MeScreen extends ConsumerWidget {
   ) async {
     final l = AppLocalizations.of(context)!;
     final thin = underweight(body.heightCm, body.weightKg);
+    final pregnant = trimester(data.user) > 0;
     final goal = await showDialog<Goal>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -484,9 +485,9 @@ class MeScreen extends ConsumerWidget {
           for (final g in Goal.values)
             ListTile(
               title: Text(_goal(g, l)),
-              // Underweight: losing gives the maintain targets anyway (computeTargets), so say why.
-              subtitle: g == Goal.lose && thin ? Text(l.underweightNoLose) : null,
-              enabled: !(g == Goal.lose && thin),
+              // Underweight or pregnant: losing gives the maintain targets anyway (computeTargets), so say why.
+              subtitle: g == Goal.lose && (thin || pregnant) ? Text(thin ? l.underweightNoLose : l.pregnantNoLose) : null,
+              enabled: !(g == Goal.lose && (thin || pregnant)),
               trailing: g == body.goal ? const Icon(Icons.check) : null,
               onTap: () => Navigator.pop(context, g),
             ),

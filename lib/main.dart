@@ -74,7 +74,7 @@ class MyFoodMindApp extends ConsumerWidget {
   }
 }
 
-/// Unsupported phone → loading → profile picker (locked) → home (unlocked).
+/// Unsupported phone → loading → food data download (first run) → profile picker (locked) → home (unlocked).
 /// Locks again after [autoLockAfter] in the background.
 class AppGate extends ConsumerStatefulWidget {
   const AppGate({super.key});
@@ -137,7 +137,8 @@ class _AppGateState extends ConsumerState<AppGate> {
         ),
       );
     }
-    return switch (ref.watch(appDirProvider)) {
+    return switch (ref.watch(dataReadyProvider)) {
+      AsyncData(value: false) => const DataScreen(),
       // Unlocking fades and grows the home screen in; locking fades it out.
       AsyncData() => AnimatedSwitcher(
           duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Durations.medium4,
@@ -155,5 +156,43 @@ class _AppGateState extends ConsumerState<AppGate> {
       AsyncError(:final error) => Scaffold(body: Center(child: Text('$error'))),
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };
+  }
+}
+
+/// First run (or a new data version): the food data and the search embedder are downloaded before anything else.
+class DataScreen extends ConsumerWidget {
+  const DataScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final download = ref.read(dataDownloadProvider.notifier);
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Icon(Icons.download_for_offline_outlined, size: 48, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 16),
+              Text(l.dataTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 12),
+              Text(l.dataBody(dataDownloadMb), textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              DownloadBar(dataDownloadProvider),
+              if (ref.watch(dataDownloadProvider) == null)
+                FilledButton.icon(
+                  icon: const Icon(Icons.download),
+                  label: Text(l.productsDownload(dataDownloadMb)),
+                  onPressed: () async {
+                    final wifiOnly = await askNetwork(context, dataDownloadMb);
+                    if (wifiOnly != null) await download.start(wifiOnly: wifiOnly, title: l.dataTitle);
+                  },
+                ),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 }

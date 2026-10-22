@@ -1144,8 +1144,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get productsTitle => 'Упаковані товари';
 
   @override
+  String get dataTitle => 'Дані про їжу';
+
+  @override
+  String dataBody(int mb) {
+    return 'My Nutrition AI зберігає таблиці продуктів, рецепти й пошук на вашому телефоні, тож ніщо з того, що ви їсте, його не покидає. Завантажте їх один раз ($mb МБ); тим часом можна вийти з застосунку. Краще через Wi-Fi.';
+  }
+
+  @override
   String get productsNone =>
-      'Вбудовано: товари з 2019 року, мало європейських. Завантажте всі товари Open Food Facts (усі країни), щоб знаходити те, що ви купуєте. Краще через Wi-Fi.';
+      'Ще не завантажено: товари в упаковці з’являться після цього завантаження. Усі товари Open Food Facts (усі країни), щоб знаходити те, що ви купуєте. Краще через Wi-Fi.';
 
   @override
   String productsHave(String count, String date) {
@@ -2510,6 +2518,13 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get lifeStageBreastfeeding => 'Годую груддю';
+
+  @override
+  String get trimester => 'Триместр';
+
+  @override
+  String get pregnantNoLose =>
+      'Під час вагітності схуднення не рекомендується: цілі залишаються на рівні підтримки ваги, а з 2-го триместру додається те, що потрібно дитині. Порадьтеся з лікарем.';
 
   @override
   String get allNutrientsTitle => 'Усі поживні речовини';

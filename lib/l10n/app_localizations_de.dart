@@ -1140,8 +1140,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get productsTitle => 'Verpackte Produkte';
 
   @override
+  String get dataTitle => 'Lebensmitteldaten';
+
+  @override
+  String dataBody(int mb) {
+    return 'My Nutrition AI speichert Lebensmitteltabellen, Rezepte und Suche auf deinem Handy, damit nichts von dem, was du isst, es verlässt. Lade sie einmal herunter ($mb MB); du kannst die App währenddessen verlassen. WLAN empfohlen.';
+  }
+
+  @override
   String get productsNone =>
-      'Eingebaut: Produkte von 2019, wenige europäische. Lade alle Produkte von Open Food Facts (alle Länder), um zu finden, was du kaufst. WLAN empfohlen.';
+      'Noch nicht geladen: Verpackte Produkte gibt es erst mit diesem Download. Alle Produkte von Open Food Facts (alle Länder), um zu finden, was du kaufst. WLAN empfohlen.';
 
   @override
   String productsHave(String count, String date) {
@@ -2495,6 +2503,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get lifeStageBreastfeeding => 'Stillend';
+
+  @override
+  String get trimester => 'Trimester';
+
+  @override
+  String get pregnantNoLose =>
+      'In der Schwangerschaft wird Abnehmen nicht empfohlen: Deine Ziele bleiben beim Halten des Gewichts, ab dem 2. Trimester kommt hinzu, was das Baby braucht. Sprich mit deiner Ärztin oder deinem Arzt.';
 
   @override
   String get allNutrientsTitle => 'Alle Nährstoffe';

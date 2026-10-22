@@ -1138,8 +1138,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get productsTitle => 'Produits emballés';
 
   @override
+  String get dataTitle => 'Données alimentaires';
+
+  @override
+  String dataBody(int mb) {
+    return 'My Nutrition AI garde ses tables d’aliments, ses recettes et sa recherche sur votre téléphone : rien de ce que vous mangez n’en sort. Téléchargez-les une fois ($mb Mo) ; vous pouvez quitter l’app pendant ce temps. Wi-Fi conseillé.';
+  }
+
+  @override
   String get productsNone =>
-      'Intégrés : produits de 2019, peu de produits européens. Téléchargez tous les produits d’Open Food Facts (tous pays) pour trouver ce que vous achetez. Wi-Fi conseillé.';
+      'Pas encore téléchargé : les produits emballés arrivent avec ce téléchargement. Tous les produits d’Open Food Facts (tous pays), pour trouver ce que vous achetez. Wi-Fi conseillé.';
 
   @override
   String productsHave(String count, String date) {
@@ -2491,6 +2499,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get lifeStageBreastfeeding => 'Allaitante';
+
+  @override
+  String get trimester => 'Trimestre';
+
+  @override
+  String get pregnantNoLose =>
+      'Perdre du poids n’est pas conseillé pendant la grossesse : vos objectifs restent au maintien du poids, plus ce dont le bébé a besoin à partir du 2e trimestre. Parlez-en à votre médecin.';
 
   @override
   String get allNutrientsTitle => 'Tous les nutriments';

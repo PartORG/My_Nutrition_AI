@@ -2,13 +2,12 @@
 # Runs on push to main; does nothing if that version was already released, so bump
 # `version:` in pubspec.yaml to ship a new one.
 #
-# One-time setup:
-#   * Release "build-inputs" holding the git-ignored assets. Public: Gemma's terms allow
-#     redistribution with its notice (assets/licenses/models.txt ships in the APK):
-#       gh release create build-inputs --prerelease --title "Build inputs (not an app release)" \
-#         assets/nutri.db assets/health.db assets/models/embeddinggemma-300M_seq256.tflite \
-#         assets/models/embeddinggemma_sentencepiece.model
-#     Re-upload with `gh release upload build-inputs <file> --clobber` when they change.
+# One-time setup (and once per data version, lib/data/nutri_db.dart nutriDataVersion):
+#   * Release "data-<nutriDataVersion>" with what the app downloads on first run, each gzipped. Public:
+#     Gemma's terms allow redistribution with its notice (assets/licenses/models.txt ships in the APK):
+#       gzip -k assets/nutri.db assets/health.db assets/models/embeddinggemma*
+#       gh release create data-5 --prerelease --title "Food data 5 (downloaded by the app)" \
+#         assets/nutri.db.gz assets/health.db.gz assets/models/embeddinggemma*.gz
 #   * Secrets: ANDROID_KEYSTORE_BASE64 (`base64 -w0 upload.jks`), ANDROID_KEYSTORE_PASSWORD,
 #     ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
 name: android
@@ -33,14 +32,14 @@ jobs:
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
           if gh release view "v$v" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; fi
 
+      # The app downloads its food data on first run: never ship one whose data release isn't up.
       - if: steps.version.outputs.exists != 'true'
         run: |
-          gh release download build-inputs --pattern nutri.db --pattern health.db --dir assets
-          gh release download build-inputs --pattern 'embeddinggemma*' --dir assets/models
-          # Phones only reinstall nutri.db for a newer data_version: never ship one older than the app expects.
-          want=$(grep -oP 'const nutriDataVersion = \K\d+' lib/data/nutri_db.dart)
-          have=$(python3 -c "import sqlite3; r = sqlite3.connect('assets/nutri.db').execute(\"SELECT value FROM meta WHERE key = 'data_version'\").fetchone(); print(r[0] if r else 0)")
-          [ "$have" -ge "$want" ] || { echo "build-inputs nutri.db has data_version $have, the app needs $want: re-upload it"; exit 1; }
+          v=$(grep -oP 'const nutriDataVersion = \K\d+' lib/data/nutri_db.dart)
+          have=$(gh release view "data-$v" --json assets -q '.assets[].name' | sort | tr '\n' ' ')
+          for f in embeddinggemma-300M_seq256.tflite.gz embeddinggemma_sentencepiece.model.gz health.db.gz nutri.db.gz; do
+            case " $have" in *" $f "*) ;; *) echo "release data-$v lacks $f: upload it"; exit 1 ;; esac
+          done
 
       - if: steps.version.outputs.exists != 'true'
         uses: actions/setup-java@v4

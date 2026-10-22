@@ -25,8 +25,8 @@ Without `key.properties` release builds fall back to the debug key — fine loca
 
 ## 2. Build
 
-The two EmbeddingGemma files must be in `assets/models/` (git-ignored, bundled into the app):
-`embeddinggemma-300M_seq256.tflite`, `embeddinggemma_sentencepiece.model`.
+The food data and EmbeddingGemma are not in the bundle: the app downloads them on first run from the
+public GitHub release `data-<nutriDataVersion>`, which must exist first.
 
 ```sh
 flutter build appbundle --release --target-platform android-arm64 \

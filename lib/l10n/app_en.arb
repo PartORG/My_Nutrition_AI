@@ -719,7 +719,16 @@
   },
   "microsTitle": "Vitamins and minerals",
   "productsTitle": "Packaged products",
-  "productsNone": "Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.",
+  "dataTitle": "Food data",
+  "dataBody": "My Nutrition AI keeps its food tables, recipes and search on your phone, so nothing you eat leaves it. Download them once ({mb} MB); you can leave the app meanwhile. Wi-Fi recommended.",
+  "@dataBody": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "productsNone": "Not downloaded yet: packaged products need this download. Every product in Open Food Facts (all countries), to find what you buy. Wi-Fi recommended.",
   "productsHave": "{count} products from Open Food Facts, updated {date}.",
   "@productsHave": {
     "placeholders": {
@@ -1614,6 +1623,8 @@
   "lifeStageNone": "No",
   "lifeStagePregnant": "Pregnant",
   "lifeStageBreastfeeding": "Breastfeeding",
+  "trimester": "Trimester",
+  "pregnantNoLose": "Losing weight isn't advised in pregnancy: your targets stay at maintaining your weight, plus what the baby needs from the 2nd trimester. Talk to your doctor.",
   "allNutrientsTitle": "All nutrients",
   "moreNutrients": "More: single sugars, amino acids",
   "fewerNutrients": "Fewer",

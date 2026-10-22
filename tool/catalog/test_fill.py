@@ -74,6 +74,23 @@ def test_a_researched_value_wins_over_estimates_never_over_a_measurement():
     assert len(problems) == 1
 
 
+def test_a_researched_value_replaces_the_same_foods_measurements_more_than_3x_off():
+    from fill import apply_manual
+
+    def milk(source, name, state=None, **n):
+        return {"source": source, "name": name, "common_name": "whole milk", "state": state, "nutrients": n}
+
+    usda, cofid, frida, close = (milk("usda_sr", "Milk, whole"), milk("cofid", "Milk, whole", vitamin_b7_ug=2.4),
+                                 milk("frida", "Milk, whole", vitamin_b7_ug=0.2), milk("nz", "Milk", vitamin_b7_ug=0.3))
+    dried = milk("cofid", "Milk, dried", "dried", vitamin_b7_ug=20.0)
+    url = "https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/"
+    n, _ = apply_manual([usda, cofid, frida, close, dried], [f"usda_sr\tMilk, whole\tvitamin_b7_ug\t0.1\t{url}"])
+    assert n == 2 and usda["nutrients"]["vitamin_b7_ug"] == cofid["nutrients"]["vitamin_b7_ug"] == 0.1
+    assert cofid["sources"]["vitamin_b7_ug"] == url and cofid["borrowed"] == ["vitamin_b7_ug"]
+    assert frida["nutrients"]["vitamin_b7_ug"] == 0.2 and close["nutrients"]["vitamin_b7_ug"] == 0.3, "within 3x"
+    assert dried["nutrients"]["vitamin_b7_ug"] == 20.0, "another state is another food"
+
+
 def test_a_reviewed_twin_lends_its_measured_values_for_estimates_only():
     from fill import apply_same
 

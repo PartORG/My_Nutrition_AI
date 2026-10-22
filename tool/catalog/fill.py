@@ -4,8 +4,9 @@ Same food = the same everyday name and the same state (raw and dried differ in w
 2. estimated: else the median of every row of that food that has it;
 3. estimated: else from the 5 most similar foods that measured it (nutrient profile + name), scaled by its base
    where it has one (amino acids by protein, fatty acids by fat, single sugars by sugar, starch by carbohydrate).
-Before 1, the USDA iodine database lends measured iodine to USDA rows. Before 3, db/catalog/same_food.tsv (reviewed twins in other tables) lends its measured values, then
-db/catalog/manual_values.tsv (researched values with their URL); both win over every estimate.
+Before 1, the USDA iodine database lends measured iodine to USDA rows, and db/catalog/manual_values.tsv its researched
+values (with their URL), which also replace the same food's measured values more than 3x off them. Before 3,
+db/catalog/same_food.tsv (reviewed twins in other tables) lends its measured values over every estimate.
 Each value's origin is in f["sources"]: the lender's source id, a URL, "same", "similar" or "atwater" (kcal from
 the macros). Products keep their label.
 Reads and rewrites BUILD/matched/foods.jsonl; prints how far step 3 is off on held-back measured values.
@@ -235,11 +236,18 @@ def apply_same(foods: list[dict], lines: list[str]) -> tuple[int, list[str]]:
     return n, problems
 
 
+# A researched value replaces the same food's measured value this many times off it: Staggs 2004 found published
+# biotin (microbiological assays, as in CoFID/Frida) often several times too high, milk 20x.
+OUTLIER = 3
+
+
 def apply_manual(foods: list[dict], lines: list[str]) -> tuple[int, list[str]]:
-    """manual_values.tsv lines: source | food name | nutrient | value per 100 g | URL. Never over a measured value."""
-    by_name = defaultdict(list)
+    """manual_values.tsv lines: source | food name | nutrient | value per 100 g | URL. Never over the food's own
+    measured value; over the same food's (name and state) in other tables when more than OUTLIER times off."""
+    by_name, groups = defaultdict(list), defaultdict(list)
     for f in foods:
         by_name[(f["source"], f["name"].lower())].append(f)
+        groups[(f.get("common_name"), f.get("state"))].append(f)
     n, problems = 0, []
     for row in rows_of(lines):
         source, name, k, value, url = row
@@ -247,7 +255,13 @@ def apply_manual(foods: list[dict], lines: list[str]) -> tuple[int, list[str]]:
         if not hits or k not in KEYS or not url.startswith("http"):
             problems.append(f"manual_values.tsv: {row!r}")
             continue
-        n += sum(lend(f, k, float(value), url) for f in hits)
+        v = float(value)
+        for f in hits:
+            n += lend(f, k, v, url)
+            for g in groups[(f.get("common_name"), f.get("state"))]:
+                if g not in hits and k in g["nutrients"] and not v / OUTLIER <= g["nutrients"][k] <= v * OUTLIER:
+                    del g["nutrients"][k]  # the outlier; lend() puts the researched value in its place
+                    n += lend(g, k, v, url)
     return n, problems
 
 
@@ -259,11 +273,11 @@ def main() -> None:
     iodine = usda_iodine.read(DATA)  # measured iodine for USDA rows, lent before the same food shares it
     lent = sum(lend(f, "iodine_ug", iodine[(f["source"], f["code"])], usda_iodine.URL)
                for f in foods if (f["source"], f["code"]) in iodine)
+    manual, more = apply_manual(foods, MANUAL.read_text().splitlines() if MANUAL.exists() else [])
     counts = fill(foods)
     counts["borrowed"] += lent
     print(f"{lent} iodine values from the USDA iodine database")
     twins, problems = apply_same(foods, SAME.read_text().splitlines())
-    manual, more = apply_manual(foods, MANUAL.read_text().splitlines() if MANUAL.exists() else [])
     print(f"{twins} values from reviewed twins, {manual} researched values", *problems, *more, sep="\n")
     counts["borrowed"] += twins + manual
     print("held-back check of similar-food estimates: nutrient, n, median error, median-guess error, within ±25 %")

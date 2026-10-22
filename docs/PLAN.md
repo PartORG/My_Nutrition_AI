@@ -531,7 +531,7 @@ Done:
 - [ ] Decision 11: the phone gate on the Xiaomi: `integration_test/phone_gate_test.dart` (the real Agent, the routing
   set plus the router's cases in en/uk/de/fr, `agent_queries_i18n.dart`; prints accuracy, wrong meals, retries and
   every step's time). Needs the phone connected; then the user's own phone test.
-- [ ] One release.
+- [x] One release: v0.15.0 (2026-10-22).
 
 Open, the owner's call (not blocking): upload the v4 products.db to a new GitHub release; a Play asset pack (the
 bundled files are over Play's 500 MB base limit); check the
@@ -593,9 +593,9 @@ translations → patterns → model-first and the check → phone gate → one r
 
 ## Drinks, store size limits, translation review (user, 2026-10-21), in progress — resume here
 
-**Status (paused 2026-10-21 by the user; resume here)**
+**Status (2026-10-22: shipped in v0.15.0; what's left at the end of this section)**
 
-Done (not committed, not yet in assets/nutri.db):
+Done:
 - [x] Drinks: nutri.db already had most drinks (government tables); the gaps were servings and a few kinds. New
   servings stage `tool/catalog/servings.py` (after fill): every drink gets a serving — USDA's own volume portions
   (`food_portion.csv`, CC0), else the median of drinks of the same everyday name, else the usual size of its kind
@@ -634,7 +634,61 @@ To do, in order:
   the files out on first run through a small platform channel); base drops to ~100 MB. Alternatives: download them
   like products.db; recipe_nutrition back to a view (−99 MB raw). iOS: 4 GB uncompressed app limit (fine), over
   200 MB only asks before a cellular download; big files can use Apple-hosted Background Assets (200 GB per app).
-- [ ] Still open from "All nutrients, patterns": decision 11 (phone gate, needs the Xiaomi) and the release.
+- [x] Release v0.15.0 (2026-10-22): GitHub release with the APK (490 MB), built by CI from build-inputs (nutri.db
+  and health.db re-uploaded; the workflow now downloads health.db too).
+
+**What's left (2026-10-22)**
+- [ ] Phone gate, decision 11 (`integration_test/phone_gate_test.dart`): needs the Xiaomi connected; then the
+  owner's own phone test of v0.15.0. Failing the gate (≥ 95 % right tool, ≤ 1 % wrong meals), the router goes
+  first again (`Agent.modelFirst = false`) until the prompts are fixed.
+- [x] Store size → **download on first run** (owner, 2026-10-22). The APK carries no data: on first run (and for a new
+  `nutriDataVersion`) the app shows "Food data" and downloads nutri.db, health.db and EmbeddingGemma (≈367 MB gzipped)
+  from the public release `data-<nutriDataVersion>` (`DataDownload`, `missingData` in `lib/app_state.dart`; each
+  database has its own `<db>.data_version`, so a half-done update resumes where it stopped). CI fails if that release
+  lacks a file; the build-inputs release is no longer read. Left: an upgraded phone keeps the old embedder copy that
+  0.15 installed from the bundle in the plugin's folder (~179 MB, unused) — no cleanup yet.
+- [x] Products v4: release `products-2026-10-22` (2,077,610 branded foods and menu items, schema 4, 166 MB gzipped);
+  `productsUrl`/`productsDownloadMb` updated. Phones that downloaded the 2026-10-16 file keep it (it still works) until
+  they delete and download again: no "update available" yet.
+- [x] Biotin: `fill.py` applies db/catalog/manual_values.tsv (Staggs 2004) before the same-food step, and a researched
+  value replaces the same food's (common name + state) measured values more than 3x off (`OUTLIER`): 94 values,
+  e.g. banana 3.2 → 0.13, plain yogurt 1.1 → 0.13 µg/100 g median. Left: milk keeps CoFID/Frida's ~2–3 µg (Staggs:
+  0.1) because their milks have their own common names ("pasteurised milk", "uht milk", "tine milk"), so they never
+  share a group with USDA's; fixing it means tidier common names for milks, not another biotin rule.
+- [ ] Food detector gates (Step 7): mAP on a held-out set of the owner's own meal photos, ≤ 150 ms per frame on the
+  Xiaomi, the threshold (0.4) tuned on real meals. Needs photos and the phone.
+- [x] Pregnancy kcal: the Goals form asks the trimester when "Pregnant" is chosen (pref `trimester`; pregnant before
+  it was asked = 1st); the kcal goal adds 0 / 340 / 452 (`pregnancyKcal`, IOM/NASEM DRI 2005), and "lose" gives the
+  maintain targets while pregnant, said in the form and the goal dialog (`pregnantNoLose`), as for underweight.
+  Breastfeeding (+330 / +400 kcal by months since birth) is not asked yet.
+- [x] Release v0.16.0: first-run download, products v4, trimester, biotin.
+
+## Owner's ideas (2026-10-22, not started — grill before building)
+
+1. **Photo in chat.** Today chat only shows a CameraCard that opens the camera screen (`openCamera`,
+   `lib/ui/camera_screen.dart`); recognition happens there, not in the conversation. Wanted: attach a photo (camera or
+   gallery, `image_picker` is already a dependency) in the chat input, run the same recognition loop in the chat,
+   show what was recognised (foods, grams, ≈ marks) as a card, let the user edit each item, and choose how to store it
+   (log as a meal + which meal type, save as a recipe, or just ask about it). Reuse the meal confirm card
+   (`_MealConfirm`/`ConfirmCard`) and the photo session (`openSession`) rather than a second pipeline.
+2. **Packaged products: needed?** Where they are used now: Settings → "Packaged products" download
+   (`settings_screen.dart`, `productsDownloadProvider`); once downloaded, Log search and the chat's food lookup show
+   matching products after generic foods (`AgentTools.search`, products_fts, 8 hits, every word must match); the Log
+   screen hints at the download when a search finds nothing. Not used: barcodes (no scanner), photos, recipes. To
+   decide: keep and make it useful (barcode scan on the Log screen and in chat → exact label; a brand chip in
+   results; "update available" for a newer release; maybe only the user's country to cut the 523 MB), or drop it.
+3. **More profile looks.** Today: picture = woman / man / neutral icon on a colour, or a photo (`avatar.dart`,
+   Settings). Wanted: more options — more icons and colours, background, outline (contour) and shape (circle,
+   rounded square, …).
+4. **Light theme too bright** (too much white: `AppColors.light` has `surface: Colors.white` on a near-white
+   `background`). Rework from researched practice: tinted neutral surfaces instead of pure white (Material 3 tonal
+   surfaces / surface containers from the seed), fewer elevation levels told apart by tone, WCAG AA contrast kept for
+   text (4.5:1) and UI parts (3:1); check every screen in both themes (golden tests).
+5. **Drawer: more entries.** Today: Weight, History & year, Goals, Health, Saved recipes, Shopping list, What the AI
+   knows. Add navigation to the tabs too (Today, Chat, Log, Plan, Me) and anything else reachable only by deep taps.
+6. **Eva (the chat icon, the owner's schnauzer) in more places:** the drawer header, empty states, the unlock/login
+   screen; new poses/forms of the picture generated from `assets/icons/icon_chat.png` (e.g. waving, sleeping for empty
+   states, holding a bowl). Keep it small and where space is free; one style across them.
 
 ## v0.11.0 (2026-10-18): My Nutrition AI, voice, Eva, avatars, widget sizes, Google Fit calories
 

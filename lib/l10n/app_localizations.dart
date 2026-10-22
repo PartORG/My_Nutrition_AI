@@ -1992,10 +1992,22 @@ abstract class AppLocalizations {
   /// **'Packaged products'**
   String get productsTitle;
 
+  /// No description provided for @dataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Food data'**
+  String get dataTitle;
+
+  /// No description provided for @dataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'My Nutrition AI keeps its food tables, recipes and search on your phone, so nothing you eat leaves it. Download them once ({mb} MB); you can leave the app meanwhile. Wi-Fi recommended.'**
+  String dataBody(int mb);
+
   /// No description provided for @productsNone.
   ///
   /// In en, this message translates to:
-  /// **'Built in: products from 2019, few European ones. Download every product in Open Food Facts (all countries) to find what you buy. Wi-Fi recommended.'**
+  /// **'Not downloaded yet: packaged products need this download. Every product in Open Food Facts (all countries), to find what you buy. Wi-Fi recommended.'**
   String get productsNone;
 
   /// No description provided for @productsHave.
@@ -4157,6 +4169,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Breastfeeding'**
   String get lifeStageBreastfeeding;
+
+  /// No description provided for @trimester.
+  ///
+  /// In en, this message translates to:
+  /// **'Trimester'**
+  String get trimester;
+
+  /// No description provided for @pregnantNoLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Losing weight isn\'t advised in pregnancy: your targets stay at maintaining your weight, plus what the baby needs from the 2nd trimester. Talk to your doctor.'**
+  String get pregnantNoLose;
 
   /// No description provided for @allNutrientsTitle.
   ///

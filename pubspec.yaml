@@ -1,7 +1,7 @@
 name: myfoodmind
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.15.0+18
+version: 0.16.0+19
 
 environment:
   sdk: ^3.12.2
@@ -74,15 +74,12 @@ flutter:
         - asset: assets/fonts/Onest-Bold.ttf
           weight: 700
   assets:
-    - assets/nutri.db
-    - assets/health.db
     - assets/icons/icon_chat.png
     - assets/fonts/
     - assets/licenses/
-    # EmbeddingGemma (Gemma terms; gated on Hugging Face): copy
-    # embeddinggemma-300M_seq256.tflite + embeddinggemma_sentencepiece.model into
-    # assets/models/ before building. Git-ignored (179 MB is over GitHub's limit).
-    # Must live under assets/: flutter_edge_ai looks bundled models up as assets/<path>.
-    - assets/models/
+    # nutri.db, health.db and EmbeddingGemma are downloaded on first run (DataDownload in lib/app_state.dart), so
+    # only the small detector models ship; listed one by one, as assets/models/ may hold the embedder locally.
+    - assets/models/efficientdet_lite0.tflite
+    - assets/models/yolox_tiny_food.tflite
     # The food detector's labels in class order (assets/models/yolox_tiny_food.tflite, tool/detector_export.py).
     - db/detector_labels.tsv

@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:background_downloader/background_downloader.dart' hide Database;
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart' show ThemeMode, WidgetsBinding, basicLocaleListResolution;
-import 'package:flutter/services.dart';
 import 'package:flutter_edge_ai/flutter_edge_ai.dart';
 import 'package:flutter_edge_ai_embeddings/flutter_edge_ai_embeddings.dart';
 import 'package:flutter_edge_ai_litertlm/flutter_edge_ai_litertlm.dart';
@@ -33,33 +32,9 @@ import 'data/user_db.dart';
 import 'l10n/app_localizations.dart';
 import 'reminders_service.dart';
 
-/// App-private data directory, with nutri.db and health.db installed from the bundled assets
-/// when missing, unreadable by this build or older than [nutriDataVersion]. Overridden in tests.
-final appDirProvider = FutureProvider<Directory>((ref) async {
-  final dir = await getApplicationSupportDirectory();
-  final nutri = File('${dir.path}/nutri.db');
-  // The data version installed last; a file, not nutri.db's meta, so an old bundle can't reinstall on every start.
-  final installed = File('${dir.path}/nutri.db.data_version');
-  try {
-    openNutriDb(nutri.path).close();
-    if ((int.tryParse(installed.existsSync() ? installed.readAsStringSync() : '') ?? 0) < nutriDataVersion) {
-      throw NutriDbException('installed data older than $nutriDataVersion');
-    }
-    if (!File(healthPath(nutri.path)!).existsSync()) throw NutriDbException('no health.db');
-  } on Object {
-    // health.db first: nutri.db attaches it when it opens. Each through a temporary file, renamed when complete.
-    final health = File(healthPath(nutri.path)!);
-    final healthTmp = File('${health.path}.download');
-    await healthTmp.writeAsBytes((await rootBundle.load('assets/health.db')).buffer.asUint8List(), flush: true);
-    healthTmp.renameSync(health.path);
-    final tmp = File('${dir.path}/nutri.db.download');
-    final data = await rootBundle.load('assets/nutri.db');
-    await tmp.writeAsBytes(data.buffer.asUint8List(), flush: true);
-    installNutriDb(tmp, nutri);
-    installed.writeAsStringSync('$nutriDataVersion');
-  }
-  return dir;
-});
+/// App-private data directory. nutri.db, health.db and the search embedder are downloaded into it on first run
+/// ([DataDownload]). Overridden in tests.
+final appDirProvider = FutureProvider<Directory>((ref) => getApplicationSupportDirectory());
 
 final profilesProvider = Provider<Profiles>((ref) {
   final profiles = Profiles.open(ref.watch(appDirProvider).requireValue);
@@ -231,7 +206,7 @@ typedef Download = ({DownloadTask task, TaskStatus status, int percent});
 /// the app is closed, so a download started earlier shows up (or finishes) on the next start.
 Future<void> trackDownloads() async {
   if (!Platform.isAndroid && !Platform.isIOS) return;
-  for (final g in ['llm', 'products']) {
+  for (final g in ['data', 'llm', 'products']) {
     await FileDownloader().trackTasksInGroup(g);
   }
 }
@@ -245,6 +220,12 @@ abstract class FileDownload extends Notifier<Download?> {
 
   /// Installs the finished file at [path]. Throws if it's unusable.
   Future<void> finish(String path);
+
+  /// After [finish] succeeded and the download is forgotten: [DataDownload] starts its next file here.
+  Future<void> afterFinish(DownloadTask task) async {}
+
+  /// The progress shown for [task] at [percent] of its own file; [DataDownload] shows all its files as one.
+  int percentOf(Task task, int percent) => percent;
 
   var _finishing = false;
 
@@ -270,7 +251,7 @@ abstract class FileDownload extends Notifier<Download?> {
       state = (task: task as DownloadTask, status: status, percent: percent ?? state?.percent ?? 0);
 
   void _onProgress(TaskProgressUpdate u) {
-    if (u.progress >= 0) _set(u.task, TaskStatus.running, (u.progress * 100).round()); // < 0: a status, not progress
+    if (u.progress >= 0) _set(u.task, TaskStatus.running, percentOf(u.task, (u.progress * 100).round())); // < 0: a status
   }
 
   Future<void> _onStatus(TaskStatusUpdate u) async {
@@ -282,6 +263,7 @@ abstract class FileDownload extends Notifier<Download?> {
     try {
       await finish(await u.task.filePath());
       await _forget(u.task);
+      await afterFinish(u.task as DownloadTask);
     } on Object catch (e) {
       debugPrint('$group download: $e');
       _set(u.task, TaskStatus.failed); // Resume downloads it again
@@ -303,6 +285,7 @@ abstract class FileDownload extends Notifier<Download?> {
     final task = DownloadTask(
       url: url,
       filename: filename,
+      displayName: title, // the next file of a DataDownload takes it from here, also after a restart
       baseDirectory: BaseDirectory.applicationSupport,
       group: group,
       updates: Updates.statusAndProgress,
@@ -375,10 +358,10 @@ Future<Llm?> installedLlm() async {
   return null;
 }
 
-/// EmbeddingGemma is gated on Hugging Face (Gemma terms allow redistribution),
-/// so it ships inside the app from git-ignored files in assets/models/.
-const embedderAsset = 'assets/models/embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
-const tokenizerAsset = 'assets/models/embeddinggemma_sentencepiece.model';
+/// EmbeddingGemma is gated on Hugging Face (Gemma terms allow redistribution, with the notice in
+/// assets/licenses/models.txt), so it comes from this repo's data release with the food data ([DataDownload]).
+const embedderFile = 'embeddinggemma-300M_seq256.tflite'; // M1: 2.5x faster than seq512, same vectors
+const tokenizerFile = 'embeddinggemma_sentencepiece.model';
 
 /// The chat model isn't on the phone yet: the Chat tab offers the download.
 class LlmNotDownloaded implements Exception {}
@@ -473,7 +456,11 @@ Future<String> _llmPath(Llm m) =>
 
 final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
   await ref.watch(_gemmaReadyProvider.future);
-  await FlutterEdgeAi.installEmbedder().modelFromAsset(embedderAsset).tokenizerFromAsset(tokenizerAsset).install();
+  final dir = (await ref.watch(appDirProvider.future)).path;
+  await FlutterEdgeAi.installEmbedder()
+      .modelFromFile('$dir/$embedderFile')
+      .tokenizerFromFile('$dir/$tokenizerFile')
+      .install(); // registered where DataDownload put them, not copied
   return FlutterEdgeAi.getActiveEmbedder();
 });
 
@@ -542,10 +529,10 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
 
 // ---- all packaged products (optional download) -------------------------------
 
-/// Built by tool/build_products_db.py from the current Open Food Facts dump (ODbL), gzipped.
-// Release asset of github.com/PartORG/My_Nutrition_AI (published 2026-10-16, sha256 aebd412d…6a07).
-const productsUrl = 'https://github.com/PartORG/My_Nutrition_AI/releases/download/products-2026-10-16/products.db.gz';
-const productsDownloadMb = 117; // products.db.gz of 2026-10-16: 2,034,064 products with label micros, 303 MB unpacked
+/// Every branded food (Open Food Facts, USDA Branded, chain menus), built by tool/catalog/write.py, gzipped.
+// Release asset of github.com/PartORG/My_Nutrition_AI (published 2026-10-22, sha256 70e0efd7…5441).
+const productsUrl = 'https://github.com/PartORG/My_Nutrition_AI/releases/download/products-2026-10-22/products.db.gz';
+const productsDownloadMb = 166; // products.db.gz of 2026-10-22: 2,077,610 products (schema 4), 523 MB unpacked
 
 File _productsFile(Directory dir) => File('${dir.path}/products.db');
 
@@ -608,6 +595,102 @@ class ProductsDownload extends FileDownload {
     tools?.products?.close();
     tools?.products = null;
     if (_productsFile(dir).existsSync()) _productsFile(dir).deleteSync();
+  }
+}
+
+// ---- food data and the search embedder (first-run download) ------------------
+
+/// Release `data-<nutriDataVersion>` of github.com/PartORG/My_Nutrition_AI: each file gzipped as `<name>.gz`
+/// (upload: the header of .github/workflows/android.yml). A new data version is a new release, so an old app keeps its own.
+const dataUrl = 'https://github.com/PartORG/My_Nutrition_AI/releases/download/data-$nutriDataVersion';
+
+/// In install order (health.db first: nutri.db attaches it when it opens), with each .gz's size for the progress.
+const dataFiles = [
+  (name: 'health.db', mb: 12),
+  (name: 'nutri.db', mb: 205),
+  (name: embedderFile, mb: 147),
+  (name: tokenizerFile, mb: 3),
+];
+final dataDownloadMb = dataFiles.fold(0, (sum, f) => sum + f.mb);
+
+/// The data version of each installed database; a file, not the db's meta, so a half-installed update can't pass.
+File _dataVersionFile(Directory dir, String db) => File('${dir.path}/$db.data_version');
+
+/// The files still to download, in order; empty = ready. health.db and nutri.db come again for a new data version.
+List<({String name, int mb})> missingData(Directory dir) {
+  bool current(String db) {
+    final v = _dataVersionFile(dir, db);
+    return (int.tryParse(v.existsSync() ? v.readAsStringSync() : '') ?? 0) >= nutriDataVersion;
+  }
+
+  bool have(String name) {
+    final f = File('${dir.path}/$name');
+    if (!f.existsSync()) return false;
+    if (name == 'health.db') return current(name);
+    if (name != 'nutri.db') return true;
+    try {
+      openNutriDb(f.path).close();
+      return current(name);
+    } on Object {
+      return false;
+    }
+  }
+
+  return [for (final f in dataFiles) if (!have(f.name)) f];
+}
+
+/// The food data is on the phone; until then the app shows the download ([AppGate]). Overridden in tests.
+final dataReadyProvider = FutureProvider<bool>((ref) async => missingData(await ref.watch(appDirProvider.future)).isEmpty);
+
+/// Unpacks a downloaded `<name>.gz` into [dir] through a .part file, checks nutri.db opens, then swaps it in.
+/// Throws on failure; the .gz is gone either way, so a retry downloads it again.
+Future<void> installData(Directory dir, File gz) async {
+  final name = gz.uri.pathSegments.last.replaceFirst(RegExp(r'\.gz$'), '');
+  final target = File('${dir.path}/$name');
+  final part = File('${target.path}.part');
+  try {
+    await gz.openRead().transform(gzip.decoder).pipe(part.openWrite());
+    if (name == 'nutri.db') {
+      installNutriDb(part, target);
+    } else {
+      part.renameSync(target.path);
+    }
+    if (name.endsWith('.db')) _dataVersionFile(dir, name).writeAsStringSync('$nutriDataVersion');
+  } finally {
+    if (part.existsSync()) part.deleteSync();
+    if (gz.existsSync()) gz.deleteSync();
+  }
+}
+
+final dataDownloadProvider = NotifierProvider<DataDownload, Download?>(DataDownload.new);
+
+/// The missing [dataFiles] one after another, shown as one download.
+class DataDownload extends FileDownload {
+  @override
+  String get group => 'data';
+
+  /// MB of the files already on the phone when the current one started.
+  int? _doneMb;
+
+  Future<void> start({required bool wifiOnly, required String title}) async {
+    final missing = missingData(await ref.read(appDirProvider.future));
+    if (missing.isEmpty) return ref.invalidate(dataReadyProvider);
+    _doneMb = dataDownloadMb - missing.fold(0, (sum, f) => sum + f.mb);
+    await download('$dataUrl/${missing.first.name}.gz', '${missing.first.name}.gz', wifiOnly: wifiOnly, title: title);
+  }
+
+  @override
+  Future<void> finish(String path) async => installData(await ref.read(appDirProvider.future), File(path));
+
+  @override
+  Future<void> afterFinish(DownloadTask task) => start(wifiOnly: task.requiresWiFi, title: task.displayName);
+
+  @override
+  int percentOf(Task task, int percent) {
+    final file = dataFiles.where((f) => task.filename == '${f.name}.gz').firstOrNull;
+    final done = _doneMb ??= dataDownloadMb - missingData(ref.read(appDirProvider).requireValue).fold(0, (s, f) => s + f.mb);
+    if (file == null) return percent;
+    return ((done + file.mb * percent / 100) * 100 / dataDownloadMb).round().clamp(0, 100);
   }
 }
 

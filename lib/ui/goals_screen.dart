@@ -31,13 +31,17 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   var _goal = Goal.maintain;
   var _imperial = false;
   var _stage = '';
+  var _trimester = 1;
 
   @override
   void initState() {
     super.initState();
     final user = ref.read(profileDataProvider)?.user;
     final b = user == null ? null : loadBody(user);
-    if (user != null) _stage = lifeStage(user);
+    if (user != null) {
+      _stage = lifeStage(user);
+      _trimester = trimester(user).clamp(1, 3); // 0 = not pregnant: the segment starts at 1st
+    }
     if (b == null) return;
     _sex = b.sex;
     _activity = b.activity;
@@ -99,6 +103,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       imperial: _imperial,
     ), now: DateTime.now());
     setLifeStage(data.user, _sex == Sex.male ? '' : _stage);
+    setTrimester(data.user, _trimester);
     ref.read(avatarProvider.notifier).suggestFor(_sex);
     data.changed();
     Navigator.of(context).pop();
@@ -110,6 +115,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     final year = DateTime.now().year;
     final locale = Localizations.localeOf(context).toString();
     final h = _heightCm, w = _num(_weight);
+    final pregnant = _sex != Sex.male && _stage == 'pregnancy';
     final thin = h != null && w != null && h > 0 && underweight(h, _imperial ? w * lbToKg : w);
     String? range(String? v, double min, double max) {
       final n = double.tryParse((v ?? '').replaceAll(',', '.'));
@@ -172,6 +178,17 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
               selected: {_stage},
               onSelectionChanged: (s) => setState(() => _stage = s.single),
             ),
+            // The kcal goal grows from the 2nd trimester (pregnancyKcal).
+            if (_stage == 'pregnancy') ...[
+              const SizedBox(height: 12),
+              Text(l.trimester),
+              const SizedBox(height: 6),
+              SegmentedButton<int>(
+                segments: [for (var t = 1; t <= 3; t++) ButtonSegment(value: t, label: Text('$t'))],
+                selected: {_trimester},
+                onSelectionChanged: (s) => setState(() => _trimester = s.single),
+              ),
+            ],
           ],
           gap,
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -242,9 +259,9 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             selected: {_goal},
             onSelectionChanged: (s) => setState(() => _goal = s.single),
           ),
-          if (_goal == Goal.lose && thin) ...[
+          if (_goal == Goal.lose && (thin || pregnant)) ...[
             const SizedBox(height: 8),
-            Text(l.underweightNoLose, style: TextStyle(color: context.colors.danger)),
+            Text(thin ? l.underweightNoLose : l.pregnantNoLose, style: TextStyle(color: context.colors.danger)),
           ],
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _save, child: Text(l.confirmSave)),

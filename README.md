@@ -128,7 +128,8 @@ python3 tool/build_medical.py assets/nutri.db
 
 When the data changes, bump `data_version` in `db/medical.sql` **and** `nutriDataVersion` in
 `lib/data/nutri_db.dart`: phones replace their installed `nutri.db` once when the app expects a newer
-version, then re-upload the file to the `build-inputs` release.
+version, then publish release `data-<version>` (see the header of
+[`.github/workflows/android.yml`](.github/workflows/android.yml)).
 
 ## Food data and vitamins
 
@@ -209,16 +210,12 @@ cd My_Nutrition_AI
 flutter pub get
 ```
 
-Two large assets are git-ignored and have to be in place before a build:
-
-| File | Source |
-|---|---|
-| `assets/nutri.db` (≈310 MB) | built with `uv run tool/build_real_nutri_db.py <data-dir> assets/nutri.db` (medical tables from `db/medical.sql`), or downloaded from the [`build-inputs`](https://github.com/PartORG/My_Nutrition_AI/releases/tag/build-inputs) release |
-| `assets/models/embeddinggemma-300M_seq256.tflite`, `assets/models/embeddinggemma_sentencepiece.model` | EmbeddingGemma (Gemma terms, gated on Hugging Face), or the `build-inputs` release |
+The app is small: on first run it downloads its food data and the search embedder (≈370 MB, gzipped)
+from the public release `data-<nutriDataVersion>`. To work on the data locally, fetch the same files:
 
 ```bash
-gh release download build-inputs --pattern nutri.db --dir assets
-gh release download build-inputs --pattern 'embeddinggemma*' --dir assets/models
+v=$(grep -oP 'const nutriDataVersion = \K\d+' lib/data/nutri_db.dart)
+gh release download data-$v --dir assets && gunzip assets/*.gz   # nutri.db, health.db, embedder
 ```
 
 Run on a connected device:
@@ -273,9 +270,8 @@ arm64 APK and publishes it as a GitHub Release. **To ship a new version, bump `v
 `pubspec.yaml` and push.**
 
 Repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
-`ANDROID_KEY_PASSWORD`. The large assets come from the `build-inputs` release. To change one, run
-`gh release upload build-inputs <file> --clobber`. The build fails if that `nutri.db` has an older
-`data_version` than the app's `nutriDataVersion`, so stale data never ships.
+`ANDROID_KEY_PASSWORD`. The build fails if release `data-<nutriDataVersion>` (what the app downloads on
+first run) is missing a file, so an app whose data isn't up never ships.
 
 ## Project structure
 

@@ -29,7 +29,7 @@ void main() {
 
   testWidgets('create, lock, wrong PIN, unlock, forgot PIN deletes', (tester) async {
     await tester.pumpWidget(ProviderScope(
-      overrides: [appDirProvider.overrideWith((ref) async => tmp)],
+      overrides: [appDirProvider.overrideWith((ref) async => tmp), dataReadyProvider.overrideWith((ref) async => true)],
       child: const MyFoodMindApp(),
     ));
     await settle(tester);

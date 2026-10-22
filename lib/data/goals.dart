@@ -74,15 +74,21 @@ double? basalKcal(Body b, {required DateTime now}) {
   };
 }
 
+/// Extra kcal per day in the 1st, 2nd and 3rd trimester (NASEM/IOM DRI 2005: EER in pregnancy).
+const pregnancyKcal = [0, 340, 452];
+
 /// Targets from the plan (docs/PLAN.md, Goals): Mifflin-St Jeor BMR × activity,
-/// ±15% for the goal (no deficit when underweight), kcal floor; protein 1.2 g/kg, fat 30% of kcal, carbs the
+/// ±15% for the goal (no deficit when underweight or pregnant), kcal floor, + [pregnancyKcal] for the
+/// [trimester] (1-3; 0 = not pregnant); protein 1.2 g/kg, fat 30% of kcal, carbs the
 /// rest; fiber 14 g per 1000 kcal; WHO limits for sugar (10% of kcal) and
 /// sodium (2000 mg). Null under 18.
-Targets? computeTargets(Body b, {required DateTime now}) {
+Targets? computeTargets(Body b, {required DateTime now, int trimester = 0}) {
   final bmr = basalKcal(b, now: now);
   if (bmr == null) return null;
-  final change = b.goal == Goal.lose && underweight(b.heightCm, b.weightKg) ? 0.0 : b.goal.change;
-  final kcal = max(bmr * b.activity.factor * (1 + change), kcalFloor[b.sex]!);
+  final noLoss = underweight(b.heightCm, b.weightKg) || trimester > 0;
+  final change = b.goal == Goal.lose && noLoss ? 0.0 : b.goal.change;
+  final kcal = max(bmr * b.activity.factor * (1 + change), kcalFloor[b.sex]!) +
+      (trimester > 0 ? pregnancyKcal[trimester - 1] : 0);
   final protein = 1.2 * b.weightKg;
   final fat = kcal * .30 / 9;
   return {
@@ -107,6 +113,12 @@ String lifeStage(Database user) => switch (pref(user, 'life_stage')) {
     };
 
 void setLifeStage(Database user, String stage) => setPref(user, 'life_stage', stage);
+
+/// 1-3 while pregnant (a profile pref; pregnant before it was asked = 1st), 0 otherwise.
+int trimester(Database user) =>
+    lifeStage(user) == 'pregnancy' ? (int.tryParse(pref(user, 'trimester') ?? '') ?? 1).clamp(1, 3) : 0;
+
+void setTrimester(Database user, int trimester) => setPref(user, 'trimester', '$trimester');
 
 /// NASEM's ULs for these cover supplements and added forms only (magnesium, niacin, folic acid, vitamin E): food
 /// alone over them is no warning.
@@ -246,7 +258,7 @@ void setOverride(Database user, String nutrient, double? value) => value == null
 ({Targets values, Set<String> custom, Map<String, String> limited}) currentTargets(Database user,
     {required Database? nutri, required DateTime now}) {
   final body = loadBody(user);
-  final computed = body == null ? null : computeTargets(body, now: now);
+  final computed = body == null ? null : computeTargets(body, now: now, trimester: trimester(user));
   final reference = body == null || nutri == null ? const <String, double>{} : referenceGoals(nutri, body, lifeStage(user), now: now);
   final overrides = loadOverrides(user);
   // The formula keeps the macros (personal kcal, protein per kg); health.db gives the rest.

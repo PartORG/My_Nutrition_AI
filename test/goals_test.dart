@@ -71,6 +71,16 @@ void main() {
           computeTargets(thin, now: now)!['kcal']);
       expect(computeTargets(body(g: Goal.lose), now: now)!['kcal'], closeTo(2759 * .85, .01), reason: 'BMI 24.7');
     });
+
+    test('pregnant: +0 / +340 / +452 kcal by trimester, and "lose" gives the maintain targets', () {
+      // Woman 25 y, 165 cm, 60 kg, light: 1345.25 × 1.375 = 1849.72
+      final b = body(sex: Sex.female, age: 25, h: 165, w: 60, a: Activity.light, g: Goal.lose);
+      double kcal(int t) => computeTargets(b, now: now, trimester: t)!['kcal']!;
+      expect(kcal(0), closeTo(1572.26, .01), reason: 'not pregnant: the 15% deficit');
+      expect(kcal(1), closeTo(1849.72, .01));
+      expect(kcal(2), closeTo(1849.72 + 340, .01));
+      expect(kcal(3), closeTo(1849.72 + 452, .01));
+    });
   });
 
   group('storage', () {
@@ -174,6 +184,13 @@ void main() {
       expect(t['iron_mg'], 18);
       setLifeStage(user, 'pregnancy');
       expect(currentTargets(user, nutri: nutri, now: now).values['iron_mg'], 27);
+      final kcal = t['kcal']!;
+      expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal, reason: 'asked before: 1st trimester');
+      setTrimester(user, 3);
+      expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal + 452);
+      setLifeStage(user, '');
+      expect(trimester(user), 0, reason: 'the trimester only counts while pregnant');
+      setLifeStage(user, 'pregnancy');
       setOverride(user, 'iron_mg', 20);
       t = currentTargets(user, nutri: nutri, now: now).values;
       expect(t['iron_mg'], 20);
