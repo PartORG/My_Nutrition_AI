@@ -22,7 +22,7 @@ import build_real_nutri_db as v3
 from build_medical import MEDICAL_SQL
 
 KEYS = [n["key"] for n in PANEL]
-NUTRI_SCHEMA, NUTRI_DATA = 4, 6  # lib/data/nutri_db.dart reads these
+NUTRI_SCHEMA, NUTRI_DATA = 4, 7  # lib/data/nutri_db.dart reads these
 HEALTH_SCHEMA = 1
 V3 = "a dataset of the v3 build, kept (owner, 2026-10-19); licence as listed in docs/DATA_SOURCES.md"
 SCRAPED = "scraped recipe site: copyright stays with the site and authors (owner's exception, 2026-10-19)"

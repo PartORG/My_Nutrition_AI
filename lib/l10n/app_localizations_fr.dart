@@ -1875,7 +1875,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get savedLabel => 'Enregistrée';
 
   @override
-  String get searchRecipes => 'Chercher parmi 166 000 recettes…';
+  String get searchRecipes => 'Chercher parmi 168 000 recettes…';
 
   @override
   String get servingsLabel => 'Portions';
@@ -2109,7 +2109,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vos repas et vos échanges ne quittent jamais le téléphone';
 
   @override
-  String get welcomePointData => '55 000 aliments et 166 000 recettes intégrés';
+  String get welcomePointData => '41 500 aliments et 168 000 recettes intégrés';
 
   @override
   String get welcomePointAllergens => 'Allergènes filtrés de chaque recette';
@@ -2329,7 +2329,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get planHeroBody =>
-      'Petit-déjeuner, déjeuner et dîner parmi 166 000 recettes.';
+      'Petit-déjeuner, déjeuner et dîner parmi 168 000 recettes.';
 
   @override
   String planSized(String amount) {

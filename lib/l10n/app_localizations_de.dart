@@ -1877,7 +1877,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get savedLabel => 'Gespeichert';
 
   @override
-  String get searchRecipes => '166.000 Rezepte durchsuchen…';
+  String get searchRecipes => '168.000 Rezepte durchsuchen…';
 
   @override
   String get servingsLabel => 'Portionen';
@@ -2112,7 +2112,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get welcomePointData =>
-      '55.000 Lebensmittel und 166.000 Rezepte eingebaut';
+      '41.500 Lebensmittel und 168.000 Rezepte eingebaut';
 
   @override
   String get welcomePointAllergens =>
@@ -2333,7 +2333,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planHeroBody =>
-      'Frühstück, Mittag- und Abendessen aus 166.000 Rezepten.';
+      'Frühstück, Mittag- und Abendessen aus 168.000 Rezepten.';
 
   @override
   String planSized(String amount) {

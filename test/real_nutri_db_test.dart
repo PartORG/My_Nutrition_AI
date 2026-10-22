@@ -153,6 +153,20 @@ void main() {
     tmp.deleteSync(recursive: true);
   }, skip: skip);
 
+  test('phone test: wholegrain toast is toasted whole wheat bread, not gruel; a slice of toast is 25 g', () {
+    final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
+    final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');
+    final r = AgentTools(db, user).run('log_meal', {'items': 'a slice of wholegrain toast, whole wheat toast, a slice of toast'});
+    expect((r.card! as ConfirmCard).lines, [
+      startsWith('Bread, whole wheat, commercial, toasted · 33 g'),
+      startsWith('Bread, whole wheat, commercial, toasted · 33 g'), // not "Whole Wheat French Toast"
+      startsWith('Bread, white, toasted · 25 g'),
+    ]);
+    db.close();
+    user.close();
+    tmp.deleteSync(recursive: true);
+  }, skip: skip);
+
   test('phone test: "rice with chicken liver in cream" is cooked rice, liver and cream, not ice cream', () {
     final tmp = Directory.systemTemp.createTempSync('myfoodmind_real_');
     final db = openNutriDb(asset.path), user = openUserDb('${tmp.path}/user.db');

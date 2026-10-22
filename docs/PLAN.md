@@ -691,6 +691,20 @@ message) copies them. When the fallback card is a write (ConfirmCard), the reply
 chat_messages and is not checked, as after a second failed check.
 v0.25.5: Today's water card showed "/ 2.25 L" with no amount: the litres format dropped a trailing zero meant for
 "2.50", which also blanked "0" (and would show 10 L as "1"). Only a decimal's last zero goes now.
+v0.26.0, data version 7 (release data-7): "wholegrain/whole grain/whole wheat/wholemeal/brown toast" (no food has those
+words, so "Gruel wholegrain fortified" and "Whole Wheat French Toast" won) → CNF "Bread, whole wheat, commercial, toasted"
+(33 g a slice); "multigrain toast" → CNF "Bread, multigrain, toasted", with "multigrain bread" pinned to the untoasted row
+so its default doesn't move; "toast" 25 g a slice (was none, so 100 g). Applied to data-6's nutri.db by SQL (7 aliases,
+one serving, meta.data_version) instead of a full rebuild: nothing in tool/catalog or db/catalog changed since that
+build, and match.py's dry run with old vs new defaults.tsv differs in exactly those rows. Welcome, recipe search and
+the plan said 55,000 foods and 166,000 recipes: 41,500 and 168,000 now (41,578 and 168,642 in data 7), README too.
+Owner's request, same release: recipe steps (US-written: in 1.08M steps, bare "350 degrees" 39k, cups 37k, inches 36k,
+°F 26k, 9" 10k, quarts 5k) in the user's units from Goals (`body.units`, metric when unset): `unitsFor` in data/cook.dart,
+on the recipe page and cook mode, after any translation. Bare degrees count as °F from 250 up (no oven goes past
+250 °C); "350F"/"180C" need 100+; explicit temperatures need 10+ and a whole number (the data has cups written "C"
+turned into "3/4°C"); a pair ("375°F (190°C)", "325°F/160°C") keeps the figure already in the user's units; "2-1/2" is
+2½; "3 - 9\" pizzas" is a count. Spoons stay. Under 20 g stays grams for imperial (steps' nutrition notes). Ingredient
+lists stay in grams (the database's unit). A 12k-step sample: 1,783 changed, ~0.09 ms a step.
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

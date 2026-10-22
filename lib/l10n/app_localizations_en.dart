@@ -1865,7 +1865,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedLabel => 'Saved';
 
   @override
-  String get searchRecipes => 'Search 166,000 recipes…';
+  String get searchRecipes => 'Search 168,000 recipes…';
 
   @override
   String get servingsLabel => 'Servings';
@@ -2097,7 +2097,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your meals and chats never leave the phone';
 
   @override
-  String get welcomePointData => '55,000 foods and 166,000 recipes built in';
+  String get welcomePointData => '41,500 foods and 168,000 recipes built in';
 
   @override
   String get welcomePointAllergens => 'Allergens filtered out of every recipe';
@@ -2316,7 +2316,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planHeroBody =>
-      'Breakfast, lunch and dinner from 166,000 recipes.';
+      'Breakfast, lunch and dinner from 168,000 recipes.';
 
   @override
   String planSized(String amount) {

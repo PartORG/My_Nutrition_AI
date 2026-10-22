@@ -75,7 +75,7 @@ pickles		Pickles, dill
 eggplant		Eggplant, cooked	
 tofu		Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)	
 smoked salmon		Salmon, smoked	
-toast		Bread, white, toasted	
+toast		Bread, white, toasted	25
 cauliflower		Cauliflower, cooked, as ingredient	
 mozzarella		Cheese, Mozzarella, NFS	
 herbs		Parsley, fresh	
@@ -215,3 +215,10 @@ limoncello	livsmedelsverket	Liqueur reduced sweetness vol. % 24	44
 raki	ciqual	Pastis (anise-flavoured spirit)	44
 turkey	usda_sr	Turkey, whole, meat only, cooked, roasted	150
 calf	ciqual	Veal, meat, cooked (average)	
+wholegrain toast	cnf	Bread, whole wheat, commercial, toasted	
+whole grain toast	cnf	Bread, whole wheat, commercial, toasted	
+whole wheat toast	cnf	Bread, whole wheat, commercial, toasted	
+wholemeal toast	cnf	Bread, whole wheat, commercial, toasted	
+brown toast	cnf	Bread, whole wheat, commercial, toasted	
+multigrain toast	cnf	Bread, multigrain, toasted	
+multigrain bread	cnf	Bread, multigrain, commercial	

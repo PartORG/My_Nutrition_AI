@@ -12,6 +12,7 @@ import '../agent/recipe_translation.dart' show savedTranslation;
 import '../app_state.dart' show agentProvider;
 import '../billing/billing.dart' show Tier;
 import '../data/cook.dart';
+import '../data/goals.dart' show loadBody;
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'kit.dart';
@@ -89,7 +90,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             widget.recipeId,
             widget.tools.language,
           );
-    return t ?? _card.instructions;
+    return unitsFor(t ?? _card.instructions, imperial: loadBody(widget.tools.user)?.imperial ?? false);
   }
 
   @override
@@ -693,7 +694,8 @@ class _StepsState extends ConsumerState<_Steps> {
     final text = translated == null || _original
         ? widget.instructions
         : (translated.isEmpty ? '…' : translated);
-    final steps = recipeSteps(text);
+    // The user's units (Goals: metric or imperial); a translation keeps the original's, so it is converted too.
+    final steps = recipeSteps(unitsFor(text, imperial: loadBody(widget.tools.user)?.imperial ?? false));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

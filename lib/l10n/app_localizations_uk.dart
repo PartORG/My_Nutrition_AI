@@ -1895,7 +1895,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get savedLabel => 'Збережено';
 
   @override
-  String get searchRecipes => 'Пошук серед 166 000 рецептів…';
+  String get searchRecipes => 'Пошук серед 168 000 рецептів…';
 
   @override
   String get servingsLabel => 'Порції';
@@ -2128,7 +2128,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get welcomePointData =>
-      '55 000 продуктів і 166 000 рецептів усередині';
+      '41 500 продуктів і 168 000 рецептів усередині';
 
   @override
   String get welcomePointAllergens =>
@@ -2350,7 +2350,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get planHeroTitle => 'Увесь тиждень, спланований одним дотиком';
 
   @override
-  String get planHeroBody => 'Сніданок, обід і вечеря зі 166 000 рецептів.';
+  String get planHeroBody => 'Сніданок, обід і вечеря зі 168 000 рецептів.';
 
   @override
   String planSized(String amount) {

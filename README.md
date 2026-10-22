@@ -41,7 +41,6 @@ On a Xiaomi 11T, v0.25.5, with a demo profile.
 <td align="center" width="25%"><img src="docs/screenshots/me.png" width="200" alt="Profile and daily targets"><br><sub>Profile and daily targets</sub></td>
 </tr>
 <tr>
-<td align="center" width="25%"><img src="docs/screenshots/welcome.png" width="200" alt="Sign-up: a name and a PIN"><br><sub>Sign-up: a name and a PIN</sub></td>
 <td align="center" width="25%"><img src="docs/screenshots/goals-month.png" width="200" alt="Goals form"><br><sub>Goals form</sub></td>
 <td align="center" width="25%"><img src="docs/screenshots/today-dark.png" width="200" alt="Dark theme"><br><sub>Dark theme</sub></td>
 </tr>
@@ -90,7 +89,7 @@ On a Xiaomi 11T, v0.25.5, with a demo profile.
 ### Food logging and the camera
 
 - **Food logging:** search about 41,500 foods and dishes (government tables of the US, UK, France, Canada, the Nordics
-  and more, plus 503 chain menu items) and 169,000 recipes, or log by chat, voice or photo. Amounts can be grams,
+  and more, plus 503 chain menu items) and 168,000 recipes, or log by chat, voice or photo. Amounts can be grams,
   kg, ml, litres, oz, lb, fl oz, tablespoons or teaspoons, or servings ("2 eggs", "a cup of rice"). Tap "+" on a
   meal to log straight into it, or repeat yesterday's meal in one tap.
 - **Camera, also in the chat:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods
@@ -143,7 +142,9 @@ On a Xiaomi 11T, v0.25.5, with a demo profile.
   fridge. The shopping list is grouped by aisle and shows which recipe each item is for.
 - **Recipes and Cook mode:** a servings stepper scales the amounts and nutrition. Add a recipe to
   the plan, log a serving, or cook it step by step: the screen stays on, each step shows the
-  ingredients it uses, and a timer starts when the step names a time. Cook mode follows the light or dark theme like every screen.
+  ingredients it uses, and a timer starts when the step names a time. Steps show in your units (metric or imperial, chosen on
+  Goals): the US recipes' 350°F, 9-inch pans, cups, ounces and quarts become 175°C, 23 cm, ml, g and L, and metric
+  steps turn imperial the other way; a step that already gives both keeps its own figure. Spoons stay as written. Cook mode follows the light or dark theme like every screen.
 
 ### Health
 
@@ -235,8 +236,8 @@ version, then publish release `data-<version>` (see the header of
 
 ### Food data and vitamins
 
-`nutri.db` (catalogue v4, data version 6) holds about 41,500 foods (dishes and 503 chain menu items among them) and
-169,000 recipes; `health.db` the reference intakes, the conditions of `db/medical.sql` and 16,000 health Q&A passages.
+`nutri.db` (catalogue v4, data version 7) holds about 41,500 foods (dishes and 503 chain menu items among them) and
+168,000 recipes; `health.db` the reference intakes, the conditions of `db/medical.sql` and 16,000 health Q&A passages.
 The app downloads both on first run, with the search model, from the public release `data-<version>`; there are no
 packaged products (removed in v0.18). Every source and its licence: [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 

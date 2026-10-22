@@ -14,8 +14,8 @@ const nutriSchemaMax = 4;
 // 1: medical data from the guidelines (db/medical.sql). 2: translated ingredient names (food_names).
 // 3: vitamins and minerals for the generic foods (foodstruct, NZ FOODfiles, FDC Foundation/Branded). 4: CIQUAL (France)
 // and CoFID (UK) foods and dishes. 5: catalogue v4 (tool/catalog). 6: chain menu items as foods (no products.db),
-// plain milk's biotin from Staggs 2004.
-const nutriDataVersion = 6;
+// plain milk's biotin from Staggs 2004. 7: toast aliases ("wholegrain toast" was gruel), a 25 g slice of toast.
+const nutriDataVersion = 7;
 
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';

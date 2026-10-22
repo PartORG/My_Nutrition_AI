@@ -3243,7 +3243,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchRecipes.
   ///
   /// In en, this message translates to:
-  /// **'Search 166,000 recipes…'**
+  /// **'Search 168,000 recipes…'**
   String get searchRecipes;
 
   /// No description provided for @servingsLabel.
@@ -3621,7 +3621,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomePointData.
   ///
   /// In en, this message translates to:
-  /// **'55,000 foods and 166,000 recipes built in'**
+  /// **'41,500 foods and 168,000 recipes built in'**
   String get welcomePointData;
 
   /// No description provided for @welcomePointAllergens.
@@ -3963,7 +3963,7 @@ abstract class AppLocalizations {
   /// No description provided for @planHeroBody.
   ///
   /// In en, this message translates to:
-  /// **'Breakfast, lunch and dinner from 166,000 recipes.'**
+  /// **'Breakfast, lunch and dinner from 168,000 recipes.'**
   String get planHeroBody;
 
   /// No description provided for @planSized.
