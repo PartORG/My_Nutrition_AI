@@ -23,8 +23,33 @@ accounts, no cloud inference and no analytics SDK.
 <br><sub>Eva, the assistant, in the poses the app shows her in</sub>
 </p>
 
+## Screenshots
+
+On a Xiaomi 11T, v0.25.5, with a demo profile.
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/screenshots/today.png" width="200" alt="Today: calories left, macros, limits"><br><sub>Today: calories left, macros, limits</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/today-meals.png" width="200" alt="Meals and water"><br><sub>Meals and water</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/chat.png" width="200" alt="Chat: say what you ate, check the card, save"><br><sub>Chat: say what you ate, check the card, save</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/plan.png" width="200" alt="A week planned in one tap"><br><sub>A week planned in one tap</sub></td>
+</tr>
+<tr>
+<td align="center" width="25%"><img src="docs/screenshots/recipes.png" width="200" alt="Recipe search, allergens filtered out"><br><sub>Recipe search, allergens filtered out</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/recipe.png" width="200" alt="Servings scale amounts and nutrition"><br><sub>Servings scale amounts and nutrition</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/cook.png" width="200" alt="Cook mode, step by step"><br><sub>Cook mode, step by step</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/me.png" width="200" alt="Profile and daily targets"><br><sub>Profile and daily targets</sub></td>
+</tr>
+<tr>
+<td align="center" width="25%"><img src="docs/screenshots/welcome.png" width="200" alt="Sign-up: a name and a PIN"><br><sub>Sign-up: a name and a PIN</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/goals-month.png" width="200" alt="Goals form"><br><sub>Goals form</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/today-dark.png" width="200" alt="Dark theme"><br><sub>Dark theme</sub></td>
+</tr>
+</table>
+
 ## Contents
 
+- [Screenshots](#screenshots)
 - [Features](#features): [chat and voice](#chat-and-voice) · [food logging and the camera](#food-logging-and-the-camera) ·
   [goals, dashboards and history](#goals-dashboards-and-history) · [recipes, plan and shopping](#recipes-plan-and-shopping) ·
   [health](#health) · [profile, looks and languages](#profile-looks-and-languages)
@@ -43,8 +68,8 @@ accounts, no cloud inference and no analytics SDK.
 - **AI chat:** Gemma 4 runs locally with native tool calling. The model routes requests and
   phrases the answers. Code computes the numbers and the database supplies the facts, so nutrition
   values and recipes appear as cards from the database, never as model-generated text. When the model answers
-  "I ate…" without calling a tool (even "Saved! Anything else?"), the app's own parser shows the meal card anyway:
-  nothing is saved until you tap Save.
+  "I ate…" without logging it (no tool, or a nutrition lookup instead), the app's own parser shows the meal card
+  anyway and drops any "I have logged it" the model wrote: nothing is saved until you tap Save.
 - **Talk to the assistant:** tap the mic in the chat and speak; Gemma 4 itself writes down what you said (no
   offline speech pack needed), and the answer is read aloud in a woman's or a man's voice (Settings → Voice; the
   phone's own offline voices). The recording is deleted as soon as it is written down.
