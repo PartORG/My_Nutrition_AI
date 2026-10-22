@@ -6,7 +6,7 @@
 #   * Release "build-inputs" holding the git-ignored assets. Public: Gemma's terms allow
 #     redistribution with its notice (assets/licenses/models.txt ships in the APK):
 #       gh release create build-inputs --prerelease --title "Build inputs (not an app release)" \
-#         assets/nutri.db assets/models/embeddinggemma-300M_seq256.tflite \
+#         assets/nutri.db assets/health.db assets/models/embeddinggemma-300M_seq256.tflite \
 #         assets/models/embeddinggemma_sentencepiece.model
 #     Re-upload with `gh release upload build-inputs <file> --clobber` when they change.
 #   * Secrets: ANDROID_KEYSTORE_BASE64 (`base64 -w0 upload.jks`), ANDROID_KEYSTORE_PASSWORD,
@@ -35,7 +35,7 @@ jobs:
 
       - if: steps.version.outputs.exists != 'true'
         run: |
-          gh release download build-inputs --pattern nutri.db --dir assets
+          gh release download build-inputs --pattern nutri.db --pattern health.db --dir assets
           gh release download build-inputs --pattern 'embeddinggemma*' --dir assets/models
           # Phones only reinstall nutri.db for a newer data_version: never ship one older than the app expects.
           want=$(grep -oP 'const nutriDataVersion = \K\d+' lib/data/nutri_db.dart)
