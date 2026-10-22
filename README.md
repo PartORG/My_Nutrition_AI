@@ -20,19 +20,32 @@ accounts, no cloud inference and no analytics SDK.
 - **Talk to the assistant:** tap the mic in the chat and speak; Gemma 4 itself writes down what you said (no
   offline speech pack needed), and the answer is read aloud in a woman's or a man's voice (Settings → Voice; the
   phone's own offline voices). The recording is deleted as soon as it is written down.
-- **Eva and you:** the assistant is drawn as Eva, the developer's miniature schnauzer (chat, tab bar, unlock
-  screen). Your own picture is a woman, man or neutral (they/them) icon on a colour you pick, or a photo from
-  your phone (Settings → Your picture).
+- **Eva and you:** the assistant is Eva, the developer's salt-and-pepper miniature schnauzer: her face in the chat,
+  the tab bar and on the unlock screen, and one pose per place elsewhere (waving on the welcome screen, sitting
+  through the food data download, asleep in an empty History, eating when Log finds no food, thinking while the
+  assistant knows nothing yet, with a camera on a photo card, peeking from the drawer). Your own picture
+  (Settings → Your picture) is a photo from your phone or one of 17 icons on one of 18 colours, solid, gradient or
+  soft; in a circle, rounded square, hexagon or flower, with or without an outline.
 - **Home-screen widget:** small, medium and large sizes with today's calories (opt-in), a Log button and a mic:
   say what you ate and the chat shows the meal card to check and save.
 - **Food logging:** search about 41,500 foods and dishes (government tables of the US, UK, France, Canada, the Nordics
-  and more, plus 503 chain menu items), 169,000 recipes, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
-  meal in one tap.
-- **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
-  (lose, maintain or gain), with a manual override for every value. Age counts from the birth month, so
-  the adult formulas start exactly at 18; with a BMI under 18.5, "lose" keeps the maintain targets and
-  says why. Micronutrients: calcium, iron,
-  magnesium, potassium and vitamins C, D and B12.
+  and more, plus 503 chain menu items) and 169,000 recipes, or log by chat, voice or photo. Amounts can be grams,
+  kg, ml, litres, oz, lb, fl oz, tablespoons or teaspoons, or servings ("2 eggs", "a cup of rice"). Tap "+" on a
+  meal to log straight into it, or repeat yesterday's meal in one tap.
+- **Daily goals** (`lib/data/goals.dart`), with a manual override for every value:
+  - calories: Mifflin-St Jeor resting burn × activity level (1.2–1.9), −15 % to lose or +15 % to gain, never under
+    1,200 kcal (women) / 1,500 kcal (men). With a BMI under 18.5, or while pregnant, "lose" keeps the maintain
+    calories and says why. Pregnancy adds 0 / 340 / 452 kcal by trimester, breastfeeding 330 / 400 kcal for a baby
+    0–6 / 7–12 months old (NASEM), both asked on the Goals form;
+  - protein 1.2 g per kg (above BMI 25, per kg of the adjusted weight: the BMI-25 weight plus 40 % of the rest),
+    fat 30 % of calories, carbohydrate the rest, fibre 14 g per 1,000 kcal;
+  - limits: total sugars 18 % of calories (the EU reference intake, 90 g of 2,000 kcal; WHO's 10 % is for free
+    sugars only, which food tables don't separate), sodium 2,000 mg (WHO); conditions only ever tighten them;
+  - vitamins, minerals, fatty acids and amino acids (56 nutrients in all): NASEM reference intakes for your sex,
+    age and pregnancy or breastfeeding, with the upper limits food can pass;
+  - water: 30 ml per kg in whole glasses, +300 ml in pregnancy, +700 ml while breastfeeding (EFSA).
+  Age counts from the birth month, so the adult formulas start exactly at 18; under 18 there are no computed
+  targets.
 - **Dashboards:** Today, Week (with a weekly review), Month and Year views, water tracking, fasting,
   streaks and an Android home-screen widget. Totals that include estimates are marked "≈". A weight
   trend screen shows a smoothed trend line over 1, 3, 6 or 12 months, so a heavy morning isn't
@@ -52,11 +65,12 @@ accounts, no cloud inference and no analytics SDK.
   passages. See [Medical data](#medical-data).
 - **Health journal:** symptoms and readings on a timeline, plus a PDF/CSV export for your doctor.
   The app records data and never interprets it.
-- **Camera:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods and
-  estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
+- **Camera, also in the chat:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods
+  and estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
   foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
-  corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. Everything
-  detected goes through a review screen before it is logged. No photo is ever stored.
+  corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. From
+  Log, what was seen opens a review screen; in the chat ("Photo of your meal" above the input) it comes back as a
+  meal card to check, change, assign to a meal and save, or to ask "What can I cook?". No photo is ever stored.
 - **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
   2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. On a Xiaomi 11T it runs in 21 ms on NNAPI (the
   phone's AI chip, same results as the CPU), 53 ms on the GPU and 146 ms on the CPU. Photos are also searched
@@ -77,6 +91,10 @@ accounts, no cloud inference and no analytics SDK.
   avatar follows it). Unlocked by fingerprint, with a PIN as the fallback. You can change the
   PIN in Settings. Signing up with Google is optional (see Build flags), and the account can be linked
   or unlinked later. Nothing leaves the phone.
+- **Navigation and looks:** a bottom bar (Today, Chat, Log, Plan, Me) and a drawer with the same tabs plus the
+  screens a few taps deep (weight, history, goals, health, all nutrients, photo of a meal, saved recipes,
+  shopping list, what the AI knows). Light and dark themes with tinted, not pure-white or near-white, surfaces;
+  every text colour keeps at least 4.5:1 contrast (WCAG AA, checked by `test/theme_test.dart`).
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
   follow the phone). The assistant answers in the chosen language.
 - **Safety:** a medical disclaimer under the chat input, on every health-information card and in
@@ -133,32 +151,25 @@ version, then publish release `data-<version>` (see the header of
 
 ## Food data and vitamins
 
-`nutri.db` holds about 41,500 foods (dishes and 503 chain menu items among them) and 169,000 recipes; there are no
-packaged products (removed in v0.18). The
-generic foods come from government tables first: USDA SR28, FoodData Central (FNDDS survey foods and
-Foundation foods, from the public-domain [bulk downloads](https://fdc.nal.usda.gov/download-datasets)),
-NZ FOODfiles, the French ANSES-CIQUAL 2025 table and the UK's McCance and Widdowson's CoFID 2021 (European
-foods and dishes, all seven micronutrients). Every food row records its `source`, and the app prefers these tables when two
-names match equally well. The EU tables list carbohydrate without fibre; the build adds the fibre back,
-so every `carbs_g` is a total as in USDA (calories stay as published).
+`nutri.db` (catalogue v4, data version 6) holds about 41,500 foods (dishes and 503 chain menu items among them) and
+169,000 recipes; `health.db` the reference intakes, the conditions of `db/medical.sql` and 16,000 health Q&A passages.
+The app downloads both on first run, with the search model, from the public release `data-<version>`; there are no
+packaged products (removed in v0.18). Every source and its licence: [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 
-Vitamins and minerals (calcium, iron, magnesium, potassium, vitamins C, D and B12) cover:
+- **Foods** come from government tables first (USDA SR28, FoodData Central, CoFID, CIQUAL, CNF, NZ FOODfiles,
+  AFCD, Frida and the other Nordic tables), then smaller datasets. The EU tables list carbohydrate without fibre;
+  the build adds it back, so every `carbs_g` is a total as in USDA.
+- **All 56 nutrients on every food:** a value a table didn't measure is borrowed from the same food in a more
+  authoritative table, else the median of that food's rows, else estimated from the five most similar foods,
+  scaled by its base (amino acids by protein, fatty acids by fat). Each value records its origin; the app marks
+  borrowed and estimated values "≈", and a day's total is "at least" when a food doesn't know a value.
+- **Researched values** (`db/catalog/manual_values.tsv`) override estimates: the USDA iodine database, and biotin
+  from Staggs et al. 2004 (HPLC), which also replaces table values more than 3× off it (older microbiological
+  assays ran several times high; plain cow's milk: 0.11 µg/100 g, not 2–4).
+- **Recipes:** nutrition per serving is summed from the ingredient lines, with how many lines knew each value.
 
-- **Foods:** about two thirds have calcium and iron. All 30 everyday foods the meal parser picks
-  ("rice", "egg", "milk", "chicken liver"…) have the full set.
-- **Recipes:** values are summed from the ingredients. About 99 % of recipes have values for every
-  ingredient.
-- **Dishes:** McDonald's items take calcium, iron and vitamin C from their own labels. Each dish is
-  then matched to a USDA FNDDS food of the same name for the rest (155 of 620). Generic dishes also
-  link to a recipe of the same title, which you can open and rate (88).
-
-A value outside a believable range in a non-government source is stored as unknown, never shown.
-Meals logged before an update get their vitamins filled in once from the food or dish of the same name.
-
-Raw data lives next to the repository (`nutrition-ai-assistant/data/`). The three FoodData Central
-releases go in `raw_fdc/{survey,foundation,sr_legacy}/`, CIQUAL's XML files in `raw_eu/ciqual/` and
-CoFID's workbook in `raw_eu/cofid/`; the build script's docstring has the links. The file must stay
-under 400 MB (`MAX_DB_BYTES`, checked by the build and by `test/real_nutri_db_test.dart`).
+The pipeline is `tool/catalog` (normalize → match → fill → servings → write; `pytest tool/catalog`). Raw data
+lives next to the repository (`nutrition-ai-assistant/data/`).
 
 ## Translated ingredient names
 
@@ -190,8 +201,8 @@ A food renamed in a rebuild makes its row stale: `apply` skips it and `translate
   only the profile data, never the models or caches.
 - Voice stays on the phone: chat recordings are a temporary file that Gemma 4 writes down and the app then
   deletes; spoken answers use only the phone's installed offline voices.
-- There is no analytics or crash-reporting SDK. Network access is limited to the one-time model
-  download and the optional product database download, both started by the user.
+- There is no analytics or crash-reporting SDK. Network access is limited to downloads the user starts: the food
+  data and search model (first run, and once per data update) and the chat model.
 
 ## Requirements
 

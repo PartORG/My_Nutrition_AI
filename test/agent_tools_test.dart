@@ -259,6 +259,18 @@ void main() {
       expect(confirmOf(tools.run('log_meal', {'items': '2 eggs, toast, banana', 'meal_type': 'lunch'})).items.length, 3);
     });
 
+    test('ounces, pounds, litres, tablespoons and teaspoons are weights, not servings', () {
+      double g(String items) => confirmOf(tools.run('log_meal', {'items': items})).items.single.grams;
+      expect(g('8 oz chicken breast'), closeTo(226.8, .1), reason: 'was 8 servings');
+      expect(g('1 lb chicken breast'), closeTo(453.6, .1));
+      expect(g('0.5 l milk'), 500);
+      expect(g('8 fl oz milk'), closeTo(236.6, .1));
+      expect(g('1 tbsp olive oil'), 15);
+      expect(g('2 tsp olive oil'), 10);
+      expect(confirmOf(tools.run('log_meal', {'items': '1 tbsp olive oil'})).items.single.label, contains('oil'));
+      expect(g('2 eggs'), 100, reason: 'still servings: 2 × 50 g');
+    });
+
     test('"a handful of almonds" and "200 g greek yogurt" parse (regression)', () {
       expect(confirmOf(tools.run('log_meal', {'items': 'a handful of almonds'})).lines.single,
           'almonds · 28 g · 162 kcal');
@@ -371,8 +383,12 @@ void main() {
       undoWater(user, now);
       expect(waterOn(user, now), 0);
       expect(waterGoal(user), 2000);
+      setPref(user, 'life_stage', 'pregnancy');
+      expect(waterGoal(user), 2250, reason: '+300 ml (EFSA), in whole glasses');
+      setPref(user, 'life_stage', 'lactation');
+      expect(waterGoal(user), 2750, reason: '+700 ml');
       setPref(user, 'water_goal_ml', '2500');
-      expect(waterGoal(user), 2500);
+      expect(waterGoal(user), 2500, reason: 'the user\'s own goal wins');
     });
 
     test('fasting: start since the last meal, one running fast, end', () {

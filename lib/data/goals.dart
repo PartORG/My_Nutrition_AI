@@ -58,6 +58,14 @@ const kcalFloor = {Sex.female: 1200.0, Sex.male: 1500.0, Sex.other: 1350.0};
 int ageOn(Body b, DateTime now) =>
     now.year - b.birthYear - (b.birthMonth != null && now.month <= b.birthMonth! ? 1 : 0);
 
+/// The weight protein is counted on: the body's own up to BMI 25, above it the adjusted body weight (the BMI-25
+/// weight + 40% of the rest), as clinical nutrition does: fat tissue needs little protein, so 1.2 g per kg of the
+/// whole weight overshoots for heavier people (140 kg would be 168 g).
+double proteinWeight(double heightCm, double weightKg) {
+  final lean = 25 * pow(heightCm / 100, 2);
+  return weightKg <= lean ? weightKg : lean + .4 * (weightKg - lean);
+}
+
 /// Under this BMI (WHO: underweight) a deficit is unsafe: "lose" gives the maintain targets.
 const underweightBmi = 18.5;
 bool underweight(double heightCm, double weightKg) => weightKg / pow(heightCm / 100, 2) < underweightBmi;
@@ -83,9 +91,9 @@ const lactationKcal = [330, 400];
 
 /// Targets from the plan (docs/PLAN.md, Goals): Mifflin-St Jeor BMR × activity,
 /// ±15% for the goal (no deficit when underweight or pregnant), kcal floor, + [pregnancyKcal] for the
-/// [trimester] (1-3; 0 = not pregnant) or [lactationKcal] for the baby's [halfYear] (1-2; 0 = not breastfeeding); protein 1.2 g/kg, fat 30% of kcal, carbs the
-/// rest; fiber 14 g per 1000 kcal; WHO limits for sugar (10% of kcal) and
-/// sodium (2000 mg). Null under 18.
+/// [trimester] (1-3; 0 = not pregnant) or [lactationKcal] for the baby's [halfYear] (1-2; 0 = not breastfeeding);
+/// protein 1.2 g per kg of [proteinWeight], fat 30% of kcal, carbs the rest; fiber 14 g per 1000 kcal; limits for
+/// total sugars (the EU reference intake, 18% of kcal: 90 g of 2000) and sodium (WHO, 2000 mg). Null under 18.
 Targets? computeTargets(Body b, {required DateTime now, int trimester = 0, int halfYear = 0}) {
   final bmr = basalKcal(b, now: now);
   if (bmr == null) return null;
@@ -94,7 +102,7 @@ Targets? computeTargets(Body b, {required DateTime now, int trimester = 0, int h
   final kcal = max(bmr * b.activity.factor * (1 + change), kcalFloor[b.sex]!) +
       (trimester > 0 ? pregnancyKcal[trimester - 1] : 0) +
       (halfYear > 0 ? lactationKcal[halfYear - 1] : 0);
-  final protein = 1.2 * b.weightKg;
+  final protein = 1.2 * proteinWeight(b.heightCm, b.weightKg);
   final fat = kcal * .30 / 9;
   return {
     'kcal': kcal,
@@ -102,7 +110,9 @@ Targets? computeTargets(Body b, {required DateTime now, int trimester = 0, int h
     'fat_g': fat,
     'carbs_g': max(0, (kcal - protein * 4 - fat * 9) / 4),
     'fiber_g': 14 * kcal / 1000,
-    'sugar_g': kcal * .10 / 4,
+    // Total sugars, fruit and milk included, as food tables give them: WHO's 10% is for free sugars only, so the
+    // limit is the EU's reference intake for total sugars (Regulation 1169/2011, Annex XIII: 90 g per 2000 kcal).
+    'sugar_g': kcal * .18 / 4,
     'sodium_mg': 2000,
   };
 }

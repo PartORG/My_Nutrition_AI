@@ -26,7 +26,7 @@ void main() {
       expect(t['fat_g'], closeTo(91.97, 0.01)); // 30% of kcal / 9
       expect(t['carbs_g'], closeTo(386.825, 0.01)); // (2759 − 384 − 827.7) / 4 = 1547.3 / 4
       expect(t['fiber_g'], closeTo(38.63, 0.01)); // 14 g / 1000 kcal
-      expect(t['sugar_g'], closeTo(68.98, 0.01)); // 10% of kcal / 4
+      expect(t['sugar_g'], closeTo(124.16, 0.01)); // total sugars: 18% of kcal / 4 (EU RI, 90 g of 2000)
       expect(t['sodium_mg'], 2000);
     });
 
@@ -70,6 +70,13 @@ void main() {
               activity: thin.activity, goal: Goal.lose, imperial: false), now: now)!['kcal'],
           computeTargets(thin, now: now)!['kcal']);
       expect(computeTargets(body(g: Goal.lose), now: now)!['kcal'], closeTo(2759 * .85, .01), reason: 'BMI 24.7');
+    });
+
+    test('protein on the adjusted weight above BMI 25: the BMI-25 weight + 40% of the rest', () {
+      expect(proteinWeight(180, 80), 80, reason: 'BMI 24.7: the own weight');
+      expect(proteinWeight(180, 81), 81, reason: 'BMI 25 exactly');
+      expect(proteinWeight(180, 140), closeTo(81 + .4 * 59, .01)); // 104.6 kg → 125.5 g, not 168 g
+      expect(computeTargets(body(w: 140), now: now)!['protein_g'], closeTo(1.2 * 104.6, .01));
     });
 
     test('pregnant: +0 / +340 / +452 kcal by trimester, and "lose" gives the maintain targets', () {

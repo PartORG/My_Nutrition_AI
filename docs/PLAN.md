@@ -666,6 +666,17 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+v0.21 (same day), reality check of the numbers (owner's request):
+- the meal parser read "8 oz steak" as 8 servings and missed tbsp/tsp/l/lb/fl oz: they are now weights;
+- the sugar limit is the EU reference intake for total sugars (18 % of kcal), since the tables give total sugars and
+  WHO's 10 % is for free sugars only (fruit and milk days showed "Over");
+- protein counts on the adjusted body weight above BMI 25 (BMI-25 weight + 40 % of the rest), not the whole weight;
+- water: +300 ml in pregnancy, +700 ml breastfeeding (EFSA);
+- the embedder copy 0.15 left in the plugin's Documents folder (~179 MB) is deleted once the downloaded one is in use.
+Checked and right as they were: Mifflin-St Jeor and the activity factors, the kcal floors, burnt calories shown but not
+added (the activity level already counts them), the weight trend (10 % a day smoothing), unit conversions, fibre,
+sodium, the NASEM reference intakes and upper limits.
+
 v0.20 (same day): the app icon is the owner's design (`assets/icons/app_icon.png`, 1024 px made from a 195 px
 screenshot, so soft on iOS and in the Play listing; a full-size original would sharpen it): iOS AppIcon set, Android
 legacy mipmaps and an adaptive icon (green #365F44 behind, the artwork in the 72 dp visible area). Every Eva picture

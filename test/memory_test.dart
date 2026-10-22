@@ -117,8 +117,8 @@ void main() {
     expect(memory.context(), contains('Daily goals: 2000 kcal. Left today: 1895 kcal.'));
     user.execute('INSERT INTO body (id, sex, birth_year, height_cm, weight_kg, activity, goal, units, updated_at) '
         "VALUES (1, 'male', 1996, 180, 80, 'moderate', 'maintain', 'metric', 0)");
-    expect(memory.context(), contains('Daily goals: 2000 kcal, 96 g protein, 387 g carbs, 69 g sugar. '
-        'Left today: 1895 kcal, 86 g protein, 367 g carbs, 69 g sugar.'));
+    expect(memory.context(), contains('Daily goals: 2000 kcal, 96 g protein, 387 g carbs, 124 g sugar. '
+        'Left today: 1895 kcal, 86 g protein, 367 g carbs, 124 g sugar.')); // total sugars: 18% of kcal
   });
 
   test('context: "Over the limit" always, "Low today" after the usual dinner time', () {

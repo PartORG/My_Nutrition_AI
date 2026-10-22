@@ -485,6 +485,16 @@ final embedderProvider = FutureProvider<EmbeddingModel>((ref) async {
       .modelFromFile('$dir/$embedderFile')
       .tokenizerFromFile('$dir/$tokenizerFile')
       .install(); // registered where DataDownload put them, not copied
+  // Up to 0.15 the APK carried the embedder and the plugin copied it into Documents (~179 MB): nothing reads that copy
+  // any more.
+  try {
+    final docs = (await getApplicationDocumentsDirectory()).path;
+    for (final name in docs == dir ? const <String>[] : [embedderFile, tokenizerFile]) {
+      if (File('$docs/$name') case final old when old.existsSync()) old.deleteSync();
+    }
+  } on Object catch (e) {
+    debugPrint('old embedder copy not removed: $e'); // tried again next start
+  }
   return FlutterEdgeAi.getActiveEmbedder();
 });
 

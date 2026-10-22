@@ -368,7 +368,9 @@ double waterGoal(Database user) {
   final own = double.tryParse(pref(user, 'water_goal_ml') ?? '');
   if (own != null && own > 0) return own;
   final kg = user.select('SELECT weight_kg FROM body').firstOrNull?['weight_kg'] as num?;
-  return kg == null ? 2000 : (kg * 30 / 250).round() * 250.0; // whole glasses
+  // Pregnancy and breastfeeding need more (EFSA 2010, adequate intake of water: +300 / +700 ml a day).
+  final extra = switch (pref(user, 'life_stage')) { 'pregnancy' => 300, 'lactation' => 700, _ => 0 };
+  return (((kg == null ? 2000 : kg * 30) + extra) / 250).round() * 250.0; // whole glasses
 }
 
 // ---- fasting ----------------------------------------------------------------------

@@ -904,7 +904,8 @@ class AgentTools {
     final m = RegExp(
       // \b after the quantity word and unit: "almonds" is not "a lmonds", "greek" not "g reek".
       r'^(?:(\d+(?:[.,]\d+)?)|(an?|one|two|three|four|five|half(?: a)?)\b)?\s*'
-      r'(?:(kg|g|gr|grams?|gramm?e?s?|ml|slices?|pieces?|portions?|servings?|bowls?|cups?|plates?|handfuls?)\b)?\s*'
+      r'(?:(kg|g|gr|grams?|gramm?e?s?|ml|fl\.? ?oz|oz|ounces?|lbs?|pounds?|l|liters?|litres?|tbsps?|tablespoons?|'
+      r'tsps?|teaspoons?|slices?|pieces?|portions?|servings?|bowls?|cups?|plates?|handfuls?)\b)?\s*'
       r'(?:of\s+)?(.+)$',
       caseSensitive: false,
     ).firstMatch(item.trim())!;
@@ -914,9 +915,17 @@ class AgentTools {
         (qtyWord == null ? 1.0 : (qtyWord.startsWith('half') ? 0.5 : words[qtyWord]!));
     final unit = m[3]?.toLowerCase() ?? '';
     final name = m[4]!;
+    // Weights and volumes in grams (a millilitre as a gram: close for drinks, milk, oil, sauces); the rest are
+    // servings of the food ("2 slices", "a cup").
     double grams(double? serving) => switch (unit) {
           'kg' => qty * 1000,
           'ml' => qty,
+          'l' || 'liter' || 'liters' || 'litre' || 'litres' => qty * 1000,
+          _ when unit.startsWith('fl') => qty * 29.57, // US fluid ounce
+          'oz' || 'ounce' || 'ounces' => qty * 28.35,
+          'lb' || 'lbs' || 'pound' || 'pounds' => qty * 453.6,
+          _ when unit.startsWith('tb') || unit.startsWith('tablespoon') => qty * 15,
+          _ when unit.startsWith('ts') || unit.startsWith('teaspoon') => qty * 5,
           _ when unit.startsWith('g') => qty, // g, gr, gram(s), gramm(s)
           _ => qty * (serving ?? 100),
         };
