@@ -809,11 +809,6 @@ class _CookScreenState extends State<CookScreen> {
   Duration? _left; // the running timer; null = none
   var _rang = false;
 
-  static const _bg = Color(0xFF121A15),
-      _chip = Color(0xFF1E2A23),
-      _mint = Color(0xFF7FDDB6),
-      _gold = Color(0xFFF7C74F);
-
   @override
   void initState() {
     super.initState();
@@ -872,211 +867,198 @@ class _CookScreenState extends State<CookScreen> {
     final timer = stepTimer(step);
     final uses = stepIngredients(step, widget.ingredients);
     final last = _step == steps.length - 1;
-    const white = Colors.white;
-    return Theme(
-      data: Theme.of(context).copyWith(brightness: Brightness.dark),
-      child: Scaffold(
-        backgroundColor: _bg,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    RoundIconButton(
-                      icon: Icons.close,
-                      tooltip: l.close,
-                      background: _chip,
-                      foreground: white,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                            ),
+    final c = context.colors;
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  RoundIconButton(
+                    icon: Icons.close,
+                    tooltip: l.close,
+                    background: c.surfaceHigh,
+                    foreground: c.ink,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: c.ink,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
                           ),
-                          Text(
-                            l.cookSubtitle(widget.servings),
-                            style: TextStyle(
-                              color: white.withValues(alpha: .65),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ExcludeSemantics(
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < steps.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 6),
-                        Expanded(
-                          child: Container(
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: i <= _step ? _mint : _chip,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
+                        ),
+                        Text(
+                          l.cookSubtitle(widget.servings),
+                          style: TextStyle(
+                            color: c.muted,
+                            fontSize: 14,
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ExcludeSemantics(
+                child: Row(
+                  children: [
+                    for (var i = 0; i < steps.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 6),
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: i <= _step ? c.primary : c.track,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.only(top: 24),
-                    children: [
-                      Text(
-                        l.stepOf(_step + 1, steps.length).toUpperCase(),
-                        style: const TextStyle(
-                          color: _mint,
-                          fontSize: 16,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.only(top: 24),
+                  children: [
+                    Text(
+                      l.stepOf(_step + 1, steps.length).toUpperCase(),
+                      style: TextStyle(
+                        color: c.primary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        step,
+                        style: TextStyle(
+                          color: c.ink,
+                          fontSize: 30,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
+                          height: 1.25,
+                          letterSpacing: -0.4,
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          step,
-                          style: const TextStyle(
-                            color: white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
-                            height: 1.25,
-                            letterSpacing: -0.4,
-                          ),
+                    ),
+                    if (uses.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        l.forThisStep,
+                        style: TextStyle(
+                          color: c.muted,
+                          fontSize: 15,
                         ),
                       ),
-                      if (uses.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        Text(
-                          l.forThisStep,
-                          style: TextStyle(
-                            color: white.withValues(alpha: .65),
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final i in uses)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _chip,
-                                  borderRadius: BorderRadius.circular(
-                                    Radii.pill,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${i.name} ${i.grams.round()} g',
-                                  style: const TextStyle(
-                                    color: white,
-                                    fontSize: 16,
-                                  ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final i in uses)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: c.surfaceHigh,
+                                borderRadius: BorderRadius.circular(
+                                  Radii.pill,
                                 ),
                               ),
-                          ],
-                        ),
-                      ],
-                      if (timer != null || _left != null || _rang) ...[
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _gold,
-                            foregroundColor: const Color(0xFF16201A),
-                            minimumSize: const Size.fromHeight(64),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(32),
+                              child: Text(
+                                '${i.name} ${i.grams.round()} g',
+                                style: TextStyle(
+                                  color: c.ink,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
-                            textStyle: const TextStyle(
-                              fontFamily: 'Onest',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          icon: Icon(
-                            _left != null
-                                ? Icons.stop_circle_outlined
-                                : Icons.timer_outlined,
-                            size: 26,
-                          ),
-                          label: Text(
-                            _left != null
-                                ? l.timerRunning(_clock(_left!))
-                                : _rang
-                                ? l.timerDone
-                                : l.startTimer(_clock(timer!)),
-                          ),
-                          onPressed: () {
-                            if (_left != null) {
-                              _timer?.cancel();
-                              setState(() => _left = null);
-                            } else if (timer != null) {
-                              _startTimer(timer);
-                            }
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: white,
-                          side: BorderSide(color: white.withValues(alpha: .35)),
-                          minimumSize: const Size.fromHeight(60),
-                        ),
-                        onPressed: _step == 0 ? null : () => _go(_step - 1),
-                        child: Text(l.back),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: FilledButton(
+                    if (timer != null || _left != null || _rang) ...[
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: _mint,
-                          foregroundColor: const Color(0xFF0F2A1E),
-                          minimumSize: const Size.fromHeight(60),
+                          backgroundColor: c.gold,
+                          foregroundColor: const Color(0xFF16201A),
+                          minimumSize: const Size.fromHeight(64),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'Onest',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        onPressed: last
-                            ? () => Navigator.of(context).pop()
-                            : () => _go(_step + 1),
-                        child: Text(last ? l.doneCooking : l.nextStep),
+                        icon: Icon(
+                          _left != null
+                              ? Icons.stop_circle_outlined
+                              : Icons.timer_outlined,
+                          size: 26,
+                        ),
+                        label: Text(
+                          _left != null
+                              ? l.timerRunning(_clock(_left!))
+                              : _rang
+                              ? l.timerDone
+                              : l.startTimer(_clock(timer!)),
+                        ),
+                        onPressed: () {
+                          if (_left != null) {
+                            _timer?.cancel();
+                            setState(() => _left = null);
+                          } else if (timer != null) {
+                            _startTimer(timer);
+                          }
+                        },
                       ),
-                    ),
+                    ],
                   ],
                 ),
-              ],
-            ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(60)),
+                      onPressed: _step == 0 ? null : () => _go(_step - 1),
+                      child: Text(l.back),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(60)),
+                      onPressed: last
+                          ? () => Navigator.of(context).pop()
+                          : () => _go(_step + 1),
+                      child: Text(last ? l.doneCooking : l.nextStep),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

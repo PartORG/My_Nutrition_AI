@@ -666,6 +666,14 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+v0.25 (same day), owner's reports: a spoken "I ate for dinner cottage cheese 160 g with pear 60 g" got "I've stored
+your dinner…" and no card. Each voice message reopens the conversation (audio needs the main session), so the model
+sees only a text replay with no tool calls in it and may answer in words; the fallback router then skipped any reply
+ending in "?". Now only a reply that is just a question skips it; the router also takes "For dinner I ate…". Cook
+mode used fixed dark colours: now the theme's. The base ThemeData is built from the colour scheme (dropdown menus
+had the default canvas), menus sit on the card colour, and text is 8 % below the system size (`SmallerText`) so
+menu items and buttons stop wrapping. Needs the phone: the voice turn end to end.
+
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too
 (`_detectPng`, whole photo and four quarters). Review: photo on top in an InteractiveViewer, list in a

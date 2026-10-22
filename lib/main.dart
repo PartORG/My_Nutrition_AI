@@ -66,7 +66,8 @@ class MyFoodMindApp extends ConsumerWidget {
         // Dates and numbers (DateFormat, NumberFormat) in the app's language, not always English.
         builder: (context, child) {
           Intl.defaultLocale = Localizations.localeOf(context).toLanguageTag();
-          return child!;
+          final media = MediaQuery.of(context);
+          return MediaQuery(data: media.copyWith(textScaler: SmallerText(media.textScaler)), child: child!);
         },
         localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

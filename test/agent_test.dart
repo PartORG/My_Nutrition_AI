@@ -445,6 +445,14 @@ void main() {
       await agent.send('I ate eggs');
       expect(agent.items.whereType<CardItem>().length, 1, reason: 'the question was the right answer');
     });
+
+    test('a claimed save with a question after it still gets the router card (spoken dinner, v0.25.0)', () async {
+      model.script.add([TextChunk("I've stored your dinner of cottage cheese with pear. Anything else?")]);
+      await agent.send('For dinner I ate 2 eggs');
+      final card = agent.items.whereType<CardItem>().single.card as ConfirmCard;
+      expect(card.lines, ['egg · 100 g · 143 kcal']);
+      expect(card.mealType, 'dinner');
+    });
   });
 
   group('the answer check (decision 10)', () {

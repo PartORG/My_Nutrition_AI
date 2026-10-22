@@ -250,8 +250,10 @@ class Agent extends ChangeNotifier {
       _sessionTokens += size;
       final turn = await _runTurn(_session!.sendUser(prompt), text);
       // The model wrote no call where the router sees one ("I ate 2 eggs" answered "Enjoy!"): the router's card.
-      // Not when it asked something back ("How many eggs?"): that is the right answer.
-      final asked = turn.reply?.text.trim().endsWith('?') ?? false;
+      // Not when it only asked something back ("How many eggs?"): that is the right answer. A question after a claim
+      // ("I've saved your dinner. Anything else?") is not: the card is the only way the meal gets saved.
+      final said = turn.reply?.text.trim() ?? '';
+      final asked = said.endsWith('?') && !RegExp(r'[.!]\s').hasMatch(said);
       if ((modelFirst && !turn.called && !asked ? tools.route(text) : null) case final routed?) {
         _store('tool', 'fallback router -> ${routed.forModel}', _now());
         items.add(CardItem(routed.card!, caption: turn.reply == null));

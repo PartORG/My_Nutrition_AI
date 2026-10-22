@@ -1359,8 +1359,12 @@ double? waterMl(String text) {
 
 /// Starts like a report of a meal: "I ate…", "I had…", "Log 2 eggs", "add breakfast: …".
 final _ateStatement = RegExp(
-    r"^\s*(?:(?:i|i've|i have|we|just|also|and|so)\s+)*(?:ate|eaten|had|drank|drunk|log|add|record|track)\b",
+    "^\\s*$_mealFirst(?:(?:i|i've|i have|we|just|also|and|so)\\s+)*(?:ate|eaten|had|drank|drunk|log|add|record|track)\\b",
     caseSensitive: false);
+
+/// Said before the verb: "For dinner I ate…", "Today, I had…".
+const _mealFirst =
+    r'(?:(?:(?:for|at)\s+(?:my\s+)?(?:breakfast|lunch|dinner|supper|snack)|today|this morning|tonight)\s*,?\s+)?';
 
 /// "I'm allergic to peanuts", "I have a gluten intolerance" (not "is my kid allergic…?"),
 /// "Ich bin allergisch gegen Nüsse", "J'ai une allergie aux arachides", "У мене алергія на арахіс".
@@ -1382,7 +1386,7 @@ String? knownAllergen(String raw) => switch (normalizeAllergen(raw)) { final a w
 /// "I ate 2 bananas for breakfast today" → "2 bananas"; "add breakfast" → "".
 String mealFoods(String text) => text
     .replaceFirst(
-        RegExp(r"^\s*(?:(?:please|can you|could you|i|i've|i have|we|just|also|and|so)\s+)*"
+        RegExp("^\\s*$_mealFirst" r"(?:(?:please|can you|could you|i|i've|i have|we|just|also|and|so)\s+)*"
             r'(?:ate|eaten|had|drank|drunk|log|add|record|track|eat)\b[\s:,-]*', caseSensitive: false),
         '')
     .replaceAll(

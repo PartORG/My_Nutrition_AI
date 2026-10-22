@@ -1,22 +1,50 @@
-# My Nutrition AI
+<p align="center"><img src="assets/icons/app_icon.png" width="112" alt="My Nutrition AI app icon"></p>
 
-**A private, on-device AI nutrition assistant for Android.**
+<h1 align="center">My Nutrition AI</h1>
+
+<p align="center"><b>A private, on-device AI nutrition assistant for Android.</b></p>
+
+<p align="center">
+<a href="https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml"><img src="https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml/badge.svg" alt="android"></a><br>
+<a href="https://github.com/PartORG/My_Nutrition_AI/releases/latest">Latest release</a> ·
+<a href="https://partorg.github.io/My_Nutrition_AI/">Privacy policy &amp; terms</a>
+</p>
 
 My Nutrition AI plans meals, logs food, tracks nutrients and answers nutrition questions through an
 AI chat. The language model, the embeddings and all personal data stay on the phone. There are no
 accounts, no cloud inference and no analytics SDK.
 
-[![android](https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml/badge.svg)](https://github.com/PartORG/My_Nutrition_AI/actions/workflows/android.yml)
-[Latest release](https://github.com/PartORG/My_Nutrition_AI/releases/latest) ·
-[Privacy policy & terms](https://partorg.github.io/My_Nutrition_AI/)
+<p align="center">
+<img src="assets/icons/eva_waving.png" width="96" alt="Eva waving">
+<img src="assets/icons/eva_thinking.png" width="96" alt="Eva thinking">
+<img src="assets/icons/eva_eating.png" width="96" alt="Eva eating">
+<img src="assets/icons/eva_camera.png" width="96" alt="Eva with a camera">
+<img src="assets/icons/eva_sleeping.png" width="96" alt="Eva asleep">
+<br><sub>Eva, the assistant, in the poses the app shows her in</sub>
+</p>
 
----
+## Contents
+
+- [Features](#features): [chat and voice](#chat-and-voice) · [food logging and the camera](#food-logging-and-the-camera) ·
+  [goals, dashboards and history](#goals-dashboards-and-history) · [recipes, plan and shopping](#recipes-plan-and-shopping) ·
+  [health](#health) · [profile, looks and languages](#profile-looks-and-languages)
+- [Plans](#plans)
+- [Data](#data): [medical data](#medical-data) · [food data and vitamins](#food-data-and-vitamins) ·
+  [translated ingredient names](#translated-ingredient-names)
+- [Privacy](#privacy)
+- [Development](#development): [requirements](#requirements) · [getting started](#getting-started) ·
+  [testing](#testing) · [CI/CD](#cicd) · [project structure](#project-structure)
+- [Disclaimer](#disclaimer) · [License](#license)
 
 ## Features
 
+### Chat and voice
+
 - **AI chat:** Gemma 4 runs locally with native tool calling. The model routes requests and
   phrases the answers. Code computes the numbers and the database supplies the facts, so nutrition
-  values and recipes appear as cards from the database, never as model-generated text.
+  values and recipes appear as cards from the database, never as model-generated text. When the model answers
+  "I ate…" without calling a tool (even "Saved! Anything else?"), the app's own parser shows the meal card anyway:
+  nothing is saved until you tap Save.
 - **Talk to the assistant:** tap the mic in the chat and speak; Gemma 4 itself writes down what you said (no
   offline speech pack needed), and the answer is read aloud in a woman's or a man's voice (Settings → Voice; the
   phone's own offline voices). The recording is deleted as soon as it is written down.
@@ -31,10 +59,37 @@ accounts, no cloud inference and no analytics SDK.
   soft; in a circle, rounded square, hexagon or flower, with or without an outline.
 - **Home-screen widget:** small, medium and large sizes with today's calories (opt-in), a Log button and a mic:
   say what you ate and the chat shows the meal card to check and save.
+- **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
+  edit or delete everything it knows about you.
+
+### Food logging and the camera
+
 - **Food logging:** search about 41,500 foods and dishes (government tables of the US, UK, France, Canada, the Nordics
   and more, plus 503 chain menu items) and 169,000 recipes, or log by chat, voice or photo. Amounts can be grams,
   kg, ml, litres, oz, lb, fl oz, tablespoons or teaspoons, or servings ("2 eggs", "a cup of rice"). Tap "+" on a
   meal to log straight into it, or repeat yesterday's meal in one tap.
+- **Camera, also in the chat:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods
+  and estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
+  foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
+  corrections are remembered for next time), and the detector draws live boxes and acts as a fallback. Shooting
+  (photo or live) freezes the frame: you see the exact picture being named, with its boxes, while Gemma works.
+  From Log, the review shows that photo on top (pinch to zoom) with the foods marked, and the editable list in a
+  sheet you pull down to look or up to edit; in the chat ("Photo of your meal" above the input) the foods come back
+  as a meal card with the photo as a thumbnail (tap for full screen), to check, change, assign to a meal and save,
+  or to ask "What can I cook?". Boxes are drawn only where the detector agrees with a food on the list, named as
+  the list names it; gallery photos are boxed too. The photo stays in memory only and is never stored.
+- **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
+  remove it, add one, or change the amount (also by half servings) before saving. Every log can be
+  undone, and a meal on Today can be changed later (food, amount or meal).
+- **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
+  2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. On a Xiaomi 11T it runs in 21 ms on NNAPI (the
+  phone's AI chip, same results as the CPU), 53 ms on the GPU and 146 ms on the CPU. Photos are also searched
+  in four overlapping quarters, so small foods are found too. It will replace EfficientDet once real meal photos
+  confirm it; for now only the developer benchmark (Settings → About in `DEV_BILLING` builds) runs it.
+  Training and export: `tool/detector_data.py`, `tool/yolox_tiny_food.py`, `tool/detector_export.py`.
+
+### Goals, dashboards and history
+
 - **Daily goals** (`lib/data/goals.dart`), with a manual override for every value:
   - calories: Mifflin-St Jeor resting burn × activity level (1.2–1.9), −15 % to lose or +15 % to gain, never under
     1,200 kcal (women) / 1,500 kcal (men). With a BMI under 18.5, or while pregnant, "lose" keeps the maintain
@@ -55,12 +110,18 @@ accounts, no cloud inference and no analytics SDK.
   mistaken for a real change.
 - **History:** meals day by day and the recipes you cooked (how often, when last), for a date range
   you pick; tap a recipe to open it.
+
+### Recipes, plan and shopping
+
 - **Plan, recipes and shopping:** plan the week and swap any meal. The recipe box holds what you
   saved, cooked or rated 4★+, searches every recipe, and suggests recipes from what's in your
   fridge. The shopping list is grouped by aisle and shows which recipe each item is for.
 - **Recipes and Cook mode:** a servings stepper scales the amounts and nutrition. Add a recipe to
   the plan, log a serving, or cook it step by step: the screen stays on, each step shows the
-  ingredients it uses, and a timer starts when the step names a time.
+  ingredients it uses, and a timer starts when the step names a time. Cook mode follows the light or dark theme like every screen.
+
+### Health
+
 - **Allergies and conditions:** recipes containing your allergens are always filtered out.
   Conditions (type 2 diabetes, high blood pressure, gout, ALS, multiple sclerosis) come from
   published clinical guidelines: they cap daily limits (they only ever *tighten*), hide recipes
@@ -68,25 +129,6 @@ accounts, no cloud inference and no analytics SDK.
   passages. See [Medical data](#medical-data).
 - **Health journal:** symptoms and readings on a timeline, plus a PDF/CSV export for your doctor.
   The app records data and never interprets it.
-- **Camera, also in the chat:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods
-  and estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
-  foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
-  corrections are remembered for next time), and the detector draws live boxes and acts as a fallback. Shooting
-  (photo or live) freezes the frame: you see the exact picture being named, with its boxes, while Gemma works.
-  From Log, the review shows that photo on top (pinch to zoom) with the foods marked, and the editable list in a
-  sheet you pull down to look or up to edit; in the chat ("Photo of your meal" above the input) the foods come back
-  as a meal card with the photo as a thumbnail (tap for full screen), to check, change, assign to a meal and save,
-  or to ask "What can I cook?". Boxes are drawn only where the detector agrees with a food on the list, named as
-  the list names it; gallery photos are boxed too. The photo stays in memory only and is never stored.
-- **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
-  2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. On a Xiaomi 11T it runs in 21 ms on NNAPI (the
-  phone's AI chip, same results as the CPU), 53 ms on the GPU and 146 ms on the CPU. Photos are also searched
-  in four overlapping quarters, so small foods are found too. It will replace EfficientDet once real meal photos
-  confirm it; for now only the developer benchmark (Settings → About in `DEV_BILLING` builds) runs it.
-  Training and export: `tool/detector_data.py`, `tool/yolox_tiny_food.py`, `tool/detector_export.py`.
-- **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
-  remove it, add one, or change the amount (also by half servings) before saving. Every log can be
-  undone, and a meal on Today can be changed later (food, amount or meal).
 - **Health Connect / Apple Health:** reads weight, steps and burnt calories. Steps are the larger of Health
   Connect's combined count and the largest single app's own count: the combined count takes each minute from one
   app only, by the priority list in Health Connect, so an app ranked above Google Fit that counted less used to
@@ -95,8 +137,9 @@ accounts, no cloud inference and no analytics SDK.
   a second ring on Today, next to the calories left, and are never added to the goal (it already counts your
   activity level). Steps refresh
   while the app is open; disconnect from the steps tile or in Settings.
-- **Memory you control:** the assistant remembers facts only after you confirm them. You can view,
-  edit or delete everything it knows about you.
+
+### Profile, looks and languages
+
 - **One profile per phone:** sign-up is a name and a PIN, then the goals (sex is asked once, there, and the
   avatar follows it). Unlocked by fingerprint, with a PIN as the fallback. You can change the
   PIN in Settings. Signing up with Google is optional (see Build flags), and the account can be linked
@@ -106,14 +149,16 @@ accounts, no cloud inference and no analytics SDK.
   shopping list, what the AI knows). The colours are the app icon's: forest green, sage, cream and peach (green
   for health and progress, warm peach and coral where food and streaks are, as warm hues go with appetite), on a
   warm cream base in light mode, never pure white; every text colour keeps at least 4.5:1 contrast (WCAG AA,
-  checked by `test/theme_test.dart`).
+  checked by `test/theme_test.dart`). Every screen, menu and dropdown takes its colours from the theme, light or
+  dark, and text is set a notch (8 %) below the system size so menu items and buttons fit on one line; the
+  phone's text-size setting still scales it.
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
   follow the phone). The assistant answers in the chosen language.
 - **Safety:** a medical disclaimer under the chat input, on every health-information card and in
   Settings → About. The assistant never diagnoses or advises on medicines, and a keyword check
   shows helpline information before the model runs when a message suggests a crisis.
 
-### Plans
+## Plans
 
 | Tier | Adds |
 |---|---|
@@ -127,7 +172,9 @@ History limits only what you can browse: older logs stay on the phone and come b
 One subscription per phone. Billing runs through RevenueCat (see
 [`docs/BILLING_SETUP.md`](docs/BILLING_SETUP.md)).
 
-## Medical data
+## Data
+
+### Medical data
 
 The medical part of `nutri.db` is curated by hand in [`db/medical.sql`](db/medical.sql) from
 clinical guidelines (ADA Standards of Care 2026, Diabetes Canada, Diabetes UK, NICE NG17/18/28/42/
@@ -161,7 +208,7 @@ When the data changes, bump `data_version` in `db/medical.sql` **and** `nutriDat
 version, then publish release `data-<version>` (see the header of
 [`.github/workflows/android.yml`](.github/workflows/android.yml)).
 
-## Food data and vitamins
+### Food data and vitamins
 
 `nutri.db` (catalogue v4, data version 6) holds about 41,500 foods (dishes and 503 chain menu items among them) and
 169,000 recipes; `health.db` the reference intakes, the conditions of `db/medical.sql` and 16,000 health Q&A passages.
@@ -183,7 +230,7 @@ packaged products (removed in v0.18). Every source and its licence: [docs/DATA_S
 The pipeline is `tool/catalog` (normalize → match → fill → servings → write; `pytest tool/catalog`). Raw data
 lives next to the repository (`nutrition-ai-assistant/data/`).
 
-## Translated ingredient names
+### Translated ingredient names
 
 Recipe ingredients (the ~2,100 foods used in recipes) show in Ukrainian, German and French from
 [`db/food_names.tsv`](db/food_names.tsv): one row per food with its English name and the three
@@ -216,7 +263,9 @@ A food renamed in a rebuild makes its row stale: `apply` skips it and `translate
 - There is no analytics or crash-reporting SDK. Network access is limited to downloads the user starts: the food
   data and search model (first run, and once per data update) and the chat model.
 
-## Requirements
+## Development
+
+### Requirements
 
 | | |
 |---|---|
@@ -224,7 +273,7 @@ A food renamed in a rebuild makes its row stale: `apply` skips it and `translate
 | Chat model | Gemma 4 E2B (2.6 GB), downloaded in the app on first use; Gemma 4 E4B is optional on 8 GB phones |
 | Build | Flutter 3.47 (stable), Dart 3.13, JDK 17, Android SDK |
 
-## Getting started
+### Getting started
 
 ```bash
 git clone git@github.com:PartORG/My_Nutrition_AI.git
@@ -246,7 +295,7 @@ Run on a connected device:
 flutter run --release --dart-define=DEV_BILLING=true   # developer tier switch, no payments
 ```
 
-### Build flags
+#### Build flags
 
 | Flag | Effect |
 |---|---|
@@ -256,7 +305,7 @@ flutter run --release --dart-define=DEV_BILLING=true   # developer tier switch, 
 | `--dart-define=GOOGLE_CLIENT_ID=….apps.googleusercontent.com` | "Continue with Google" at sign-up and "Sign in with Google" on the lock screen. Needs an Android OAuth client (package name + SHA-1 of the signing key) and a Web client in Google Cloud Console; pass the **Web** client id. Android only for now |
 | `--dart-define=AGENT_THINKING=true` | Gemma 4 thinks before answering. Slower; compare with the eval first |
 
-### Release builds
+#### Release builds
 
 The CI release APK is built with `DEV_BILLING=true` for now (no RevenueCat yet).
 
@@ -269,7 +318,7 @@ Builds are arm64 only. Signing reads `android/key.properties` (git-ignored); wit
 release builds fall back to the debug key. For the Play Store steps, see
 [`docs/PLAY_RELEASE.md`](docs/PLAY_RELEASE.md).
 
-## Testing
+### Testing
 
 ```bash
 flutter test                                    # host tests (fake model, test/nutri_test.db)
@@ -284,7 +333,7 @@ the camera review flow. They also run every main screen at 200 % text size in al
 When `assets/nutri.db` is present, `test/real_nutri_db_test.dart` checks the real database too,
 including its medical data and `data_version`.
 
-## CI/CD
+### CI/CD
 
 [`.github/workflows/android.yml`](.github/workflows/android.yml) runs on every push to `main`. It
 reads `version:` from `pubspec.yaml`, and if no release `v<version>` exists yet, it builds a signed
@@ -295,7 +344,7 @@ Repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `AND
 `ANDROID_KEY_PASSWORD`. The build fails if release `data-<nutriDataVersion>` (what the app downloads on
 first run) is missing a file, so an app whose data isn't up never ships.
 
-## Project structure
+### Project structure
 
 ```
 lib/

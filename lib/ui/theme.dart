@@ -335,6 +335,27 @@ abstract final class AppText {
   static const tabular = [FontFeature.tabularFigures()];
 }
 
+/// The user's text size a notch smaller: at the design's sizes menu items, chips and buttons wrapped onto a second
+/// line on phones. Keeps Android's nonlinear scaling (large text grows headings less).
+class SmallerText extends TextScaler {
+  const SmallerText(this.user);
+  final TextScaler user;
+  static const factor = .92;
+
+  @override
+  double scale(double fontSize) => user.scale(fontSize) * factor;
+
+  @override
+  // ignore: deprecated_member_use
+  double get textScaleFactor => user.textScaleFactor * factor;
+
+  @override
+  bool operator ==(Object other) => other is SmallerText && other.user == user;
+
+  @override
+  int get hashCode => user.hashCode;
+}
+
 class AppTheme {
   static ThemeData get lightTheme => build(Brightness.light);
 
@@ -368,7 +389,8 @@ class AppTheme {
         );
     const font = 'PlusJakartaSans';
     const fallback = ['Onest']; // Cyrillic (Ukrainian): Plus Jakarta Sans has none
-    final base = ThemeData(useMaterial3: true, brightness: brightness, fontFamily: font, fontFamilyFallback: fallback);
+    // From the scheme, not patched on later: derived colours (the dropdown menus' canvas, cards, hints) follow it.
+    final base = ThemeData(useMaterial3: true, colorScheme: scheme, fontFamily: font, fontFamilyFallback: fallback);
     TextStyle? as(TextStyle? s, TextStyle t, [Color? color]) => s?.merge(t).copyWith(color: color ?? p.ink);
     final text = base.textTheme.copyWith(
       displaySmall: as(base.textTheme.displaySmall, AppText.display),
@@ -392,6 +414,7 @@ class AppTheme {
       textTheme: text,
       extensions: [p],
       scaffoldBackgroundColor: p.background,
+      canvasColor: p.surface, // dropdown menus, like the popup menus (surfaceContainer)
       dividerTheme: DividerThemeData(color: p.divider, thickness: 1, space: 1),
       appBarTheme: AppBarTheme(
         backgroundColor: p.background,
