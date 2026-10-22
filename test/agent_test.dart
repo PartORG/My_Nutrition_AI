@@ -453,6 +453,13 @@ void main() {
       expect(card.lines, ['egg · 100 g · 143 kcal']);
       expect(card.mealType, 'dinner');
     });
+
+    test('a meal looked up instead of logged gets the meal card (seen on the phone, v0.25.0)', () async {
+      model.script.add([ToolCall('lookup_nutrition', {'food': 'eggs'})]);
+      await agent.send('I ate 2 eggs for breakfast');
+      final card = agent.items.whereType<CardItem>().single.card as ConfirmCard;
+      expect(card.lines, ['egg · 100 g · 143 kcal']);
+    });
   });
 
   group('the answer check (decision 10)', () {

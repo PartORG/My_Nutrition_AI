@@ -673,6 +673,11 @@ ending in "?". Now only a reply that is just a question skips it; the router als
 mode used fixed dark colours: now the theme's. The base ThemeData is built from the colour scheme (dropdown menus
 had the default canvas), menus sit on the card colour, and text is 8 % below the system size (`SmallerText`) so
 menu items and buttons stop wrapping. Needs the phone: the voice turn end to end.
+v0.25.1: on the phone the model answered "I had 2 eggs for breakfast" with lookup_nutrition ("Here are the numbers.")
+three times in a row, and a tool call skips the fallback router: lookup_nutrition on a message that starts like a
+meal report now logs it, as search_recipes already did. Seen too, not fixed: "wholegrain toast" matches "Gruel
+wholegrain fortified" and "whole wheat toast" French toast (no everyday default for them in db/catalog/defaults.tsv;
+needs a data rebuild), and "a slice of toast" is 100 g.
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

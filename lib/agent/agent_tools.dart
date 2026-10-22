@@ -245,6 +245,8 @@ class AgentTools {
           'rate' => _rateRecipe(arg('recipe'), int.tryParse(arg('stars'))),
           _ => _showRecipe(arg('recipe')),
         },
+      // "I ate 2 eggs and toast" looked up instead of logged ("Here are the numbers."): the meal card.
+      'lookup_nutrition' when _ateStatement.hasMatch(said) && !said.contains('?') => _logMeal(said, ''),
       'lookup_nutrition' => _lookupNutrition(arg('food')),
       'nutrition_status' => _nutritionStatus(arg('period')),
       'my_patterns' => _myPatterns(),
