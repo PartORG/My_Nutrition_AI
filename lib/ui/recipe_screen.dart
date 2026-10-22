@@ -99,6 +99,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
     final c = context.colors;
     final card = _card;
     final cooked = timesCooked(widget.tools, widget.recipeId);
+    final imperial = loadBody(widget.tools.user)?.imperial ?? false; // Goals' units, for the amounts
     final values = card.perServing.map((k, v) => MapEntry(k, v * _servings));
     final meta = [
       if (card.minutes != null && card.minutes! > 0)
@@ -367,7 +368,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                                 ),
                               ),
                               Text(
-                                '${(i.grams * _factor).round()} g',
+                                amountIn(i.grams * _factor, imperial: imperial),
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: c.muted,
@@ -431,6 +432,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => CookScreen(
+                    imperial: imperial,
                     title: card.title,
                     steps: recipeSteps(_instructions()),
                     ingredients: [
@@ -786,7 +788,7 @@ Future<void> keepScreenOn(bool on) async {
   }
 }
 
-/// One step at a time, big type on a dark screen that stays on, the step's ingredients, and a
+/// One step at a time, big type on a screen that stays on, the step's ingredients, and a
 /// timer when the step names a time.
 class CookScreen extends StatefulWidget {
   const CookScreen({
@@ -795,11 +797,15 @@ class CookScreen extends StatefulWidget {
     required this.steps,
     required this.ingredients,
     required this.servings,
+    this.imperial = false,
   });
   final String title;
   final List<String> steps;
   final List<({String name, String english, double grams})> ingredients;
   final int servings;
+
+  /// Ingredient amounts in ounces and pounds (Goals: imperial).
+  final bool imperial;
 
   @override
   State<CookScreen> createState() => _CookScreenState();
@@ -986,7 +992,7 @@ class _CookScreenState extends State<CookScreen> {
                                 ),
                               ),
                               child: Text(
-                                '${i.name} ${i.grams.round()} g',
+                                '${i.name} ${amountIn(i.grams, imperial: widget.imperial)}',
                                 style: TextStyle(
                                   color: c.ink,
                                   fontSize: 16,

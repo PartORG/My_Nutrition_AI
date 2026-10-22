@@ -72,6 +72,14 @@ void main() {
     expect(imperial('PREHEAT oven to 375ºF (190ºC).'), 'PREHEAT oven to 375ºF.');
   });
 
+  test('ingredient amounts: grams, or ounces and pounds for imperial', () {
+    expect(amountIn(340, imperial: false), '340 g');
+    expect(amountIn(340, imperial: true), '12 oz');
+    expect(amountIn(567, imperial: true), '1 1/4 lb');
+    expect(amountIn(15, imperial: true), '0.5 oz');
+    expect(amountIn(2, imperial: true), '0.1 oz', reason: 'a pinch is not 1/4 oz');
+  });
+
   test('aisles: first match wins, so broth is pantry before chicken is meat', () {
     expect(aisleOf('Chicken broth'), Aisle.pantry);
     expect(aisleOf('Chicken, breast, raw'), Aisle.meatFish);

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../agent/agent_tools.dart' show RecipeListCard, RecipeSummary;
 import '../app_state.dart';
 import '../billing/billing.dart';
+import '../data/cook.dart' show amountIn;
 import '../data/diary.dart' show totalsOn;
 import '../data/goals.dart';
 import '../data/plan.dart';
@@ -950,6 +951,7 @@ class _ShoppingState extends State<_Shopping> {
     final l = AppLocalizations.of(context)!;
     final c = context.colors;
     final tools = widget.data.tools;
+    final imperial = loadBody(tools.user)?.imperial ?? false; // Goals' units, for the amounts
     final items = widget.items;
     final ticked = items.where((i) => i.checked).length;
     final byAisle = <Aisle, List<ShoppingItem>>{};
@@ -1007,7 +1009,7 @@ class _ShoppingState extends State<_Shopping> {
                     secondary: i.grams == null
                         ? null
                         : Text(
-                            '${i.grams!.round()} g',
+                            amountIn(i.grams!, imperial: imperial),
                             style: TextStyle(fontSize: 15, color: c.muted),
                           ),
                     onChanged: (on) {

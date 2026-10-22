@@ -1,6 +1,8 @@
 /// Cook mode: a recipe's instructions as steps, the timer a step asks for, the ingredients it uses.
 library;
 
+import 'dart:math' show max;
+
 /// "1. Preheat oven.\n2. Brown the chicken." → the steps, numbers and "Directions:" headings gone.
 /// One paragraph without line breaks is split into sentences, two or three to a step.
 List<String> recipeSteps(String instructions) {
@@ -129,6 +131,10 @@ String unitsFor(String text, {required bool imperial}) {
   return text.replaceAllMapped(RegExp(r'(\d[\d./ –]*\s?(?:°[CF]|[a-zA-Z]+(?: oz)?))\s*\(\1\)'), (m) => m[1]!);
 }
 
+/// An ingredient's [grams] as the user measures: "340 g", or "12 oz", "1 1/4 lb", "0.5 oz" for [imperial].
+String amountIn(double grams, {required bool imperial}) =>
+    imperial ? _say(_Kind.weight, grams / 28.35, null, true) : '${grams.round()} g';
+
 /// "1 1/2" → 1.5, "1½" → 1.5, "3/4" → 0.75; null for "1/0".
 double? _value(String s) {
   const glyphs = {'½': .5, '¼': .25, '¾': .75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': .125};
@@ -160,7 +166,10 @@ String _say(_Kind kind, double a, double? b, bool imperial) {
     (_Kind.weight, false) => top >= 1000
         ? two((v) => _plain(r(v / 1000, .1)), ' kg')
         : two((v) => _plain(r(v, 5)), ' g'),
-    (_Kind.weight, true) => top >= 16 ? two((v) => _quarters(r(v / 16, .25)), ' lb') : two((v) => _quarters(r(v, .5)), ' oz'),
+    (_Kind.weight, true) => top >= 16
+        ? two((v) => _quarters(r(v / 16, .25)), ' lb')
+        // Under an ounce in tenths: a pinch of 2 g is not "1/4 oz".
+        : two((v) => top < 1 ? _plain(max(r(v, .1), .1)) : _quarters(r(v, .5)), ' oz'),
     (_Kind.volume, false) => top >= 1000
         ? two((v) => _plain(r(v / 1000, .1)), ' L')
         : two((v) => _plain(r(v, top < 100 ? 5 : 10)), ' ml'),

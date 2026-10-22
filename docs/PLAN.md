@@ -703,8 +703,9 @@ Owner's request, same release: recipe steps (US-written: in 1.08M steps, bare "3
 on the recipe page and cook mode, after any translation. Bare degrees count as °F from 250 up (no oven goes past
 250 °C); "350F"/"180C" need 100+; explicit temperatures need 10+ and a whole number (the data has cups written "C"
 turned into "3/4°C"); a pair ("375°F (190°C)", "325°F/160°C") keeps the figure already in the user's units; "2-1/2" is
-2½; "3 - 9\" pizzas" is a count. Spoons stay. Under 20 g stays grams for imperial (steps' nutrition notes). Ingredient
-lists stay in grams (the database's unit). A 12k-step sample: 1,783 changed, ~0.09 ms a step.
+2½; "3 - 9\" pizzas" is a count. Spoons stay. Under 20 g stays grams for imperial (steps' nutrition notes).
+v0.26.1: ingredient amounts too (`amountIn`: the recipe's list, cook-mode chips, the shopping list): oz, lb from 16 oz,
+tenths under an ounce. Nutrition values stay grams, as on US labels. A 12k-step sample: 1,783 changed, ~0.09 ms a step.
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

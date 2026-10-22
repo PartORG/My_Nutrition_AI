@@ -144,7 +144,8 @@ On a Xiaomi 11T, v0.25.5, with a demo profile.
   the plan, log a serving, or cook it step by step: the screen stays on, each step shows the
   ingredients it uses, and a timer starts when the step names a time. Steps show in your units (metric or imperial, chosen on
   Goals): the US recipes' 350°F, 9-inch pans, cups, ounces and quarts become 175°C, 23 cm, ml, g and L, and metric
-  steps turn imperial the other way; a step that already gives both keeps its own figure. Spoons stay as written. Cook mode follows the light or dark theme like every screen.
+  steps turn imperial the other way; a step that already gives both keeps its own figure. Spoons stay as written. Ingredient amounts (the recipe's list,
+  cook mode, the shopping list) show in ounces and pounds for imperial. Cook mode follows the light or dark theme like every screen.
 
 ### Health
 
