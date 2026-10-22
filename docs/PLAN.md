@@ -678,6 +678,9 @@ three times in a row, and a tool call skips the fallback router: lookup_nutritio
 meal report now logs it, as search_recipes already did. Seen too, not fixed: "wholegrain toast" matches "Gruel
 wholegrain fortified" and "whole wheat toast" French toast (no everyday default for them in db/catalog/defaults.tsv;
 needs a data rebuild), and "a slice of toast" is 100 g.
+v0.25.2: the Plan week strip showed Sunday 25 October twice (the night clocks go back): midnight + 24 h steps landed
+on 23:00 the same day. Plan, add-to-plan and the chart's date labels step with DateUtils.addDaysToDate; the data layer
+already used DateTime(y, m, d + i).
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

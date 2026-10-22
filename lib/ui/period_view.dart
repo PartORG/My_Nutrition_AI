@@ -368,7 +368,7 @@ class TrendChart extends StatelessWidget {
               interval: days == null ? null : (days! / 4).ceilToDouble(),
               getTitlesWidget: (v, meta) => v == meta.max
                   ? const SizedBox.shrink()
-                  : Text(DateFormat('d MMM').format(t0.add(Duration(days: v.round()))), style: muted),
+                  : Text(DateFormat('d MMM').format(DateUtils.addDaysToDate(t0, v.round())), style: muted),
             ),
           ),
           leftTitles: AxisTitles(

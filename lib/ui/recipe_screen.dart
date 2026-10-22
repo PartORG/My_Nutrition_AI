@@ -556,7 +556,7 @@ class _PlanSheetState extends State<_PlanSheet> {
             const SizedBox(height: 12),
             ChoicePills<DateTime>(
               values: [
-                for (var i = 0; i < 7; i++) today.add(Duration(days: i)),
+                for (var i = 0; i < 7; i++) DateUtils.addDaysToDate(today, i),
               ],
               selected: _day,
               scroll: true,

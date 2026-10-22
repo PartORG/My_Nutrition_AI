@@ -53,7 +53,7 @@ class _PlanScreenState extends State<PlanScreen> {
         final today = DateUtils.dateOnly(DateTime.now());
         final locale = Localizations.localeOf(context).toString();
         final week =
-            '${DateFormat.MMMd(locale).format(today)} – ${DateFormat.MMMd(locale).format(today.add(const Duration(days: 6)))}';
+            '${DateFormat.MMMd(locale).format(today)} – ${DateFormat.MMMd(locale).format(DateUtils.addDaysToDate(today, 6))}';
         final (title, aside) = switch (_tab) {
           PlanTab.plan => (l.thisWeek, week),
           PlanTab.recipes => (l.recipesTitle, data.tools.myAllergens().isEmpty ? null : l.allergenFreeForYou),
@@ -167,10 +167,10 @@ class _WeekPlanState extends State<_WeekPlan> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: _DayChip(
-                  day: today.add(Duration(days: i)),
-                  selected: DateUtils.isSameDay(_day, today.add(Duration(days: i))),
+                  day: DateUtils.addDaysToDate(today, i),
+                  selected: DateUtils.isSameDay(_day, DateUtils.addDaysToDate(today, i)),
                   locale: locale,
-                  onTap: () => setState(() => _day = today.add(Duration(days: i))),
+                  onTap: () => setState(() => _day = DateUtils.addDaysToDate(today, i)),
                 ),
               ),
             ),
