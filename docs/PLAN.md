@@ -626,7 +626,7 @@ To do, in order:
   "calf" (most used by recipes, so it owned `телятина`/`veau`/`Kalb`) → "Veal, meat, cooked (average)" instead of a
   calf's head; coffee 240 g (the table said 480 g "1 medium"); turkey 150 g (the table said a 3.8 kg bird). An
   override's grams now drop the table's serving label. Committed on main as v0.15.0+18 (2026-10-22).
-- [ ] Store size (decision for the owner, not built): Android base module limit is 500 MB compressed (Play; asset
+- [x] Store size — decided 2026-10-22: download on first run, shipped in v0.16.0 (see "What's left"). Background: Android base module limit is 500 MB compressed (Play; asset
   packs 1.5 GB each, 4 GB install-time total, 30 GB fast-follow/on-demand); the release APK is 490 MB compressed —
   nutri.db 205 MB, EmbeddingGemma 179 MB (stored uncompressed), native libs ~70 MB, health.db 12 MB. Recipes are
   ~430 of nutri.db's 497 MB (steps 109, ingredient lines 101 + indexes 54, recipe_nutrition 99). Recommended: an
