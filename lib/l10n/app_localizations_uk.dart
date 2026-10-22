@@ -113,6 +113,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chatHint => 'Запитайте про їжу, запишіть страву…';
 
   @override
+  String get chatEmpty =>
+      'Привіт, я Єва! Розкажіть, що ви з\'їли, запитайте про їжу й рецепти або надішліть фото страви.';
+
+  @override
   String get send => 'Надіслати';
 
   @override

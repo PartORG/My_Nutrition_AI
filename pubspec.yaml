@@ -1,7 +1,7 @@
 name: myfoodmind
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.22.0+25
+version: 0.23.0+26
 
 environment:
   sdk: ^3.12.2

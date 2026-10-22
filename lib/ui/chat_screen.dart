@@ -239,20 +239,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           children: [
             if (!big) ...[header, Divider(color: c.border)],
             Expanded(
-              child: ListView.builder(
-                reverse: true, // newest at the bottom, list sticks to it
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                // Large text: the header and the disclaimer scroll with the conversation (last = top).
-                itemCount: items.length + (big ? 2 : 0),
-                itemBuilder: (_, i) => big && i == 0
-                    ? disclaimer
-                    : big && i == items.length + 1
-                    ? header
-                    : _item(
-                        context,
-                        items[items.length - 1 - (big ? i - 1 : i)],
+              // A new chat: Eva waves hello and says what she can do.
+              child: items.isEmpty && !big
+                  ? Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          const EvaCutout(size: 140, asset: evaWavingAsset),
+                          const SizedBox(height: 12),
+                          Text(l.chatEmpty, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: c.ink2)),
+                        ]),
                       ),
-              ),
+                    )
+                  : ListView.builder(
+                    reverse: true, // newest at the bottom, list sticks to it
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    // Large text: the header and the disclaimer scroll with the conversation (last = top).
+                    itemCount: items.length + (big ? 2 : 0),
+                    itemBuilder: (_, i) => big && i == 0
+                        ? disclaimer
+                        : big && i == items.length + 1
+                        ? header
+                        : _item(
+                            context,
+                            items[items.length - 1 - (big ? i - 1 : i)],
+                          ),
+                  ),
             ),
             // The input area too: at 200 % with the header it left the conversation nothing.
             MediaQuery.withClampedTextScaling(
@@ -279,6 +291,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 8, 24, 2),
                       child: Row(children: [
+                        const EvaCutout(size: 36, asset: evaThinkingAsset),
+                        const SizedBox(width: 8),
                         SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: c.primary)),
                         const SizedBox(width: 10),
                         Text(_transcribing ? l.transcribing : l.thinking, style: TextStyle(fontSize: 14, color: c.muted)),

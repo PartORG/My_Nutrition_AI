@@ -27,6 +27,7 @@
   "deviceUnsupportedTitle": "Dieses Handy wird nicht unterstützt",
   "deviceUnsupportedBody": "My Nutrition AI führt seine KI vollständig auf deinem Handy aus und braucht mindestens 6 GB RAM. Dieses Handy hat etwa {gb} GB.",
   "chatHint": "Frag nach Essen, trag eine Mahlzeit ein…",
+  "chatEmpty": "Hallo, ich bin Eva! Erzähl mir, was du gegessen hast, frag mich nach Essen und Rezepten oder schick ein Foto deiner Mahlzeit.",
   "send": "Senden",
   "preparingAi": "Die KI auf dem Gerät wird vorbereitet… Der erste Start dauert etwa eine Minute.",
   "confirmSave": "Speichern",

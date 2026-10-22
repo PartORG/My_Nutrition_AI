@@ -6,6 +6,7 @@ import '../app_state.dart';
 import '../data/diary.dart' show logWeight;
 import '../data/goals.dart';
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'kit.dart';
 import 'theme.dart';
 
@@ -147,7 +148,11 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             child: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), children: [
-          Text(l.goalsIntro, style: TextStyle(color: context.colors.textSecondary)),
+          Row(children: [
+            Expanded(child: Text(l.goalsIntro, style: TextStyle(color: context.colors.textSecondary))),
+            const SizedBox(width: 12),
+            const EvaCutout(size: 72, asset: evaSittingAsset),
+          ]),
           gap,
           SegmentedButton<bool>(
             segments: [

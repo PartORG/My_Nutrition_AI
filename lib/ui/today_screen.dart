@@ -16,6 +16,7 @@ import '../data/health_sync.dart'
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
 import 'all_nutrients_screen.dart';
+import 'avatar.dart';
 import 'recipe_screen.dart' show RecipeScreen;
 import 'goals_screen.dart';
 import 'history_screen.dart';
@@ -1367,16 +1368,23 @@ class _SetGoalsCard extends StatelessWidget {
         color: context.colors.hero,
         border: false,
         padding: const EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.setGoalsTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-          const SizedBox(height: 4),
-          Text(l.setGoalsBody, style: TextStyle(color: Colors.white.withValues(alpha: .85))),
-          const SizedBox(height: 14),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: context.colors.hero),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GoalsScreen())),
-            child: Text(l.setGoalsButton),
+        // Eva sits by, ready to help: the card's free right side.
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.setGoalsTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+              const SizedBox(height: 4),
+              Text(l.setGoalsBody, style: TextStyle(color: Colors.white.withValues(alpha: .85))),
+              const SizedBox(height: 14),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: context.colors.hero),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GoalsScreen())),
+                child: Text(l.setGoalsButton),
+              ),
+            ]),
           ),
+          const SizedBox(width: 8),
+          const EvaCutout(size: 96, asset: evaSittingAsset),
         ]),
       ),
       const SizedBox(height: 12),

@@ -21,14 +21,16 @@ class EvaAvatar extends StatelessWidget {
 }
 
 /// Eva on a transparent background, so she sits on any colour (2026-10-22): her head (icon_chat.png without its
-/// disc), and six poses the owner made, cut off their paper and scaled to 384 px. One screen each, never repeated.
-const evaCutoutAsset = 'assets/icons/eva_cutout.png'; // the drawer's header
-const evaWavingAsset = 'assets/icons/eva_waving.png'; // the welcome screen
-const evaSittingAsset = 'assets/icons/eva_sitting.png'; // the food data download
-const evaSleepingAsset = 'assets/icons/eva_sleeping.png'; // History: nothing on those days
-const evaEatingAsset = 'assets/icons/eva_eating.png'; // Log: no food found
-const evaThinkingAsset = 'assets/icons/eva_thinking.png'; // what the AI knows: nothing yet
-const evaCameraAsset = 'assets/icons/eva_camera.png'; // a photo in the chat
+/// disc), and six poses the owner made, cut off their paper and scaled to 384 px. Each pose goes where its mood fits
+/// (a pose may serve several screens, never twice on one):
+const evaCutoutAsset = 'assets/icons/eva_cutout.png'; // herself: the drawer's header
+const evaWavingAsset = 'assets/icons/eva_waving.png'; // hello: the welcome screen, a new chat
+const evaSittingAsset = 'assets/icons/eva_sitting.png'; // ready for you: food data download, "set your goals", Goals
+const evaSleepingAsset = 'assets/icons/eva_sleeping.png'; // nothing happened: History, the health journal
+const evaEatingAsset = 'assets/icons/eva_eating.png'; // food: Log with no match, an empty shopping list
+// considering: what the AI knows, saved recipes, too few weigh-ins, the chat while it answers
+const evaThinkingAsset = 'assets/icons/eva_thinking.png';
+const evaCameraAsset = 'assets/icons/eva_camera.png'; // photos: the chat's photo card, a review with nothing found
 
 class EvaCutout extends StatelessWidget {
   const EvaCutout({super.key, this.size = 48, this.asset = evaCutoutAsset});

@@ -111,6 +111,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatHint => 'Posez une question, notez un repas…';
 
   @override
+  String get chatEmpty =>
+      'Bonjour, je suis Eva ! Dites-moi ce que vous avez mangé, posez-moi vos questions sur les aliments et les recettes, ou envoyez une photo de votre repas.';
+
+  @override
   String get send => 'Envoyer';
 
   @override

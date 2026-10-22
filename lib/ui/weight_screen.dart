@@ -5,6 +5,7 @@ import '../data/diary.dart';
 import '../data/goals.dart';
 import '../data/health_sync.dart' show healthSyncOn, syncHealthWeights;
 import '../l10n/app_localizations.dart';
+import 'avatar.dart';
 import 'me_screen.dart' show TargetDialog;
 import 'kit.dart';
 import 'theme.dart';
@@ -239,7 +240,8 @@ class _WeightScreenState extends State<WeightScreen> {
                   const SizedBox(height: 8),
                   Text(l.trendWeight, style: TextStyle(color: c.muted, fontSize: 15)),
                   if (points.isEmpty)
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Text(l.weightTrendEmpty))
+                    Padding(padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: EvaNote(l.weightTrendEmpty, asset: evaThinkingAsset))
                   else
                     Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, runSpacing: 8, children: [
                       Text.rich(TextSpan(children: [

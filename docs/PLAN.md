@@ -666,6 +666,12 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+v0.23 (same day): Eva on more screens, by mood (owner's request): a new chat (waving, with a greeting), the chat while it
+answers (thinking), Today's "set your goals" card and Goals (sitting), the health journal (sleeping), too few
+weigh-ins and no saved recipes (thinking), an empty shopping list (eating), a camera review with nothing found
+(camera). A pose may serve several screens, never twice on one. Wanted next from the owner: Eva with a plate (Log),
+a shopping basket (Shopping), a chef's hat (Recipes, Cook mode).
+
 v0.22 (same day): Google Fit through Health Connect (owner's report): steps are the larger of Health Connect's combined
 count and the largest app's own (the combined one takes each minute from one app, by Health Connect's priority list,
 so a phone counter ranked above Fit hid Fit's steps); burnt calories from Fit's totals subtract the resting burn only

@@ -69,6 +69,7 @@
     }
   },
   "chatHint": "Ask about food, log a meal…",
+  "chatEmpty": "Hi, I'm Eva! Tell me what you ate, ask me about food and recipes, or send a photo of your meal.",
   "send": "Send",
   "preparingAi": "Preparing the on-device AI… The first start takes about a minute.",
   "confirmSave": "Save",

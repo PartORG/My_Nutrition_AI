@@ -27,6 +27,7 @@
   "deviceUnsupportedTitle": "Ce téléphone n’est pas pris en charge",
   "deviceUnsupportedBody": "My Nutrition AI fait tourner son IA entièrement sur votre téléphone et nécessite au moins 6 Go de RAM. Ce téléphone en a environ {gb} Go.",
   "chatHint": "Posez une question, notez un repas…",
+  "chatEmpty": "Bonjour, je suis Eva ! Dites-moi ce que vous avez mangé, posez-moi vos questions sur les aliments et les recettes, ou envoyez une photo de votre repas.",
   "send": "Envoyer",
   "preparingAi": "Préparation de l’IA sur l’appareil… Le premier démarrage prend environ une minute.",
   "confirmSave": "Enregistrer",

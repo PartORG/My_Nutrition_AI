@@ -21,9 +21,11 @@ accounts, no cloud inference and no analytics SDK.
   offline speech pack needed), and the answer is read aloud in a woman's or a man's voice (Settings → Voice; the
   phone's own offline voices). The recording is deleted as soon as it is written down.
 - **Eva and you:** the assistant is Eva, the developer's salt-and-pepper miniature schnauzer: her face in the chat,
-  the tab bar and on the unlock screen, and one pose per place elsewhere (waving on the welcome screen, sitting
-  through the food data download, asleep in an empty History, eating when Log finds no food, thinking while the
-  assistant knows nothing yet, with a camera on a photo card, peeking from the drawer). Your own picture
+  the tab bar and on the unlock screen, and elsewhere a pose that fits the moment: waving on the welcome screen and
+  in a new chat; sitting through the food data download, on Today's "set your goals" card and on Goals; asleep in
+  an empty History or health journal; eating when Log finds no food or the shopping list is empty; thinking while
+  she answers, when she knows nothing about you yet, with no saved recipes or too few weigh-ins; with a camera on a
+  photo card or a review that found nothing; peeking from the drawer. Never twice on one screen. Your own picture
   (Settings → Your picture: a sheet with the picture large on top and Picture / Colour / Shape tabs) is a photo from
   your phone or one of 17 icons on one of 18 colours, solid, gradient or
   soft; in a circle, rounded square, hexagon or flower, with or without an outline.

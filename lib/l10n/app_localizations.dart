@@ -264,6 +264,12 @@ abstract class AppLocalizations {
   /// **'Ask about food, log a meal…'**
   String get chatHint;
 
+  /// No description provided for @chatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I\'m Eva! Tell me what you ate, ask me about food and recipes, or send a photo of your meal.'**
+  String get chatEmpty;
+
   /// No description provided for @send.
   ///
   /// In en, this message translates to:

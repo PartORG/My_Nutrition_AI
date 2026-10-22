@@ -19,6 +19,7 @@ import '../billing/billing.dart';
 import '../l10n/app_localizations.dart';
 import '../vision/detector.dart';
 import '../vision/scan.dart';
+import 'avatar.dart';
 import 'kit.dart';
 import 'meal_editor.dart';
 import 'nutrients.dart';
@@ -538,7 +539,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 const SizedBox(height: 6),
                 Text(l.reviewHint, style: TextStyle(fontSize: 16, color: c.ink2)),
                 const SizedBox(height: 16),
-                if (_items.isEmpty) Panel(child: Text(l.reviewEmpty)),
+                if (_items.isEmpty) Panel(child: EvaNote(l.reviewEmpty, asset: evaCameraAsset)),
                 if (_items.isNotEmpty)
                   PanelList(children: [
                     for (final i in _items)
