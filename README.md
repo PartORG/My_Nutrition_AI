@@ -24,7 +24,8 @@ accounts, no cloud inference and no analytics SDK.
   the tab bar and on the unlock screen, and one pose per place elsewhere (waving on the welcome screen, sitting
   through the food data download, asleep in an empty History, eating when Log finds no food, thinking while the
   assistant knows nothing yet, with a camera on a photo card, peeking from the drawer). Your own picture
-  (Settings → Your picture) is a photo from your phone or one of 17 icons on one of 18 colours, solid, gradient or
+  (Settings → Your picture: a sheet with the picture large on top and Picture / Colour / Shape tabs) is a photo from
+  your phone or one of 17 icons on one of 18 colours, solid, gradient or
   soft; in a circle, rounded square, hexagon or flower, with or without an outline.
 - **Home-screen widget:** small, medium and large sizes with today's calories (opt-in), a Log button and a mic:
   say what you ate and the chat shows the meal card to check and save.
@@ -80,8 +81,11 @@ accounts, no cloud inference and no analytics SDK.
 - **Fix what the AI got wrong:** on the chat meal card and the photo review, tap a food to swap it,
   remove it, add one, or change the amount (also by half servings) before saving. Every log can be
   undone, and a meal on Today can be changed later (food, amount or meal).
-- **Health Connect / Apple Health:** reads weight, steps and burnt calories (active calories, or for Google Fit,
-  which writes only totals, the total minus your resting burn so far). Burnt calories show as
+- **Health Connect / Apple Health:** reads weight, steps and burnt calories. Steps are the larger of Health
+  Connect's combined count and the largest single app's own count: the combined count takes each minute from one
+  app only, by the priority list in Health Connect, so an app ranked above Google Fit that counted less used to
+  hide Fit's steps. Burnt calories are active calories, or for Google Fit, which writes only totals and in batches
+  that trail the clock, the total minus your resting burn for the hours Fit's records cover. Burnt calories show as
   a second ring on Today, next to the calories left, and are never added to the goal (it already counts your
   activity level). Steps refresh
   while the app is open; disconnect from the steps tile or in Settings.
@@ -93,8 +97,10 @@ accounts, no cloud inference and no analytics SDK.
   or unlinked later. Nothing leaves the phone.
 - **Navigation and looks:** a bottom bar (Today, Chat, Log, Plan, Me) and a drawer with the same tabs plus the
   screens a few taps deep (weight, history, goals, health, all nutrients, photo of a meal, saved recipes,
-  shopping list, what the AI knows). Light and dark themes with tinted, not pure-white or near-white, surfaces;
-  every text colour keeps at least 4.5:1 contrast (WCAG AA, checked by `test/theme_test.dart`).
+  shopping list, what the AI knows). The colours are the app icon's: forest green, sage, cream and peach (green
+  for health and progress, warm peach and coral where food and streaks are, as warm hues go with appetite), on a
+  warm cream base in light mode, never pure white; every text colour keeps at least 4.5:1 contrast (WCAG AA,
+  checked by `test/theme_test.dart`).
 - **Languages:** English, Ukrainian, German and French, chosen in Settings or the app bar (or
   follow the phone). The assistant answers in the chosen language.
 - **Safety:** a medical disclaimer under the chat input, on every health-information card and in

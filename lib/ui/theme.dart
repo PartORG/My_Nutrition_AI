@@ -3,8 +3,8 @@ import 'package:material_ui/material_ui.dart';
 /// The design's tokens (docs/New_Design/Colour & type tokens): one colour per nutrient and per meal,
 /// used the same way on every screen. Dark is the design's; light keeps the roles with darker hues.
 class AppColors {
-  static const Color primary = Color(0xFF0B7849);
-  static const Color background = Color(0xFFE8EEEA);
+  static const Color primary = Color(0xFF22704A);
+  static const Color background = Color(0xFFF1ECE2);
 }
 
 /// The app's colours for the current theme: `context.colors.muted`.
@@ -92,7 +92,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   // The same hues, dark enough for text on the light background and cards (each ≥ 4.5:1, test/theme_test.dart).
   static const _lightAccents = {
-    'kcal': Color(0xFF0B7849),
+    'kcal': Color(0xFF22704A),
     'protein_g': Color(0xFFB7411C),
     'carbs_g': Color(0xFF905E00),
     'fat_g': Color(0xFF6650DB),
@@ -102,35 +102,36 @@ class AppPalette extends ThemeExtension<AppPalette> {
     'water': Color(0xFF006FA8),
   };
 
-  // No pure white (glare, and cards told apart only by a border): green-tinted neutrals stepped by tone like
-  // Material 3's surface containers, background darkest, cards lightest.
+  // The app icon's colours (forest green, sage, cream, peach): a warm cream base instead of a cool grey one, sage
+  // chips, peach chips (warm hues go with food and appetite), the icon's forest green for the strong fills. No pure
+  // white (glare); background darkest, cards lightest, stepped by tone like Material 3's surface containers.
   static const light = AppPalette(
-    primary: Color(0xFF0B7849),
-    primaryDark: Color(0xFF07603A),
+    primary: Color(0xFF22704A),
+    primaryDark: Color(0xFF175A3A),
     onPrimary: Colors.white,
-    background: Color(0xFFE8EEEA),
-    surface: Color(0xFFF6F9F7),
-    surfaceHigh: Color(0xFFDDE6E0),
-    heroSurface: Color(0xFFD2EADC),
-    ink: Color(0xFF0F1A15),
-    ink2: Color(0xFF33433B),
-    muted: Color(0xFF56665E),
-    border: Color(0xFFD5DDD8),
-    divider: Color(0xFFDFE6E1),
-    track: Color(0xFFDAE3DD),
-    outline: Color(0xFFBFC9C3),
-    hero: Color(0xFF0B7849),
-    mint: Color(0xFFD5EBDF),
-    onMint: Color(0xFF07603A),
-    warm: Color(0xFFF2E7D0),
-    onWarm: Color(0xFF7A5000),
+    background: Color(0xFFF1ECE2),
+    surface: Color(0xFFFBF8F2),
+    surfaceHigh: Color(0xFFE8E1D4),
+    heroSurface: Color(0xFFDCE8D3),
+    ink: Color(0xFF1C2A21),
+    ink2: Color(0xFF3A4A3F),
+    muted: Color(0xFF5C645B),
+    border: Color(0xFFE3DBCD),
+    divider: Color(0xFFEBE5DA),
+    track: Color(0xFFE6DFD2),
+    outline: Color(0xFFCDC4B4),
+    hero: Color(0xFF30543C),
+    mint: Color(0xFFDDEBD8),
+    onMint: Color(0xFF24503A),
+    warm: Color(0xFFFBE1D3),
+    onWarm: Color(0xFF8A3B1E),
     water: Color(0xFF006FA8),
     waterBg: Color(0xFFDFEDF4),
     waterTint: Color(0xFFCCDFE9),
     danger: Color(0xFFB3261E),
     dangerBg: Color(0xFFF7E2DE),
     gold: Color(0xFFFFC24D),
-    dark: Color(0xFF0F1A15),
+    dark: Color(0xFF1C2A21),
     accents: _lightAccents,
   );
 
@@ -143,7 +144,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     background: Color(0xFF0D1311),
     surface: Color(0xFF19221E),
     surfaceHigh: Color(0xFF26332D),
-    heroSurface: Color(0xFF17332A),
+    heroSurface: Color(0xFF1C3A2A),
     ink: Color(0xFFDFE7E2),
     ink2: Color(0xFFC2CEC8),
     muted: Color(0xFFA3B5AC),
@@ -151,11 +152,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
     divider: Color(0xFF222C27),
     track: Color(0xFF26332D),
     outline: Color(0xFF34433C),
-    hero: Color(0xFF1E5A3C),
-    mint: Color(0xFF233D31),
+    hero: Color(0xFF2C5A40),
+    mint: Color(0xFF22402F),
     onMint: Color(0xFF6EE7A8),
-    warm: Color(0xFF3A3722),
-    onWarm: Color(0xFFFFC24D),
+    warm: Color(0xFF3D2A21),
+    onWarm: Color(0xFFFFB08A),
     water: Color(0xFF5CC2FF),
     waterBg: Color(0xFF173A5A),
     waterTint: Color(0xFF20373F),
@@ -307,9 +308,10 @@ const mealIcons = {
   'snack': Icons.cookie_outlined,
 };
 
-/// [color] washed over [base] (the card surface): the design's 16 % tint, 10 % on light for contrast.
+/// [color] washed over [base] (the card surface): the design's 16 % tint, 13 % on light (more colour on the warm
+/// cream, the icon still ≥ 3:1 on it: test/theme_test.dart).
 Color tint(BuildContext context, Color color, {Color? base, double? alpha}) => Color.alphaBlend(
-    color.withValues(alpha: alpha ?? (Theme.of(context).brightness == Brightness.dark ? .16 : .10)),
+    color.withValues(alpha: alpha ?? (Theme.of(context).brightness == Brightness.dark ? .16 : .13)),
     base ?? context.colors.surface);
 
 /// Corner radii of the design: cards 20, hero cards 24, tiles and inputs 14, chips 12, pills full.

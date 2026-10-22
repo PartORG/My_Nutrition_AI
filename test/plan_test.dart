@@ -88,14 +88,26 @@ void main() {
         [80.0, 79.6]);
   });
 
-  test('burnt calories: active ones, else the total beyond the resting burn so far (Google Fit)', () {
-    final noon = DateTime(2026, 10, 18, 12);
-    expect(burntKcal(active: 250, now: noon), 250, reason: 'no total: active only');
-    expect(burntKcal(active: 0, total: 1200, now: noon), 0, reason: 'no goals, no resting burn known');
-    // Half the day gone: 1800 / 2 = 900 kcal of the total was resting.
-    expect(burntKcal(active: 0, total: 1200, basalPerDay: 1800, now: noon), closeTo(300, .01));
-    expect(burntKcal(active: 400, total: 1200, basalPerDay: 1800, now: noon), 400, reason: 'active wins when larger');
-    expect(burntKcal(active: 0, total: 500, basalPerDay: 1800, now: noon), 0, reason: 'never below zero');
+  test('steps: the largest app\'s own total, never two apps added up; cut records count in proportion', () {
+    final day = DateTime(2026, 10, 18), noon = DateTime(2026, 10, 18, 12);
+    HealthRecord r(String app, int h1, int h2, double v) =>
+        (source: app, from: day.add(Duration(hours: h1)), to: day.add(Duration(hours: h2)), value: v);
+    // Google Fit counted 6000, the phone's counter (ranked first in Health Connect) only 4000 over the same hours.
+    final steps = [r('fit', 8, 9, 2500), r('fit', 10, 11, 3500), r('phone', 8, 11, 4000)];
+    expect(largestSourceTotal(steps, day, noon), 6000);
+    expect(largestSourceTotal([r('fit', -2, 2, 800)], day, noon), 400, reason: 'half of it was yesterday');
+    expect(largestSourceTotal([], day, noon), 0);
+  });
+
+  test('burnt from Google Fit totals: the resting burn only for the hours its records cover', () {
+    final day = DateTime(2026, 10, 18), evening = DateTime(2026, 10, 18, 18);
+    HealthRecord r(int h1, int h2, double v) =>
+        (source: 'fit', from: day.add(Duration(hours: h1)), to: day.add(Duration(hours: h2)), value: v);
+    // Fit has synced up to noon: 1200 kcal, of which 1800 / 2 = 900 resting. Counting the resting burn up to 18:00
+    // (1350) gave less than zero, so the ring never showed anything.
+    expect(activeFromTotals([r(0, 6, 450), r(6, 12, 750)], 1800, day, evening), closeTo(300, .01));
+    expect(activeFromTotals([r(0, 12, 800)], 1800, day, evening), 0, reason: 'never below zero');
+    expect(activeFromTotals([], 1800, day, evening), 0);
   });
 
   test('ingredients and shopping list in the app language, English where nutri.db has no translation', () {

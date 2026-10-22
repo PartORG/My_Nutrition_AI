@@ -2350,6 +2350,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get avatarTitle => 'Dein Bild';
 
   @override
+  String get avatarEditHint => 'Foto oder Symbol, Farbe, Form';
+
+  @override
+  String get avatarTabPicture => 'Bild';
+
+  @override
+  String get avatarTabColour => 'Farbe';
+
+  @override
+  String get avatarTabShape => 'Form';
+
+  @override
+  String get avatarPhotoCovers =>
+      'Dein Foto wird angezeigt. Entferne es, um ein Symbol, seine Farbe und den Hintergrund zu wählen.';
+
+  @override
   String get avatarWoman => 'Frau';
 
   @override

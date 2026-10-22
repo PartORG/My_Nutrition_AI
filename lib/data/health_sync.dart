@@ -76,58 +76,100 @@ Future<void> disconnectHealth(Database user) async {
   }
 }
 
-/// Today's steps; null when sync is off or the platform says nothing.
-Future<int?> stepsToday(Database user) async {
-  if (!healthSupported || !healthSyncOn(user)) return null;
+/// One record from the health app: which app wrote it, the time it covers and its amount (steps, kcal).
+typedef HealthRecord = ({String source, DateTime from, DateTime to, double value});
+
+/// Today's records of [type], each with the app that wrote it; empty when unreadable (e.g. not granted yet).
+Future<List<HealthRecord>> _recordsToday(HealthDataType type, DateTime start, DateTime now) async {
   try {
-    final now = DateTime.now();
-    return await _health.getTotalStepsInInterval(DateTime(now.year, now.month, now.day), now);
+    final points = await _health.getHealthDataFromTypes(types: [type], startTime: start, endTime: now);
+    return [
+      for (final p in points)
+        if (p.value case NumericHealthValue(:final numericValue))
+          (source: '${p.sourceName}|${p.sourceId}', from: p.dateFrom, to: p.dateTo, value: numericValue.toDouble()),
+    ];
   } on Object catch (e) {
-    debugPrint('health steps: $e');
-    return null;
+    debugPrint('health $type: $e');
+    return const [];
   }
 }
 
-/// Today's burnt calories, summed by the platform (Health Connect drops the overlap between
-/// apps); stored for the "burnt" ring on Today. True when they changed.
+/// Each app's own records cut to [from, to] (a record cut in two counts in proportion), by app.
+Map<String, List<HealthRecord>> _bySource(List<HealthRecord> records, DateTime from, DateTime to) {
+  final out = <String, List<HealthRecord>>{};
+  for (final r in records) {
+    final a = r.from.isBefore(from) ? from : r.from, b = r.to.isAfter(to) ? to : r.to;
+    final whole = r.to.difference(r.from).inSeconds;
+    if (whole > 0 && !b.isAfter(a)) continue; // outside the day
+    final share = whole <= 0 ? 1.0 : b.difference(a).inSeconds / whole;
+    (out[r.source] ??= []).add((source: r.source, from: a, to: b, value: r.value * share));
+  }
+  return out;
+}
+
+/// The largest app's own total. Health Connect's combined total counts each minute from one app only (by the
+/// priority list in Health Connect), so an app ranked above Google Fit that counted fewer steps hides Fit's;
+/// one app's own records don't overlap, so its total counts nothing twice.
+double largestSourceTotal(List<HealthRecord> records, DateTime from, DateTime to) => _bySource(records, from, to)
+    .values
+    .map((rs) => rs.fold(0.0, (sum, r) => sum + r.value))
+    .fold(0.0, max);
+
+/// Burnt calories from total-calorie records (Google Fit writes only those, resting burn included, and in batches
+/// that trail the clock): per app, its total minus the resting burn for the time its records cover, not for the whole
+/// day so far (which, hours behind, went below zero and showed nothing); the largest app.
+double activeFromTotals(List<HealthRecord> records, double basalPerDay, DateTime from, DateTime to) {
+  var best = 0.0;
+  for (final rs in _bySource(records, from, to).values) {
+    rs.sort((a, b) => a.from.compareTo(b.from));
+    var covered = 0, end = from; // seconds covered by the union of the app's records
+    for (final r in rs) {
+      final a = r.from.isAfter(end) ? r.from : end;
+      if (r.to.isAfter(a)) covered += r.to.difference(a).inSeconds;
+      if (r.to.isAfter(end)) end = r.to;
+    }
+    final kcal = rs.fold(0.0, (sum, r) => sum + r.value);
+    best = max(best, kcal - basalPerDay * covered / 86400);
+  }
+  return best;
+}
+
+/// Today's steps: the larger of Health Connect's combined total and the largest app's own ([largestSourceTotal]);
+/// null when sync is off or nothing could be read.
+Future<int?> stepsToday(Database user) async {
+  if (!healthSupported || !healthSyncOn(user)) return null;
+  final now = DateTime.now();
+  final start = DateTime(now.year, now.month, now.day);
+  int? combined;
+  try {
+    combined = await _health.getTotalStepsInInterval(start, now);
+  } on Object catch (e) {
+    debugPrint('health steps: $e');
+  }
+  final records = await _recordsToday(HealthDataType.STEPS, start, now);
+  if (combined == null && records.isEmpty) return null;
+  return max(combined ?? 0, largestSourceTotal(records, start, now).round());
+}
+
+/// Today's burnt calories for the "burnt" ring on Today: active calories where an app writes them, else what the
+/// total-calorie records hold beyond the resting burn ([activeFromTotals]; without goals no resting burn is known,
+/// so only active calories count). True when they changed.
 Future<bool> syncActiveKcal(Database user) async {
   if (!healthSupported || !healthSyncOn(user)) return false;
   try {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
-    Future<double?> sum(HealthDataType type) async {
-      try {
-        final points = await _health.getHealthIntervalDataFromTypes(
-            startDate: start, endDate: now, types: [type], interval: 86400);
-        return [
-          for (final p in points)
-            if (p.value case NumericHealthValue(:final numericValue)) numericValue.toDouble(),
-        ].fold<double>(0, (a, b) => a + b);
-      } on Object catch (e) {
-        debugPrint('health $type: $e'); // e.g. total calories not granted yet
-        return null;
-      }
-    }
-
-    final active = await sum(HealthDataType.ACTIVE_ENERGY_BURNED) ?? 0;
-    final total = Platform.isAndroid ? await sum(HealthDataType.TOTAL_CALORIES_BURNED) : null;
+    final active = largestSourceTotal(await _recordsToday(HealthDataType.ACTIVE_ENERGY_BURNED, start, now), start, now);
     final body = loadBody(user);
     final basal = body == null ? null : basalKcal(body, now: now);
-    return storeActiveKcal(user, now, burntKcal(active: active, total: total, basalPerDay: basal, now: now));
+    final totals = Platform.isAndroid && basal != null
+        ? activeFromTotals(await _recordsToday(HealthDataType.TOTAL_CALORIES_BURNED, start, now), basal, start, now)
+        : 0.0;
+    return storeActiveKcal(user, now, max(active, totals));
   } on Object catch (e) {
     debugPrint('health calories: $e');
     return false;
   }
-}
-
-/// The ring's calories: active ones when an app writes them; else what the day's total holds beyond the
-/// resting burn so far (Google Fit writes only totals, resting burn included). Without goals (no basal
-/// burn known) only active calories count.
-// shortcut: the resting burn is our Mifflin-St Jeor, not Health Connect's own; use its BasalMetabolicRate if they drift.
-double burntKcal({required double active, double? total, double? basalPerDay, required DateTime now}) {
-  if (total == null || basalPerDay == null) return active;
-  final dayPart = now.difference(DateTime(now.year, now.month, now.day)).inMinutes / 1440;
-  return max(active, total - basalPerDay * dayPart);
 }
 
 /// Weights of the last 90 days from the health app into the journal (goals use the latest).

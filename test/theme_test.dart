@@ -20,9 +20,9 @@ void main() {
           expect(contrast(c, bg), greaterThanOrEqualTo(4.5), reason: '$k on $on');
         }
       }
-      // A meal or nutrient icon on its 10 % (light) / 16 % (night) wash over the card (tint in theme.dart).
+      // A meal or nutrient icon on its 13 % (light) / 16 % (night) wash over the card (tint in theme.dart).
       for (final MapEntry(key: k, value: c) in p.accents.entries) {
-        final wash = Color.alphaBlend(c.withValues(alpha: name == 'light' ? .10 : .16), p.surface);
+        final wash = Color.alphaBlend(c.withValues(alpha: name == 'light' ? .13 : .16), p.surface);
         expect(contrast(c, wash), greaterThanOrEqualTo(3), reason: '$k icon on its tint');
       }
       for (final (k, fg, bg) in [

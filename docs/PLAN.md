@@ -666,6 +666,14 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+v0.22 (same day): Google Fit through Health Connect (owner's report): steps are the larger of Health Connect's combined
+count and the largest app's own (the combined one takes each minute from one app, by Health Connect's priority list,
+so a phone counter ranked above Fit hid Fit's steps); burnt calories from Fit's totals subtract the resting burn only
+for the hours Fit's records cover (Fit syncs in batches; counted to "now" it went below zero and the ring stayed
+empty). Settings → Your picture is one row opening a sheet (large preview, Picture / Colour / Shape tabs, scrolls with
+pinned tabs at large text). Colours from the app icon: warm cream base, sage, peach and coral chips, the icon's forest
+green for strong fills; all text still ≥ 4.5:1.
+
 v0.21 (same day), reality check of the numbers (owner's request):
 - the meal parser read "8 oz steak" as 8 servings and missed tbsp/tsp/l/lb/fl oz: they are now weights;
 - the sugar limit is the EU reference intake for total sugars (18 % of kcal), since the tables give total sugars and

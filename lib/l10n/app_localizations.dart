@@ -4002,6 +4002,36 @@ abstract class AppLocalizations {
   /// **'Your picture'**
   String get avatarTitle;
 
+  /// No description provided for @avatarEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo or icon, colour, shape'**
+  String get avatarEditHint;
+
+  /// No description provided for @avatarTabPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture'**
+  String get avatarTabPicture;
+
+  /// No description provided for @avatarTabColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get avatarTabColour;
+
+  /// No description provided for @avatarTabShape.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape'**
+  String get avatarTabShape;
+
+  /// No description provided for @avatarPhotoCovers.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo is shown. Remove it to choose an icon, its colour and background.'**
+  String get avatarPhotoCovers;
+
   /// No description provided for @avatarWoman.
   ///
   /// In en, this message translates to:

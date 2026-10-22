@@ -119,6 +119,17 @@ void main() {
       ]));
       await tester.pumpAndSettle();
       expect(find.text(l.settingsDanger), findsNothing, reason: 'starts at the top');
+      // Your picture: one row; its editor is a sheet with three tabs.
+      await tester.tap(find.text(l.avatarEditHint));
+      await tester.pumpAndSettle();
+      for (final t in [l.avatarTabColour, l.avatarTabShape, l.avatarTabPicture]) {
+        await tester.tap(find.descendant(of: find.byType(TabBar), matching: find.text(t)));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull, reason: 'picture editor ($lang)');
+      await tester.tap(find.text(l.close));
+      await tester.pumpAndSettle();
+      expect(find.byType(TabBar), findsNothing);
       await scrollAll(tester, 'Settings ($lang)');
       await tester.scrollUntilVisible(find.text(l.deleteThisProfile), 400);
       expect(tester.takeException(), isNull);

@@ -2366,6 +2366,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get avatarTitle => 'Ваше зображення';
 
   @override
+  String get avatarEditHint => 'Фото чи значок, колір, форма';
+
+  @override
+  String get avatarTabPicture => 'Зображення';
+
+  @override
+  String get avatarTabColour => 'Колір';
+
+  @override
+  String get avatarTabShape => 'Форма';
+
+  @override
+  String get avatarPhotoCovers =>
+      'Показано ваше фото. Видаліть його, щоб вибрати значок, його колір і фон.';
+
+  @override
   String get avatarWoman => 'Жінка';
 
   @override

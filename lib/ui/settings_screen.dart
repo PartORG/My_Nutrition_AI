@@ -45,7 +45,15 @@ class SettingsScreen extends ConsumerWidget {
             final google = profiles.googleEmail(data.profile.id);
             return ListView(padding: const EdgeInsets.only(bottom: 32), children: [
               ScreenHeader(title: l.settingsTitle, back: true),
-              _Group(title: l.avatarTitle, children: const [_AvatarSettings()]),
+              _Group(title: l.avatarTitle, children: [
+                ListTile(
+                  leading: const UserAvatar(radius: 24),
+                  title: Text(l.avatarTitle),
+                  subtitle: Text(l.avatarEditHint),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showAvatarEditor(context),
+                ),
+              ]),
               _Group(title: l.lookAndLanguage, children: [
                 ListTile(
                   leading: _icon(context, Icons.language, 'water'),
@@ -346,8 +354,18 @@ class _VoiceRepliesState extends ConsumerState<_VoiceReplies> {
 
 /// Settings → Your picture: a photo from the phone, or an icon on a colour (solid, gradient or soft); either in a
 /// shape, with or without an outline.
-class _AvatarSettings extends ConsumerWidget {
-  const _AvatarSettings();
+/// Settings → Your picture: a sheet with the picture large on top and its options in three tabs (picture,
+/// colour, shape), as avatar editors usually are: Settings itself keeps one row. Every choice applies at once.
+Future<void> showAvatarEditor(BuildContext context) => showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => const FractionallySizedBox(heightFactor: .85, child: _AvatarEditor()),
+    );
+
+class _AvatarEditor extends ConsumerWidget {
+  const _AvatarEditor();
 
   Future<void> _pickPhoto(WidgetRef ref) async {
     try {
@@ -366,14 +384,43 @@ class _AvatarSettings extends ConsumerWidget {
     final a = ref.watch(avatarProvider);
     final avatar = ref.read(avatarProvider.notifier);
     final label = AppText.caption.copyWith(fontSize: 13, color: c.muted);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          const UserAvatar(radius: 36),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Wrap(spacing: 8, runSpacing: 8, children: [
+    // A photo covers the icon, its colour and background: those tabs say so until it's removed.
+    Widget photoNote() => Padding(
+        padding: const EdgeInsets.only(bottom: 12), child: Text(l.avatarPhotoCovers, style: TextStyle(color: c.ink2)));
+    Widget tab(List<Widget> children) => ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: children);
+    // The title and the big picture scroll away with the options (large text on a small phone leaves no room for
+    // them all); the tabs stay pinned.
+    return DefaultTabController(
+      length: 3,
+      child: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverToBoxAdapter(
+            child: Column(children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
+                child: Row(children: [
+                  Expanded(child: Text(l.avatarTitle, style: Theme.of(context).textTheme.titleLarge)),
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(l.close)),
+                ]),
+              ),
+              const SizedBox(height: 8),
+              const UserAvatar(radius: 56),
+              const SizedBox(height: 12),
+            ]),
+          ),
+          SliverAppBar(
+            pinned: true,
+            primary: false,
+            automaticallyImplyLeading: false,
+            toolbarHeight: 0,
+            backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? c.surface,
+            surfaceTintColor: Colors.transparent,
+            bottom: TabBar(tabs: [Tab(text: l.avatarTabPicture), Tab(text: l.avatarTabColour), Tab(text: l.avatarTabShape)]),
+          ),
+        ],
+        body: TabBarView(children: [
+          tab([
+            Wrap(spacing: 8, runSpacing: 8, children: [
               OutlinedButton.icon(
                 icon: const Icon(Icons.photo_library_outlined),
                 label: Text(l.avatarPhoto),
@@ -381,58 +428,65 @@ class _AvatarSettings extends ConsumerWidget {
               ),
               if (a.photo != null) TextButton(onPressed: () => avatar.setPhoto(null), child: Text(l.avatarRemovePhoto)),
             ]),
-          ),
-        ]),
-        // A photo covers the icon, its colour and background: they're offered again once it's removed.
-        if (a.photo == null) ...[
-          const SizedBox(height: 12),
-          AvatarChoices(values: personAvatars, selected: a.kind, label: (k) => avatarKindName(l, k),
-              preview: (k) => copyAvatar(a, kind: k), onSelected: (k) => avatar.set(kind: k)),
-          const SizedBox(height: 4),
-          AvatarChoices(
-              values: [for (final k in AvatarKind.values) if (!personAvatars.contains(k)) k],
-              selected: a.kind, label: (k) => avatarKindName(l, k), captions: false,
-              preview: (k) => copyAvatar(a, kind: k, ring: AvatarRing.none), onSelected: (k) => avatar.set(kind: k)),
-          const SizedBox(height: 12),
-          Text(l.avatarColor, style: label),
-          const SizedBox(height: 8),
-          Wrap(spacing: 10, runSpacing: 10, children: [
-            for (final (i, color) in avatarColors.indexed)
-              Semantics(
-                button: true,
-                selected: color == a.color,
-                label: '${l.avatarColor} ${i + 1}',
-                excludeSemantics: true,
-                child: InkResponse(
-                  onTap: () => avatar.set(color: color),
-                  radius: 26,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Color(color),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: color == a.color ? c.ink : Colors.transparent, width: 3),
-                    ),
-                    child: color == a.color ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
-                  ),
-                ),
-              ),
+            const SizedBox(height: 16),
+            if (a.photo != null)
+              photoNote()
+            else ...[
+              AvatarChoices(values: personAvatars, selected: a.kind, label: (k) => avatarKindName(l, k),
+                  preview: (k) => copyAvatar(a, kind: k), onSelected: (k) => avatar.set(kind: k)),
+              const SizedBox(height: 8),
+              AvatarChoices(
+                  values: [for (final k in AvatarKind.values) if (!personAvatars.contains(k)) k],
+                  selected: a.kind, label: (k) => avatarKindName(l, k), captions: false,
+                  preview: (k) => copyAvatar(a, kind: k, ring: AvatarRing.none), onSelected: (k) => avatar.set(kind: k)),
+            ],
           ]),
-          const SizedBox(height: 12),
-          Text(l.avatarBackground, style: label),
-          AvatarChoices(values: AvatarStyle.values, selected: a.style, label: (s) => l.avatarStyleName(s.name),
-              preview: (s) => copyAvatar(a, style: s), onSelected: (s) => avatar.set(style: s)),
-        ],
-        const SizedBox(height: 8),
-        Text(l.avatarShape, style: label),
-        AvatarChoices(values: AvatarShape.values, selected: a.shape, label: (s) => l.avatarShapeName(s.name),
-            preview: (s) => copyAvatar(a, shape: s), onSelected: (s) => avatar.set(shape: s)),
-        const SizedBox(height: 8),
-        Text(l.avatarOutline, style: label),
-        AvatarChoices(values: AvatarRing.values, selected: a.ring, label: (r) => l.avatarRingName(r.name),
-            preview: (r) => copyAvatar(a, ring: r), onSelected: (r) => avatar.set(ring: r)),
-      ]),
+          tab([
+            if (a.photo != null)
+              photoNote()
+            else ...[
+              Text(l.avatarColor, style: label),
+              const SizedBox(height: 8),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                for (final (i, color) in avatarColors.indexed)
+                  Semantics(
+                    button: true,
+                    selected: color == a.color,
+                    label: '${l.avatarColor} ${i + 1}',
+                    excludeSemantics: true,
+                    child: InkResponse(
+                      onTap: () => avatar.set(color: color),
+                      radius: 26,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Color(color),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: color == a.color ? c.ink : Colors.transparent, width: 3),
+                        ),
+                        child: color == a.color ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                      ),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 16),
+              Text(l.avatarBackground, style: label),
+              AvatarChoices(values: AvatarStyle.values, selected: a.style, label: (s) => l.avatarStyleName(s.name),
+                  preview: (s) => copyAvatar(a, style: s), onSelected: (s) => avatar.set(style: s)),
+            ],
+          ]),
+          tab([
+            Text(l.avatarShape, style: label),
+            AvatarChoices(values: AvatarShape.values, selected: a.shape, label: (s) => l.avatarShapeName(s.name),
+                preview: (s) => copyAvatar(a, shape: s), onSelected: (s) => avatar.set(shape: s)),
+            const SizedBox(height: 12),
+            Text(l.avatarOutline, style: label),
+            AvatarChoices(values: AvatarRing.values, selected: a.ring, label: (r) => l.avatarRingName(r.name),
+                preview: (r) => copyAvatar(a, ring: r), onSelected: (r) => avatar.set(ring: r)),
+          ]),
+        ]),
+      ),
     );
   }
 }
