@@ -46,6 +46,7 @@ void main() {
   });
 
   testWidgets('until the data is on the phone the app shows its download, with the size', (tester) async {
+    File('${tmp.path}/products.db').writeAsStringSync('the old packaged-products download');
     await tester.pumpWidget(ProviderScope(
       overrides: [appDirProvider.overrideWith((ref) async => tmp)],
       child: const MyFoodMindApp(),
@@ -54,5 +55,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Food data'), findsOneWidget);
     expect(find.text('Download ($dataDownloadMb MB)'), findsOneWidget);
+    expect(File('${tmp.path}/products.db').existsSync(), isFalse, reason: 'its download is gone: the space is freed');
+  });
+
+  testWidgets('a new data version asks only for the databases, sized as such', (tester) async {
+    for (final f in [embedderFile, tokenizerFile]) {
+      File('${tmp.path}/$f').writeAsBytesSync([1]);
+    }
+    await tester.pumpWidget(ProviderScope(
+      overrides: [appDirProvider.overrideWith((ref) async => tmp)],
+      child: const MyFoodMindApp(),
+    ));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    final mb = dataFiles.where((f) => f.name.endsWith('.db')).fold(0, (sum, f) => sum + f.mb);
+    expect(find.text('Download ($mb MB)'), findsOneWidget);
   });
 }

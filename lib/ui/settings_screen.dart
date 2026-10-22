@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../billing/billing.dart' show Tier;
@@ -18,7 +17,7 @@ import '../data/reminders.dart';
 import '../l10n/app_localizations.dart';
 import 'avatar.dart';
 import 'detector_bench_screen.dart';
-import 'home_screen.dart' show AiModelCard, DownloadBar, askNetwork;
+import 'home_screen.dart' show AiModelCard;
 import 'nutrients.dart';
 import 'kit.dart';
 import 'paywall_screen.dart';
@@ -113,7 +112,6 @@ class SettingsScreen extends ConsumerWidget {
                       data.changed();
                     },
                   ),
-                _Products(data: data),
               ]),
               _Group(title: l.settingsPrivacy, children: [
                 if (ref.watch(biometricsAvailableProvider).value == true)
@@ -692,56 +690,3 @@ class _Reminders extends ConsumerWidget {
   }
 }
 
-/// Every packaged product from Open Food Facts (all countries), as an optional download.
-class _Products extends ConsumerStatefulWidget {
-  const _Products({required this.data});
-  final ProfileData data;
-
-  @override
-  ConsumerState<_Products> createState() => _ProductsState();
-}
-
-class _ProductsState extends ConsumerState<_Products> {
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final progress = ref.watch(productsDownloadProvider);
-    final info = productsInfo(widget.data.tools.products);
-    final download = ref.read(productsDownloadProvider.notifier);
-    final c = context.colors;
-    final green = context.nutrientColor('kcal');
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _icon(context, Icons.inventory_2_outlined, 'kcal'),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l.productsTitle, style: Theme.of(context).listTileTheme.titleTextStyle),
-            const SizedBox(height: 2),
-            Text(info == null ? l.productsNone : l.productsHave(NumberFormat.decimalPattern().format(info.rows), info.builtAt),
-                style: Theme.of(context).listTileTheme.subtitleTextStyle),
-            const SizedBox(height: 8),
-            DownloadBar(productsDownloadProvider),
-            if (progress == null)
-              info == null
-                  ? FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                          backgroundColor: tint(context, green, alpha: .18), foregroundColor: green, minimumSize: const Size(48, 44)),
-                      icon: const Icon(Icons.download, size: 18),
-                      label: Text(l.productsDownload(productsDownloadMb)),
-                      onPressed: () async {
-                        final wifiOnly = await askNetwork(context, productsDownloadMb);
-                        if (wifiOnly != null) await download.start(wifiOnly: wifiOnly, title: l.productsTitle);
-                      },
-                    )
-                  : TextButton(
-                      style: TextButton.styleFrom(foregroundColor: c.danger),
-                      onPressed: () => setState(download.remove),
-                      child: Text(l.productsRemove)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}

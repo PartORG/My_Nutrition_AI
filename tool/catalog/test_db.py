@@ -1,4 +1,4 @@
-"""The host tests' catalogue: test/nutri_test.db, test/health_test.db and test/products_test.db in the v4 schemas,
+"""The host tests' catalogue: test/nutri_test.db and test/health_test.db in the v4 schemas,
 made from the same dummy data the v3 tests used (db/nutri_dummy.sql, loaded into the v3 schema and converted), so
 the tests keep their foods, recipes and numbers.
 
@@ -61,7 +61,7 @@ def nutri(v3: sqlite3.Connection) -> None:
         db.executemany("INSERT INTO recipe_ingredients (recipe_id, position, food_id, grams, line) VALUES (?, ?, ?, ?, ?)",
                        [(r["id"], i, x["food_id"], x["grams"], f"{x['grams']:g} g {names[x['food_id']]}")
                         for i, x in enumerate(lines, 1)])
-    db.executemany("INSERT INTO meta VALUES (?, ?)", [("schema_version", "4"), ("data_version", "5"),
+    db.executemany("INSERT INTO meta VALUES (?, ?)", [("schema_version", "4"), ("data_version", "6"),
                                                       ("embedding_model", "embeddinggemma-300m"), ("built_at", "dummy")])
     for t in ("foods_fts", "recipes_fts"):
         db.execute(f"INSERT INTO {t}({t}) VALUES ('rebuild')")
@@ -110,19 +110,8 @@ def health(v3: sqlite3.Connection) -> None:
     db.commit()
 
 
-def products(v3: sqlite3.Connection) -> None:
-    db = fresh("products")
-    db.execute("INSERT INTO sources VALUES ('dummy', 'DUMMY', 'none', NULL)")
-    cols = ["barcode", "name", "kind", "source_id", *KEYS]
-    db.executemany(f"INSERT INTO products ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
-                   [(p["barcode"], p["name"], "packaged", "dummy", *values(p)) for p in v3.execute("SELECT * FROM products")])
-    db.executemany("INSERT INTO meta VALUES (?, ?)", [("schema_version", "4"), ("built_at", "dummy"), ("rows", "3")])
-    db.execute("INSERT INTO products_fts(products_fts) VALUES ('rebuild')")
-    db.commit()
-
-
 if __name__ == "__main__":
     dummy = v3_dummy()
-    for build in (nutri, health, products):
+    for build in (nutri, health):
         build(dummy)
-    print("test/nutri_test.db, test/health_test.db, test/products_test.db")
+    print("test/nutri_test.db, test/health_test.db")

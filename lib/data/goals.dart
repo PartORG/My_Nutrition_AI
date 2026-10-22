@@ -77,18 +77,23 @@ double? basalKcal(Body b, {required DateTime now}) {
 /// Extra kcal per day in the 1st, 2nd and 3rd trimester (NASEM/IOM DRI 2005: EER in pregnancy).
 const pregnancyKcal = [0, 340, 452];
 
+/// Extra kcal per day while breastfeeding, the baby 0-6 and 7-12 months old (NASEM/IOM DRI 2005: EER in lactation;
+/// the first half already counts the usual weight loss after birth).
+const lactationKcal = [330, 400];
+
 /// Targets from the plan (docs/PLAN.md, Goals): Mifflin-St Jeor BMR × activity,
 /// ±15% for the goal (no deficit when underweight or pregnant), kcal floor, + [pregnancyKcal] for the
-/// [trimester] (1-3; 0 = not pregnant); protein 1.2 g/kg, fat 30% of kcal, carbs the
+/// [trimester] (1-3; 0 = not pregnant) or [lactationKcal] for the baby's [halfYear] (1-2; 0 = not breastfeeding); protein 1.2 g/kg, fat 30% of kcal, carbs the
 /// rest; fiber 14 g per 1000 kcal; WHO limits for sugar (10% of kcal) and
 /// sodium (2000 mg). Null under 18.
-Targets? computeTargets(Body b, {required DateTime now, int trimester = 0}) {
+Targets? computeTargets(Body b, {required DateTime now, int trimester = 0, int halfYear = 0}) {
   final bmr = basalKcal(b, now: now);
   if (bmr == null) return null;
   final noLoss = underweight(b.heightCm, b.weightKg) || trimester > 0;
   final change = b.goal == Goal.lose && noLoss ? 0.0 : b.goal.change;
   final kcal = max(bmr * b.activity.factor * (1 + change), kcalFloor[b.sex]!) +
-      (trimester > 0 ? pregnancyKcal[trimester - 1] : 0);
+      (trimester > 0 ? pregnancyKcal[trimester - 1] : 0) +
+      (halfYear > 0 ? lactationKcal[halfYear - 1] : 0);
   final protein = 1.2 * b.weightKg;
   final fat = kcal * .30 / 9;
   return {
@@ -119,6 +124,13 @@ int trimester(Database user) =>
     lifeStage(user) == 'pregnancy' ? (int.tryParse(pref(user, 'trimester') ?? '') ?? 1).clamp(1, 3) : 0;
 
 void setTrimester(Database user, int trimester) => setPref(user, 'trimester', '$trimester');
+
+/// While breastfeeding, the baby's age: 1 = 0-6 months, 2 = 7-12 (a profile pref; breastfeeding before it was asked
+/// = 1); 0 otherwise.
+int babyHalfYear(Database user) =>
+    lifeStage(user) == 'lactation' ? (int.tryParse(pref(user, 'baby_half_year') ?? '') ?? 1).clamp(1, 2) : 0;
+
+void setBabyHalfYear(Database user, int halfYear) => setPref(user, 'baby_half_year', '$halfYear');
 
 /// NASEM's ULs for these cover supplements and added forms only (magnesium, niacin, folic acid, vitamin E): food
 /// alone over them is no warning.
@@ -258,7 +270,7 @@ void setOverride(Database user, String nutrient, double? value) => value == null
 ({Targets values, Set<String> custom, Map<String, String> limited}) currentTargets(Database user,
     {required Database? nutri, required DateTime now}) {
   final body = loadBody(user);
-  final computed = body == null ? null : computeTargets(body, now: now, trimester: trimester(user));
+  final computed = body == null ? null : computeTargets(body, now: now, trimester: trimester(user), halfYear: babyHalfYear(user));
   final reference = body == null || nutri == null ? const <String, double>{} : referenceGoals(nutri, body, lifeStage(user), now: now);
   final overrides = loadOverrides(user);
   // The formula keeps the macros (personal kcal, protein per kg); health.db gives the rest.

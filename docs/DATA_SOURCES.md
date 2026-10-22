@@ -52,11 +52,12 @@ the sums of their fatty acids.
   Topics, NIH SeniorHealth, cancer.gov, NHLBI, CDC). The three subsets whose answers the authors removed add nothing.
 - EFSA DRV summary tables (PDF) are downloaded but not parsed yet.
 
-### products.db (download): 2,077,610 products
+### Packaged products: removed (v0.18, 2026-10-22)
 
-Open Food Facts dump 2026-10-16 (ODbL 1.0 / DbCL; 2,034,064 rows), USDA Branded Foods (public domain, 29,824),
-Healthy Foods DB (7,772), the v3 Open Food Facts extract (4,509), baked goods (643), USDA SR chain items (265), chain
-menus (503), Swiss branded foods (30). One row per barcode: the most complete label.
+The optional products.db download (Open Food Facts, USDA Branded, 2.08M rows) is gone: no barcode scanning, so
+search alone didn't earn 523 MB. The 503 chain menu items (McDonald's, Burger King, Indian chains: the
+mcdonalds_menu, chains_nutrition_values and india_chains tables) moved into nutri.db as foods. Open Food Facts still
+gives the drinks' label medians (off_median).
 
 ### Not used
 

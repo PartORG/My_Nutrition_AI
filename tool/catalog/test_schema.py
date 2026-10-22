@@ -21,18 +21,18 @@ def test_nutrient_panel_keys_are_unique_columns_with_their_unit():
         assert n["key"].endswith(unit), n
 
 
-@pytest.mark.parametrize("name", ["nutri", "health", "products"])
+@pytest.mark.parametrize("name", ["nutri", "health"])
 def test_schemas_load(name):
     con = schema.create(":memory:", name)
     assert schema.MARKER not in schema.sql(name)
     assert con.execute("SELECT count(*) FROM meta").fetchone() == (0,)
 
 
-def test_nutrient_columns_on_foods_products_and_recipe_totals():
+def test_nutrient_columns_on_foods_and_recipe_totals():
     keys = [n["key"] for n in schema.nutrients()]
-    nutri, products = schema.create(":memory:", "nutri"), schema.create(":memory:", "products")
-    for con, table in [(nutri, "foods"), (nutri, "recipe_nutrition"), (products, "products")]:
-        cols = [r[1] for r in con.execute(f"PRAGMA table_info({table})")]
+    nutri = schema.create(":memory:", "nutri")
+    for table in ["foods", "recipe_nutrition"]:
+        cols = [r[1] for r in nutri.execute(f"PRAGMA table_info({table})")]
         assert [c for c in cols if c in keys] == keys, table
 
 

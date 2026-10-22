@@ -360,9 +360,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get kindRecipe => 'Рецепт';
 
   @override
-  String get kindProduct => 'Товар';
-
-  @override
   String perServing2(int kcal) {
     return '$kcal ккал на порцію';
   }
@@ -1141,9 +1138,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get microsTitle => 'Вітаміни й мінерали';
 
   @override
-  String get productsTitle => 'Упаковані товари';
-
-  @override
   String get dataTitle => 'Дані про їжу';
 
   @override
@@ -1152,25 +1146,9 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get productsNone =>
-      'Ще не завантажено: товари в упаковці з’являться після цього завантаження. Усі товари Open Food Facts (усі країни), щоб знаходити те, що ви купуєте. Краще через Wi-Fi.';
-
-  @override
-  String productsHave(String count, String date) {
-    return '$count товарів з Open Food Facts, оновлено $date.';
-  }
-
-  @override
-  String productsDownload(int mb) {
+  String downloadSize(int mb) {
     return 'Завантажити ($mb МБ)';
   }
-
-  @override
-  String get productsRemove => 'Видалити';
-
-  @override
-  String get productsHint =>
-      'Не знаходите упакований товар? Завантажте всі товари у вкладці «Я».';
 
   @override
   String get healthConnect => 'Health Connect';
@@ -2576,6 +2554,15 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get pregnantNoLose =>
       'Під час вагітності схуднення не рекомендується: цілі залишаються на рівні підтримки ваги, а з 2-го триместру додається те, що потрібно дитині. Порадьтеся з лікарем.';
+
+  @override
+  String get babyAge => 'Вік дитини';
+
+  @override
+  String get babyAge0to6 => '0–6 місяців';
+
+  @override
+  String get babyAge7to12 => '7–12 місяців';
 
   @override
   String get allNutrientsTitle => 'Усі поживні речовини';

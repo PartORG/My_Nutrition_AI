@@ -6,7 +6,7 @@
 #   * Release "data-<nutriDataVersion>" with what the app downloads on first run, each gzipped. Public:
 #     Gemma's terms allow redistribution with its notice (assets/licenses/models.txt ships in the APK):
 #       gzip -k assets/nutri.db assets/health.db assets/models/embeddinggemma*
-#       gh release create data-5 --prerelease --title "Food data 5 (downloaded by the app)" \
+#       gh release create data-6 --prerelease --title "Food data 6 (downloaded by the app)" \
 #         assets/nutri.db.gz assets/health.db.gz assets/models/embeddinggemma*.gz
 #   * Secrets: ANDROID_KEYSTORE_BASE64 (`base64 -w0 upload.jks`), ANDROID_KEYSTORE_PASSWORD,
 #     ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.

@@ -192,7 +192,7 @@ void main() {
     });
   });
 
-  group('full flow with the dummy detector and products', () {
+  group('full flow with the dummy detector', () {
     late Directory tmp;
     late ProfileData data;
     late Database vectors, settings;

@@ -75,7 +75,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     ref.listen(logMealProvider, (_, meal) {
       if (meal != null) setState(() => _meal = meal);
     });
-    final kinds = {'food': l.kindFood, 'dish': l.kindDish, 'recipe': l.kindRecipe, 'product': l.kindProduct};
+    final kinds = {'food': l.kindFood, 'dish': l.kindDish, 'recipe': l.kindRecipe};
     final searching = _search.text.trim().length >= 2;
     final now = DateTime.now();
     final all = searching ? _results : recentFoods(data.user, now);
@@ -165,8 +165,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: EvaNote(data.tools.products == null ? '${l.noResults}\n${l.productsHint}' : l.noResults,
-                asset: evaEatingAsset),
+            child: EvaNote(l.noResults, asset: evaEatingAsset),
           ),
         )
       else if (list.isNotEmpty)

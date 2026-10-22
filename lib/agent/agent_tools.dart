@@ -163,14 +163,9 @@ const _pendingNote = 'NOT saved yet: the user must tap Save on the card. Tell th
 /// Runs the agent's tools against nutri.db (read-only) and the profile's
 /// user.db. Writes only happen through [ConfirmCard.apply].
 class AgentTools {
-  AgentTools(this.nutri, this.user, {DateTime Function()? clock, this.products})
-      : _now = clock ?? DateTime.now;
+  AgentTools(this.nutri, this.user, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
 
   final Database nutri, user;
-
-  /// The optional download of every Open Food Facts product (products.db); null = the
-  /// 2019 products inside nutri.db. Set when the download finishes.
-  Database? products;
   final DateTime Function() _now;
 
   /// The app's language: recipe ingredients show in it where nutri.db has a translation.
@@ -1136,13 +1131,6 @@ class AgentTools {
             }))
         of('food', r.$2, (r.$2['serving_g'] as num?)?.toDouble(), _nutrientsOf(r.$2),
             estimated: r.$2['category'] == 'dish'),
-      // Every word must match: among millions of products "any word" buries the one meant. Only with products.db.
-      if (products case final db?)
-        for (final r in db.select(
-            'SELECT p.*, COALESCE(p.barcode, p.rowid) AS id FROM products_fts f JOIN products p ON p.rowid = f.rowid '
-            'WHERE products_fts MATCH ? ORDER BY bm25(products_fts) LIMIT 8',
-            [_ftsQuery(text)?.replaceAll(' OR ', ' ') ?? '""']))
-          of('product', r, null, _nutrientsOf(r)),
     ];
   }
 

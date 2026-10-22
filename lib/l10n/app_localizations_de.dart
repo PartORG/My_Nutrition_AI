@@ -356,9 +356,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get kindRecipe => 'Rezept';
 
   @override
-  String get kindProduct => 'Produkt';
-
-  @override
   String perServing2(int kcal) {
     return '$kcal kcal pro Portion';
   }
@@ -1137,9 +1134,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get microsTitle => 'Vitamine und Mineralstoffe';
 
   @override
-  String get productsTitle => 'Verpackte Produkte';
-
-  @override
   String get dataTitle => 'Lebensmitteldaten';
 
   @override
@@ -1148,25 +1142,9 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get productsNone =>
-      'Noch nicht geladen: Verpackte Produkte gibt es erst mit diesem Download. Alle Produkte von Open Food Facts (alle Länder), um zu finden, was du kaufst. WLAN empfohlen.';
-
-  @override
-  String productsHave(String count, String date) {
-    return '$count Produkte von Open Food Facts, Stand $date.';
-  }
-
-  @override
-  String productsDownload(int mb) {
+  String downloadSize(int mb) {
     return 'Herunterladen ($mb MB)';
   }
-
-  @override
-  String get productsRemove => 'Entfernen';
-
-  @override
-  String get productsHint =>
-      'Fehlt ein verpacktes Produkt? Lade alle Produkte unter „Ich“.';
 
   @override
   String get healthConnect => 'Health Connect';
@@ -2561,6 +2539,15 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get pregnantNoLose =>
       'In der Schwangerschaft wird Abnehmen nicht empfohlen: Deine Ziele bleiben beim Halten des Gewichts, ab dem 2. Trimester kommt hinzu, was das Baby braucht. Sprich mit deiner Ärztin oder deinem Arzt.';
+
+  @override
+  String get babyAge => 'Alter des Babys';
+
+  @override
+  String get babyAge0to6 => '0–6 Monate';
+
+  @override
+  String get babyAge7to12 => '7–12 Monate';
 
   @override
   String get allNutrientsTitle => 'Alle Nährstoffe';

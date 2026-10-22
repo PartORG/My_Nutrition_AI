@@ -32,6 +32,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   var _imperial = false;
   var _stage = '';
   var _trimester = 1;
+  var _halfYear = 1;
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     if (user != null) {
       _stage = lifeStage(user);
       _trimester = trimester(user).clamp(1, 3); // 0 = not pregnant: the segment starts at 1st
+      _halfYear = babyHalfYear(user).clamp(1, 2);
     }
     if (b == null) return;
     _sex = b.sex;
@@ -104,6 +106,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     ), now: DateTime.now());
     setLifeStage(data.user, _sex == Sex.male ? '' : _stage);
     setTrimester(data.user, _trimester);
+    setBabyHalfYear(data.user, _halfYear);
     ref.read(avatarProvider.notifier).suggestFor(_sex);
     data.changed();
     Navigator.of(context).pop();
@@ -187,6 +190,20 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                 segments: [for (var t = 1; t <= 3; t++) ButtonSegment(value: t, label: Text('$t'))],
                 selected: {_trimester},
                 onSelectionChanged: (s) => setState(() => _trimester = s.single),
+              ),
+            ],
+            // Breastfeeding adds more kcal once the baby is past 6 months (lactationKcal).
+            if (_stage == 'lactation') ...[
+              const SizedBox(height: 12),
+              Text(l.babyAge),
+              const SizedBox(height: 6),
+              SegmentedButton<int>(
+                segments: [
+                  ButtonSegment(value: 1, label: Text(l.babyAge0to6)),
+                  ButtonSegment(value: 2, label: Text(l.babyAge7to12)),
+                ],
+                selected: {_halfYear},
+                onSelectionChanged: (s) => setState(() => _halfYear = s.single),
               ),
             ],
           ],

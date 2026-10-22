@@ -652,18 +652,19 @@ To do, in order:
   they delete and download again: no "update available" yet.
 - [x] Biotin: `fill.py` applies db/catalog/manual_values.tsv (Staggs 2004) before the same-food step, and a researched
   value replaces the same food's (common name + state) measured values more than 3x off (`OUTLIER`): 94 values,
-  e.g. banana 3.2 → 0.13, plain yogurt 1.1 → 0.13 µg/100 g median. Left: milk keeps CoFID/Frida's ~2–3 µg (Staggs:
-  0.1) because their milks have their own common names ("pasteurised milk", "uht milk", "tine milk"), so they never
-  share a group with USDA's; fixing it means tidier common names for milks, not another biotin rule.
+  e.g. banana 3.2 → 0.13, plain yogurt 1.1 → 0.13 µg/100 g median. Milk, v0.18: every table names plain cow's milk its own
+  way ("pasteurised milk", "uht milk", "milk, cow, trim"), so a pattern row in manual_values.tsv (source `*`, a
+  regular expression over the name) gives all 155 plain milks Staggs' mean, 0.11 µg (was 1.8–3.8).
 - [ ] Food detector gates (Step 7): mAP on a held-out set of the owner's own meal photos, ≤ 150 ms per frame on the
   Xiaomi, the threshold (0.4) tuned on real meals. Needs photos and the phone.
 - [x] Pregnancy kcal: the Goals form asks the trimester when "Pregnant" is chosen (pref `trimester`; pregnant before
   it was asked = 1st); the kcal goal adds 0 / 340 / 452 (`pregnancyKcal`, IOM/NASEM DRI 2005), and "lose" gives the
   maintain targets while pregnant, said in the form and the goal dialog (`pregnantNoLose`), as for underweight.
-  Breastfeeding (+330 / +400 kcal by months since birth) is not asked yet.
+  Breastfeeding, v0.18: the form asks the baby's age (0–6 / 7–12 months, pref `baby_half_year`) and the kcal
+  goal adds 330 / 400 (`lactationKcal`); losing stays allowed (the 0–6 figure already counts the usual loss).
 - [x] Release v0.16.0: first-run download, products v4, trimester, biotin.
 
-## Owner's ideas (2026-10-22; 3–6 done the same day, 1 and 2 not started — grill before building)
+## Owner's ideas (2026-10-22; 2–6 done the same day, 1 not started — grill before building)
 
 1. **Photo in chat.** Today chat only shows a CameraCard that opens the camera screen (`openCamera`,
    `lib/ui/camera_screen.dart`); recognition happens there, not in the conversation. Wanted: attach a photo (camera or
@@ -671,7 +672,10 @@ To do, in order:
    show what was recognised (foods, grams, ≈ marks) as a card, let the user edit each item, and choose how to store it
    (log as a meal + which meal type, save as a recipe, or just ask about it). Reuse the meal confirm card
    (`_MealConfirm`/`ConfirmCard`) and the photo session (`openSession`) rather than a second pipeline.
-2. **Packaged products: needed?** Where they are used now: Settings → "Packaged products" download
+2. **Done 2026-10-22 (v0.18): packaged products removed** (no barcode scanning, so search alone didn't earn
+   523 MB). The download, its Settings section, the Log hint and the product search are gone; phones delete an old
+   products.db at start. The 503 chain menu items moved into nutri.db as foods (data version 6). Was asked:
+   **Packaged products: needed?** Where they are used now: Settings → "Packaged products" download
    (`settings_screen.dart`, `productsDownloadProvider`); once downloaded, Log search and the chat's food lookup show
    matching products after generic foods (`AgentTools.search`, products_fts, 8 hits, every word must match); the Log
    screen hints at the download when a search finds nothing. Not used: barcodes (no scanner), photos, recipes. To

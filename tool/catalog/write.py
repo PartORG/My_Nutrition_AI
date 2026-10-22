@@ -1,10 +1,9 @@
-"""Write stage: nutri.db, health.db and products.db (db/catalog/*.sql) from the matched and normalized files.
+"""Write stage: nutri.db and health.db (db/catalog/*.sql) from the matched and normalized files.
 
-    python3 tool/catalog/write.py OUT_DIR [nutri|health|products ...]
+    python3 tool/catalog/write.py OUT_DIR [nutri|health ...]
 
 nutri.db: foods (filled), aliases, allergens, recipes (lines, steps, tags, nutrition per serving with coverage).
 health.db: DRI reference values, the curated conditions of db/medical.sql (run against the v4 foods), MedQuAD passages.
-products.db: Open Food Facts (2026 dump) and every other branded row, one per barcode (the most complete label).
 """
 
 import json
@@ -23,7 +22,7 @@ import build_real_nutri_db as v3
 from build_medical import MEDICAL_SQL
 
 KEYS = [n["key"] for n in PANEL]
-NUTRI_SCHEMA, NUTRI_DATA = 4, 5  # lib/data/nutri_db.dart reads these
+NUTRI_SCHEMA, NUTRI_DATA = 4, 6  # lib/data/nutri_db.dart reads these
 HEALTH_SCHEMA = 1
 V3 = "a dataset of the v3 build, kept (owner, 2026-10-19); licence as listed in docs/DATA_SOURCES.md"
 SCRAPED = "scraped recipe site: copyright stays with the site and authors (owner's exception, 2026-10-19)"
@@ -381,54 +380,10 @@ def write_health(out: Path) -> None:
     print(f"health.db: {len(qa)} Q&A passages, {(out / 'health.db').stat().st_size:,} bytes")
 
 
-def write_products(out: Path) -> None:
-    con = fresh(out / "products.db", "products")
-    best: dict[str, tuple] = {}
-    rows, sids = [], set()
-
-    def add(p: dict, kind: str) -> None:
-        sids.add(p["source"])
-        row = (
-            p.get("barcode"),
-            p["name"][:200],
-            p.get("brand"),
-            kind,
-            p["source"],
-            p.get("serving_g"),
-            p.get("serving"),
-            *nutrients(p["nutrients"]),
-        )
-        if not p.get("barcode"):
-            rows.append((row, p.get("allergens") or []))
-        elif p["barcode"] not in best or len(p["nutrients"]) > best[p["barcode"]][1]:
-            best[p["barcode"]] = (row, len(p["nutrients"]), p.get("allergens") or [])
-
-    menus = {"mcdonalds_menu", "chains_nutrition_values", "india_chains"}
-    for p in jsonl(BUILD / "matched/products.jsonl"):
-        add(p, "menu" if p["source"] in menus else "packaged")
-    for p in jsonl(BUILD / "normalized/off.jsonl"):
-        add(p, "packaged")
-    con.executemany("INSERT INTO sources VALUES (?, ?, ?, ?)", [source_row(s)[:4] for s in sorted(sids)])
-    cols = ["barcode", "name", "brand", "kind", "source_id", "serving_g", "serving", *KEYS]
-    sql = f"INSERT INTO products ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})"
-    allergens = []
-    for row, *rest in [*best.values(), *((r, 0, a) for r, a in rows)]:
-        cur = con.execute(sql, row)
-        allergens += [(cur.lastrowid, a) for a in rest[-1]]
-    con.executemany("INSERT OR IGNORE INTO product_allergens VALUES (?, ?)", allergens)
-    n = con.execute("SELECT count(*) FROM products").fetchone()[0]
-    con.executemany(
-        "INSERT INTO meta VALUES (?, ?)",
-        [("schema_version", str(NUTRI_SCHEMA)), ("built_at", date.today().isoformat()), ("rows", str(n))],
-    )
-    finish(con, ["products_fts"])
-    print(f"products.db: {n:,} products, {(out / 'products.db').stat().st_size:,} bytes")
-
-
 def main(out: Path, which: list[str]) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    for name in which or ["nutri", "health", "products"]:
-        {"nutri": write_nutri, "health": write_health, "products": write_products}[name](out)
+    for name in which or ["nutri", "health"]:
+        {"nutri": write_nutri, "health": write_health}[name](out)
 
 
 if __name__ == "__main__":

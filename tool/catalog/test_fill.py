@@ -91,6 +91,24 @@ def test_a_researched_value_replaces_the_same_foods_measurements_more_than_3x_of
     assert dried["nutrients"]["vitamin_b7_ug"] == 20.0, "another state is another food"
 
 
+def test_a_pattern_row_reaches_every_tables_name_for_the_food():
+    from fill import apply_manual
+
+    def food(source, name, **n):
+        return {"source": source, "name": name, "common_name": name.lower(), "state": None, "nutrients": n}
+
+    cofid, nz, close = food("cofid", "Milk, semi-skimmed, UHT", vitamin_b7_ug=3.0), food("nz", "Milk, cow, trim"), \
+        food("frida", "Milk, whole", vitamin_b7_ug=0.2)
+    choc, fish = food("cofid", "Milk, flavoured, chocolate", vitamin_b7_ug=2.2), food("afcd", "Milkfish", vitamin_b7_ug=3.0)
+    url = "https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/"
+    n, problems = apply_manual([cofid, nz, close, choc, fish],
+                               [f"*\t(?!.*choc)(milk|milk, cow)\\b.*\tvitamin_b7_ug\t0.11\t{url}", f"*\tnothing\tvitamin_b7_ug\t1\t{url}"])
+    assert n == 2 and cofid["nutrients"]["vitamin_b7_ug"] == nz["nutrients"]["vitamin_b7_ug"] == 0.11
+    assert close["nutrients"]["vitamin_b7_ug"] == 0.2, "measured within 3x: kept"
+    assert choc["nutrients"]["vitamin_b7_ug"] == 2.2 and fish["nutrients"]["vitamin_b7_ug"] == 3.0
+    assert len(problems) == 1, "a pattern nothing matches is reported"
+
+
 def test_a_reviewed_twin_lends_its_measured_values_for_estimates_only():
     from fill import apply_same
 

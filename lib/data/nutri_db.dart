@@ -5,8 +5,7 @@ import 'package:sqlite3/sqlite3.dart';
 /// nutri.db schema versions this app build can read (see db/catalog/nutri.sql).
 // 2: micronutrients. 3: foods.source, micronutrients on dishes and products, dishes linked to foods and
 // recipes. 4: catalogue v4 (docs/PLAN.md "Catalogue v4"): new ids, the full nutrient panel, aliases, recipe lines and
-// steps, health data in health.db, products in products.db. An older file on the phone fails the check and the
-// bundled one is reinstalled.
+// steps, health data in health.db. An older file on the phone fails the check and is downloaded again.
 const nutriSchemaMin = 4;
 const nutriSchemaMax = 4;
 
@@ -14,8 +13,9 @@ const nutriSchemaMax = 4;
 /// replace their installed copy once.
 // 1: medical data from the guidelines (db/medical.sql). 2: translated ingredient names (food_names).
 // 3: vitamins and minerals for the generic foods (foodstruct, NZ FOODfiles, FDC Foundation/Branded). 4: CIQUAL (France)
-// and CoFID (UK) foods and dishes. 5: catalogue v4 (tool/catalog).
-const nutriDataVersion = 5;
+// and CoFID (UK) foods and dishes. 5: catalogue v4 (tool/catalog). 6: chain menu items as foods (no products.db),
+// plain milk's biotin from Staggs 2004.
+const nutriDataVersion = 6;
 
 /// Vectors in docs.embedding are only comparable with the app's own embedder.
 const nutriEmbeddingModel = 'embeddinggemma-300m';

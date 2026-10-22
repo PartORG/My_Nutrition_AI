@@ -196,7 +196,6 @@
   "kindFood": "Food",
   "kindDish": "Dish",
   "kindRecipe": "Recipe",
-  "kindProduct": "Product",
   "perServing2": "{kcal} kcal per serving",
   "@perServing2": {
     "placeholders": {
@@ -718,7 +717,6 @@
     }
   },
   "microsTitle": "Vitamins and minerals",
-  "productsTitle": "Packaged products",
   "dataTitle": "Food data",
   "dataBody": "My Nutrition AI keeps its food tables, recipes and search on your phone, so nothing you eat leaves it. Download them once ({mb} MB); you can leave the app meanwhile. Wi-Fi recommended.",
   "@dataBody": {
@@ -728,28 +726,14 @@
       }
     }
   },
-  "productsNone": "Not downloaded yet: packaged products need this download. Every product in Open Food Facts (all countries), to find what you buy. Wi-Fi recommended.",
-  "productsHave": "{count} products from Open Food Facts, updated {date}.",
-  "@productsHave": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      },
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "productsDownload": "Download ({mb} MB)",
-  "@productsDownload": {
+  "downloadSize": "Download ({mb} MB)",
+  "@downloadSize": {
     "placeholders": {
       "mb": {
         "type": "int"
       }
     }
   },
-  "productsRemove": "Remove",
-  "productsHint": "Missing a packaged product? Download all products in Me.",
   "healthConnect": "Health Connect",
   "appleHealth": "Apple Health",
   "healthSyncHint": "Reads your weight (for your goals), steps and burnt calories (shown on Today). Nothing is written there and nothing leaves your phone. Turn off to disconnect.",
@@ -1637,6 +1621,9 @@
   "lifeStageBreastfeeding": "Breastfeeding",
   "trimester": "Trimester",
   "pregnantNoLose": "Losing weight isn't advised in pregnancy: your targets stay at maintaining your weight, plus what the baby needs from the 2nd trimester. Talk to your doctor.",
+  "babyAge": "Baby's age",
+  "babyAge0to6": "0–6 months",
+  "babyAge7to12": "7–12 months",
   "allNutrientsTitle": "All nutrients",
   "moreNutrients": "More: single sugars, amino acids",
   "fewerNutrients": "Fewer",

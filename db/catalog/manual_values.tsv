@@ -3,6 +3,9 @@
 # Biotin: Staggs, Sealey, McCabe, Teague, Mock (2004), J Food Compos Anal 17:767-776, Table 1 (HPLC/avidin
 # binding, ng/g ÷ 10 = µg/100 g); only rows whose food and state match ours.
 source	name	nutrient	value	url
+# Plain cow's milk, any fat, every table's name for it (CoFID/Frida/NZ give 1.8-3.8, Staggs 0.09-0.13): the mean of
+# Staggs' whole, 2 % and skim milk. Not flavoured, cultured, dried, plant or other animals' milks.
+*	(?!.*(choc|flavou?r|cultur|ferment|kefir|biola|butter|acidoph|coffee|strawb|banana|malt|shake|bread|cake|roll|jelly|dessert|cookie|spread|powder|dried|dry|condensed|evaporat|soy|imitation|substitute|filled|human|goat|sheep|buffalo|coconut|almond|oat|rice|cereal|probiotic))(milk|whole milk|semi-skimmed milk|skimmed milk|cows?'? milk|milk, cow)\b.*	vitamin_b7_ug	0.11	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
 usda_sr	Beef, variety meats and by-products, liver, cooked, braised	vitamin_b7_ug	41.6	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
 usda_sr	Chicken, liver, all classes, cooked, simmered	vitamin_b7_ug	187.2	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/
 usda_sr	Egg, whole, cooked, hard-boiled	vitamin_b7_ug	21.4	https://pmc.ncbi.nlm.nih.gov/articles/PMC1450323/

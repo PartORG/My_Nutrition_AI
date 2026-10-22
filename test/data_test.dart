@@ -32,7 +32,7 @@ void main() {
       // (300 g chicken*1.65 + 250 broccoli*.34 + 30 soy*.53 + 15 oil*8.84 + 300 rice*1.23) / 2
       expect(stirFry['kcal'] as double, closeTo(548.8, 0.1));
       expect(db.select("SELECT rowid FROM foods_fts WHERE foods_fts MATCH 'rice'").length, 2);
-      // Products live in products.db (downloaded) since catalogue v4; health data in health.db, attached.
+      // No products since v0.18 (chain menus are foods); health data in health.db, attached.
       expect(hasHealth(db), isTrue, reason: 'test/health_test.db sits next to it');
       expect(db.select('SELECT key FROM health.conditions ORDER BY id').first['key'], 'diabetes_t2');
       expect(() => db.execute('DELETE FROM foods'), throwsA(isA<SqliteException>()),

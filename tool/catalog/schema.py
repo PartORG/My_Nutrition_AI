@@ -31,7 +31,7 @@ def recipe_nutrition_view() -> str:
 
 
 def sql(name: str) -> str:
-    """The schema of nutri.db, health.db or products.db, one REAL column per nutrient at the marker."""
+    """The schema of nutri.db or health.db, one REAL column per nutrient at the marker."""
     return ((CATALOG / f"{name}.sql").read_text()
             .replace(MARKER, ",\n  ".join(f"{n['key']} REAL" for n in nutrients()))
             .replace("/*RECIPE_NUTRITION*/", recipe_nutrition_view()))

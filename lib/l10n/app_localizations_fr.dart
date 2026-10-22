@@ -354,9 +354,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get kindRecipe => 'Recette';
 
   @override
-  String get kindProduct => 'Produit';
-
-  @override
   String perServing2(int kcal) {
     return '$kcal kcal par portion';
   }
@@ -1135,9 +1132,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get microsTitle => 'Vitamines et minéraux';
 
   @override
-  String get productsTitle => 'Produits emballés';
-
-  @override
   String get dataTitle => 'Données alimentaires';
 
   @override
@@ -1146,25 +1140,9 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get productsNone =>
-      'Pas encore téléchargé : les produits emballés arrivent avec ce téléchargement. Tous les produits d’Open Food Facts (tous pays), pour trouver ce que vous achetez. Wi-Fi conseillé.';
-
-  @override
-  String productsHave(String count, String date) {
-    return '$count produits d’Open Food Facts, mis à jour le $date.';
-  }
-
-  @override
-  String productsDownload(int mb) {
+  String downloadSize(int mb) {
     return 'Télécharger ($mb Mo)';
   }
-
-  @override
-  String get productsRemove => 'Supprimer';
-
-  @override
-  String get productsHint =>
-      'Un produit emballé manque ? Téléchargez tous les produits dans Moi.';
 
   @override
   String get healthConnect => 'Health Connect';
@@ -2557,6 +2535,15 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get pregnantNoLose =>
       'Perdre du poids n’est pas conseillé pendant la grossesse : vos objectifs restent au maintien du poids, plus ce dont le bébé a besoin à partir du 2e trimestre. Parlez-en à votre médecin.';
+
+  @override
+  String get babyAge => 'Âge du bébé';
+
+  @override
+  String get babyAge0to6 => '0–6 mois';
+
+  @override
+  String get babyAge7to12 => '7–12 mois';
 
   @override
   String get allNutrientsTitle => 'Tous les nutriments';

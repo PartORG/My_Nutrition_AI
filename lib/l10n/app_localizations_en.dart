@@ -354,9 +354,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kindRecipe => 'Recipe';
 
   @override
-  String get kindProduct => 'Product';
-
-  @override
   String perServing2(int kcal) {
     return '$kcal kcal per serving';
   }
@@ -1130,9 +1127,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get microsTitle => 'Vitamins and minerals';
 
   @override
-  String get productsTitle => 'Packaged products';
-
-  @override
   String get dataTitle => 'Food data';
 
   @override
@@ -1141,25 +1135,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get productsNone =>
-      'Not downloaded yet: packaged products need this download. Every product in Open Food Facts (all countries), to find what you buy. Wi-Fi recommended.';
-
-  @override
-  String productsHave(String count, String date) {
-    return '$count products from Open Food Facts, updated $date.';
-  }
-
-  @override
-  String productsDownload(int mb) {
+  String downloadSize(int mb) {
     return 'Download ($mb MB)';
   }
-
-  @override
-  String get productsRemove => 'Remove';
-
-  @override
-  String get productsHint =>
-      'Missing a packaged product? Download all products in Me.';
 
   @override
   String get healthConnect => 'Health Connect';
@@ -2544,6 +2522,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pregnantNoLose =>
       'Losing weight isn\'t advised in pregnancy: your targets stay at maintaining your weight, plus what the baby needs from the 2nd trimester. Talk to your doctor.';
+
+  @override
+  String get babyAge => 'Baby\'s age';
+
+  @override
+  String get babyAge0to6 => '0–6 months';
+
+  @override
+  String get babyAge7to12 => '7–12 months';
 
   @override
   String get allNutrientsTitle => 'All nutrients';

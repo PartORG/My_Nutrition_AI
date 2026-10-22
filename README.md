@@ -25,8 +25,8 @@ accounts, no cloud inference and no analytics SDK.
   your phone (Settings → Your picture).
 - **Home-screen widget:** small, medium and large sizes with today's calories (opt-in), a Log button and a mic:
   say what you ate and the chat shows the meal card to check and save.
-- **Food logging:** search about 61,000 foods (US, NZ, French and UK government tables), 171,000 recipes, 620 dishes and 263,000 packaged
-  products, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
+- **Food logging:** search about 41,500 foods and dishes (government tables of the US, UK, France, Canada, the Nordics
+  and more, plus 503 chain menu items), 169,000 recipes, or log by chat or voice. Tap "+" on a meal to log straight into it, or repeat yesterday's
   meal in one tap.
 - **Daily goals:** calorie and macro targets from Mifflin-St Jeor × activity, adjusted for your goal
   (lose, maintain or gain), with a manual override for every value. Age counts from the birth month, so
@@ -133,7 +133,8 @@ version, then publish release `data-<version>` (see the header of
 
 ## Food data and vitamins
 
-`nutri.db` holds about 61,400 foods, 171,000 recipes, 620 dishes and 263,000 packaged products. The
+`nutri.db` holds about 41,500 foods (dishes and 503 chain menu items among them) and 169,000 recipes; there are no
+packaged products (removed in v0.18). The
 generic foods come from government tables first: USDA SR28, FoodData Central (FNDDS survey foods and
 Foundation foods, from the public-domain [bulk downloads](https://fdc.nal.usda.gov/download-datasets)),
 NZ FOODfiles, the French ANSES-CIQUAL 2025 table and the UK's McCance and Widdowson's CoFID 2021 (European
@@ -150,8 +151,6 @@ Vitamins and minerals (calcium, iron, magnesium, potassium, vitamins C, D and B1
 - **Dishes:** McDonald's items take calcium, iron and vitamin C from their own labels. Each dish is
   then matched to a USDA FNDDS food of the same name for the rest (155 of 620). Generic dishes also
   link to a recipe of the same title, which you can open and rate (88).
-- **Products:** whatever the Open Food Facts label states (about half of the bundled 2019 products give
-  calcium, iron and vitamin C; about 15 % of the 2 million in the optional download do).
 
 A value outside a believable range in a non-government source is stored as unknown, never shown.
 Meals logged before an update get their vitamins filled in once from the food or dish of the same name.
@@ -284,7 +283,7 @@ lib/
   vision/     EfficientDet and YOLOX detectors, Gemma photo naming
   l10n/       .arb translations (en, uk, de, fr) and generated localizations
 db/           nutri.db schema, test fixture data and the curated medical data (medical.sql)
-tool/         Python builders for nutri.db (incl. build_medical.py) and the products database; food detector
+tool/         Python builders for nutri.db and health.db (catalog/, build_medical.py); food detector
               training and export (detector_*.py, yolox_*)
 test/         host tests
 integration_test/  on-device evaluation and latency tests

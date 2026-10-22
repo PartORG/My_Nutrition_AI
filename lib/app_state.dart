@@ -230,7 +230,7 @@ typedef Download = ({DownloadTask task, TaskStatus status, int percent});
 /// the app is closed, so a download started earlier shows up (or finishes) on the next start.
 Future<void> trackDownloads() async {
   if (!Platform.isAndroid && !Platform.isIOS) return;
-  for (final g in ['data', 'llm', 'products']) {
+  for (final g in ['data', 'llm']) {
     await FileDownloader().trackTasksInGroup(g);
   }
 }
@@ -511,7 +511,7 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
   final nutri = openNutriDb('${dir.path}/nutri.db');
   final user = openUserDb(ref.watch(profilesProvider).userDbPath(profile.id));
   final data = ProfileData(profile: profile, nutri: nutri, user: user,
-      tools: AgentTools(nutri, user, products: openProducts(dir)));
+      tools: AgentTools(nutri, user));
   // listen, not watch: a language switch must not reopen the databases.
   ref.listen(languageProvider, (_, code) => data.tools.language = appLanguage(code), fireImmediately: true);
   final profiles = ref.watch(profilesProvider);
@@ -523,7 +523,6 @@ final profileDataProvider = Provider.autoDispose<ProfileData?>((ref) {
     if (n > 0) data.changed();
   }));
   ref.onDispose(() {
-    data.tools.products?.close();
     data.changes.dispose();
     nutri.close();
     user.close();
@@ -548,77 +547,6 @@ Future<void> syncHomeWidget(ProfileData data, {required bool show}) async {
     await HomeWidget.updateWidget(qualifiedAndroidName: 'io.github.partorg.myfoodmind.TodayWidget');
   } on Object catch (e) {
     debugPrint('home widget: $e'); // no widget placed, or the plugin isn't there: nothing to update
-  }
-}
-
-// ---- all packaged products (optional download) -------------------------------
-
-/// Every branded food (Open Food Facts, USDA Branded, chain menus), built by tool/catalog/write.py, gzipped.
-// Release asset of github.com/PartORG/My_Nutrition_AI (published 2026-10-22, sha256 70e0efd7…5441).
-const productsUrl = 'https://github.com/PartORG/My_Nutrition_AI/releases/download/products-2026-10-22/products.db.gz';
-const productsDownloadMb = 166; // products.db.gz of 2026-10-22: 2,077,610 products (schema 4), 523 MB unpacked
-
-File _productsFile(Directory dir) => File('${dir.path}/products.db');
-
-/// The downloaded products.db, read-only; null when not downloaded or unreadable.
-Database? openProducts(Directory dir) {
-  final f = _productsFile(dir);
-  if (!f.existsSync()) return null;
-  try {
-    final db = sqlite3.open(f.path, mode: OpenMode.readOnly);
-    db.select('SELECT 1 FROM products_fts LIMIT 1');
-    return db;
-  } on Object catch (e) {
-    debugPrint('products.db unreadable: $e');
-    return null;
-  }
-}
-
-/// How many products the download has and when it was built; null = not downloaded.
-({int rows, String builtAt})? productsInfo(Database? db) {
-  if (db == null) return null;
-  String meta(String k) => db.select('SELECT value FROM meta WHERE key = ?', [k]).firstOrNull?['value'] as String? ?? '';
-  return (rows: int.tryParse(meta('rows')) ?? 0, builtAt: meta('built_at'));
-}
-
-/// Unpacks the downloaded [gz], checks the file opens, then swaps it in. Throws on failure;
-/// the .gz is gone either way, so a retry downloads it again.
-Future<void> unpackProducts(Directory dir, File gz, AgentTools? tools) async {
-  final part = File('${_productsFile(dir).path}.part');
-  try {
-    await gz.openRead().transform(gzip.decoder).pipe(part.openWrite());
-    sqlite3.open(part.path, mode: OpenMode.readOnly)
-      ..select('SELECT 1 FROM products_fts LIMIT 1')
-      ..close();
-    tools?.products?.close();
-    part.renameSync(_productsFile(dir).path);
-    tools?.products = openProducts(dir);
-  } finally {
-    if (part.existsSync()) part.deleteSync();
-    if (gz.existsSync()) gz.deleteSync();
-  }
-}
-
-final productsDownloadProvider = NotifierProvider<ProductsDownload, Download?>(ProductsDownload.new);
-
-class ProductsDownload extends FileDownload {
-  @override
-  String get group => 'products';
-
-  Future<void> start({required bool wifiOnly, required String title}) =>
-      download(productsUrl, 'products.db.gz', wifiOnly: wifiOnly, title: title);
-
-  @override
-  Future<void> finish(String path) async =>
-      unpackProducts(await ref.read(appDirProvider.future), File(path), ref.read(profileDataProvider)?.tools);
-
-  /// Back to the 2019 products in nutri.db; frees the space.
-  void remove() {
-    final dir = ref.read(appDirProvider).requireValue;
-    final tools = ref.read(profileDataProvider)?.tools;
-    tools?.products?.close();
-    tools?.products = null;
-    if (_productsFile(dir).existsSync()) _productsFile(dir).deleteSync();
   }
 }
 
@@ -664,7 +592,14 @@ List<({String name, int mb})> missingData(Directory dir) {
 }
 
 /// The food data is on the phone; until then the app shows the download ([AppGate]). Overridden in tests.
-final dataReadyProvider = FutureProvider<bool>((ref) async => missingData(await ref.watch(appDirProvider.future)).isEmpty);
+final dataReadyProvider = FutureProvider<bool>((ref) async {
+  final dir = await ref.watch(appDirProvider.future);
+  // The packaged-products download is gone (v0.18): free what an older version downloaded (523 MB).
+  for (final name in ['products.db', 'products.db.gz', 'products.db.part']) {
+    if (File('${dir.path}/$name') case final f when f.existsSync()) f.deleteSync();
+  }
+  return missingData(dir).isEmpty;
+});
 
 /// Unpacks a downloaded `<name>.gz` into [dir] through a .part file, checks nutri.db opens, then swaps it in.
 /// Throws on failure; the .gz is gone either way, so a retry downloads it again.

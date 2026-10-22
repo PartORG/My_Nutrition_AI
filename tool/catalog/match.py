@@ -1,6 +1,6 @@
 """Match stage, foods: every normalized food gets an id, its everyday name, its state and whether it is the default
-for that name; branded rows go to products. Reads BUILD/normalized/*.jsonl (not the recipes, not Open Food Facts:
-readers.off rows are products already), writes BUILD/matched/foods.jsonl and products.jsonl.
+for that name. Chain menu items are foods; other branded rows are dropped (the app has no packaged products since
+v0.18). Reads BUILD/normalized/*.jsonl (not the recipes, not the Open Food Facts dump), writes BUILD/matched/foods.jsonl.
 
     python3 tool/catalog/match.py
 
@@ -48,6 +48,8 @@ SOURCE_RANK = {
     )
 }
 AUTHORITATIVE = set(list(SOURCE_RANK)[:12])
+# Chain menus: their rows name the chain ("Whopper Sandwich (Burger King)") and are asked for like dishes.
+MENUS = {"mcdonalds_menu", "chains_nutrition_values", "india_chains"}
 
 
 def food_id(source: str, code: str) -> int:
@@ -71,13 +73,16 @@ def overrides() -> list[dict]:
 
 
 def match_foods(rows: list[dict], defaults: list[dict] | None = None) -> tuple[list[dict], list[dict], list[str]]:
-    """→ (foods, products, problems). Defaults: the override's food, else the best default_score per common name."""
-    foods, products = [], []
+    """→ (foods, dropped branded rows, problems). Defaults: the override's food, else the best default_score per common
+    name."""
+    foods, branded = [], []
     for r in rows:
         r["id"] = food_id(r["source"], r["code"])
         if r["category"] == "branded":
-            products.append(r)
-            continue
+            if r["source"] not in MENUS:
+                branded.append(r)
+                continue
+            r["category"] = "food"
         r["common_name"] = common_name(r["name"])
         r["state"] = state(r["name"])
         r["authoritative"] = r["source"] in AUTHORITATIVE
@@ -122,7 +127,7 @@ def match_foods(rows: list[dict], defaults: list[dict] | None = None) -> tuple[l
         else:
             f["aliases"] = sorted(set(f["aliases"]))
         f["aliases"] = [a for a in f["aliases"] if owner.get(a, f) is f]
-    return foods, products, problems
+    return foods, branded, problems
 
 
 def load(folder: Path) -> list[dict]:
@@ -136,14 +141,14 @@ def load(folder: Path) -> list[dict]:
 
 
 def main() -> None:
-    foods, products, problems = match_foods(load(BUILD / "normalized"))
+    foods, branded, problems = match_foods(load(BUILD / "normalized"))
     out = BUILD / "matched"
     out.mkdir(parents=True, exist_ok=True)
-    for name, rows in (("foods", foods), ("products", products)):
-        with open(out / f"{name}.jsonl", "w") as fh:
-            fh.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
+    with open(out / "foods.jsonl", "w") as fh:
+        fh.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in foods)
     defaults = sum(f["is_default"] for f in foods)
-    print(f"{len(foods)} foods ({defaults} defaults), {len(products)} branded rows to products")
+    menus = sum(f["source"] in MENUS for f in foods)
+    print(f"{len(foods)} foods ({defaults} defaults, {menus} chain menu items), {len(branded)} branded rows dropped")
     print(*problems, sep="\n", file=sys.stderr)
 
 

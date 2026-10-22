@@ -243,23 +243,38 @@ OUTLIER = 3
 
 def apply_manual(foods: list[dict], lines: list[str]) -> tuple[int, list[str]]:
     """manual_values.tsv lines: source | food name | nutrient | value per 100 g | URL. Never over the food's own
-    measured value; over the same food's (name and state) in other tables when more than OUTLIER times off."""
+    measured value; over the same food's (name and state) in other tables when more than OUTLIER times off.
+    Source "*": the name is a regular expression (whole name, any case) for a kind of food every table names its own
+    way (plain cow's milk); every match gets the value, unless it measured one within OUTLIER times of it."""
     by_name, groups = defaultdict(list), defaultdict(list)
     for f in foods:
         by_name[(f["source"], f["name"].lower())].append(f)
         groups[(f.get("common_name"), f.get("state"))].append(f)
+
+    def outlier(g: dict, k: str, v: float) -> bool:
+        return k in g["nutrients"] and not v / OUTLIER <= g["nutrients"][k] <= v * OUTLIER
+
     n, problems = 0, []
     for row in rows_of(lines):
         source, name, k, value, url = row
+        v = float(value)
+        if source == "*":
+            hits = [f for f in foods if re.fullmatch(name, f["name"], re.IGNORECASE)]
+            for f in hits:
+                if outlier(f, k, v):
+                    del f["nutrients"][k]
+                n += lend(f, k, v, url)
+            if not hits:
+                problems.append(f"manual_values.tsv: no food matches {row!r}")
+            continue
         hits = by_name.get((source, name.lower()))
         if not hits or k not in KEYS or not url.startswith("http"):
             problems.append(f"manual_values.tsv: {row!r}")
             continue
-        v = float(value)
         for f in hits:
             n += lend(f, k, v, url)
             for g in groups[(f.get("common_name"), f.get("state"))]:
-                if g not in hits and k in g["nutrients"] and not v / OUTLIER <= g["nutrients"][k] <= v * OUTLIER:
+                if g not in hits and outlier(g, k, v):
                     del g["nutrients"][k]  # the outlier; lend() puts the researched value in its place
                     n += lend(g, k, v, url)
     return n, problems

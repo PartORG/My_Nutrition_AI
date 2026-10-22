@@ -167,6 +167,8 @@ class DataScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
     final download = ref.read(dataDownloadProvider.notifier);
+    // What's still missing: everything on first run, only the databases for a new data version.
+    final mb = missingData(ref.watch(appDirProvider).requireValue).fold(0, (sum, f) => sum + f.mb);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -177,15 +179,15 @@ class DataScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(l.dataTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 12),
-              Text(l.dataBody(dataDownloadMb), textAlign: TextAlign.center),
+              Text(l.dataBody(mb), textAlign: TextAlign.center),
               const SizedBox(height: 24),
               DownloadBar(dataDownloadProvider),
               if (ref.watch(dataDownloadProvider) == null)
                 FilledButton.icon(
                   icon: const Icon(Icons.download),
-                  label: Text(l.productsDownload(dataDownloadMb)),
+                  label: Text(l.downloadSize(mb)),
                   onPressed: () async {
-                    final wifiOnly = await askNetwork(context, dataDownloadMb);
+                    final wifiOnly = await askNetwork(context, mb);
                     if (wifiOnly != null) await download.start(wifiOnly: wifiOnly, title: l.dataTitle);
                   },
                 ),

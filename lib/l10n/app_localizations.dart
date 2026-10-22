@@ -672,12 +672,6 @@ abstract class AppLocalizations {
   /// **'Recipe'**
   String get kindRecipe;
 
-  /// No description provided for @kindProduct.
-  ///
-  /// In en, this message translates to:
-  /// **'Product'**
-  String get kindProduct;
-
   /// No description provided for @perServing2.
   ///
   /// In en, this message translates to:
@@ -1986,12 +1980,6 @@ abstract class AppLocalizations {
   /// **'Vitamins and minerals'**
   String get microsTitle;
 
-  /// No description provided for @productsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Packaged products'**
-  String get productsTitle;
-
   /// No description provided for @dataTitle.
   ///
   /// In en, this message translates to:
@@ -2004,35 +1992,11 @@ abstract class AppLocalizations {
   /// **'My Nutrition AI keeps its food tables, recipes and search on your phone, so nothing you eat leaves it. Download them once ({mb} MB); you can leave the app meanwhile. Wi-Fi recommended.'**
   String dataBody(int mb);
 
-  /// No description provided for @productsNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Not downloaded yet: packaged products need this download. Every product in Open Food Facts (all countries), to find what you buy. Wi-Fi recommended.'**
-  String get productsNone;
-
-  /// No description provided for @productsHave.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} products from Open Food Facts, updated {date}.'**
-  String productsHave(String count, String date);
-
-  /// No description provided for @productsDownload.
+  /// No description provided for @downloadSize.
   ///
   /// In en, this message translates to:
   /// **'Download ({mb} MB)'**
-  String productsDownload(int mb);
-
-  /// No description provided for @productsRemove.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove'**
-  String get productsRemove;
-
-  /// No description provided for @productsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Missing a packaged product? Download all products in Me.'**
-  String get productsHint;
+  String downloadSize(int mb);
 
   /// No description provided for @healthConnect.
   ///
@@ -4229,6 +4193,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Losing weight isn\'t advised in pregnancy: your targets stay at maintaining your weight, plus what the baby needs from the 2nd trimester. Talk to your doctor.'**
   String get pregnantNoLose;
+
+  /// No description provided for @babyAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Baby\'s age'**
+  String get babyAge;
+
+  /// No description provided for @babyAge0to6.
+  ///
+  /// In en, this message translates to:
+  /// **'0–6 months'**
+  String get babyAge0to6;
+
+  /// No description provided for @babyAge7to12.
+  ///
+  /// In en, this message translates to:
+  /// **'7–12 months'**
+  String get babyAge7to12;
 
   /// No description provided for @allNutrientsTitle.
   ///

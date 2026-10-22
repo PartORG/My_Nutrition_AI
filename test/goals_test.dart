@@ -81,6 +81,14 @@ void main() {
       expect(kcal(2), closeTo(1849.72 + 340, .01));
       expect(kcal(3), closeTo(1849.72 + 452, .01));
     });
+
+    test('breastfeeding: +330 kcal while the baby is 0-6 months, +400 at 7-12; losing stays allowed', () {
+      final b = body(sex: Sex.female, age: 25, h: 165, w: 60, a: Activity.light);
+      expect(computeTargets(b, now: now, halfYear: 1)!['kcal'], closeTo(1849.72 + 330, .01));
+      expect(computeTargets(b, now: now, halfYear: 2)!['kcal'], closeTo(1849.72 + 400, .01));
+      final lose = body(sex: Sex.female, age: 25, h: 165, w: 60, a: Activity.light, g: Goal.lose);
+      expect(computeTargets(lose, now: now, halfYear: 1)!['kcal'], closeTo(1572.26 + 330, .01));
+    });
   });
 
   group('storage', () {
@@ -188,8 +196,13 @@ void main() {
       expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal, reason: 'asked before: 1st trimester');
       setTrimester(user, 3);
       expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal + 452);
-      setLifeStage(user, '');
+      setLifeStage(user, 'lactation');
+      expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal + 330, reason: 'not asked yet: 0-6 months');
+      setBabyHalfYear(user, 2);
+      expect(currentTargets(user, nutri: nutri, now: now).values['kcal'], kcal + 400);
       expect(trimester(user), 0, reason: 'the trimester only counts while pregnant');
+      setLifeStage(user, '');
+      expect(babyHalfYear(user), 0);
       setLifeStage(user, 'pregnancy');
       setOverride(user, 'iron_mg', 20);
       t = currentTargets(user, nutri: nutri, now: now).values;

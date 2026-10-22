@@ -387,21 +387,6 @@ void main() {
       expect(currentFast(user), isNull);
     });
 
-    test('products come from the downloaded products.db; every word must match', () {
-      final off = sqlite3.openInMemory()
-        ..execute('CREATE TABLE products (barcode TEXT PRIMARY KEY, name TEXT NOT NULL, kcal REAL NOT NULL, '
-            'protein_g REAL NOT NULL, fat_g REAL NOT NULL, carbs_g REAL NOT NULL, fiber_g REAL, sugar_g REAL, sodium_mg REAL); '
-            "CREATE VIRTUAL TABLE products_fts USING fts5 (name, barcode UNINDEXED, content = 'products'); "
-            "INSERT INTO products VALUES ('4000417326102', 'Ritter Sport Alpenmilch', 532, 8, 32, 53, 2, 50, 100), "
-            "('7622201679958', 'Milka Alpenmilch', 539, 6, 31, 58, 2, 57, 300); "
-            "INSERT INTO products_fts(products_fts) VALUES ('rebuild');");
-      final withOff = AgentTools(nutri, user, clock: () => now, products: off);
-      final hits = withOff.searchFood('ritter alpenmilch').where((f) => f.kind == 'product');
-      expect(hits.map((f) => f.label), ['Ritter Sport Alpenmilch']);
-      expect(withOff.searchFood('yogurt').where((f) => f.kind == 'product'), isEmpty, reason: 'only the products.db given');
-      off.close();
-    });
-
     test('micronutrients: known ones flow from foods and recipes into the log; unknown stays unknown', () {
       confirmOf(tools.run('log_meal', {'items': '2 eggs, 100 g broccoli'})).apply(); // broccoli: no values in the test db
       final (from, to) = dayRange(now);
@@ -457,12 +442,8 @@ void main() {
   });
 
   group('Log tab', () {
-    test('search covers foods (dishes among them), recipes and, with products.db, products', () {
-      expect({for (final f in tools.searchFood('pasta')) f.kind}, {'food'}, reason: 'no products.db, no products');
-      final products = sqlite3.open('test/products_test.db', mode: OpenMode.readOnly);
-      final withProducts = AgentTools(nutri, user, clock: () => now, products: products);
-      expect({for (final f in withProducts.searchFood('pasta')) f.kind}, containsAll(['food', 'product']));
-      products.close();
+    test('search covers foods (dishes among them) and recipes', () {
+      expect({for (final f in tools.searchFood('pasta')) f.kind}, {'food'});
       final lasagna = tools.searchFood('lasagna').first;
       expect((lasagna.kind, lasagna.estimated), ('food', true), reason: 'a dish is a food, and an estimate');
       expect(tools.searchFood('shakshuka').map((f) => f.kind), contains('recipe'));
