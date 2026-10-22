@@ -964,6 +964,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewEmpty => 'No food found. Add items by name.';
 
   @override
+  String reviewPhoto(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Your photo, $n foods marked',
+      one: 'Your photo, 1 food marked',
+      zero: 'Your photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoShow => 'Show the photo';
+
+  @override
   String notInDatabase(String name) {
     return '$name: not in the database. Tap Change to pick a food.';
   }

@@ -32,7 +32,9 @@ const supportEmail = 'peredereev.ievgen@gmail.com';
 /// check, change and save, or to cook from.
 Future<void> photoToChat(BuildContext context, Agent agent, String mode) async {
   final shot = await capturePhoto(context, mode);
-  if (shot != null) agent.addPhoto(photoMeal(shot.data.tools, shot.items, mode: shot.mode));
+  if (shot != null) {
+    agent.addPhoto(photoMeal(shot.data.tools, shot.items, mode: shot.mode, png: shot.photo, boxes: shot.boxes));
+  }
 }
 
 /// Recipe ideas for what the camera saw, or a note that there are none.
@@ -982,6 +984,58 @@ class _MealConfirm extends StatelessWidget {
                 Expanded(child: Text(l.photoCardHint, style: TextStyle(fontSize: 15, color: c.ink2))),
               ]),
               const SizedBox(height: 12),
+              // The photo, small, with the foods still on the card marked; a tap shows it full screen to check.
+              if (card.png case final png?) ...[
+                Builder(builder: (context) {
+                  final boxes = [
+                    for (final b in card.boxes)
+                      if (card.items.any((i) => (i.seen ?? i.label) == b.label)) b,
+                  ];
+                  return Semantics(
+                    button: true,
+                    label: l.photoShow,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(Radii.tile),
+                      onTap: () => showDialog<void>(
+                        context: context,
+                        builder: (context) => Dialog.fullscreen(
+                          backgroundColor: Colors.black,
+                          child: Stack(children: [
+                            Positioned.fill(
+                              child: InteractiveViewer(
+                                maxScale: 5,
+                                child: Center(
+                                    child: PhotoWithBoxes(photo: png, boxes: boxes,
+                                        semanticLabel: l.reviewPhoto(boxes.length))),
+                              ),
+                            ),
+                            SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: RoundIconButton(
+                                  icon: Icons.close,
+                                  tooltip: l.close,
+                                  background: Colors.black.withValues(alpha: .45),
+                                  foreground: Colors.white,
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(Radii.tile),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          child: Center(child: PhotoWithBoxes(photo: png, boxes: boxes)),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+              ],
             ],
             if (card.mealType != null) ...[
               ChoicePills<String>(

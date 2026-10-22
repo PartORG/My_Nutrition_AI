@@ -286,7 +286,9 @@ void recordScan(Database user, String mode, List<ScanItem> items, {required Date
 /// A photo in the chat → its meal card: each matched food with what was seen ("check" when unsure), the rest listed
 /// to add by hand, oil offered when something was fried. Save logs the meal, keeps the user's corrections for the
 /// next photo and records the scan, as the review screen's "Log this meal" does.
-ConfirmCard photoMeal(AgentTools tools, List<ScanItem> items, {required String mode}) => tools.photoMealCard(
+ConfirmCard photoMeal(AgentTools tools, List<ScanItem> items,
+        {required String mode, Uint8List? png, List<PhotoBox> boxes = const []}) =>
+    tools.photoMealCard(
       [
         for (final i in items)
           if (i.food case final f?)
@@ -297,6 +299,8 @@ ConfirmCard photoMeal(AgentTools tools, List<ScanItem> items, {required String m
       ],
       notFound: [for (final i in items) if (i.food == null) i.name],
       fat: items.any((i) => cookedInFat(i.cooking)) ? tools.staple('oil') ?? matchFood(tools, 'oil') : null,
+      png: png,
+      boxes: boxes,
       saved: (card) {
         final now = DateTime.now();
         for (final m in card.items) {
@@ -306,3 +310,16 @@ ConfirmCard photoMeal(AgentTools tools, List<ScanItem> items, {required String m
             [for (final m in card.items) ScanItem(name: m.seen ?? m.label, food: m.food, grams: m.grams)], at: now);
       },
     );
+
+/// The detector's boxes that belong to [items], labelled with the food's name as the list shows it: every box whose
+/// label is that food (by what was seen or the food it matched; three bananas, three boxes). Boxes for nothing on
+/// the list are dropped: Gemma names the foods, and a box disagreeing with the list would only confuse.
+List<PhotoBox> boxesFor(List<ScanItem> items, List<Detection> found) {
+  final left = [...found];
+  return [
+    for (final i in items)
+      for (final d in [...left])
+        if (sameFood(d.label, i.name) || (i.food != null && sameFood(d.label, i.food!.label)))
+          if (left.remove(d)) (box: d.box, label: i.name),
+  ];
+}

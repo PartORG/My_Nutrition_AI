@@ -269,6 +269,8 @@
   "reviewTitle": "Vérifiez ce qui a été trouvé",
   "reviewHint": "Les quantités issues d’une photo sont des estimations (≈). Modifiez ou retirez ce que vous voulez ; rien n’est enregistré avant d’appuyer sur Noter.",
   "reviewEmpty": "Aucun aliment trouvé. Ajoutez des éléments par leur nom.",
+  "reviewPhoto": "{n, plural, =0{Votre photo} =1{Votre photo, 1 aliment repéré} other{Votre photo, {n} aliments repérés}}",
+  "photoShow": "Afficher la photo",
   "notInDatabase": "{name} : absent de la base. Touchez Modifier pour choisir un aliment.",
   "reviewChange": "Modifier",
   "reviewAdd": "Ajouter un élément",

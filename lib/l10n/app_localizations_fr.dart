@@ -968,6 +968,21 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun aliment trouvé. Ajoutez des éléments par leur nom.';
 
   @override
+  String reviewPhoto(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Votre photo, $n aliments repérés',
+      one: 'Votre photo, 1 aliment repéré',
+      zero: 'Votre photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoShow => 'Afficher la photo';
+
+  @override
   String notInDatabase(String name) {
     return '$name : absent de la base. Touchez Modifier pour choisir un aliment.';
   }

@@ -269,6 +269,8 @@
   "reviewTitle": "Prüfe, was erkannt wurde",
   "reviewHint": "Mengen aus einem Foto sind Schätzungen (≈). Ändere oder entferne alles; gespeichert wird erst, wenn du auf „Eintragen“ tippst.",
   "reviewEmpty": "Kein Essen erkannt. Füge Einträge per Namen hinzu.",
+  "reviewPhoto": "{n, plural, =0{Dein Foto} =1{Dein Foto, 1 Lebensmittel markiert} other{Dein Foto, {n} Lebensmittel markiert}}",
+  "photoShow": "Foto anzeigen",
   "notInDatabase": "{name}: nicht in der Datenbank. Tippe auf Ändern, um ein Lebensmittel zu wählen.",
   "reviewChange": "Ändern",
   "reviewAdd": "Eintrag hinzufügen",

@@ -969,6 +969,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Kein Essen erkannt. Füge Einträge per Namen hinzu.';
 
   @override
+  String reviewPhoto(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Dein Foto, $n Lebensmittel markiert',
+      one: 'Dein Foto, 1 Lebensmittel markiert',
+      zero: 'Dein Foto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoShow => 'Foto anzeigen';
+
+  @override
   String notInDatabase(String name) {
     return '$name: nicht in der Datenbank. Tippe auf Ändern, um ein Lebensmittel zu wählen.';
   }

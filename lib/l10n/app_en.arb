@@ -567,6 +567,9 @@
   "reviewTitle": "Check what was found",
   "reviewHint": "Amounts from a photo are estimates (≈). Change or remove anything; nothing is saved until you tap Log.",
   "reviewEmpty": "No food found. Add items by name.",
+  "reviewPhoto": "{n, plural, =0{Your photo} =1{Your photo, 1 food marked} other{Your photo, {n} foods marked}}",
+  "@reviewPhoto": {"placeholders": {"n": {"type": "int"}}},
+  "photoShow": "Show the photo",
   "notInDatabase": "{name}: not in the database. Tap Change to pick a food.",
   "@notInDatabase": {
     "placeholders": {

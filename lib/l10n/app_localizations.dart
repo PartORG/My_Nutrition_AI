@@ -1716,6 +1716,18 @@ abstract class AppLocalizations {
   /// **'No food found. Add items by name.'**
   String get reviewEmpty;
 
+  /// No description provided for @reviewPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{Your photo} =1{Your photo, 1 food marked} other{Your photo, {n} foods marked}}'**
+  String reviewPhoto(int n);
+
+  /// No description provided for @photoShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the photo'**
+  String get photoShow;
+
   /// No description provided for @notInDatabase.
   ///
   /// In en, this message translates to:

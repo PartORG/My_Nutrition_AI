@@ -34,14 +34,16 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
   final shot = await capturePhoto(context, mode);
   if (shot == null || !context.mounted) return;
   await nav.push(MaterialPageRoute<void>(
-    builder: (_) => ReviewScreen(data: shot.data, items: shot.items, mode: shot.mode, onCook: onCook),
+    builder: (_) => ReviewScreen(data: shot.data, items: shot.items, mode: shot.mode, onCook: onCook, photo: shot.photo,
+        boxes: shot.boxes),
   ));
 }
 
 /// Pro (else the plans): the camera, photo or live, or a gallery picture → the foods seen, matched in nutri.db, and
-/// how they were taken ('photo' / 'live'). Null when cancelled, locked or not Pro. The review screen and the chat's
-/// camera both start here.
-Future<({ProfileData data, List<ScanItem> items, String mode})?> capturePhoto(BuildContext context, String mode) async {
+/// how they were taken ('photo' / 'live'), with the photo (in memory only) and the foods' boxes on it. Null when
+/// cancelled, locked or not Pro. The review screen and the chat's camera both start here.
+Future<({ProfileData data, List<ScanItem> items, String mode, Uint8List? photo, List<PhotoBox> boxes})?> capturePhoto(
+    BuildContext context, String mode) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final billing = await container.read(billingProvider.future);
   if (!context.mounted) return null;
@@ -51,8 +53,9 @@ Future<({ProfileData data, List<ScanItem> items, String mode})?> capturePhoto(Bu
   }
   final data = container.read(profileDataProvider);
   if (data == null) return null;
-  final captured = await container.read(captureProvider)(context, mode);
-  if (captured == null || !context.mounted) return null;
+  final result = await container.read(captureProvider)(context, mode);
+  if (result == null || !context.mounted) return null;
+  final (captured, photo, found) = result is Captured ? (result.found, result.photo, result.boxes) : (result, null, null);
   final rows = container.read(detectorRowsProvider).value ?? const {}; // loaded with the detector
   final (items, usedMode) = switch (captured) {
     (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found, rows: rows), live ? 'live' : 'photo'),
@@ -60,8 +63,13 @@ Future<({ProfileData data, List<ScanItem> items, String mode})?> capturePhoto(Bu
     (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
   };
-  return (data: data, items: items, mode: usedMode);
+  final boxes = found ?? (captured is (List<Detection>, bool) ? captured.$1 : const <Detection>[]);
+  return (data: data, items: items, mode: usedMode, photo: photo, boxes: boxesFor(items, boxes));
 }
+
+/// The camera's result: what was found (as below), the photo it was found on (PNG, in memory only: shown on the
+/// review, never written) and the detector's boxes on that photo.
+typedef Captured = ({Object found, Uint8List? photo, List<Detection> boxes});
 
 /// What a capture returns: Gemma's foods from a photo, matched
 /// (`List<ScanItem>`; tests may return `List<SeenFood>`), or detections and whether they came from live mode
@@ -79,6 +87,65 @@ final detectorProvider = FutureProvider.autoDispose<Detector>((ref) async {
   ref.onDispose(d.close);
   return d;
 });
+
+/// Width and height from a PNG's header (its IHDR chunk): the photo's shape before it's decoded.
+Size pngSize(Uint8List png) {
+  final b = ByteData.sublistView(png);
+  return Size(b.getUint32(16).toDouble(), b.getUint32(20).toDouble());
+}
+
+/// The photo at its own shape with the foods' boxes on it, labelled with their names.
+class PhotoWithBoxes extends StatelessWidget {
+  const PhotoWithBoxes({super.key, required this.photo, required this.boxes, this.semanticLabel});
+  final Uint8List photo;
+  final List<PhotoBox> boxes;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = pngSize(photo);
+    return AspectRatio(
+      aspectRatio: size.width / size.height,
+      child: Stack(fit: StackFit.expand, children: [
+        Image.memory(photo, fit: BoxFit.fill, gaplessPlayback: true, semanticLabel: semanticLabel,
+            excludeFromSemantics: semanticLabel == null),
+        FoodBoxes(boxes),
+      ]),
+    );
+  }
+}
+
+/// Boxes over whatever fills the space (a camera preview or a photo), each with its label at the top left.
+class FoodBoxes extends StatelessWidget {
+  const FoodBoxes(this.boxes, {super.key});
+  final List<PhotoBox> boxes;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: LayoutBuilder(builder: (context, box) => Stack(children: [
+              for (final d in boxes)
+                Positioned(
+                  left: d.box.left * box.maxWidth,
+                  top: d.box.top * box.maxHeight,
+                  width: d.box.width * box.maxWidth,
+                  height: d.box.height * box.maxHeight,
+                  child: Container(
+                    alignment: Alignment.topLeft,
+                    decoration: BoxDecoration(border: Border.all(color: context.colors.accent, width: 3)),
+                    // The label only: a detector score looks more certain than it is.
+                    child: Container(
+                      color: context.colors.accent,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: Text(d.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 15)),
+                    ),
+                  ),
+                ),
+            ])),
+      );
+}
 
 /// Each detector label's reviewed nutri.db row (db/detector_labels.tsv), so a box never goes through search.
 final detectorRowsProvider =
@@ -117,6 +184,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   List<Detection> _found = [];
   late bool _live = widget.live;
   bool _busy = false, _naming = false, _cancelled = false, _fromGallery = false;
+
+  /// Shooting: the stream stops replacing [_frame], so the boxes and the photo are of the same frame.
+  bool _hold = false;
+
+  /// The photo being named, shown (with [_found]) instead of the preview until the review opens.
+  Uint8List? _frozen;
   Timer? _timer;
   Object? _error;
 
@@ -133,11 +206,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       final cam = CameraController(back, ResolutionPreset.high, // ~1280×720: Gemma sees small ingredients
           enableAudio: false, imageFormatGroup: ImageFormatGroup.yuv420);
       await cam.initialize();
-      await cam.startImageStream((img) => _frame = img);
+      await cam.startImageStream((img) {
+        if (!_hold) _frame = img;
+      });
       if (!mounted) return await cam.dispose();
       setState(() => _cam = cam);
       _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        if (_live && !_naming) _detect(); // Gemma gets the CPU while it names
+        if (_live && !_naming && !_hold) _detect(); // Gemma gets the CPU while it names
       });
     } on Object catch (e) {
       if (mounted) setState(() => _error = e); // permission denied, no camera
@@ -225,24 +300,39 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     return _png(_rgb(frame, rotation, outW: w, outH: h), w, h);
   }
 
+  Captured _captured(Object found) => (found: found, photo: _frozen, boxes: _found);
+
   Future<void> _shoot(AppLocalizations l) async {
     if (_frame == null || _cam == null) return;
     // Both modes: Gemma names the foods and weighs them; YOLOX's boxes are the live preview and the fallback
-    // when Gemma isn't downloaded, sees nothing, or the user stops waiting.
+    // when Gemma isn't downloaded, sees nothing, or the user stops waiting. The frame is held, boxed again (live
+    // mode's last boxes were of an earlier frame) and shown while Gemma works.
+    _hold = true;
+    await _detect(tiled: !_live); // its boxes aim Gemma's closer look
+    final photo = await _framePng();
+    if (!mounted) return;
+    setState(() => _frozen = photo);
     try {
-      if (!_live) await _detect(tiled: true); // its boxes aim Gemma's closer look
-      final seen = await _name(_framePng, boxes: [for (final d in _found) d.box]);
+      final seen = await _name(() async => photo, boxes: [for (final d in _found) d.box]);
       if (_cancelled || !mounted) return;
-      if (seen != null && (seen.isNotEmpty || _found.isEmpty)) return Navigator.pop(context, seen);
+      if (seen != null && (seen.isNotEmpty || _found.isEmpty)) return Navigator.pop(context, _captured(seen));
     } on Object catch (e, st) {
       debugPrint('photo naming failed: $e\n$st');
       if (_cancelled || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
     }
-    if (mounted) Navigator.pop(context, (_found, _live));
+    if (mounted) Navigator.pop(context, _captured((_found, _live)));
   }
 
-  /// "Choose photo": a picture from the gallery, read into memory; the picker's temporary copy is deleted.
+  /// Back to the live camera: nothing held or frozen.
+  void _resume() => setState(() {
+        _hold = false;
+        _frozen = null;
+        _found = [];
+      });
+
+  /// "Choose photo": a picture from the gallery, read into memory; the picker's temporary copy is deleted. Shown
+  /// while it's named, boxed by the detector like a camera photo.
   Future<void> _gallery(AppLocalizations l) async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1280, maxHeight: 1280);
     if (file == null || !mounted) return;
@@ -253,20 +343,43 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       debugPrint('picked photo not deleted: $e');
     }
     _fromGallery = true;
+    _hold = true;
     try {
-      final seen = await _name(() => _encodePng(bytes));
+      final png = await _encodePng(bytes);
+      final found = await _detectPng(png);
+      if (!mounted) return;
+      setState(() {
+        _frozen = png;
+        _found = found;
+      });
+      final seen = await _name(() async => png, boxes: [for (final d in found) d.box]);
       if (_cancelled || !mounted) return;
       if (seen == null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraGalleryNeedsAi)));
-        return;
+        return _resume();
       }
-      Navigator.pop(context, seen);
+      Navigator.pop(context, _captured(seen));
     } on Object catch (e, st) {
       debugPrint('gallery naming failed: $e\n$st');
-      if (mounted && !_cancelled) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+      if (mounted && !_cancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.cameraNamingFailed)));
+        _resume();
+      }
     } finally {
       _fromGallery = false;
     }
+  }
+
+  /// The detector over a whole photo and its four quarters, as for a camera photo.
+  Future<List<Detection>> _detectPng(Uint8List png) async {
+    final detector = ref.read(detectorProvider).value;
+    if (detector == null) return const [];
+    final all = <Detection>[];
+    for (final tile in photoTiles) {
+      final (rgb, w, h) = await _fitRgb(tile == photoTiles.first ? png : await _cropPng(png, tile));
+      all.addAll((await detector.detect(rgb, w, h)).map((d) => fromTile(d, tile)));
+    }
+    return mergeTiles(all);
   }
 
   /// Stop waiting for Gemma (it finishes in the background, its answer unused): a camera shot
@@ -276,9 +389,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       _cancelled = true;
       _naming = false;
     });
-    if (_fromGallery || _frame == null) return;
-    if (!_live) await _detect(tiled: true);
-    if (mounted) Navigator.pop(context, (_found, _live));
+    if (_fromGallery || _frame == null) return _resume();
+    if (mounted) Navigator.pop(context, _captured((_found, _live)));
   }
 
   @override
@@ -327,26 +439,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                   aspectRatio: 1 / cam.value.aspectRatio,
                   child: Stack(fit: StackFit.expand, children: [
                     CameraPreview(cam),
-                    LayoutBuilder(builder: (context, box) => Stack(children: [
-                          for (final d in _found)
-                            Positioned(
-                              left: d.box.left * box.maxWidth,
-                              top: d.box.top * box.maxHeight,
-                              width: d.box.width * box.maxWidth,
-                              height: d.box.height * box.maxHeight,
-                              child: Container(
-                                alignment: Alignment.topLeft,
-                                decoration: BoxDecoration(border: Border.all(color: context.colors.accent, width: 3)),
-                                // The label only: a detector score looks more certain than it is.
-                                child: Container(
-                                  color: context.colors.accent,
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  child: Text(d.label,
-                                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 15)),
-                                ),
-                              ),
-                            ),
-                        ])),
+                    FoodBoxes([for (final d in _found) (box: d.box, label: d.label)]),
                   ]),
                 ),
               );
@@ -354,24 +447,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Stack(children: [
-          Positioned.fill(child: body),
+          // The photo being named, held still with its boxes: what Gemma looks at, not the moving preview.
+          Positioned.fill(
+              child: _frozen != null
+                  ? Center(child: PhotoWithBoxes(photo: _frozen!, boxes: [for (final d in _found) (box: d.box, label: d.label)]))
+                  : body),
           if (_naming)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: .6),
-                child: Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const CircularProgressIndicator(color: white),
-                    const SizedBox(height: 16),
-                    Text(l.cameraNaming, style: const TextStyle(color: white, fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: white, side: const BorderSide(color: white)),
-                      onPressed: _cancel,
-                      child: Text(l.cancel),
-                    ),
-                  ]),
-                ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: .75), borderRadius: BorderRadius.circular(20)),
+                child: Row(children: [
+                  const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 3, color: white)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                      child: Text(l.cameraNaming,
+                          style: const TextStyle(color: white, fontSize: 17, fontWeight: FontWeight.w600))),
+                  TextButton(style: TextButton.styleFrom(foregroundColor: white), onPressed: _cancel, child: Text(l.cancel)),
+                ]),
               ),
             ),
           Positioned(
@@ -393,7 +489,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               ),
             ]),
           ),
-          if (_error == null && cam != null)
+          if (_error == null && cam != null && !_naming && _frozen == null)
             Positioned(
               left: 16,
               right: 16,
@@ -441,11 +537,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 /// Everything detected is checked here before use: rename (re-match), amount,
 /// remove, add. Values are ≈ for photos. Nothing is saved before a button.
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({super.key, required this.data, required this.items, required this.mode, this.onCook});
+  const ReviewScreen({super.key, required this.data, required this.items, required this.mode, this.onCook, this.photo,
+      this.boxes = const []});
   final ProfileData data;
   final List<ScanItem> items;
   final String mode;
   final void Function(List<String> names)? onCook;
+
+  /// The photo the foods were found on (in memory only) and their boxes: shown above the list, which then sits in
+  /// a sheet the user pulls down to look at the photo or up to edit.
+  final Uint8List? photo;
+  final List<PhotoBox> boxes;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -502,39 +604,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       Navigator.pop(context);
     }
 
-    return Scaffold(
-      backgroundColor: c.dark,
-      body: SafeArea(
-        bottom: false,
-        child: Column(children: [
-          // The photo is never stored: the band shows what was seen, by name.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              RoundIconButton(
-                icon: Icons.arrow_back_ios_new,
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                background: Colors.white.withValues(alpha: .12),
-                foreground: Colors.white,
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Wrap(spacing: 8, runSpacing: 8, children: [
-                  for (final (n, i) in _items.indexed)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: tints[n % tints.length], borderRadius: BorderRadius.circular(10)),
-                      child: Text(i.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF16201A))),
-                    ),
-                ]),
-              ),
-            ]),
-          ),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(color: c.background, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
-              child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 24), children: [
+    final content = <Widget>[
                 Semantics(header: true, child: Text(l.reviewTitle, style: Theme.of(context).textTheme.headlineMedium)),
                 const SizedBox(height: 6),
                 Text(l.reviewHint, style: TextStyle(fontSize: 16, color: c.ink2)),
@@ -611,11 +681,96 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     Text('$approx${kcal.round()} ${l.kcal}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
                   ],
                 ),
-              ]),
+    ];
+    final photo = widget.photo;
+    // A food removed from the list leaves the photo too.
+    final shown = [for (final b in widget.boxes) if (_items.any((i) => i.name == b.label)) b];
+    final Widget body;
+    if (photo != null) {
+      // The photo, pinch to zoom, with what was found marked; the list in a sheet pulled up to edit, down to look.
+      body = Stack(children: [
+        Positioned.fill(
+          child: SafeArea(
+            bottom: false,
+            child: InteractiveViewer(
+              maxScale: 5,
+              child: Center(
+                  child: PhotoWithBoxes(photo: photo, boxes: shown, semanticLabel: l.reviewPhoto(shown.length))),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: RoundIconButton(
+              icon: Icons.arrow_back_ios_new,
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              background: Colors.black.withValues(alpha: .45),
+              foreground: Colors.white,
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ),
+        DraggableScrollableSheet(
+          initialChildSize: .55,
+          minChildSize: .2,
+          maxChildSize: .95,
+          snap: true,
+          snapSizes: const [.55],
+          builder: (context, scroll) => Container(
+            decoration: BoxDecoration(color: c.background, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
+            child: ListView(controller: scroll, padding: const EdgeInsets.fromLTRB(20, 10, 20, 24), children: [
+              Center(
+                child: Container(
+                    width: 40, height: 4, margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(color: c.outline, borderRadius: BorderRadius.circular(2))),
+              ),
+              ...content,
+            ]),
+          ),
+        ),
+      ]);
+    } else {
+      body = SafeArea(
+        bottom: false,
+        child: Column(children: [
+          // The photo is never stored: the band shows what was seen, by name.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              RoundIconButton(
+                icon: Icons.arrow_back_ios_new,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                background: Colors.white.withValues(alpha: .12),
+                foreground: Colors.white,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final (n, i) in _items.indexed)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: tints[n % tints.length], borderRadius: BorderRadius.circular(10)),
+                      child: Text(i.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF16201A))),
+                    ),
+                ]),
+              ),
+            ]),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(color: c.background, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
+              child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 24), children: content),
             ),
           ),
         ]),
-      ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: c.dark,
+      body: body,
       bottomNavigationBar: BottomActions(children: [
         if (widget.onCook != null)
           Expanded(
@@ -698,5 +853,28 @@ Future<Uint8List> _rgbaPng(Uint8List rgba, int w, int h) async {
     codec.dispose();
     descriptor.dispose();
     buffer.dispose();
+  }
+}
+
+/// [png] scaled to fit [yoloxSize]² with its shape kept → RGB bytes and their size: the detector's input.
+Future<(Uint8List, int, int)> _fitRgb(Uint8List png) async {
+  final size = pngSize(png);
+  final r = yoloxSize / max(size.width, size.height);
+  final w = max(1, (size.width * r).floor()), h = max(1, (size.height * r).floor());
+  final codec = await ui.instantiateImageCodec(png, targetWidth: w, targetHeight: h);
+  final image = (await codec.getNextFrame()).image;
+  try {
+    final rgba = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List();
+    final rgb = Uint8List(w * h * 3);
+    for (var i = 0, j = 0; j < rgb.length; i += 4, j += 3) {
+      rgb
+        ..[j] = rgba[i]
+        ..[j + 1] = rgba[i + 1]
+        ..[j + 2] = rgba[i + 2];
+    }
+    return (rgb, w, h);
+  } finally {
+    image.dispose();
+    codec.dispose();
   }
 }

@@ -71,9 +71,13 @@ accounts, no cloud inference and no analytics SDK.
 - **Camera, also in the chat:** photo and live modes, or a photo from the gallery. Gemma 4 vision names the foods
   and estimates portions (looking at the whole photo and a closer crop, then choosing among the closest database
   foods; foods it isn't sure of are marked "Check this", fried food offers "cooked with oil?", and your
-  corrections are remembered for next time), and EfficientDet-Lite0 draws live boxes and acts as a fallback. From
-  Log, what was seen opens a review screen; in the chat ("Photo of your meal" above the input) it comes back as a
-  meal card to check, change, assign to a meal and save, or to ask "What can I cook?". No photo is ever stored.
+  corrections are remembered for next time), and the detector draws live boxes and acts as a fallback. Shooting
+  (photo or live) freezes the frame: you see the exact picture being named, with its boxes, while Gemma works.
+  From Log, the review shows that photo on top (pinch to zoom) with the foods marked, and the editable list in a
+  sheet you pull down to look or up to edit; in the chat ("Photo of your meal" above the input) the foods come back
+  as a meal card with the photo as a thumbnail (tap for full screen), to check, change, assign to a meal and save,
+  or to ask "What can I cook?". Boxes are drawn only where the detector agrees with a food on the list, named as
+  the list names it; gallery photos are boxed too. The photo stays in memory only and is never stored.
 - **Own food detector (in testing):** a YOLOX-Tiny model trained on 164 food labels (MyFoodRepo / Food Recognition
   2022, CC BY 4.0), int8 TFLite, 5.4 MB, validation AP 30.9. On a Xiaomi 11T it runs in 21 ms on NNAPI (the
   phone's AI chip, same results as the CPU), 53 ms on the GPU and 146 ms on the CPU. Photos are also searched

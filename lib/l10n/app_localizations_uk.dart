@@ -973,6 +973,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reviewEmpty => 'Їжу не знайдено. Додайте позиції за назвою.';
 
   @override
+  String reviewPhoto(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Ваше фото, позначено $n продуктів',
+      few: 'Ваше фото, позначено $n продукти',
+      one: 'Ваше фото, позначено 1 продукт',
+      zero: 'Ваше фото',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoShow => 'Показати фото';
+
+  @override
   String notInDatabase(String name) {
     return '$name: немає в базі. Натисніть «Змінити», щоб обрати продукт.';
   }

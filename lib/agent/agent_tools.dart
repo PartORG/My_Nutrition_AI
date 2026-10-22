@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' show Rect;
 
 import 'package:sqlite3/sqlite3.dart';
 
@@ -124,10 +126,14 @@ class MealItem {
   Nutrients get values => per100.map((k, v) => MapEntry(k, v * grams / 100));
 }
 
+/// A food's place on a photo: its box (normalized 0..1 on the upright photo) and the name the user sees for it.
+typedef PhotoBox = ({Rect box, String label});
+
 /// A write the model proposed. Nothing is stored until the user taps ✓.
 class ConfirmCard extends AgentCard {
   ConfirmCard({required String title, List<String> lines = const [], required void Function(ConfirmCard) apply,
-      this.mealType, this.items = const [], this.photo = false, this.notFound = const [], this.fat})
+      this.mealType, this.items = const [], this.photo = false, this.notFound = const [], this.fat, this.png,
+      this.boxes = const []})
       // ignore: prefer_initializing_formals
       : _title = title,
         // ignore: prefer_initializing_formals
@@ -145,6 +151,10 @@ class ConfirmCard extends AgentCard {
   final bool photo;
   final List<String> notFound;
   final FoodChoice? fat;
+
+  /// The photo itself (in memory only, never stored) and the foods marked on it.
+  final Uint8List? png;
+  final List<PhotoBox> boxes;
 
   List<String> get lines => [
         for (final i in items) '${i.label} · ${i.grams.round()} g · ${i.estimated ? '≈' : ''}${i.values['kcal']!.round()} kcal',
@@ -864,7 +874,8 @@ class AgentTools {
   /// A photo's meal card (lib/vision/scan.dart photoMeal): the same card log_meal shows, under the meal of the hour;
   /// [saved] runs after the meal is logged.
   ConfirmCard photoMealCard(List<MealItem> items,
-          {List<String> notFound = const [], FoodChoice? fat, required void Function(ConfirmCard) saved}) =>
+          {List<String> notFound = const [], FoodChoice? fat, Uint8List? png, List<PhotoBox> boxes = const [],
+          required void Function(ConfirmCard) saved}) =>
       ConfirmCard(
         title: 'Log meal',
         mealType: _mealTypeFor(_now()),
@@ -872,6 +883,8 @@ class AgentTools {
         photo: true,
         notFound: notFound,
         fat: fat,
+        png: png,
+        boxes: boxes,
         apply: (c) {
           _insertItems(_ms(), c);
           saved(c);

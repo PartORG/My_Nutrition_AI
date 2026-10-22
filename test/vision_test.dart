@@ -368,6 +368,59 @@ void main() {
       expect(meals().map((r) => r['description']), containsAll(['banana', 'broccoli']));
     });
 
+    // A 4×2 photo as the camera hands it over (PNG, in memory only), and boxes on it.
+    final png = Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 4, 0, 0, 0, 2, 8,
+      2, 0, 0, 0, 240, 202, 234, 52, 0, 0, 0, 16, 73, 68, 65, 84, 120, 156, 99, 104, 72, 112, 128, 35, 6, 100, 14, 0, 119, 26,
+      9, 1, 26, 44, 114, 34, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]);
+    Detection det(String label, double left) =>
+        (label: label, score: .9, box: Rect.fromLTWH(left, .2, .3, .5));
+
+    test('boxes: only foods on the list, named as the list names them; the photo\'s size from its header', () {
+      final items = itemsFromSeen(data.tools, parseSeenFoods('150 | banana\n90 | broccoli'));
+      final boxes = boxesFor(items, [det('banana', 0), det('banana', .3), det('pizza', .6)]);
+      expect(boxes.map((b) => b.label), ['banana', 'banana'], reason: 'two bananas, two boxes; no pizza on the list');
+      expect(pngSize(png), const Size(4, 2));
+    });
+
+    testWidgets('photo → review: the photo with its boxes, the list in a sheet; a removed food leaves the photo',
+        (tester) async {
+      capture = (_) => (found: parseSeenFoods('150 | banana\n90 | broccoli'), photo: png,
+          boxes: [det('banana', 0), det('broccoli', .5)]);
+      await pumpReview(tester);
+      await tester.tap(find.text('Open camera'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PhotoWithBoxes), findsOneWidget);
+      expect(find.byType(DraggableScrollableSheet), findsOneWidget);
+      Finder onPhoto(String name) => find.descendant(of: find.byType(FoodBoxes), matching: find.text(name));
+      expect(onPhoto('broccoli'), findsOneWidget);
+      await tester.ensureVisible(find.byTooltip('Remove').last); // broccoli's row, in the sheet
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Remove').last);
+      await tester.pump();
+      expect(onPhoto('broccoli'), findsNothing);
+      expect(onPhoto('banana'), findsOneWidget);
+      await tester.tap(find.textContaining('Log this'));
+      await tester.pumpAndSettle();
+      expect(meals().map((r) => r['description']), ['banana']);
+    });
+
+    testWidgets('chat photo: the card shows the photo with its boxes; a tap opens it full screen', (tester) async {
+      capture = (_) => (found: parseSeenFoods('150 | banana'), photo: png, boxes: [det('banana', 0)]);
+      await pumpChat(tester);
+      await tester.tap(find.text('Photo of your meal'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PhotoWithBoxes), findsOneWidget);
+      expect(find.descendant(of: find.byType(FoodBoxes), matching: find.text('banana')), findsOneWidget);
+      await tester.ensureVisible(find.byType(PhotoWithBoxes));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Show the photo'));
+      await tester.pumpAndSettle();
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(InteractiveViewer), findsNothing);
+    });
+
     testWidgets('chat photo: a meal card to check, change, save; a swap is remembered for next time', (tester) async {
       capture = (_) => parseSeenFoods('150 | banana | fried\n200 | unicorn stew');
       await pumpChat(tester);

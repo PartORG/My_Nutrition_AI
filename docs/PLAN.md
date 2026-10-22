@@ -666,6 +666,13 @@ To do, in order:
 
 ## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
+Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
+and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too
+(`_detectPng`, whole photo and four quarters). Review: photo on top in an InteractiveViewer, list in a
+DraggableScrollableSheet; boxes only where the detector agrees with a food on the list (`boxesFor`: Gemma names,
+a disagreeing box would confuse), a removed food's box goes. The chat photo card carries the PNG and boxes
+(thumbnail, tap for full screen). Memory only. Needs the phone: real frames, box positions, Gemma timing.
+
 v0.23 (same day): Eva on more screens, by mood (owner's request): a new chat (waving, with a greeting), the chat while it
 answers (thinking), Today's "set your goals" card and Goals (sitting), the health journal (sleeping), too few
 weigh-ins and no saved recipes (thinking), an empty shopping list (eating), a camera review with nothing found
