@@ -436,6 +436,12 @@ class Agent extends ChangeNotifier {
     return true;
   }
 
+  /// A photo from the chat's camera: its meal card, to check and save. No model, not counted.
+  void addPhoto(ConfirmCard card) {
+    items.add(CardItem(card, caption: true));
+    notifyListeners();
+  }
+
   /// "I ate this" on a recipe card: straight to a ✓ card, no model, not counted.
   void ateRecipe(int recipeId) {
     items.add(CardItem(tools.logRecipe(recipeId).card!));
@@ -474,6 +480,9 @@ class Agent extends ChangeNotifier {
     } else {
       final f = MealItem.of(food, grams: food.servingG ?? item.grams);
       item
+        ..food = food
+        ..corrected = item.seen != null
+        ..check = false
         ..label = f.label
         ..grams = f.grams
         ..per100 = f.per100

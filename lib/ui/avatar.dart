@@ -21,11 +21,14 @@ class EvaAvatar extends StatelessWidget {
 }
 
 /// Eva on a transparent background, so she sits on any colour (2026-10-22): her head (icon_chat.png without its
-/// disc), and three poses the owner made, cut off their paper and scaled to 384 px.
-const evaCutoutAsset = 'assets/icons/eva_cutout.png';
-const evaWavingAsset = 'assets/icons/eva_waving.png'; // hello: the welcome screen
-const evaSleepingAsset = 'assets/icons/eva_sleeping.png'; // nothing here yet
-const evaEatingAsset = 'assets/icons/eva_eating.png'; // no food found, nothing to buy or cook
+/// disc), and six poses the owner made, cut off their paper and scaled to 384 px. One screen each, never repeated.
+const evaCutoutAsset = 'assets/icons/eva_cutout.png'; // the drawer's header
+const evaWavingAsset = 'assets/icons/eva_waving.png'; // the welcome screen
+const evaSittingAsset = 'assets/icons/eva_sitting.png'; // the food data download
+const evaSleepingAsset = 'assets/icons/eva_sleeping.png'; // History: nothing on those days
+const evaEatingAsset = 'assets/icons/eva_eating.png'; // Log: no food found
+const evaThinkingAsset = 'assets/icons/eva_thinking.png'; // what the AI knows: nothing yet
+const evaCameraAsset = 'assets/icons/eva_camera.png'; // a photo in the chat
 
 class EvaCutout extends StatelessWidget {
   const EvaCutout({super.key, this.size = 48, this.asset = evaCutoutAsset});
@@ -36,9 +39,9 @@ class EvaCutout extends StatelessWidget {
   Widget build(BuildContext context) => Image.asset(asset, height: size, excludeFromSemantics: true);
 }
 
-/// Where a list has nothing yet: Eva (asleep, unless [asset] says otherwise) beside the line that says so.
+/// Where a list has nothing yet: Eva, in the pose that screen owns, beside the line that says so.
 class EvaNote extends StatelessWidget {
-  const EvaNote(this.text, {super.key, this.asset = evaSleepingAsset});
+  const EvaNote(this.text, {super.key, required this.asset});
   final String text;
   final String asset;
 

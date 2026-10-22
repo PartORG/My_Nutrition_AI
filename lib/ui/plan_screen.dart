@@ -8,7 +8,6 @@ import '../data/diary.dart' show totalsOn;
 import '../data/goals.dart';
 import '../data/plan.dart';
 import '../l10n/app_localizations.dart';
-import 'avatar.dart';
 import 'camera_screen.dart';
 import 'kit.dart';
 import 'paywall_screen.dart' show LockedCard, TierBuilder;
@@ -701,7 +700,7 @@ class _RecipeBoxState extends State<_RecipeBox> {
                 ),
               const SizedBox(height: 12),
               if (list.isEmpty)
-                Panel(child: EvaNote(_cook != null ? l.cookNone : l.boxEmpty, asset: evaEatingAsset)),
+                Panel(child: Text(_cook != null ? l.cookNone : l.boxEmpty, style: TextStyle(color: c.muted))),
             ],
           ),
         ),
@@ -979,7 +978,7 @@ class _ShoppingState extends State<_Shopping> {
         if (items.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16),
-            child: EvaNote(l.shoppingEmpty, asset: evaEatingAsset),
+            child: Text(l.shoppingEmpty),
           ),
         for (final aisle in Aisle.values)
           if (byAisle[aisle] case final group?) ...[

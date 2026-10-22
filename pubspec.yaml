@@ -1,7 +1,7 @@
 name: myfoodmind
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.18.0+21
+version: 0.19.0+22
 
 environment:
   sdk: ^3.12.2
@@ -79,6 +79,9 @@ flutter:
     - assets/icons/eva_eating.png
     - assets/icons/eva_sleeping.png
     - assets/icons/eva_waving.png
+    - assets/icons/eva_sitting.png
+    - assets/icons/eva_thinking.png
+    - assets/icons/eva_camera.png
     - assets/fonts/
     - assets/licenses/
     # nutri.db, health.db and EmbeddingGemma are downloaded on first run (DataDownload in lib/app_state.dart), so

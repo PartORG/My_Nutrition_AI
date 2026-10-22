@@ -103,7 +103,7 @@ class CameraCard extends AgentCard {
 /// One food on a meal card. The user can change its amount or swap the food before Save.
 class MealItem {
   MealItem({required this.label, required this.grams, required this.per100, this.estimated = false, this.recipeId,
-      this.servingG});
+      this.servingG, this.seen, this.check = false, this.food});
   MealItem.of(FoodChoice f, {double? grams})
       : this(label: f.label, grams: grams ?? f.servingG ?? 100, per100: f.per100, estimated: f.estimated,
             recipeId: f.kind == 'recipe' ? f.id as int : null, servingG: f.servingG);
@@ -113,13 +113,21 @@ class MealItem {
   bool estimated;
   int? recipeId;
   double? servingG;
+
+  /// From a photo: what Gemma saw ("seen: …" under the food), whether to check it (one look only, or a loose match),
+  /// the food it matched and whether the user changed that (remembered for the next photo on Save).
+  final String? seen;
+  bool check;
+  FoodChoice? food;
+  bool corrected = false;
+
   Nutrients get values => per100.map((k, v) => MapEntry(k, v * grams / 100));
 }
 
 /// A write the model proposed. Nothing is stored until the user taps ✓.
 class ConfirmCard extends AgentCard {
   ConfirmCard({required String title, List<String> lines = const [], required void Function(ConfirmCard) apply,
-      this.mealType, this.items = const []})
+      this.mealType, this.items = const [], this.photo = false, this.notFound = const [], this.fat})
       // ignore: prefer_initializing_formals
       : _title = title,
         // ignore: prefer_initializing_formals
@@ -131,6 +139,12 @@ class ConfirmCard extends AgentCard {
 
   /// Meal cards: the foods, editable; [lines] then also lists them.
   final List<MealItem> items;
+
+  /// A photo's meal card (the chat's camera): what was seen but matched nothing, to add by hand, and the oil or
+  /// butter to offer when something was fried or roasted (no photo shows it).
+  final bool photo;
+  final List<String> notFound;
+  final FoodChoice? fat;
 
   List<String> get lines => [
         for (final i in items) '${i.label} · ${i.grams.round()} g · ${i.estimated ? '≈' : ''}${i.values['kcal']!.round()} kcal',
@@ -846,6 +860,23 @@ class AgentTools {
       apply: (c) => _insertItems(at, c),
     ));
   }
+
+  /// A photo's meal card (lib/vision/scan.dart photoMeal): the same card log_meal shows, under the meal of the hour;
+  /// [saved] runs after the meal is logged.
+  ConfirmCard photoMealCard(List<MealItem> items,
+          {List<String> notFound = const [], FoodChoice? fat, required void Function(ConfirmCard) saved}) =>
+      ConfirmCard(
+        title: 'Log meal',
+        mealType: _mealTypeFor(_now()),
+        items: items,
+        photo: true,
+        notFound: notFound,
+        fat: fat,
+        apply: (c) {
+          _insertItems(_ms(), c);
+          saved(c);
+        },
+      );
 
   /// The whole phrase is exactly a dish or recipe name (same content words),
   /// so it must not be split on "and"/"with".

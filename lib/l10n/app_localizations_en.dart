@@ -1063,6 +1063,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get captionCamera => 'Tap the button to open the camera.';
 
   @override
+  String get photoAttach => 'Photo of your meal';
+
+  @override
+  String get captionPhoto => 'Here\'s what I see in your photo.';
+
+  @override
+  String get photoCardHint =>
+      'Check each food and amount, change what I got wrong, then pick the meal and save it.';
+
+  @override
+  String photoNotMatched(String names) {
+    return 'Not in the food list: $names. Add them with “Add item”.';
+  }
+
+  @override
   String get cardLogSymptom => 'Log symptom';
 
   @override

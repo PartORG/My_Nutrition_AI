@@ -664,9 +664,17 @@ To do, in order:
   goal adds 330 / 400 (`lactationKcal`); losing stays allowed (the 0–6 figure already counts the usual loss).
 - [x] Release v0.16.0: first-run download, products v4, trimester, biotin.
 
-## Owner's ideas (2026-10-22; 2–6 done the same day, 1 not started — grill before building)
+## Owner's ideas (2026-10-22; all six done the same day, 1 in v0.19)
 
-1. **Photo in chat.** Today chat only shows a CameraCard that opens the camera screen (`openCamera`,
+1. **Done 2026-10-22 (v0.19): photo in chat.** Built: a "Photo of your meal" chip first above the chat input (Pro,
+   else the plans; not a fourth button in the input row, which squeezed the field on narrow phones) and the chat's
+   own "Open camera" card both run the camera (shoot or gallery, Gemma's recognition, `capturePhoto` shared with the
+   review screen); the foods come back as the chat's meal card (`photoMeal` in scan.dart): "seen: …" and "check
+   this" per food, change / remove / amount / add, the meal, foods not in the list named, oil offered after frying,
+   "What can I cook?", Save or Discard. Save logs, remembers the user's swaps for the next photo and records the
+   scan. The Log tab keeps the full-screen review. Eva poses, one screen each: head (drawer), waving (welcome),
+   sitting (food data download), sleeping (History empty), eating (Log search, no match), thinking (what the AI
+   knows, empty), camera (the photo card). Asked for: Today chat only shows a CameraCard that opens the camera screen (`openCamera`,
    `lib/ui/camera_screen.dart`); recognition happens there, not in the conversation. Wanted: attach a photo (camera or
    gallery, `image_picker` is already a dependency) in the chat input, run the same recognition loop in the chat,
    show what was recognised (foods, grams, ≈ marks) as a card, let the user edit each item, and choose how to store it

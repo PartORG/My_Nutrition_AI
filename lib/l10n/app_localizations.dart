@@ -1884,6 +1884,30 @@ abstract class AppLocalizations {
   /// **'Tap the button to open the camera.'**
   String get captionCamera;
 
+  /// No description provided for @photoAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of your meal'**
+  String get photoAttach;
+
+  /// No description provided for @captionPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s what I see in your photo.'**
+  String get captionPhoto;
+
+  /// No description provided for @photoCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check each food and amount, change what I got wrong, then pick the meal and save it.'**
+  String get photoCardHint;
+
+  /// No description provided for @photoNotMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in the food list: {names}. Add them with “Add item”.'**
+  String photoNotMatched(String names);
+
   /// No description provided for @cardLogSymptom.
   ///
   /// In en, this message translates to:

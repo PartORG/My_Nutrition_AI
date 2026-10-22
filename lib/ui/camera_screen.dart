@@ -29,18 +29,29 @@ import 'today_screen.dart' show mealName;
 /// Pro: camera (photo / live) → review → "What can I cook?" or
 /// "Log this meal". [onCook] is null where cooking ideas can't be shown (Log tab).
 Future<void> openCamera(BuildContext context, String mode, {void Function(List<String> names)? onCook}) async {
+  final nav = Navigator.of(context);
+  final shot = await capturePhoto(context, mode);
+  if (shot == null || !context.mounted) return;
+  await nav.push(MaterialPageRoute<void>(
+    builder: (_) => ReviewScreen(data: shot.data, items: shot.items, mode: shot.mode, onCook: onCook),
+  ));
+}
+
+/// Pro (else the plans): the camera, photo or live, or a gallery picture → the foods seen, matched in nutri.db, and
+/// how they were taken ('photo' / 'live'). Null when cancelled, locked or not Pro. The review screen and the chat's
+/// camera both start here.
+Future<({ProfileData data, List<ScanItem> items, String mode})?> capturePhoto(BuildContext context, String mode) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final billing = await container.read(billingProvider.future);
-  if (!context.mounted) return;
-  final nav = Navigator.of(context);
+  if (!context.mounted) return null;
   if (!billing.tier.value.includes(Tier.pro)) {
-    await nav.push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen()));
-    return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PaywallScreen()));
+    return null;
   }
   final data = container.read(profileDataProvider);
-  if (data == null) return;
+  if (data == null) return null;
   final captured = await container.read(captureProvider)(context, mode);
-  if (captured == null || !context.mounted) return;
+  if (captured == null || !context.mounted) return null;
   final rows = container.read(detectorRowsProvider).value ?? const {}; // loaded with the detector
   final (items, usedMode) = switch (captured) {
     (List<Detection> found, bool live) => (itemsFromDetections(data.tools, found, rows: rows), live ? 'live' : 'photo'),
@@ -48,9 +59,7 @@ Future<void> openCamera(BuildContext context, String mode, {void Function(List<S
     (List<SeenFood> seen) => (itemsFromSeen(data.tools, seen), 'photo'),
     _ => throw ArgumentError('capture returned $captured'),
   };
-  await nav.push(MaterialPageRoute<void>(
-    builder: (_) => ReviewScreen(data: data, items: items, mode: usedMode, onCook: onCook),
-  ));
+  return (data: data, items: items, mode: usedMode);
 }
 
 /// What a capture returns: Gemma's foods from a photo, matched

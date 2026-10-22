@@ -1070,6 +1070,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe auf die Schaltfläche, um die Kamera zu öffnen.';
 
   @override
+  String get photoAttach => 'Foto deiner Mahlzeit';
+
+  @override
+  String get captionPhoto => 'Das sehe ich auf deinem Foto.';
+
+  @override
+  String get photoCardHint =>
+      'Prüfe jedes Lebensmittel und jede Menge, korrigiere meine Fehler, dann wähle die Mahlzeit und speichere.';
+
+  @override
+  String photoNotMatched(String names) {
+    return 'Nicht in der Lebensmittelliste: $names. Füge sie mit „Eintrag hinzufügen“ hinzu.';
+  }
+
+  @override
   String get cardLogSymptom => 'Symptom eintragen';
 
   @override

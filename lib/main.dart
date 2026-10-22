@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 
 import 'app_state.dart';
 import 'l10n/app_localizations.dart';
+import 'ui/avatar.dart' show EvaCutout, evaSittingAsset;
 import 'ui/home_screen.dart';
 import 'ui/profile_screens.dart';
 import 'ui/theme.dart';
@@ -175,7 +176,7 @@ class DataScreen extends ConsumerWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Icon(Icons.download_for_offline_outlined, size: 48, color: Theme.of(context).colorScheme.primary),
+              const Center(child: EvaCutout(size: 140, asset: evaSittingAsset)), // waits with you
               const SizedBox(height: 16),
               Text(l.dataTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 12),

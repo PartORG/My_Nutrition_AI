@@ -236,13 +236,28 @@ void main() {
             home: Scaffold(body: ChatScreen(agent: agent)),
           ),
         ));
+    // The review screen as the Log tab opens it: a button calling openCamera.
+    Future<void> pumpReview(WidgetTester tester) => tester.pumpWidget(ProviderScope(
+          overrides: [
+            profileDataProvider.overrideWithValue(data),
+            billingProvider.overrideWith((ref) async => billing),
+            captureProvider.overrideWithValue((context, mode) async => capture(mode)),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+                body: Builder(
+                    builder: (context) => TextButton(onPressed: () => openCamera(context, 'photo'), child: const Text('Open camera')))),
+          ),
+        ));
     List<Map<String, Object?>> meals() => data.user.select('SELECT description, grams, estimated FROM meal_log ORDER BY id').toList();
     List<String> scans() => [for (final r in data.user.select('SELECT mode, text FROM scans')) '${r['mode']}: ${r['text']}'];
 
     testWidgets('photo → review → Log this meal', (tester) async {
       final found = await FakeDetector().detect(Uint8List(0), 0, 0);
       capture = (_) => (found, false);
-      await pumpChat(tester);
+      await pumpReview(tester);
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
 
@@ -273,7 +288,7 @@ void main() {
 
     testWidgets('Gemma photo → review with its portions; an unknown food waits for a match', (tester) async {
       capture = (_) => parseSeenFoods('150 | banana\n90 | broccoli\n200 | unicorn stew');
-      await pumpChat(tester);
+      await pumpReview(tester);
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
 
@@ -303,7 +318,7 @@ void main() {
 
     testWidgets('fried food offers oil; a changed food is remembered for that name next time', (tester) async {
       capture = (_) => parseSeenFoods('150 | banana | fried\n200 | unicorn stew | stewed');
-      await pumpChat(tester);
+      await pumpReview(tester);
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cooked with oil or butter?'));
@@ -326,7 +341,7 @@ void main() {
 
     testWidgets('review rows keep their own grams after a remove and follow a changed food', (tester) async {
       capture = (_) => parseSeenFoods('150 | banana\n90 | broccoli\n200 | unicorn stew');
-      await pumpChat(tester);
+      await pumpReview(tester);
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
       // Unmatched first: it needs the user before it can be logged.
@@ -353,11 +368,55 @@ void main() {
       expect(meals().map((r) => r['description']), containsAll(['banana', 'broccoli']));
     });
 
-    testWidgets('photo → What can I cook? shows recipes in the chat, logs nothing', (tester) async {
+    testWidgets('chat photo: a meal card to check, change, save; a swap is remembered for next time', (tester) async {
+      capture = (_) => parseSeenFoods('150 | banana | fried\n200 | unicorn stew');
+      await pumpChat(tester);
+      await tester.tap(find.text('Photo of your meal'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Here's what I see in your photo."), findsOneWidget);
+      expect(find.text('Check what was found'), findsNothing, reason: 'in the chat, not the review screen');
+      expect(find.widgetWithText(TextField, '150'), findsOneWidget, reason: "Gemma's grams");
+      expect(find.text('Not in the food list: unicorn stew. Add them with “Add item”.'), findsOneWidget);
+      await tester.ensureVisible(find.text('Cooked with oil or butter?'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cooked with oil or butter?'));
+      await tester.pump();
+      expect(find.text('Cooked with oil or butter?'), findsNothing, reason: 'offered once');
+      // Gemma's banana was really broccoli: tapping the food's name changes it.
+      await tester.ensureVisible(find.text('banana'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('banana'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'broccoli');
+      await tester.pump();
+      await tester.tap(find.text('broccoli').last);
+      await tester.pumpAndSettle();
+      expect(find.text('seen: banana'), findsOneWidget);
+      await tester.ensureVisible(find.text('Dinner'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dinner'));
+      await tester.pump();
+      await tester.ensureVisible(find.text('Save'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(meals().map((r) => r['description']), ['broccoli', 'olive oil']);
+      expect(data.user.select('SELECT DISTINCT meal_type FROM meal_log').single['meal_type'], 'dinner');
+      expect(scans(), ['photo: broccoli, olive oil']);
+      expect(itemsFromSeen(data.tools, parseSeenFoods('100 | banana')).single.food?.label, 'broccoli',
+          reason: 'the next photo of a "banana" starts from what the user chose');
+    });
+
+    testWidgets("chat's Open camera card: same card; What can I cook? shows recipes, logs nothing", (tester) async {
       final found = await FakeDetector().detect(Uint8List(0), 0, 0);
       capture = (_) => (found, true);
       await pumpChat(tester);
       await tester.tap(find.text('Open camera').last);
+      await tester.pumpAndSettle();
+      expect(find.text("Here's what I see in your photo."), findsOneWidget);
+      await tester.ensureVisible(find.text('What can I cook?'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('What can I cook?'));
       await tester.pumpAndSettle();
@@ -365,7 +424,15 @@ void main() {
       final list = (agent.items.last as CardItem).card as RecipeListCard;
       expect(list.recipes.map((r) => r.title), contains('Chicken broccoli stir-fry'));
       expect(meals(), isEmpty);
-      expect(scans(), ['live: banana, broccoli']);
+    });
+
+    testWidgets('a photo that matches nothing still gets its card, to add by hand', (tester) async {
+      capture = (_) => parseSeenFoods('');
+      await pumpChat(tester);
+      await tester.tap(find.text('Photo of your meal'));
+      await tester.pumpAndSettle();
+      expect(find.text('No food found. Add items by name.'), findsOneWidget);
+      expect(find.text('Add item'), findsOneWidget);
     });
 
     testWidgets('below Pro the camera opens the plans instead', (tester) async {
@@ -374,7 +441,7 @@ void main() {
       await pumpChat(tester);
       await tester.tap(find.text('Open camera').last);
       await tester.pumpAndSettle();
-      expect(find.text('Check what was found'), findsNothing);
+      expect(find.text("Here's what I see in your photo."), findsNothing);
       expect(find.text('Plans'), findsOneWidget); // the paywall
     });
   });

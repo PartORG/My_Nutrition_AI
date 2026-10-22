@@ -88,7 +88,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
           Panel(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(l.factsSection, style: Theme.of(context).textTheme.titleMedium),
-              if (facts.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: EvaNote(l.factsEmpty)),
+              if (facts.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: EvaNote(l.factsEmpty, asset: evaThinkingAsset)),
               for (final (i, f) in facts.indexed) ...[
                 if (i > 0) Divider(color: c.divider),
                 Row(children: [

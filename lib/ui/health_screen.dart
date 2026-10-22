@@ -16,7 +16,6 @@ import '../data/goals.dart';
 import '../data/journal.dart';
 import '../l10n/app_localizations.dart';
 import '../report.dart';
-import 'avatar.dart';
 import 'kit.dart';
 import 'nutrients.dart';
 import 'paywall_screen.dart';
@@ -359,7 +358,7 @@ class _Journal extends StatelessWidget {
         ),
     ]..sort((a, b) => b.at.compareTo(a.at));
     if (entries.isEmpty) {
-      return Panel(child: EvaNote(l.journalEmpty));
+      return Panel(child: Text(l.journalEmpty, style: TextStyle(color: c.muted)));
     }
     return PanelList(
       children: [

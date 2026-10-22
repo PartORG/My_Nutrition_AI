@@ -282,3 +282,27 @@ List<String> cookNames(List<ScanItem> items) => [for (final i in items) i.food?.
 void recordScan(Database user, String mode, List<ScanItem> items, {required DateTime at}) => user.execute(
     'INSERT INTO scans (scanned_at, mode, text) VALUES (?, ?, ?)',
     [at.millisecondsSinceEpoch, mode, [for (final i in items) i.food?.label ?? i.name].join(', ')]);
+
+/// A photo in the chat → its meal card: each matched food with what was seen ("check" when unsure), the rest listed
+/// to add by hand, oil offered when something was fried. Save logs the meal, keeps the user's corrections for the
+/// next photo and records the scan, as the review screen's "Log this meal" does.
+ConfirmCard photoMeal(AgentTools tools, List<ScanItem> items, {required String mode}) => tools.photoMealCard(
+      [
+        for (final i in items)
+          if (i.food case final f?)
+            MealItem(label: f.label, grams: i.grams, per100: f.per100, estimated: f.estimated,
+                recipeId: f.kind == 'recipe' ? f.id as int : null, servingG: f.servingG, seen: i.name, check: !i.sure,
+                food: f)
+              ..corrected = i.corrected,
+      ],
+      notFound: [for (final i in items) if (i.food == null) i.name],
+      fat: items.any((i) => cookedInFat(i.cooking)) ? tools.staple('oil') ?? matchFood(tools, 'oil') : null,
+      saved: (card) {
+        final now = DateTime.now();
+        for (final m in card.items) {
+          if (m.corrected && m.seen != null && m.food != null) rememberCorrection(tools.user, m.seen!, m.food!, at: now);
+        }
+        recordScan(tools.user, mode,
+            [for (final m in card.items) ScanItem(name: m.seen ?? m.label, food: m.food, grams: m.grams)], at: now);
+      },
+    );

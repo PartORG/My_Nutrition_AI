@@ -1074,6 +1074,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get captionCamera => 'Натисніть кнопку, щоб відкрити камеру.';
 
   @override
+  String get photoAttach => 'Фото страви';
+
+  @override
+  String get captionPhoto => 'Ось що я бачу на вашому фото.';
+
+  @override
+  String get photoCardHint =>
+      'Перевірте кожен продукт і кількість, виправте мої помилки, потім виберіть прийом їжі й збережіть.';
+
+  @override
+  String photoNotMatched(String names) {
+    return 'Немає в списку продуктів: $names. Додайте їх кнопкою «Додати позицію».';
+  }
+
+  @override
   String get cardLogSymptom => 'Записати симптом';
 
   @override

@@ -64,7 +64,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           Widget empty(String text) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
-                child: EvaNote(text),
+                child: EvaNote(text, asset: evaSleepingAsset),
               );
 
           return ListView(padding: const EdgeInsets.fromLTRB(0, 0, 0, 24), children: [

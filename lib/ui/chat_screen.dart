@@ -9,6 +9,7 @@ import '../agent/agent_tools.dart';
 import '../app_state.dart' show llmHears, llmProvider, voiceRepliesProvider;
 import '../data/diary.dart';
 import '../l10n/app_localizations.dart';
+import '../vision/scan.dart' show photoMeal;
 import 'all_nutrients_screen.dart' show NutrientTable;
 import 'avatar.dart';
 import 'camera_screen.dart';
@@ -26,6 +27,13 @@ import 'voice.dart';
 /// Where "Report this response" drafts go (Play's AI-generated content policy).
 // TODO(ievgen): real support address before release.
 const supportEmail = 'peredereev.ievgen@gmail.com';
+
+/// A photo in the chat (Pro): the camera or a gallery picture, and what it saw comes back as a meal card to
+/// check, change and save, or to cook from.
+Future<void> photoToChat(BuildContext context, Agent agent, String mode) async {
+  final shot = await capturePhoto(context, mode);
+  if (shot != null) agent.addPhoto(photoMeal(shot.data.tools, shot.items, mode: shot.mode));
+}
 
 /// Recipe ideas for what the camera saw, or a note that there are none.
 void cookOrSay(BuildContext context, Agent agent, List<String> names) {
@@ -626,15 +634,11 @@ class _CardView extends StatelessWidget {
           child: ElevatedButton.icon(
             icon: const Icon(Icons.photo_camera),
             label: Text(l.cameraOpen),
-            onPressed: () => openCamera(
-              context,
-              c.mode,
-              onCook: (names) => cookOrSay(context, agent, names),
-            ),
+            onPressed: () => photoToChat(context, agent, c.mode),
           ),
         ),
       ),
-      ConfirmCard c when c.items.isNotEmpty && c.accepted == null =>
+      ConfirmCard c when (c.items.isNotEmpty || c.photo) && c.accepted == null =>
         _MealConfirm(card: c, agent: agent),
       ConfirmCard c => _Framed(
         icon: switch (c.accepted) {
@@ -702,6 +706,7 @@ class _CardView extends StatelessWidget {
 
 /// The line above a card shown without a model reply.
 String? _caption(AppLocalizations l, AgentCard card) => switch (card) {
+  ConfirmCard(photo: true) => l.captionPhoto,
   ConfirmCard() => l.captionConfirm,
   RecipeListCard(:final avoided) when avoided.isNotEmpty =>
     l.captionIdeasAvoiding(avoided.join(', ')),
@@ -955,6 +960,15 @@ class _MealConfirm extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // A photo's card: Eva with her camera, and how to check what she saw.
+            if (card.photo) ...[
+              Row(children: [
+                const EvaCutout(size: 72, asset: evaCameraAsset),
+                const SizedBox(width: 12),
+                Expanded(child: Text(l.photoCardHint, style: TextStyle(fontSize: 15, color: c.ink2))),
+              ]),
+              const SizedBox(height: 12),
+            ],
             if (card.mealType != null) ...[
               ChoicePills<String>(
                 values: const ['breakfast', 'lunch', 'dinner', 'snack'],
@@ -974,6 +988,8 @@ class _MealConfirm extends StatelessWidget {
                 kcal: i.values['kcal'],
                 servingG: i.servingG,
                 estimated: i.estimated,
+                seen: i.seen,
+                check: i.check,
                 onChange: () async {
                   final food = await showDialog<FoodChoice>(
                       context: context, builder: (_) => PickFoodDialog(tools: agent.tools, initial: i.label.split(',').first));
@@ -994,6 +1010,17 @@ class _MealConfirm extends StatelessWidget {
                 },
               ),
             ),
+            if (card.notFound.isNotEmpty) Text(l.photoNotMatched(card.notFound.join(', ')), style: TextStyle(color: c.ink2)),
+            if (card.photo && card.items.isEmpty && card.notFound.isEmpty) Text(l.reviewEmpty, style: TextStyle(color: c.ink2)),
+            if (card.fat case final oil? when !card.items.any((i) => i.label == oil.label))
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.water_drop_outlined),
+                  label: Text(l.reviewAddFat),
+                  onPressed: () => agent.addFood(card, oil),
+                ),
+              ),
             for (final line in card.lines.skip(card.items.length)) Text(line),
             const SizedBox(height: 6),
             Divider(color: c.divider, thickness: 2),
@@ -1015,6 +1042,11 @@ class _MealConfirm extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    if (card.photo)
+                      OutlinedButton(
+                        onPressed: () => cookOrSay(context, agent, [...card.items.map((i) => i.label), ...card.notFound]),
+                        child: Text(l.reviewCook),
+                      ),
                     OutlinedButton(
                       onPressed: () => agent.decide(card, false),
                       child: Text(l.confirmDiscard),
@@ -1065,6 +1097,12 @@ class _Suggestions extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
       child: Row(
         children: [
+          // First: a photo of the meal (Pro), its foods back here as a card. Not in the input row: on a narrow
+          // phone a fourth button there squeezes the field.
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Pill(label: l.photoAttach, icon: Icons.photo_camera_outlined, onTap: () => photoToChat(context, agent, 'photo')),
+          ),
           for (final t in texts)
             Padding(
               padding: const EdgeInsets.only(right: 8),

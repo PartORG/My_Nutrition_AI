@@ -1068,6 +1068,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get captionCamera => 'Touchez le bouton pour ouvrir l’appareil photo.';
 
   @override
+  String get photoAttach => 'Photo de votre repas';
+
+  @override
+  String get captionPhoto => 'Voici ce que je vois sur votre photo.';
+
+  @override
+  String get photoCardHint =>
+      'Vérifiez chaque aliment et chaque quantité, corrigez mes erreurs, puis choisissez le repas et enregistrez.';
+
+  @override
+  String photoNotMatched(String names) {
+    return 'Absent de la liste d’aliments : $names. Ajoutez-les avec « Ajouter un élément ».';
+  }
+
+  @override
   String get cardLogSymptom => 'Noter un symptôme';
 
   @override
