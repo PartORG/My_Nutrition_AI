@@ -689,6 +689,8 @@ v0.25.4: the original report, reproduced on the phone: "I had 2 eggs for breakfa
 came (v0.25.0), but the false words stayed on screen and in the replay, where a reopened conversation (every voice
 message) copies them. When the fallback card is a write (ConfirmCard), the reply goes from the screen and
 chat_messages and is not checked, as after a second failed check.
+v0.25.5: Today's water card showed "/ 2.25 L" with no amount: the litres format dropped a trailing zero meant for
+"2.50", which also blanked "0" (and would show 10 L as "1"). Only a decimal's last zero goes now.
 
 Camera, owner's request (v0.24, 2026-10-22): the shot frame is held (the stream stops replacing it)
 and shown with its boxes while Gemma names it, in photo and live mode; gallery photos go through the detector too

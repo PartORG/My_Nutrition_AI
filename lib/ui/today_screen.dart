@@ -833,7 +833,8 @@ class _WaterTile extends StatelessWidget {
     final blue = context.nutrientColor('water');
     final ml = waterOn(data.user, DateTime.now()), goal = waterGoal(data.user);
     final glasses = (goal / glassMl).round().clamp(1, 16), had = (ml / glassMl).floor();
-    String litres(double v) => (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 2).replaceFirst(RegExp(r'0$'), '');
+    // "2.50" → "2.5"; only a decimal's last zero ("0" and "10" went blank and "1").
+    String litres(double v) => (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 2).replaceFirst(RegExp(r'(?<=\.\d)0$'), '');
     return Panel(
       radius: Radii.card,
       padding: const EdgeInsets.fromLTRB(14, 10, 10, 14),
