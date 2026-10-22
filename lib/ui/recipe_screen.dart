@@ -420,13 +420,13 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
           Expanded(
             child: OutlinedButton(
               onPressed: _logServing,
-              child: Text(l.logServing, textAlign: TextAlign.center),
+              child: FittedBox(fit: BoxFit.scaleDown, child: Text(l.logServing, maxLines: 1)), // one line, shrunk
             ),
           ),
           Expanded(
             child: FilledButton.icon(
               icon: const Icon(Icons.play_arrow),
-              label: Text(l.startCooking),
+              label: FittedBox(fit: BoxFit.scaleDown, child: Text(l.startCooking, maxLines: 1)),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => CookScreen(

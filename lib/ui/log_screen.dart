@@ -227,7 +227,14 @@ class _ActionButton extends StatelessWidget {
       child: Row(children: [
         Icon(icon, color: c.primary, size: 24),
         const SizedBox(width: 10),
-        Expanded(child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: c.ink))),
+        // One line, shrunk if it must: "Snap a / photo" wrapped beside the PRO tag.
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(label, maxLines: 1, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: c.ink)),
+          ),
+        ),
         if (badge != null) ...[const SizedBox(width: 6), badge!],
       ]),
     );

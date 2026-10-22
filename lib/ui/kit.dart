@@ -327,7 +327,13 @@ class StatTile extends StatelessWidget {
         Container(width: 9, height: 9, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
         const SizedBox(width: 6),
       ],
-      Flexible(child: Text(label, style: AppText.caption.copyWith(fontSize: 13, color: c.muted))),
+      Flexible(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(label, maxLines: 1, style: AppText.caption.copyWith(fontSize: 13, color: c.muted)),
+        ),
+      ),
     ]);
     return Panel(
       radius: Radii.tile,
